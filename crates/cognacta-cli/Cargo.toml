@@ -1,0 +1,10 @@
+[package]
+name = "cognacta-cli"
+description = "CLI binary of the cognacta workspace"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+cognacta-core.workspace = true

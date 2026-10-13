@@ -1,0 +1,9 @@
+[package]
+name = "cognacta-core"
+description = "Core library of the cognacta workspace"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
