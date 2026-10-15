@@ -1,6 +1,7 @@
 "use client";
 
-import { ChevronRight } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ChevronRightIcon } from "@hugeicons-pro/core-stroke-rounded";
 import {
   AnimatePresence,
   type HTMLMotionProps,
@@ -1097,7 +1098,7 @@ export function AnimatedSidebarMenuButton({
           transition={context.reduce ? { duration: 0 } : SPRING_LAYOUT}
           className="relative z-10 grid size-4 shrink-0 place-items-center text-muted-foreground"
         >
-          <ChevronRight className="size-3.5" />
+          <HugeiconsIcon icon={ChevronRightIcon} size={14} />
         </motion.span>
       ) : null}
     </>

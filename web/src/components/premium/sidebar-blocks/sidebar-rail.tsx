@@ -1,22 +1,22 @@
 "use client";
 
+import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import {
-  ArrowUpRight,
-  BookOpen,
-  FileText,
-  Folder,
-  History,
-  House,
-  Layers2,
-  type LucideIcon,
-  PanelLeft,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Plus,
-  Search,
-  Settings2,
-  X,
-} from "lucide-react";
+  ArrowUpRight01Icon,
+  BookOpen01Icon,
+  Cancel01Icon,
+  FileTextIcon,
+  Folder01Icon,
+  HistoryIcon,
+  Home01Icon,
+  Layers02Icon,
+  PanelLeftCloseIcon,
+  PanelLeftIcon,
+  PanelLeftOpenIcon,
+  PlusSignIcon,
+  Search01Icon,
+  Settings02Icon,
+} from "@hugeicons-pro/core-stroke-rounded";
 import { motion, useReducedMotion } from "motion/react";
 import {
   type ReactNode,
@@ -52,13 +52,13 @@ import { cn } from "@/lib/utils";
 export type SidebarRailItem = {
   id: string;
   label: string;
-  icon?: LucideIcon;
+  icon?: IconSvgElement;
 };
 
 export type SidebarRailSection = {
   id: string;
   label: string;
-  icon: LucideIcon;
+  icon: IconSvgElement;
   groups: readonly {
     label: string;
     items: readonly SidebarRailItem[];
@@ -69,18 +69,18 @@ const defaultSections: readonly SidebarRailSection[] = [
   {
     id: "workspace",
     label: "工作区",
-    icon: House,
+    icon: Home01Icon,
     groups: [
       {
         label: "置顶",
         items: [
-          { id: "brand-notes", label: "品牌笔记", icon: Folder },
-          { id: "website-refresh", label: "官网改版", icon: Folder },
+          { id: "brand-notes", label: "品牌笔记", icon: Folder01Icon },
+          { id: "website-refresh", label: "官网改版", icon: Folder01Icon },
         ],
       },
       {
         label: "项目",
-        items: [{ id: "fieldwork", label: "实地调研", icon: Folder }],
+        items: [{ id: "fieldwork", label: "实地调研", icon: Folder01Icon }],
       },
       {
         label: "最近",
@@ -98,14 +98,14 @@ const defaultSections: readonly SidebarRailSection[] = [
   {
     id: "library",
     label: "资料库",
-    icon: Layers2,
+    icon: Layers02Icon,
     groups: [
       {
         label: "合集",
         items: [
-          { id: "references", label: "参考资料", icon: BookOpen },
-          { id: "saved-pages", label: "收藏的页面", icon: FileText },
-          { id: "assets", label: "素材", icon: Folder },
+          { id: "references", label: "参考资料", icon: BookOpen01Icon },
+          { id: "saved-pages", label: "收藏的页面", icon: FileTextIcon },
+          { id: "assets", label: "素材", icon: Folder01Icon },
         ],
       },
     ],
@@ -113,14 +113,14 @@ const defaultSections: readonly SidebarRailSection[] = [
   {
     id: "activity",
     label: "动态",
-    icon: History,
+    icon: HistoryIcon,
     groups: [
       {
         label: "更新",
         items: [
-          { id: "this-week", label: "本周", icon: History },
-          { id: "shared-with-you", label: "与我共享", icon: FileText },
-          { id: "archive", label: "归档", icon: Folder },
+          { id: "this-week", label: "本周", icon: HistoryIcon },
+          { id: "shared-with-you", label: "与我共享", icon: FileTextIcon },
+          { id: "archive", label: "归档", icon: Folder01Icon },
         ],
       },
     ],
@@ -128,14 +128,14 @@ const defaultSections: readonly SidebarRailSection[] = [
   {
     id: "settings",
     label: "设置",
-    icon: Settings2,
+    icon: Settings02Icon,
     groups: [
       {
         label: "工作区",
         items: [
-          { id: "preferences", label: "偏好设置", icon: Settings2 },
-          { id: "members", label: "成员", icon: House },
-          { id: "connections", label: "连接", icon: Layers2 },
+          { id: "preferences", label: "偏好设置", icon: Settings02Icon },
+          { id: "members", label: "成员", icon: Home01Icon },
+          { id: "connections", label: "连接", icon: Layers02Icon },
         ],
       },
     ],
@@ -348,9 +348,10 @@ function SidebarRailShell({
                     active && "bg-accent text-accent-foreground",
                   )}
                 >
-                  <Icon
+                  <HugeiconsIcon
+                    icon={Icon}
                     aria-hidden="true"
-                    className="size-5"
+                    size={20}
                     strokeWidth={1.7}
                   />
                 </Button>
@@ -424,7 +425,11 @@ function SidebarRailShell({
                   }}
                   className={iconButtonClass}
                 >
-                  <Search aria-hidden="true" className="size-4" />
+                  <HugeiconsIcon
+                    icon={Search01Icon}
+                    aria-hidden="true"
+                    size={16}
+                  />
                 </Button>
               </MorphicTooltip>
               <MorphicTooltip
@@ -446,14 +451,26 @@ function SidebarRailShell({
                   className={iconButtonClass}
                 >
                   {expanded ? (
-                    <PanelLeftClose aria-hidden="true" className="size-4" />
+                    <HugeiconsIcon
+                      icon={PanelLeftCloseIcon}
+                      aria-hidden="true"
+                      size={16}
+                    />
                   ) : (
-                    <PanelLeftOpen aria-hidden="true" className="size-4" />
+                    <HugeiconsIcon
+                      icon={PanelLeftOpenIcon}
+                      aria-hidden="true"
+                      size={16}
+                    />
                   )}
                 </Button>
               </MorphicTooltip>
               <AnimatedSidebarClose className="size-9 rounded-full text-muted-foreground hover:bg-muted md:hidden">
-                <X aria-hidden="true" className="size-4" />
+                <HugeiconsIcon
+                  icon={Cancel01Icon}
+                  aria-hidden="true"
+                  size={16}
+                />
               </AnimatedSidebarClose>
             </div>
             {searching ? (
@@ -488,7 +505,11 @@ function SidebarRailShell({
               }}
               className="h-9 justify-start rounded-full px-2 text-foreground"
             >
-              <Plus aria-hidden="true" className="size-4" />
+              <HugeiconsIcon
+                icon={PlusSignIcon}
+                aria-hidden="true"
+                size={16}
+              />
               新建页面
             </Button>
           </AnimatedSidebarHeader>
@@ -514,9 +535,10 @@ function SidebarRailShell({
                           <AnimatedSidebarMenuButton
                             icon={
                               Icon ? (
-                                <Icon
+                                <HugeiconsIcon
+                                  icon={Icon}
                                   aria-hidden="true"
-                                  className="size-4"
+                                  size={16}
                                   strokeWidth={1.7}
                                 />
                               ) : undefined
@@ -569,7 +591,11 @@ function SidebarRailShell({
               }}
               className={iconButtonClass}
             >
-              <PanelLeft aria-hidden="true" className="size-4" />
+              <HugeiconsIcon
+                icon={PanelLeftIcon}
+                aria-hidden="true"
+                size={16}
+              />
             </Button>
           </MorphicTooltip>
           <div
@@ -602,7 +628,11 @@ function SidebarRailShell({
           {children ?? (
             <div className="grid h-full place-content-center gap-3 text-center">
               <span className="mx-auto grid size-10 place-items-center rounded-full border border-border text-muted-foreground">
-                <ArrowUpRight aria-hidden="true" className="size-5" />
+                <HugeiconsIcon
+                  icon={ArrowUpRight01Icon}
+                  aria-hidden="true"
+                  size={20}
+                />
               </span>
               <h3 className="text-xl font-medium">
                 {selectedItem?.label ?? "下一个想法从这里开始"}

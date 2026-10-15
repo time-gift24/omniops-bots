@@ -1,7 +1,12 @@
 "use client";
 // beui.dev/components/motion/button
 
-import { Check, Loader2, X } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  Cancel01Icon,
+  CheckIcon,
+  Loading03Icon,
+} from "@hugeicons-pro/core-stroke-rounded";
 import {
   AnimatePresence,
   motion,
@@ -215,17 +220,21 @@ export const StatefulButton = forwardRef<HTMLButtonElement, StatefulButtonProps>
         <AnimatePresence initial={false}>
           {state === "loading" ? (
             <IconSlot keyId="loading-icon">
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <HugeiconsIcon
+                icon={Loading03Icon}
+                size={16}
+                className="animate-spin"
+              />
             </IconSlot>
           ) : null}
           {state === "success" ? (
             <IconSlot keyId="success-icon">
-              <Check className="h-4 w-4" />
+              <HugeiconsIcon icon={CheckIcon} size={16} />
             </IconSlot>
           ) : null}
           {state === "error" ? (
             <IconSlot keyId="error-icon">
-              <X className="h-4 w-4" />
+              <HugeiconsIcon icon={Cancel01Icon} size={16} />
             </IconSlot>
           ) : null}
         </AnimatePresence>
