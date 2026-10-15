@@ -7,3 +7,12 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+async-trait.workspace = true
+bon.workspace = true
+futures-core.workspace = true
+thiserror.workspace = true
+url.workspace = true
+
+[dev-dependencies]
+futures-util.workspace = true
+tokio.workspace = true
