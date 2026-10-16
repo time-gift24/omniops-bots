@@ -218,3 +218,43 @@
     font-weight: 500;
   }
 }
+
+/* ---- 对话流入场动效 ----
+   仅在挂载时播放一次；流式增量不触发。
+   reduced-motion 下降级为立即呈现。 */
+@keyframes chat-bubble-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes chat-message-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chat-bubble-enter {
+  animation: chat-bubble-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.chat-message-enter {
+  animation: chat-message-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-bubble-enter,
+  .chat-message-enter {
+    animation: none;
+  }
+}

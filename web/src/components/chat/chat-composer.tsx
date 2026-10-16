@@ -65,13 +65,16 @@ export function ChatComposer({
         if (
           event.key === "Enter" &&
           !event.shiftKey &&
-          !event.nativeEvent.isComposing
+          // IME 双重互锁：合成中（含 229 键码）的 Enter 是确认候选词，不发送
+          !event.nativeEvent.isComposing &&
+          event.nativeEvent.keyCode !== 229
         ) {
           event.preventDefault();
           submit();
         }
       }}
-      className="block max-h-48 min-h-16 w-full resize-none bg-transparent px-4 pt-3 pb-1 text-sm leading-6 text-foreground outline-none placeholder:text-muted-foreground"
+      // field-sizing 原生自适应高度（受 min/max 钳制；不支持的引擎回退为固定两行）
+      className="block max-h-96 min-h-16 w-full resize-none bg-transparent px-4 pt-3 pb-1 text-sm leading-6 text-foreground outline-none [field-sizing:content] placeholder:text-muted-foreground"
     />
   );
 

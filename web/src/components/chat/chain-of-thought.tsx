@@ -115,6 +115,13 @@ function ReasoningStep({ part }: { part: Extract<PartView, { kind: "reasoning" }
   );
 }
 
+function formatDuration(ms: number): string {
+  const seconds = Math.round(ms / 1000);
+  if (seconds < 1) return "不足 1 秒";
+  if (seconds < 60) return `${seconds} 秒`;
+  return `${Math.floor(seconds / 60)} 分 ${seconds % 60} 秒`;
+}
+
 export function ChainOfThought({
   parts,
   streaming,
@@ -132,6 +139,27 @@ export function ChainOfThought({
   ).length;
   const status = running ? "running" : failed > 0 ? "error" : undefined;
 
+  // 计时：流式开始到结束的实际耗时，完成后并入摘要行（重挂载后丢失，可接受）。
+  const startedAt = React.useRef<number | null>(null);
+  const [elapsedMs, setElapsedMs] = React.useState<number | null>(null);
+  React.useEffect(() => {
+    if (streaming) {
+      if (startedAt.current === null) {
+        startedAt.current = Date.now();
+        setElapsedMs(null);
+      }
+    } else if (startedAt.current !== null) {
+      setElapsedMs(Date.now() - startedAt.current);
+      startedAt.current = null;
+    }
+  }, [streaming]);
+
+  const summary = running
+    ? "正在研究…"
+    : `已研究 ${parts.length} 步${failed > 0 ? `，${failed} 步失败` : ""}${
+        elapsedMs !== null ? ` · 用时 ${formatDuration(elapsedMs)}` : ""
+      }`;
+
   return (
     <Trace>
       <TraceCollapsible open={open ?? running} onOpenChange={setOpen}>
@@ -140,11 +168,7 @@ export function ChainOfThought({
             <TraceIcon>
               <StatusIcon status={status} />
             </TraceIcon>
-            <TraceTitle>
-              {running
-                ? "正在研究…"
-                : `已研究 ${parts.length} 步${failed > 0 ? `，${failed} 步失败` : ""}`}
-            </TraceTitle>
+            <TraceTitle>{summary}</TraceTitle>
           </TraceLine>
         </TraceCollapsibleTrigger>
         <TraceCollapsibleContent forceMount>

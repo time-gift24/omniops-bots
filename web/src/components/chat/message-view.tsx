@@ -87,7 +87,7 @@ export function MessageView({
   if (message.role === "user") {
     const text = messageText(message);
     return (
-      <Message align="end">
+      <Message align="end" className="chat-bubble-enter">
         <MessageContent className="gap-2">
           <Bubble align="end" variant="muted">
             <BubbleContent>{text}</BubbleContent>
@@ -118,7 +118,7 @@ export function MessageView({
   const answering = text.length > 0;
 
   return (
-    <Message>
+    <Message className="chat-message-enter">
       <MessageContent className="gap-4">
         {steps.length > 0 && (
           <ChainOfThought
