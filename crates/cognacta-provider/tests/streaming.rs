@@ -1,5 +1,8 @@
 //! All HTTP payloads in this file are hand-written fixtures, not captured provider responses.
 
+#[path = "support/client.rs"]
+mod support;
+
 use std::{collections::HashMap, error::Error as _, future::Future, sync::Arc, time::Duration};
 
 use async_trait::async_trait;
@@ -30,7 +33,7 @@ async fn bounded<T>(future: impl Future<Output = T>) -> T {
 }
 
 fn client() -> Client {
-    Client::builder()
+    support::client_builder()
         .no_proxy()
         .redirect(reqwest::redirect::Policy::none())
         .retry(reqwest::retry::never())
@@ -644,7 +647,7 @@ async fn transport_and_read_timeout_preserve_reqwest_sources() {
         )
         .unwrap(),
     );
-    let client = Client::builder()
+    let client = support::client_builder()
         .no_proxy()
         .redirect(reqwest::redirect::Policy::none())
         .retry(reqwest::retry::never())

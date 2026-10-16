@@ -22,6 +22,7 @@ mod tests {
 mod error;
 mod generation;
 mod model;
+mod observation;
 
 pub use error::{Error, ErrorKind, PartialGeneration, PartialPart};
 pub use generation::{

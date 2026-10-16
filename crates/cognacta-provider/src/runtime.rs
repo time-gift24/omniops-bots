@@ -194,12 +194,12 @@ mod tests {
             let mut unknown_provider = config();
             unknown_provider.models[0].provider = reference.into();
             assert!(matches!(
-                build_models(unknown_provider, Client::new()),
+                build_models(unknown_provider, crate::test_client()),
                 Err(Error::InvalidConfig { field, .. }) if field == "models.provider"
             ));
         }
         for config in cases {
-            assert!(build_models(config, Client::new()).is_err());
+            assert!(build_models(config, crate::test_client()).is_err());
         }
         let mut shared_names = config();
         let mut other = config().providers.remove(0);
@@ -213,7 +213,7 @@ mod tests {
                 protocol: "openai.chat-completions".into(),
             },
         );
-        let models = build_models(shared_names, Client::new()).unwrap();
+        let models = build_models(shared_names, crate::test_client()).unwrap();
         assert_eq!(models.len(), 2);
         for provider in ["test", "other"] {
             assert_eq!(
@@ -236,7 +236,7 @@ mod tests {
                 prefix: "Bearer ".into(),
                 env: "TEST_KEY".into(),
             };
-            let result = build_with_env(config, Client::new(), |_| credential.clone());
+            let result = build_with_env(config, crate::test_client(), |_| credential.clone());
             let error = result.err().unwrap();
             assert!(!error.to_string().contains("secret"));
         }
@@ -246,7 +246,7 @@ mod tests {
             prefix: String::new(),
             env: "TEST_KEY".into(),
         };
-        assert!(build_with_env(config, Client::new(), |_| Ok("fake-key".into())).is_ok());
+        assert!(build_with_env(config, crate::test_client(), |_| Ok("fake-key".into())).is_ok());
     }
 
     #[test]
@@ -261,7 +261,7 @@ mod tests {
             let mut config = config();
             config.providers[0].api_key = Some(key);
             assert!(
-                build_with_env(config, Client::new(), |name| {
+                build_with_env(config, crate::test_client(), |name| {
                     assert!(!literal, "literal keys must not read environment variables");
                     assert_eq!(name, "TEST_KEY");
                     Ok("fake-key".into())
@@ -289,7 +289,7 @@ mod tests {
         ] {
             let mut config = config();
             config.providers[0].api_key = Some(key);
-            let error = build_with_env(config, Client::new(), |name| match name {
+            let error = build_with_env(config, crate::test_client(), |name| match name {
                 "MISSING_KEY" => Err(VarError::NotPresent),
                 "EMPTY_KEY" => Ok(String::new()),
                 "INVALID_KEY" => Ok("fake-secret\r\nheader".into()),
@@ -307,7 +307,7 @@ mod tests {
             env: "TEST_KEY".into(),
         };
         assert!(matches!(
-            build_with_env(config, Client::new(), |_| panic!(
+            build_with_env(config, crate::test_client(), |_| panic!(
                 "conflict must be rejected first"
             )),
             Err(Error::InvalidConfig { .. })
@@ -325,7 +325,7 @@ mod tests {
             config.providers[0]
                 .headers
                 .insert(name.into(), value.into());
-            assert!(build_models(config, Client::new()).is_err());
+            assert!(build_models(config, crate::test_client()).is_err());
         }
         let mut config = config();
         config.providers[0].auth = AuthConfig::HeaderEnv {
@@ -334,7 +334,9 @@ mod tests {
             env: "TEST_KEY".into(),
         };
         assert!(matches!(
-            build_with_env(config, Client::new(), |_| Ok("application/json".into())),
+            build_with_env(config, crate::test_client(), |_| Ok(
+                "application/json".into()
+            )),
             Err(Error::InvalidConfig { .. })
         ));
     }

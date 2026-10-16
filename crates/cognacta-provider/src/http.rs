@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use tracing::Instrument;
 
 use reqwest::{
     Client, Request, Response,
@@ -66,7 +67,16 @@ impl HttpAccess {
         }
         // Read-only validation: never change a request after it may be signed.
         validate_protocol_headers(request.headers(), true)?;
-        self.client.execute(request).await.map_err(Error::Transport)
+        let span = tracing::info_span!(
+            "provider.http",
+            http.request.method = request.method().as_str(),
+            http.response.status_code = tracing::field::Empty
+        );
+        let result = self.client.execute(request).instrument(span.clone()).await;
+        if let Ok(response) = &result {
+            span.record("http.response.status_code", response.status().as_u16());
+        }
+        result.map_err(Error::Transport)
     }
 }
 
@@ -111,26 +121,31 @@ mod tests {
         let mut headers = HeaderMap::new();
         headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
         assert!(matches!(
-            HttpAccess::new(Client::new(), headers.clone(), None),
+            HttpAccess::new(crate::test_client(), headers.clone(), None),
             Err(Error::InvalidConfig { .. })
         ));
         assert!(matches!(
             HttpAccess::builder()
-                .client(Client::new())
+                .client(crate::test_client())
                 .headers(headers)
                 .build(),
             Err(Error::InvalidConfig { .. })
         ));
-        assert!(HttpAccess::builder().client(Client::new()).build().is_ok());
+        assert!(
+            HttpAccess::builder()
+                .client(crate::test_client())
+                .build()
+                .is_ok()
+        );
     }
 
     #[test]
     fn scope_includes_tenant_headers() {
         let mut headers = HeaderMap::new();
         headers.insert("x-tenant", HeaderValue::from_static("tenant-a"));
-        let a = HttpAccess::new(Client::new(), headers.clone(), None).unwrap();
+        let a = HttpAccess::new(crate::test_client(), headers.clone(), None).unwrap();
         headers.insert("x-tenant", HeaderValue::from_static("tenant-b"));
-        let b = HttpAccess::new(Client::new(), headers, None).unwrap();
+        let b = HttpAccess::new(crate::test_client(), headers, None).unwrap();
         assert_ne!(a.replay_scope(), b.replay_scope());
         assert!(!a.replay_scope().contains("tenant-a"));
     }

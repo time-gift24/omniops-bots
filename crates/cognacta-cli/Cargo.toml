@@ -8,18 +8,24 @@ repository.workspace = true
 
 [features]
 default = []
-cognacta-test = ["dep:cognacta-provider", "dep:futures-util", "dep:reqwest", "dep:tokio"]
+cognacta-test = ["dep:cognacta-provider", "dep:futures-util", "dep:reqwest", "dep:rustls", "dep:rustls-platform-verifier", "dep:tokio"]
 
 [dependencies]
+cognacta-collector.workspace = true
+tracing.workspace = true
 clap = { workspace = true, features = ["derive"] }
 cognacta-core.workspace = true
 cognacta-provider = { workspace = true, optional = true }
 futures-util = { workspace = true, optional = true }
 reqwest = { workspace = true, optional = true }
+rustls = { workspace = true, optional = true }
+rustls-platform-verifier = { workspace = true, optional = true }
 thiserror.workspace = true
 tokio = { workspace = true, optional = true }
 
 [dev-dependencies]
+opentelemetry-proto.workspace = true
+prost.workspace = true
 async-trait.workspace = true
 serde_json.workspace = true
 tokio.workspace = true

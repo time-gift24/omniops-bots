@@ -89,6 +89,11 @@ struct CliProcess {
 impl CliProcess {
     fn start(config: &ConfigFile, input: &str) -> Self {
         let mut command = Command::new(env!("CARGO_BIN_EXE_cognacta-cli"));
+        for (key, _) in std::env::vars_os() {
+            if key.to_string_lossy().starts_with("OTEL_") || key == "RUST_LOG" {
+                command.env_remove(key);
+            }
+        }
         command
             .args(["chat", "--config"])
             .arg(&config.path)
@@ -312,7 +317,9 @@ fn two_turns_flush_before_completion_and_preserve_history() {
         assert!(status.success(), "{stderr}");
         assert!(stdout.contains("第一段完整回复"));
         assert!(stdout.contains("第二轮回复"));
-        assert!(stderr.is_empty());
+        assert!(stderr.contains("generation.completed"));
+        assert!(!stderr.contains("第一段完整回复"));
+        assert!(!stderr.contains("not-a-real-key"));
         done_rx.recv_timeout(LIMIT).unwrap();
         server.join().unwrap();
     }

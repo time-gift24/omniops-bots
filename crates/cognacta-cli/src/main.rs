@@ -23,6 +23,8 @@ enum Command {
 #[derive(Debug, thiserror::Error)]
 enum Error {
     #[error("{0}")]
+    Observability(#[from] cognacta_collector::Error),
+    #[error("{0}")]
     Arguments(#[from] clap::Error),
     #[error("终端或运行时 I/O 失败: {0}")]
     Io(#[from] std::io::Error),
@@ -36,12 +38,30 @@ enum Error {
     #[error("无法创建 HTTP 客户端")]
     HttpClient(#[source] reqwest::Error),
     #[cfg(feature = "cognacta-test")]
+    #[error("无法配置 HTTP 客户端 TLS")]
+    Tls(#[source] rustls::Error),
+    #[cfg(feature = "cognacta-test")]
     #[error("未配置 Provider {provider} 下的模型 {model}")]
     UnknownModel { provider: String, model: String },
 }
 
 fn main() -> ExitCode {
-    match run() {
+    let collector = cognacta_collector::Collector::init_from_env("cognacta-cli");
+    if let Err(error) = &collector {
+        tracing::warn!(event = "collector.initialization_failed", diagnostic = %error, "telemetry unavailable");
+    }
+    let code = exit_code(run());
+    if let Ok(collector) = collector
+        && let Err(error) = collector.shutdown(std::time::Duration::from_secs(3))
+    {
+        let error = Error::Observability(error);
+        tracing::warn!(event = "collector.shutdown_failed", diagnostic = %error, "telemetry shutdown incomplete");
+    }
+    code
+}
+
+fn exit_code(result: Result<(), Error>) -> ExitCode {
+    match result {
         Ok(()) => ExitCode::SUCCESS,
         Err(Error::Arguments(error)) => {
             let code = if error.use_stderr() {

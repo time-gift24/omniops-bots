@@ -9,6 +9,7 @@ use cognacta_core::{
 };
 use cognacta_provider::{ProvidersConfig, build_models};
 use futures_util::StreamExt;
+use rustls_platform_verifier::BuilderVerifierExt;
 
 use crate::Error;
 
@@ -26,16 +27,21 @@ pub(crate) struct ChatArgs {
 }
 
 pub(crate) async fn run(args: ChatArgs) -> Result<(), Error> {
-    let config = ProvidersConfig::load(args.config)?;
-    let client = reqwest::Client::builder()
-        .redirect(reqwest::redirect::Policy::none())
-        .retry(reqwest::retry::never())
-        .connect_timeout(Duration::from_secs(10))
-        .read_timeout(Duration::from_secs(60))
-        .timeout(Duration::from_secs(300))
-        .build()
-        .map_err(Error::HttpClient)?;
-    let models = build_models(config, client)?;
+    let config = ProvidersConfig::load(args.config).inspect_err(|_| {
+        tracing::warn!(
+            event = "configuration.failed",
+            stage = "load",
+            "provider configuration failed"
+        )
+    })?;
+    let client = http_client()?;
+    let models = build_models(config, client).inspect_err(|_| {
+        tracing::warn!(
+            event = "configuration.failed",
+            stage = "build",
+            "provider configuration failed"
+        )
+    })?;
     let key = (args.provider, args.model);
     let model = models.get(&key).ok_or_else(|| Error::UnknownModel {
         provider: key.0.clone(),
@@ -47,6 +53,26 @@ pub(crate) async fn run(args: ChatArgs) -> Result<(), Error> {
         &mut std::io::stdout().lock(),
     )
     .await
+}
+
+fn http_client() -> Result<reqwest::Client, Error> {
+    let mut tls = rustls::ClientConfig::builder_with_provider(
+        rustls::crypto::ring::default_provider().into(),
+    )
+    .with_safe_default_protocol_versions()
+    .and_then(|builder| builder.with_platform_verifier())
+    .map_err(Error::Tls)?
+    .with_no_client_auth();
+    tls.alpn_protocols = vec![b"h2".to_vec(), b"http/1.1".to_vec()];
+    reqwest::Client::builder()
+        .tls_backend_preconfigured(tls)
+        .redirect(reqwest::redirect::Policy::none())
+        .retry(reqwest::retry::never())
+        .connect_timeout(Duration::from_secs(10))
+        .read_timeout(Duration::from_secs(60))
+        .timeout(Duration::from_secs(300))
+        .build()
+        .map_err(Error::HttpClient)
 }
 
 async fn interact(
@@ -136,6 +162,13 @@ mod tests {
     };
 
     use super::*;
+
+    #[test]
+    fn http_client_does_not_require_or_install_a_global_tls_provider() {
+        assert!(rustls::crypto::CryptoProvider::get_default().is_none());
+        http_client().unwrap();
+        assert!(rustls::crypto::CryptoProvider::get_default().is_none());
+    }
 
     struct FakeProtocol {
         requests: Mutex<Vec<GenerationRequest>>,

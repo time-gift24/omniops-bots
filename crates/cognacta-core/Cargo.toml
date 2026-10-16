@@ -7,6 +7,8 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+tracing.workspace = true
+opentelemetry.workspace = true
 async-trait.workspace = true
 bon.workspace = true
 futures-core.workspace = true
@@ -14,5 +16,6 @@ thiserror.workspace = true
 url.workspace = true
 
 [dev-dependencies]
+opentelemetry_sdk = { workspace = true, features = ["testing"] }
 futures-util.workspace = true
 tokio.workspace = true

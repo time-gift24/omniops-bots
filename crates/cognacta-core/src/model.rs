@@ -1,7 +1,9 @@
 use std::{pin::Pin, sync::Arc};
 
+use crate::observation::{Metrics, Observation};
 use async_trait::async_trait;
 use futures_core::Stream;
+use tracing::Instrument;
 
 use crate::{Error, ErrorKind, GenerationEvent, GenerationRequest, GenerationResponse};
 
@@ -62,6 +64,7 @@ pub struct Model {
     provider: Arc<Provider>,
     name: String,
     protocol: Arc<dyn Protocol>,
+    metrics: Arc<Metrics>,
 }
 
 #[bon::bon]
@@ -79,6 +82,7 @@ impl Model {
             provider,
             name,
             protocol,
+            metrics: Arc::new(Metrics::new(opentelemetry::global::meter("cognacta-core"))),
         })
     }
 
@@ -94,16 +98,40 @@ impl Model {
         self.protocol.as_ref()
     }
 
+    /// Observes one generation without changing protocol errors or response data.
+    /// Construct the model after installing the application's telemetry provider.
     pub async fn generate(&self, request: GenerationRequest) -> Result<GenerationResponse, Error> {
-        self.protocol
+        let mut observation = Observation::start(self, "generate", self.metrics.clone());
+        let result = self
+            .protocol
             .generate(&self.provider, &self.name, request)
-            .await
+            .instrument(observation.span())
+            .await;
+        match &result {
+            Ok(response) => observation.success(response),
+            Err(error) => observation.failure(error),
+        }
+        result
     }
 
+    /// Observation follows consumption through Completed, error or drop, including
+    /// consumer waiting time. Drop means local cancellation, not upstream billing
+    /// cancellation. First-text latency excludes empty deltas; usage settles once
+    /// from the latest reported cumulative values, leaving unknown counts unknown.
     pub async fn stream(&self, request: GenerationRequest) -> Result<EventStream, Error> {
-        self.protocol
+        let mut observation = Observation::start(self, "stream", self.metrics.clone());
+        match self
+            .protocol
             .stream(&self.provider, &self.name, request)
+            .instrument(observation.span())
             .await
+        {
+            Ok(stream) => Ok(observation.wrap(stream)),
+            Err(error) => {
+                observation.failure(&error);
+                Err(error)
+            }
+        }
     }
 }
 
@@ -257,3 +285,7 @@ mod tests {
         assert!(Model::new(provider, " ", Arc::new(EchoProtocol)).is_err());
     }
 }
+
+#[cfg(test)]
+#[path = "observation_tests.rs"]
+mod observation_tests;
