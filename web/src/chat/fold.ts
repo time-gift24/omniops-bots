@@ -32,6 +32,8 @@ export interface ChatMessageView {
   role: "user" | "assistant";
   parts: PartView[];
   state: MessageState;
+  /** 用户消息携带的附件（仅展示用途）。 */
+  attachments?: { name: string; mediaType: string }[];
 }
 
 export type ThreadStatus = "idle" | "submitted" | "streaming" | "failed";
@@ -58,12 +60,14 @@ function nextMessageId(state: ThreadViewState): string {
 export function appendUserMessage(
   state: ThreadViewState,
   text: string,
+  attachments?: { name: string; mediaType: string }[],
 ): ThreadViewState {
   const message: ChatMessageView = {
     id: nextMessageId(state),
     role: "user",
     parts: [{ kind: "text", text }],
     state: "done",
+    ...(attachments?.length ? { attachments } : {}),
   };
   return {
     ...state,

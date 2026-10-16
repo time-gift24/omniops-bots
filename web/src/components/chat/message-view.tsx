@@ -91,6 +91,21 @@ export function MessageView({
         <MessageContent className="gap-2">
           <Bubble align="end" variant="muted">
             <BubbleContent>{text}</BubbleContent>
+            {message.attachments && message.attachments.length > 0 && (
+              <ul
+                aria-label="消息附件"
+                className="mt-1.5 flex flex-wrap justify-end gap-1 border-t border-border/60 pt-1.5"
+              >
+                {message.attachments.map((attachment, index) => (
+                  <li
+                    key={`${attachment.name}-${index}`}
+                    className="max-w-full truncate rounded-full bg-background/70 px-2 py-0.5 text-xs text-muted-foreground"
+                  >
+                    {attachment.name}
+                  </li>
+                ))}
+              </ul>
+            )}
           </Bubble>
           <MessageFooter>
             <MessageAction

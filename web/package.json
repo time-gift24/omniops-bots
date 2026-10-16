@@ -15,6 +15,7 @@
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",
     "@fontsource-variable/geist-mono": "^5.3.0",
+    "@headlessui/react": "^2.2.10",
     "@hugeicons-pro/core-stroke-rounded": "^4.3.4",
     "@hugeicons/react": "^1.1.10",
     "@radix-ui/react-dropdown-menu": "^2.2.1",

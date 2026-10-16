@@ -66,7 +66,7 @@ export class ThreadStoreImpl implements ThreadStore {
     const trimmed = text.trim();
     if (!trimmed || this.running) return;
 
-    this.state = appendUserMessage(this.state, trimmed);
+    this.state = appendUserMessage(this.state, trimmed, attachments);
     this.emit();
     void this.consume(trimmed, attachments);
   };
