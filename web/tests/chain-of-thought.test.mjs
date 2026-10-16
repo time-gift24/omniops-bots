@@ -8,15 +8,51 @@ test("思维链收起时隐藏内容并保留子步骤，运行中展开", async
   const server = await createServer({ server: { middlewareMode: true, hmr: false }, appType: "custom" });
   t.after(() => server.close());
   const { ChainOfThought } = await server.ssrLoadModule("/src/components/chat/chain-of-thought.tsx");
-  const parts = [{ kind: "reasoning", text: "检查构建日志" }];
-
   for (const streaming of [false, true]) {
     const html = renderToString(createElement(ChainOfThought, {
-      parts, streaming, answering: false,
+      parts: [{ kind: "reasoning", text: "检查构建日志", state: streaming ? "running" : "done" }],
+      streaming, answering: false,
     }));
     const content = html.match(/<div[^>]*data-slot="trace-collapsible-content"[^>]*>/)?.[0];
     assert.ok(content);
     assert.equal(/\shidden(?:=|\s|>)/.test(content), !streaming);
-    assert.match(html, /已思考/);
+    assert.match(html, streaming ? /正在思考…/ : /已思考/);
+  }
+});
+
+test("思考完成由步骤事件决定；停止和失败不再旋转或显示完成", async (t) => {
+  const server = await createServer({ server: { middlewareMode: true, hmr: false }, appType: "custom" });
+  t.after(() => server.close());
+  const { ChainOfThought } = await server.ssrLoadModule("/src/components/chat/chain-of-thought.tsx");
+  for (const [partState, messageState, title, summary, spinning] of [
+    ["running", "streaming", "正在思考…", "正在研究…", true],
+    ["done", "streaming", "已思考", "已研究 1 步", false],
+    ["running", "stopped", "思考已停止", "研究已停止", false],
+    ["running", "failed", "思考中断", "研究中断", false],
+    ["done", "stopped", "已思考", "已研究 1 步", false],
+    ["done", "failed", "已思考", "已研究 1 步", false],
+  ]) {
+    const html = renderToString(createElement(ChainOfThought, {
+      parts: [{ kind: "reasoning", text: "已收到部分思考内容", state: partState }],
+      streaming: messageState === "streaming", messageState, answering: false,
+    }));
+    assert.ok(html.includes(title), `${partState} / ${messageState}: ${title}`);
+    assert.ok(html.includes(summary), `${partState} / ${messageState}: ${summary}`);
+    assert.equal(html.includes("chat-quiet-dot"), spinning);
+    if (partState === "running") assert.ok(!html.includes("已思考"));
+  }
+});
+
+test("工具进行中结束回复也移除旋转状态", async (t) => {
+  const server = await createServer({ server: { middlewareMode: true, hmr: false }, appType: "custom" });
+  t.after(() => server.close());
+  const { ChainOfThought } = await server.ssrLoadModule("/src/components/chat/chain-of-thought.tsx");
+  for (const messageState of ["stopped", "failed"]) {
+    const html = renderToString(createElement(ChainOfThought, {
+      parts: [{ kind: "tool", name: "searchCode", callId: "c1", inputText: "{}", state: "running" }],
+      streaming: false, messageState, answering: false,
+    }));
+    assert.ok(html.includes(messageState === "stopped" ? "已停止搜索代码" : "搜索代码中断"));
+    assert.ok(!html.includes("chat-quiet-dot"));
   }
 });

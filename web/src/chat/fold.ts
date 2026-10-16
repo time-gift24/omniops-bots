@@ -14,7 +14,7 @@ export type ToolState = "running" | "done" | "error";
 
 export type PartView =
   | { kind: "text"; text: string }
-  | { kind: "reasoning"; text: string }
+  | { kind: "reasoning"; text: string; state: "running" | "done" }
   | {
       kind: "tool";
       callId: string;
@@ -144,7 +144,7 @@ export function foldChatEvent(
                   state: "running",
                 }
               : event.kind === "reasoning"
-                ? { kind: "reasoning", text: "" }
+                ? { kind: "reasoning", text: "", state: "running" }
                 : { kind: "text", text: "" };
           const parts = [...message.parts];
           parts[event.partId] = part;
@@ -186,7 +186,7 @@ export function foldChatEvent(
               };
             }
             if (content.type === "reasoning" && part.kind === "reasoning") {
-              return { ...part, text: content.text };
+              return { ...part, text: content.text, state: "done" };
             }
             if (content.type === "text" && part.kind === "text") {
               return { ...part, text: content.text };

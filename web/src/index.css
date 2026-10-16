@@ -327,6 +327,47 @@
   }
 }
 
+/* ---- 思考中三点波浪（CDS timeline-quiet-dot：1.9s 阶梯延迟 0/0.15/0.3s） ---- */
+@keyframes chat-quiet-dot {
+  0%,
+  8% {
+    opacity: 0.2;
+    transform: translateY(2px);
+  }
+  22% {
+    opacity: 1;
+    transform: translateY(-2.5px);
+  }
+  36%,
+  70% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  90%,
+  100% {
+    opacity: 0.2;
+    transform: translateY(0);
+  }
+}
+
+.chat-quiet-dot {
+  animation: chat-quiet-dot 1.9s infinite cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.chat-quiet-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.chat-quiet-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-quiet-dot {
+    animation: none;
+  }
+}
+
 /* ---- Composer 外壳（CDS 逆向：柔影 + 发丝描边，无彩色光晕） ----
    常态 inset 1px 发丝线；悬浮/聚焦仅加深描边，焦点彩色环由 --ring 体系负责。 */
 .chat-composer-shell {

@@ -22,13 +22,17 @@ test("完整流式回合：事件依次折叠为运行中 → 完成的视图状
   assert.equal(state.messages.at(-1).role, "assistant");
 
   state = foldChatEvent(state, { type: "part-started", partId: 0, kind: "reasoning" });
+  assert.equal(state.messages.at(-1).parts[0].state, "running");
   state = foldChatEvent(state, { type: "delta", partId: 0, text: "先想" });
   state = foldChatEvent(state, { type: "delta", partId: 0, text: "一下" });
+  assert.equal(state.messages.at(-1).parts[0].state, "running");
   state = foldChatEvent(state, {
     type: "part-completed",
     partId: 0,
     content: { type: "reasoning", text: "先想一下" },
   });
+  assert.equal(state.messages.at(-1).parts[0].state, "done");
+  assert.equal(state.messages.at(-1).state, "streaming");
 
   state = foldChatEvent(state, { type: "part-started", partId: 1, kind: "tool-call", name: "searchCode" });
   state = foldChatEvent(state, { type: "delta", partId: 1, text: '{"query":' });
@@ -133,6 +137,28 @@ test("停止：进行中的回复保留已输出内容并标记 stopped", async 
   assert.equal(state.status, "idle");
   assert.equal(reply.state, "stopped");
   assert.equal(reply.parts[0].text, "已输出");
+});
+
+test("思考中停止或失败保留文本，未完成步骤不伪装成完成", async (t) => {
+  const { createThreadState, foldChatEvent, markStopped } = await loadFold(t);
+  let state = foldChatEvent(createThreadState("t1"), {
+    type: "started",
+    metadata: { providerName: "p", protocolName: "mock", requestedModel: "m" },
+  });
+  state = foldChatEvent(state, { type: "part-started", partId: 0, kind: "reasoning" });
+  state = foldChatEvent(state, { type: "delta", partId: 0, text: "正在检查" });
+
+  const failed = foldChatEvent(state, {
+    type: "failed", error: { kind: "transport", message: "断流" },
+  });
+  const stopped = markStopped(state);
+  assert.equal(stopped.messages[0].state, "stopped");
+  assert.equal(failed.messages[0].state, "failed");
+  for (const ended of [stopped, failed]) {
+    assert.deepEqual(ended.messages[0].parts[0], {
+      kind: "reasoning", text: "正在检查", state: "running",
+    });
+  }
 });
 
 test("重新生成历史回复时，开始、增量、失败和停止都只更新目标消息", async (t) => {
