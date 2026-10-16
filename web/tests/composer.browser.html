@@ -1,0 +1,94 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Composer regression check</title>
+<!-- Run npm run dev, then open /tests/composer.browser.html. No backend required. -->
+<div id="fixture"></div>
+<pre id="result">Running…</pre>
+<script type="module">
+  import React from "react";
+  import { createRoot } from "react-dom/client";
+  import { flushSync } from "react-dom";
+  import "/src/index.css";
+  import { ChatComposer } from "/src/components/chat/chat-composer.tsx";
+  import { AgentChatComposer } from "/src/components/premium/agent-chat-input/composer.tsx";
+
+  const fixture = document.querySelector("#fixture");
+  const result = document.querySelector("#result");
+  const root = createRoot(fixture);
+  const assert = (condition, message) => {
+    if (!condition) throw new Error(message);
+  };
+  const editor = () => fixture.querySelector('[role="textbox"]');
+  const sendButton = () => fixture.querySelector('button[aria-label="发送"]');
+  const insert = (text) => flushSync(() => {
+    editor().focus();
+    assert(document.execCommand("insertText", false, text), "Native insertion failed");
+  });
+  const paste = (text) => flushSync(() => {
+    const clipboardData = new DataTransfer();
+    clipboardData.setData("text/plain", text);
+    clipboardData.setData("text/html", "<b>Rich clipboard markup</b>");
+    editor().dispatchEvent(new ClipboardEvent("paste", { clipboardData, bubbles: true, cancelable: true }));
+  });
+
+  try {
+    let accepted = false;
+    let attempts = 0;
+    const state = { threadId: "test", status: "idle", messages: [] };
+    const store = {
+      getState: () => state,
+      subscribe: () => () => {},
+      send: () => { attempts += 1; return accepted; },
+      stop: () => {},
+    };
+    flushSync(() => root.render(React.createElement(ChatComposer, { store })));
+    const fileInput = fixture.querySelector('input[type="file"]');
+    const files = new DataTransfer();
+    files.items.add(new File(["test"], "attachment.txt", { type: "text/plain" }));
+    flushSync(() => {
+      fileInput.files = files.files;
+      fileInput.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    assert(sendButton().disabled, "Attachment-only input must not enable send");
+    flushSync(() => editor().dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
+    assert(attempts === 0 && fixture.textContent.includes("attachment.txt"), "Empty submission must keep attachments");
+    insert("draft");
+    flushSync(() => sendButton().click());
+    assert(attempts === 1 && editor().textContent === "draft" && fixture.textContent.includes("attachment.txt"), "Rejected submission must preserve text and attachments");
+    accepted = true;
+    flushSync(() => sendButton().click());
+    assert(attempts === 2 && editor().textContent === "", "Accepted submission must clear text");
+    // Removed attachment cards can remain briefly while their exit animation finishes.
+    assert(sendButton().disabled, "Accepted submission must reset send state");
+
+    const ref = React.createRef();
+    flushSync(() => root.render(React.createElement(AgentChatComposer, { ref, skills: [], maxLength: 20 })));
+    insert("original");
+    paste(" <b>PASTED</b> extra");
+    const pasted = ref.current.serialize().text;
+    assert(pasted === "original <b>PASTED</" && !editor().querySelector("b"), "Paste must insert plain text within maxLength");
+    flushSync(() => document.execCommand("undo"));
+    assert(ref.current.serialize().text === "original", "Undo must remove only the paste");
+    flushSync(() => document.execCommand("redo"));
+    assert(ref.current.serialize().text === pasted, "Redo must restore the paste");
+    const range = document.createRange();
+    range.selectNodeContents(editor());
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    paste("replacement");
+    assert(ref.current.serialize().text === "replacement", "Paste must replace the selection at maxLength");
+    flushSync(() => document.execCommand("undo"));
+    assert(ref.current.serialize().text === pasted, "Undo must restore the replaced selection");
+    range.selectNodeContents(editor());
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    paste("line 1\n\n<html>");
+    assert(ref.current.serialize().text === "line 1\n\n<html>", "Paste must preserve newlines and literal HTML text");
+    result.textContent = "PASS: attachment gating, rejected/accepted submissions, plain paste, maxLength, undo and redo";
+    result.dataset.passed = "true";
+  } catch (error) {
+    result.textContent = `FAIL: ${error.message}`;
+    result.dataset.passed = "false";
+    throw error;
+  }
+</script>

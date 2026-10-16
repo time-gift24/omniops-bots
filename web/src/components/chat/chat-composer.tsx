@@ -77,14 +77,15 @@ export function ChatComposer({
       onAttachmentsChange={setAttachments}
       onStop={() => store.stop()}
       onSubmit={(text, sent) => {
-        store.send(
+        const accepted = store.send(
           text,
           sent.map((attachment) => ({
             name: attachment.name,
             mediaType: attachment.type ?? "application/octet-stream",
           })),
         );
-        setAttachments([]);
+        if (accepted) setAttachments([]);
+        return accepted;
       }}
       className={cn("max-w-[720px]", className)}
     >

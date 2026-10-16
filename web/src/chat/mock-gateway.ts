@@ -40,16 +40,21 @@ function chunkText(text: string, size = 6): string[] {
   return chunks;
 }
 
-export function createMockGateway(options: MockGatewayOptions = {}): ChatGateway {
+export function createMockGateway(
+  options: MockGatewayOptions = {},
+): ChatGateway {
   const baseDelay = options.delayMs ?? 120;
-  let aborted = false;
+  let active: { aborted: boolean } | undefined;
 
-  async function* script(request: ChatRequest): AsyncGenerator<ChatEvent> {
+  async function* script(
+    request: ChatRequest,
+    signal: { aborted: boolean },
+  ): AsyncGenerator<ChatEvent> {
     const text = request.messages.at(-1)?.text ?? "";
     const delay = baseDelay * (text.includes("[slow]") ? 8 : 1);
-    const signal = { get aborted() { return aborted; } };
     const tick = () => sleep(delay, signal);
     const alive = () => !signal.aborted;
+    if (!alive()) return;
 
     const metadata = {
       providerName: "mock-provider",
@@ -63,9 +68,13 @@ export function createMockGateway(options: MockGatewayOptions = {}): ChatGateway
     if (text.includes("[fail-send]")) {
       yield { type: "started", metadata };
       await tick();
+      if (!alive()) return;
       yield {
         type: "failed",
-        error: { kind: "transport", message: "连接模型服务失败，请检查网络后重试。" },
+        error: {
+          kind: "transport",
+          message: "连接模型服务失败，请检查网络后重试。",
+        },
       };
       return;
     }
@@ -89,7 +98,12 @@ export function createMockGateway(options: MockGatewayOptions = {}): ChatGateway
     };
 
     // 工具步骤 1：读部署日志
-    yield { type: "part-started", partId: 1, kind: "tool-call", name: "readBuildLog" };
+    yield {
+      type: "part-started",
+      partId: 1,
+      kind: "tool-call",
+      name: "readBuildLog",
+    };
     const input1 = JSON.stringify({ deployment: "dpl_8Kx2" });
     for (const chunk of chunkText(input1, 12)) {
       await tick();
@@ -97,6 +111,7 @@ export function createMockGateway(options: MockGatewayOptions = {}): ChatGateway
       yield { type: "delta", partId: 1, text: chunk };
     }
     await tick();
+    if (!alive()) return;
     yield {
       type: "part-completed",
       partId: 1,
@@ -112,7 +127,12 @@ export function createMockGateway(options: MockGatewayOptions = {}): ChatGateway
     };
 
     // 工具步骤 2：检索代码（[fail-step] 时失败）
-    yield { type: "part-started", partId: 2, kind: "tool-call", name: "searchCode" };
+    yield {
+      type: "part-started",
+      partId: 2,
+      kind: "tool-call",
+      name: "searchCode",
+    };
     const input2 = JSON.stringify({ query: "cacheKey" });
     for (const chunk of chunkText(input2, 12)) {
       await tick();
@@ -120,6 +140,7 @@ export function createMockGateway(options: MockGatewayOptions = {}): ChatGateway
       yield { type: "delta", partId: 2, text: chunk };
     }
     await tick();
+    if (!alive()) return;
     if (text.includes("[fail-step]")) {
       yield {
         type: "part-completed",
@@ -183,11 +204,12 @@ export function createMockGateway(options: MockGatewayOptions = {}): ChatGateway
 
   return {
     stream(request) {
-      aborted = false;
-      return script(request);
+      const signal = { aborted: false };
+      active = signal;
+      return script(request, signal);
     },
     abort() {
-      aborted = true;
+      if (active) active.aborted = true;
     },
   };
 }

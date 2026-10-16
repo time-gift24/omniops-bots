@@ -134,6 +134,7 @@ export function ChainOfThought({
 }) {
   const [open, setOpen] = React.useState<boolean>();
   const running = streaming && !answering;
+  const expanded = open ?? running;
   const failed = parts.filter(
     (part) => part.kind === "tool" && part.state === "error",
   ).length;
@@ -162,7 +163,7 @@ export function ChainOfThought({
 
   return (
     <Trace>
-      <TraceCollapsible open={open ?? running} onOpenChange={setOpen}>
+      <TraceCollapsible open={expanded} onOpenChange={setOpen}>
         <TraceCollapsibleTrigger>
           <TraceLine status={status}>
             <TraceIcon>
@@ -171,7 +172,8 @@ export function ChainOfThought({
             <TraceTitle>{summary}</TraceTitle>
           </TraceLine>
         </TraceCollapsibleTrigger>
-        <TraceCollapsibleContent forceMount>
+        {/* 保留子步骤展开状态；forceMount 时显式隐藏，避免关闭动画结束后回弹。 */}
+        <TraceCollapsibleContent forceMount hidden={!expanded}>
           <Trace>
             {parts.map((part, index) =>
               part.kind === "reasoning" ? (

@@ -72,14 +72,6 @@ export function ChatThread({
     );
   }
 
-  const last = state.messages.at(-1);
-  // 思考过场：用户消息之后、首个可见内容（步骤或正文）到达之前。
-  const showThinking =
-    busy &&
-    (!last ||
-      last.role === "user" ||
-      (last.role === "assistant" && last.parts.length === 0));
-
   return (
     <MessageScrollerProvider autoScroll scrollPreviousItemPeek={64}>
       <MessageScroller>
@@ -94,19 +86,20 @@ export function ChatThread({
                 messageId={message.id}
                 scrollAnchor={message.role === "user"}
               >
-                <MessageView
-                  message={message}
-                  streaming={busy && message === last}
-                  onRetry={() => store.retry()}
-                  onEdit={onEditMessage}
-                />
+                {busy &&
+                message.state === "streaming" &&
+                message.parts.length === 0 ? (
+                  <AIThinkingLoader variant="diamond" label="正在思考" />
+                ) : (
+                  <MessageView
+                    message={message}
+                    streaming={busy && message.state === "streaming"}
+                    onRetry={() => store.retry(message.id)}
+                    onEdit={onEditMessage}
+                  />
+                )}
               </MessageScrollerItem>
             ))}
-            {showThinking && (
-              <MessageScrollerItem messageId="__thinking__">
-                <AIThinkingLoader variant="diamond" label="正在思考" />
-              </MessageScrollerItem>
-            )}
           </MessageScrollerContent>
         </MessageScrollerViewport>
         <MessageScrollerButton />

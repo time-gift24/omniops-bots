@@ -81,14 +81,18 @@ function withInFlightAssistant(
   state: ThreadViewState,
   mutate: (message: ChatMessageView) => ChatMessageView,
   createIfMissing = false,
+  messageId?: string,
 ): ThreadViewState {
   const messages = [...state.messages];
-  let index = messages.length - 1;
+  let index =
+    messageId === undefined
+      ? messages.length - 1
+      : messages.findIndex((message) => message.id === messageId);
   let message = messages[index];
   if (!message || message.role !== "assistant") {
     if (!createIfMissing) return state;
     message = {
-      id: nextMessageId(state),
+      id: messageId ?? nextMessageId(state),
       role: "assistant",
       parts: [],
       state: "streaming",
@@ -115,67 +119,82 @@ function mutatePart(
 export function foldChatEvent(
   state: ThreadViewState,
   event: ChatEvent,
+  messageId?: string,
 ): ThreadViewState {
   switch (event.type) {
     case "started":
       return withInFlightAssistant(
         { ...state, status: "streaming", metadata: event.metadata },
-        (message) => message,
+        (message) => ({ ...message, parts: [], state: "streaming" }),
         true,
+        messageId,
       );
 
     case "part-started":
-      return withInFlightAssistant(state, (message) => {
-        const part: PartView =
-          event.kind === "tool-call"
-            ? {
-                kind: "tool",
-                callId: String(event.partId),
-                name: event.name ?? "",
-                inputText: "",
-                state: "running",
-              }
-            : event.kind === "reasoning"
-              ? { kind: "reasoning", text: "" }
-              : { kind: "text", text: "" };
-        const parts = [...message.parts];
-        parts[event.partId] = part;
-        return { ...message, parts };
-      });
+      return withInFlightAssistant(
+        state,
+        (message) => {
+          const part: PartView =
+            event.kind === "tool-call"
+              ? {
+                  kind: "tool",
+                  callId: String(event.partId),
+                  name: event.name ?? "",
+                  inputText: "",
+                  state: "running",
+                }
+              : event.kind === "reasoning"
+                ? { kind: "reasoning", text: "" }
+                : { kind: "text", text: "" };
+          const parts = [...message.parts];
+          parts[event.partId] = part;
+          return { ...message, parts };
+        },
+        false,
+        messageId,
+      );
 
     case "delta":
-      return withInFlightAssistant(state, (message) =>
-        mutatePart(message, event.partId, (part) => {
-          if (part.kind === "tool") {
-            return { ...part, inputText: part.inputText + event.text };
-          }
-          return { ...part, text: part.text + event.text };
-        }),
+      return withInFlightAssistant(
+        state,
+        (message) =>
+          mutatePart(message, event.partId, (part) => {
+            if (part.kind === "tool") {
+              return { ...part, inputText: part.inputText + event.text };
+            }
+            return { ...part, text: part.text + event.text };
+          }),
+        false,
+        messageId,
       );
 
     case "part-completed":
-      return withInFlightAssistant(state, (message) =>
-        mutatePart(message, event.partId, (part) => {
-          const content = event.content;
-          if (content.type === "tool-call" && part.kind === "tool") {
-            return {
-              ...part,
-              callId: content.call.callId,
-              name: content.call.name,
-              inputText: content.call.inputText,
-              output: content.call.output,
-              errorText: content.call.errorText,
-              state: content.call.errorText ? "error" : "done",
-            };
-          }
-          if (content.type === "reasoning" && part.kind === "reasoning") {
-            return { ...part, text: content.text };
-          }
-          if (content.type === "text" && part.kind === "text") {
-            return { ...part, text: content.text };
-          }
-          return part;
-        }),
+      return withInFlightAssistant(
+        state,
+        (message) =>
+          mutatePart(message, event.partId, (part) => {
+            const content = event.content;
+            if (content.type === "tool-call" && part.kind === "tool") {
+              return {
+                ...part,
+                callId: content.call.callId,
+                name: content.call.name,
+                inputText: content.call.inputText,
+                output: content.call.output,
+                errorText: content.call.errorText,
+                state: content.call.errorText ? "error" : "done",
+              };
+            }
+            if (content.type === "reasoning" && part.kind === "reasoning") {
+              return { ...part, text: content.text };
+            }
+            if (content.type === "text" && part.kind === "text") {
+              return { ...part, text: content.text };
+            }
+            return part;
+          }),
+        false,
+        messageId,
       );
 
     case "usage":
@@ -190,6 +209,8 @@ export function foldChatEvent(
           metadata: event.response.metadata,
         },
         (message) => ({ ...message, state: "done" }),
+        false,
+        messageId,
       );
 
     case "failed":
@@ -199,15 +220,24 @@ export function foldChatEvent(
           message.state === "streaming"
             ? { ...message, state: "failed" }
             : message,
+        false,
+        messageId,
       );
   }
 }
 
 /** 用户显式停止：保留已输出内容，标记进行中的回复为 stopped。 */
-export function markStopped(state: ThreadViewState): ThreadViewState {
+export function markStopped(
+  state: ThreadViewState,
+  messageId?: string,
+): ThreadViewState {
   return withInFlightAssistant(
     { ...state, status: "idle" },
     (message) =>
-      message.state === "streaming" ? { ...message, state: "stopped" } : message,
+      message.state === "streaming"
+        ? { ...message, state: "stopped" }
+        : message,
+    false,
+    messageId,
   );
 }

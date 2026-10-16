@@ -57,12 +57,13 @@ export type AgentChatCreditsProps = {
   value?: string;
   defaultValue?: string;
   onValueChange?: (value: string) => void;
+  /** Return false to keep the draft when submission is rejected. */
   onSubmit?: (
     value: string,
     attachments: readonly AgentChatAttachment[],
     skillIds: readonly string[],
     model: string,
-  ) => void;
+  ) => void | boolean;
   onStop?: () => void;
   onFilesSelected?: (files: File[]) => void;
   attachments?: readonly AgentChatAttachment[];
@@ -175,7 +176,7 @@ export function AgentChatCredits({
     !disabled &&
     !busy &&
     (maxLength === undefined || text.length <= Math.max(0, maxLength)) &&
-    (text.trim().length > 0 || currentAttachments.length > 0);
+    text.trim().length > 0;
 
   useEffect(() => {
     if (
@@ -201,13 +202,13 @@ export function AgentChatCredits({
       text,
       skillIds: [...selectedSkillIds],
     };
-    onSubmit?.(
+    const accepted = onSubmit(
       composed.text.trim(),
       currentAttachments,
       composed.skillIds,
       selectedModel,
     );
-    if (clearOnSubmit) composerRef.current?.clear();
+    if (accepted !== false && clearOnSubmit) composerRef.current?.clear();
   }
 
   function handleFiles(event: ChangeEvent<HTMLInputElement>) {

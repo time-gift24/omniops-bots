@@ -454,13 +454,10 @@ export const AgentChatComposer = forwardRef<
               );
         const insertion = text.slice(0, available);
         if (!insertion) return;
-        range.deleteContents();
-        const node = document.createTextNode(insertion);
-        range.insertNode(node);
-        range.setStartAfter(node);
-        range.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(range);
+        // insertHTML starts its own undo step; textContent keeps clipboard HTML inert.
+        const plainText = document.createElement("span");
+        plainText.textContent = insertion;
+        document.execCommand("insertHTML", false, plainText.innerHTML);
         emit();
       }}
       onKeyDown={handleKeyDown}

@@ -134,3 +134,25 @@ test("停止：进行中的回复保留已输出内容并标记 stopped", async 
   assert.equal(reply.state, "stopped");
   assert.equal(reply.parts[0].text, "已输出");
 });
+
+test("重新生成历史回复时，开始、增量、失败和停止都只更新目标消息", async (t) => {
+  const { foldChatEvent, markStopped } = await loadFold(t);
+  const metadata = { providerName: "p", protocolName: "x", requestedModel: "m" };
+  const original = {
+    threadId: "t1", status: "idle",
+    messages: [
+      { id: "m1", role: "assistant", state: "done", parts: [{ kind: "text", text: "old" }] },
+      { id: "m2", role: "assistant", state: "done", parts: [{ kind: "text", text: "keep" }] },
+    ],
+  };
+  let state = foldChatEvent(original, { type: "started", metadata }, "m1");
+  assert.equal(state.messages[0].state, "streaming");
+  assert.deepEqual(state.messages[0].parts, []);
+  state = foldChatEvent(state, { type: "part-started", partId: 0, kind: "text" }, "m1");
+  state = foldChatEvent(state, { type: "delta", partId: 0, text: "new" }, "m1");
+  assert.equal(state.messages[0].parts[0].text, "new");
+  assert.equal(markStopped(state, "m1").messages[0].state, "stopped");
+  state = foldChatEvent(state, { type: "failed", error: { kind: "transport", message: "fail" } }, "m1");
+  assert.equal(state.messages[0].state, "failed");
+  assert.deepEqual(state.messages[1], original.messages[1]);
+});
