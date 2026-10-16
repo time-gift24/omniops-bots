@@ -2,11 +2,13 @@ import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
 
+import { HugeiconsIcon } from "@hugeicons/react"
+import { CheckIcon, Copy01Icon } from "@hugeicons-pro/core-stroke-rounded"
+
 import { Button } from "@/components/ui/button"
-import { CheckIcon, CopyIcon } from "lucide-react"
 
 const codeBlockVariants = cva(
-  "group/code-block relative flex w-full min-w-0 flex-col overflow-hidden rounded-lg text-sm has-[>[data-slot=code-block-content]:focus-visible]:ring-3 has-[>[data-slot=code-block-content]:focus-visible]:ring-ring/50 data-[size=sm]:text-xs",
+  "group/code-block relative flex w-full min-w-0 flex-col overflow-hidden rounded-xl text-sm has-[>[data-slot=code-block-content]:focus-visible]:ring-3 has-[>[data-slot=code-block-content]:focus-visible]:ring-ring/50 data-[size=sm]:text-xs",
   {
     variants: {
       variant: {
@@ -97,7 +99,8 @@ function CodeBlockCopyButton({
       return
     }
 
-    const timeout = setTimeout(() => setCopied(false), 2000)
+    // 与 index.css 的 chat-check-decay 时长一致：勾选淡出后再换回复制图标。
+    const timeout = setTimeout(() => setCopied(false), 2500)
     return () => clearTimeout(timeout)
   }, [copied])
 
@@ -108,27 +111,24 @@ function CodeBlockCopyButton({
         data-copied={copied || undefined}
         variant={variant}
         size={size}
-        aria-label={copied ? "Copied" : "Copy"}
+        aria-label={copied ? "已复制" : "复制"}
         className={cn(className)}
         onClick={(event) => {
           onClick?.(event)
-          navigator.clipboard
-            .writeText(value)
-            .then(() => setCopied(true))
-            .catch(() => {})
+          // 与消息复制一致：点击即给反馈，剪贴板写入异步进行。
+          void navigator.clipboard.writeText(value).catch(() => {})
+          setCopied(true)
         }}
         {...props}
       >
-        {copied ? (
-          <CheckIcon
-          />
-        ) : (
-          <CopyIcon
-          />
-        )}
+        <HugeiconsIcon
+          key={copied ? "check" : "copy"}
+          icon={copied ? CheckIcon : Copy01Icon}
+          className={copied ? "chat-check-decay" : undefined}
+        />
       </Button>
       <span aria-live="polite" className="sr-only">
-        {copied ? "Copied" : ""}
+        {copied ? "已复制" : ""}
       </span>
     </>
   )
