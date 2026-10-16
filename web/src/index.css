@@ -143,6 +143,23 @@
     }
 }
 
+/* ---- 暗色视网膜光渗字重逆补偿（CDS 逆向） ----
+   深色底上白字视觉上发胀，命名字重工具的 wght 轴主动减薄 30-40 刻度，
+   使感知粗细与亮色模式一致。只补偿 font-medium/semibold/bold 工具类；
+   正文 400 与直写 font-weight 的局部样式不动，避免抹平标题层级。
+   非可变字体回退（PingFang 等）忽略该设置，无回归。 */
+@layer base {
+  .dark .font-medium {
+    font-variation-settings: "wght" 465;
+  }
+  .dark .font-semibold {
+    font-variation-settings: "wght" 560;
+  }
+  .dark .font-bold {
+    font-variation-settings: "wght" 660;
+  }
+}
+
 /* Agent 回复的 Markdown 排版（客户端主阅读区：16px / 1.7）。代码块由 .chat-markdown 外的 CodeBlock 组件承载。 */
 @layer components {
   .chat-markdown {
