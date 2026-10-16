@@ -80,7 +80,8 @@ export function MessageView({
 
   React.useEffect(() => {
     if (!copied) return;
-    const timeout = setTimeout(() => setCopied(false), 2000);
+    // 与 index.css 的 chat-check-decay 时长一致：勾选淡出后再换回复制图标。
+    const timeout = setTimeout(() => setCopied(false), 2500);
     return () => clearTimeout(timeout);
   }, [copied]);
 
@@ -176,8 +177,9 @@ export function MessageView({
               }}
             >
               <HugeiconsIcon
+                key={copied ? "check" : "copy"}
                 icon={copied ? CheckIcon : Copy01Icon}
-                className="size-4"
+                className={copied ? "chat-check-decay size-4" : "size-4"}
               />
             </MessageAction>
             <MessageAction

@@ -304,6 +304,29 @@
   }
 }
 
+/* ---- 复制勾选衰减（CDS saved-check-decay：保持 75% 后淡出微缩） ---- */
+@keyframes chat-check-decay {
+  0%,
+  75% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+
+.chat-check-decay {
+  animation: chat-check-decay 2.5s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-check-decay {
+    animation: none;
+  }
+}
+
 /* ---- Composer 外壳（CDS 逆向：柔影 + 发丝描边，无彩色光晕） ----
    常态 inset 1px 发丝线；悬浮/聚焦仅加深描边，焦点彩色环由 --ring 体系负责。 */
 .chat-composer-shell {
