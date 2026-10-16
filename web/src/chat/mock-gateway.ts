@@ -11,7 +11,7 @@ import type { ChatGateway } from "./gateway.ts";
 import type { ChatEvent, ChatRequest, ChatUsage } from "./dto.ts";
 
 export interface MockGatewayOptions {
-  /** 每个事件之间的基础延迟（ms），默认 120。 */
+  /** 每个事件之间的基础延迟（ms），默认 45。 */
   delayMs?: number;
 }
 
@@ -31,8 +31,8 @@ const sleep = (ms: number, signal: { aborted: boolean }) =>
     setTimeout(resolve, ms);
   });
 
-/** 把文本切成若干片段，模拟 token 级流式增量。 */
-function chunkText(text: string, size = 6): string[] {
+/** 把文本切成若干片段，模拟 token 级流式增量。小片段 + 短间隔，吐字更连贯。 */
+function chunkText(text: string, size = 3): string[] {
   const chunks: string[] = [];
   for (let i = 0; i < text.length; i += size) {
     chunks.push(text.slice(i, i + size));
@@ -43,7 +43,7 @@ function chunkText(text: string, size = 6): string[] {
 export function createMockGateway(
   options: MockGatewayOptions = {},
 ): ChatGateway {
-  const baseDelay = options.delayMs ?? 120;
+  const baseDelay = options.delayMs ?? 45;
   let active: { aborted: boolean } | undefined;
 
   async function* script(
@@ -86,7 +86,7 @@ export function createMockGateway(
     // 推理部分（扩展位演示）
     yield { type: "part-started", partId: 0, kind: "reasoning" };
     const reasoning = "先确认缓存键的构成，再核对部署日志里的耗时分布。";
-    for (const chunk of chunkText(reasoning, 8)) {
+    for (const chunk of chunkText(reasoning, 4)) {
       await tick();
       if (!alive()) return;
       yield { type: "delta", partId: 0, text: chunk };
