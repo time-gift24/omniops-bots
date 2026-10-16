@@ -12,6 +12,7 @@
     --font-heading: var(--font-sans);
     --font-sans: 'Geist Variable', 'MiSans VF', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
     --font-mono: 'Geist Mono Variable', 'JetBrains Mono', 'MiSans VF', ui-monospace, monospace;
+    --color-bubble-user: var(--bubble-user);
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -52,74 +53,79 @@
     --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* Cognacta Pine — 亮色为主。色值与 DESIGN.md frontmatter 保持一致。 */
+/* Cognacta Clay — 暖中性底 + 陶土 accent，令牌值对齐 Claude Design System 逆向令牌
+   （open-claude-ui/code-examples/cds-theme.css）；组件结构保持 beui/shadcn 不变。 */
 :root {
-    --background: oklch(0.985 0.003 168);
-    --foreground: oklch(0.21 0.012 168);
+    --background: oklch(0.991 0.001 106.4);
+    --foreground: oklch(0.196 0.000 89.9);
     --card: oklch(1 0 0);
-    --card-foreground: oklch(0.21 0.012 168);
+    --card-foreground: oklch(0.196 0.000 89.9);
     --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.21 0.012 168);
-    --primary: oklch(0.38 0.065 167);
-    --primary-foreground: oklch(0.985 0.004 168);
-    --secondary: oklch(0.955 0.006 168);
-    --secondary-foreground: oklch(0.21 0.012 168);
-    --muted: oklch(0.955 0.006 168);
-    --muted-foreground: oklch(0.46 0.015 168);
-    --accent: oklch(0.925 0.028 168);
-    --accent-foreground: oklch(0.3 0.045 165);
-    --destructive: oklch(0.577 0.215 27);
-    --border: oklch(0.905 0.008 168);
-    --input: oklch(0.905 0.008 168);
-    --ring: oklch(0.46 0.085 169);
-    --chart-1: oklch(0.55 0.1 170);
-    --chart-2: oklch(0.65 0.095 170);
-    --chart-3: oklch(0.75 0.075 169);
-    --chart-4: oklch(0.845 0.05 168);
-    --chart-5: oklch(0.925 0.028 168);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.975 0.004 168);
-    --sidebar-foreground: oklch(0.21 0.012 168);
-    --sidebar-primary: oklch(0.38 0.065 167);
-    --sidebar-primary-foreground: oklch(0.985 0.004 168);
-    --sidebar-accent: oklch(0.925 0.028 168);
-    --sidebar-accent-foreground: oklch(0.3 0.045 165);
-    --sidebar-border: oklch(0.905 0.008 168);
-    --sidebar-ring: oklch(0.46 0.085 169);
+    --popover-foreground: oklch(0.196 0.000 89.9);
+    --primary: oklch(0.672 0.131 38.8);
+    --primary-foreground: oklch(0.991 0.001 106.4);
+    --secondary: oklch(0.970 0.003 106.4);
+    --secondary-foreground: oklch(0.196 0.000 89.9);
+    --muted: oklch(0.970 0.003 106.4);
+    --muted-foreground: oklch(0.439 0.000 89.9);
+    --accent: oklch(0.962 0.002 106);
+    --accent-foreground: oklch(0.196 0.000 89.9);
+    --destructive: oklch(0.637 0.212 25.8);
+    --border: oklch(0.930 0.003 106.5);
+    --border-strong: oklch(0.854 0.004 106.5);
+    --input: oklch(0.930 0.003 106.5);
+    --ring: oklch(0.672 0.131 38.8);
+    --bubble-user: oklch(0.965 0.007 247.9);
+    --chart-1: oklch(0.672 0.131 38.8);
+    --chart-2: oklch(0.75 0.1 55);
+    --chart-3: oklch(0.8 0.07 70);
+    --chart-4: oklch(0.86 0.045 85);
+    --chart-5: oklch(0.92 0.02 95);
+    --radius: 0.5rem;
+    --sidebar: oklch(0.970 0.003 106.4);
+    --sidebar-foreground: oklch(0.196 0.000 89.9);
+    --sidebar-primary: oklch(0.672 0.131 38.8);
+    --sidebar-primary-foreground: oklch(0.991 0.001 106.4);
+    --sidebar-accent: oklch(0.962 0.002 106);
+    --sidebar-accent-foreground: oklch(0.196 0.000 89.9);
+    --sidebar-border: oklch(0.930 0.003 106.5);
+    --sidebar-ring: oklch(0.672 0.131 38.8);
 }
 
 .dark {
-    --background: oklch(0.175 0.01 170);
-    --foreground: oklch(0.965 0.005 168);
-    --card: oklch(0.215 0.012 170);
-    --card-foreground: oklch(0.965 0.005 168);
-    --popover: oklch(0.215 0.012 170);
-    --popover-foreground: oklch(0.965 0.005 168);
-    --primary: oklch(0.74 0.115 172);
-    --primary-foreground: oklch(0.24 0.03 163);
-    --secondary: oklch(0.26 0.012 170);
-    --secondary-foreground: oklch(0.965 0.005 168);
-    --muted: oklch(0.26 0.012 170);
-    --muted-foreground: oklch(0.72 0.02 170);
-    --accent: oklch(0.3 0.028 170);
-    --accent-foreground: oklch(0.87 0.06 172);
+    --background: oklch(0.196 0.000 89.9);
+    --foreground: oklch(0.970 0.000 89.9);
+    --card: oklch(0.217 0.002 106.6);
+    --card-foreground: oklch(0.970 0.000 89.9);
+    --popover: oklch(0.251 0.004 106.7);
+    --popover-foreground: oklch(0.970 0.000 89.9);
+    --primary: oklch(0.672 0.131 38.8);
+    --primary-foreground: oklch(0.991 0.001 106.4);
+    --secondary: oklch(0.243 0.004 106.7);
+    --secondary-foreground: oklch(0.970 0.000 89.9);
+    --muted: oklch(0.243 0.004 106.7);
+    --muted-foreground: oklch(0.715 0.000 89.9);
+    --accent: oklch(0.268 0.004 106);
+    --accent-foreground: oklch(0.970 0.000 89.9);
     --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.74 0.115 172);
-    --chart-1: oklch(0.74 0.115 172);
-    --chart-2: oklch(0.65 0.095 170);
-    --chart-3: oklch(0.55 0.1 170);
-    --chart-4: oklch(0.46 0.085 169);
-    --chart-5: oklch(0.38 0.065 167);
-    --sidebar: oklch(0.2 0.011 170);
-    --sidebar-foreground: oklch(0.965 0.005 168);
-    --sidebar-primary: oklch(0.74 0.115 172);
-    --sidebar-primary-foreground: oklch(0.24 0.03 163);
-    --sidebar-accent: oklch(0.3 0.028 170);
-    --sidebar-accent-foreground: oklch(0.87 0.06 172);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.74 0.115 172);
+    --border: oklch(1 0 0 / 9%);
+    --border-strong: oklch(1 0 0 / 18%);
+    --input: oklch(1 0 0 / 18%);
+    --ring: oklch(0.702 0.124 38.4);
+    --bubble-user: oklch(1 0 0 / 6%);
+    --chart-1: oklch(0.672 0.131 38.8);
+    --chart-2: oklch(0.702 0.1 50);
+    --chart-3: oklch(0.75 0.08 62);
+    --chart-4: oklch(0.8 0.06 75);
+    --chart-5: oklch(0.86 0.04 88);
+    --sidebar: oklch(0.149 0.002 106.7);
+    --sidebar-foreground: oklch(0.970 0.000 89.9);
+    --sidebar-primary: oklch(0.672 0.131 38.8);
+    --sidebar-primary-foreground: oklch(0.991 0.001 106.4);
+    --sidebar-accent: oklch(0.268 0.004 106);
+    --sidebar-accent-foreground: oklch(0.970 0.000 89.9);
+    --sidebar-border: oklch(1 0 0 / 9%);
+    --sidebar-ring: oklch(0.702 0.124 38.4);
 }
 
 @layer base {
@@ -279,4 +285,43 @@
   .chat-markdown [data-sd-animate-marker]::marker {
     animation: none;
   }
+}
+
+/* ---- Composer 外壳（CDS 逆向：柔影 + 发丝描边，无彩色光晕） ----
+   常态 inset 1px 发丝线；悬浮/聚焦仅加深描边，焦点彩色环由 --ring 体系负责。 */
+.chat-composer-shell {
+  box-shadow:
+    0 4px 20px rgb(0 0 0 / 0.035),
+    inset 0 0 0 1px var(--border);
+  transition: box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.chat-composer-shell:hover {
+  box-shadow:
+    0 4px 24px rgb(0 0 0 / 0.06),
+    inset 0 0 0 1px var(--border-strong);
+}
+
+.chat-composer-shell:focus-within {
+  box-shadow:
+    0 4px 24px rgb(0 0 0 / 0.08),
+    inset 0 0 0 1px var(--border-strong);
+}
+
+.dark .chat-composer-shell {
+  box-shadow:
+    0 4px 20px rgb(0 0 0 / 0.4),
+    inset 0 0 0 1px var(--border);
+}
+
+.dark .chat-composer-shell:hover {
+  box-shadow:
+    0 4px 24px rgb(0 0 0 / 0.55),
+    inset 0 0 0 1px var(--border-strong);
+}
+
+.dark .chat-composer-shell:focus-within {
+  box-shadow:
+    0 4px 24px rgb(0 0 0 / 0.65),
+    inset 0 0 0 1px var(--border-strong);
 }

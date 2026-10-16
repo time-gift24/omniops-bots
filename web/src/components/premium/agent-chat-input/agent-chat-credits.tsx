@@ -347,8 +347,10 @@ export function AgentChatCredits({
     >
       <div
         className={cn(
-          "relative w-full max-w-3xl bg-muted p-[3px] transition-[border-radius] duration-200",
-          skillCommand.visible ? "rounded-b-2xl rounded-t-none" : "rounded-2xl",
+          "chat-composer-shell relative w-full max-w-3xl bg-muted p-[3px] transition-[border-radius] duration-200",
+          skillCommand.visible
+            ? "rounded-t-none rounded-b-[20px]"
+            : "rounded-[20px]",
           className,
         )}
       >
