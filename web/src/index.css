@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "streamdown/styles.css";
 @import "@fontsource-variable/geist";
 @import "@fontsource-variable/geist-mono";
 @import "misans";
@@ -252,9 +253,30 @@
   animation: chat-message-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* 过场 → 内容 交叉过渡：diamond 淡出微缩，内容走 chat-message-enter 淡入。 */
+@keyframes chat-swap-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.96);
+  }
+}
+
+.chat-swap-out {
+  animation: chat-swap-out 0.2s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .chat-bubble-enter,
-  .chat-message-enter {
+  .chat-message-enter,
+  .chat-swap-out {
+    animation: none;
+  }
+  .chat-markdown [data-sd-animate],
+  .chat-markdown [data-sd-animate-marker]::marker {
     animation: none;
   }
 }
