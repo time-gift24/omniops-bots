@@ -268,7 +268,7 @@ impl Stream for ObservedStream {
         result
     }
 }
-fn error_kind(kind: ErrorKind) -> &'static str {
+pub(crate) fn error_kind(kind: ErrorKind) -> &'static str {
     match kind {
         ErrorKind::InvalidRequest => "invalid_request",
         ErrorKind::Unsupported => "unsupported",
@@ -280,5 +280,11 @@ fn error_kind(kind: ErrorKind) -> &'static str {
         ErrorKind::InvalidResponse => "invalid_response",
         ErrorKind::Truncated => "truncated",
         ErrorKind::ReplayMismatch => "replay_mismatch",
+        ErrorKind::DuplicateNode => "duplicate_node",
+        ErrorKind::UnknownNode => "unknown_node",
+        ErrorKind::InputTypeMismatch => "input_type_mismatch",
+        ErrorKind::RunNotReady => "run_not_ready",
+        ErrorKind::NodeExecution => "node_execution",
+        ErrorKind::StateDeltaRejected => "state_delta_rejected",
     }
 }

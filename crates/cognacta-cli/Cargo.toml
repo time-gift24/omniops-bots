@@ -8,9 +8,10 @@ repository.workspace = true
 
 [features]
 default = []
-cognacta-test = ["dep:cognacta-provider", "dep:futures-util", "dep:reqwest", "dep:rustls", "dep:rustls-platform-verifier", "dep:tokio"]
+cognacta-test = ["dep:async-trait", "dep:cognacta-provider", "dep:futures-util", "dep:reqwest", "dep:rustls", "dep:rustls-platform-verifier", "dep:tokio"]
 
 [dependencies]
+async-trait = { workspace = true, optional = true }
 cognacta-collector.workspace = true
 tracing.workspace = true
 clap = { workspace = true, features = ["derive"] }

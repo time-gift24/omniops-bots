@@ -1,8 +1,8 @@
 use std::time::Duration;
 
-use crate::{PartId, Usage};
+use crate::{NodeId, PartId, Usage};
 
-/// Failure categories shared across protocol implementations.
+/// Failure categories for model protocols and cluster execution.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ErrorKind {
     InvalidRequest,
@@ -15,6 +15,12 @@ pub enum ErrorKind {
     InvalidResponse,
     Truncated,
     ReplayMismatch,
+    DuplicateNode,
+    UnknownNode,
+    InputTypeMismatch,
+    RunNotReady,
+    NodeExecution,
+    StateDeltaRejected,
 }
 
 /// A classified failure with optional diagnostics and its original source.
@@ -26,6 +32,7 @@ pub struct Error {
     message: String,
     #[builder(into)]
     request_id: Option<String>,
+    node_id: Option<NodeId>,
     retry_after: Option<Duration>,
     #[builder(into)]
     partial: Option<Box<PartialGeneration>>,
@@ -40,6 +47,7 @@ impl Error {
             kind,
             message: message.into(),
             request_id: None,
+            node_id: None,
             retry_after: None,
             partial: None,
             source: None,
@@ -49,6 +57,15 @@ impl Error {
     pub fn with_request_id(mut self, request_id: String) -> Self {
         self.request_id = Some(request_id);
         self
+    }
+
+    pub fn with_node_id(mut self, node_id: NodeId) -> Self {
+        self.node_id = Some(node_id);
+        self
+    }
+
+    pub fn node_id(&self) -> Option<&NodeId> {
+        self.node_id.as_ref()
     }
 
     pub fn with_retry_after(mut self, retry_after: Duration) -> Self {
@@ -123,6 +140,7 @@ mod tests {
     fn preserves_typed_source_and_partial_diagnostics() {
         let error = Error::new(ErrorKind::Transport, "stream interrupted")
             .with_request_id("request-1".into())
+            .with_node_id("node-1".into())
             .with_retry_after(Duration::from_secs(2))
             .with_partial(PartialGeneration::new(
                 vec![PartialPart::Text {
@@ -136,11 +154,25 @@ mod tests {
         assert_eq!(error.kind(), ErrorKind::Transport);
         assert_eq!(error.to_string(), "stream interrupted");
         assert_eq!(error.request_id(), Some("request-1"));
+        assert_eq!(error.node_id().map(String::as_str), Some("node-1"));
         assert_eq!(error.retry_after(), Some(Duration::from_secs(2)));
         assert!(error.source().unwrap().is::<std::io::Error>());
         assert!(matches!(
             &error.partial().unwrap().parts()[0],
             PartialPart::Text { part: 0, text } if text == "partial"
         ));
+    }
+
+    #[test]
+    fn builder_preserves_node_context_and_source() {
+        let error = Error::builder()
+            .kind(ErrorKind::NodeExecution)
+            .message("node execution failed")
+            .node_id("node-1".to_owned())
+            .source(Box::new(Error::new(ErrorKind::Timeout, "original")))
+            .build();
+        assert_eq!(error.node_id().map(String::as_str), Some("node-1"));
+        let source = error.source().unwrap().downcast_ref::<Error>().unwrap();
+        assert_eq!(source.kind(), ErrorKind::Timeout);
     }
 }

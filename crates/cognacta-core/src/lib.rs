@@ -1,4 +1,4 @@
-//! Shared LLM request, response, and runtime protocol boundaries.
+//! Shared LLM boundaries and typed, Outcome-routed cluster execution.
 
 /// Returns the crate version of `cognacta-core`.
 pub fn version() -> &'static str {
@@ -23,6 +23,13 @@ mod error;
 mod generation;
 mod model;
 mod observation;
+mod scheduler;
+mod scheduler_observation;
+
+#[cfg(test)]
+mod scheduler_observation_tests;
+#[cfg(test)]
+mod scheduler_tests;
 
 pub use error::{Error, ErrorKind, PartialGeneration, PartialPart};
 pub use generation::{
@@ -31,3 +38,7 @@ pub use generation::{
     PartKind, Usage,
 };
 pub use model::{EventStream, Model, Protocol, Provider};
+pub use scheduler::{
+    Cluster, ClusterStartBuilder, Control, Node, NodeBuilder, NodeContext, NodeId, NodeInstance,
+    Outcome, Run, RunStatus, Scheduler, State, cluster_start_builder, node_builder,
+};
