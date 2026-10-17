@@ -49,7 +49,9 @@ export type AgentChatComposerProps = {
   onBlur?: () => void;
 };
 
-const LINE_HEIGHT_REM = 1.75;
+// 与 credits 变体实际生效的 leading-6 保持一致；min/max 行高换算必须
+// 跟随真实行高，否则空载最小高度与滚动起点都会漂移。
+const LINE_HEIGHT_REM = 1.5;
 // Skill query is a trailing "/word" run that does not contain spaces or
 // another slash, measured from the caret backwards.
 const SLASH_QUERY = /(?:^|\s)\/([^\s/]*)$/;
@@ -468,7 +470,7 @@ export const AgentChatComposer = forwardRef<
         maxHeight: `${maxRows * LINE_HEIGHT_REM}rem`,
       }}
       className={cn(
-        "w-full overflow-y-auto whitespace-pre-wrap break-words px-4 pt-4 pb-3 text-base leading-7 outline-none sm:px-5 sm:pt-5 md:text-lg",
+        "w-full overflow-y-auto whitespace-pre-wrap break-words px-2.5 pt-2.5 pb-2 text-base leading-6 outline-none",
         "data-[empty=true]:before:pointer-events-none data-[empty=true]:before:text-muted-foreground/70 data-[empty=true]:before:content-[attr(data-placeholder)]",
         disabled && "cursor-not-allowed opacity-60",
         className,
