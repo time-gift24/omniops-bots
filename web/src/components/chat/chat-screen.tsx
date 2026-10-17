@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import { useThreadState, useThreadStore } from "@/chat/react.ts";
+import { useThreadStore } from "@/chat/react.ts";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { ChatThread } from "@/components/chat/chat-thread";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,24 +12,13 @@ const MAIN_THREAD_ID = "main";
 
 type EditRequest = { text: string; nonce: number };
 
-export function ChatScreen({ agentName = "研发助手" }: { agentName?: string }) {
+export function ChatScreen() {
   const store = useThreadStore(MAIN_THREAD_ID);
-  const state = useThreadState(store);
   const [editRequest, setEditRequest] = React.useState<EditRequest | null>(null);
-
-  const model = state.metadata?.requestedModel;
 
   return (
     <TooltipProvider>
       <div className="flex h-full min-h-0 flex-col">
-      <div className="flex h-12 shrink-0 items-center justify-between px-2 sm:px-4">
-        <div className="flex min-w-0 items-baseline gap-2">
-          <span className="truncate text-sm font-medium">{agentName}</span>
-          <span className="truncate font-mono text-xs text-muted-foreground">
-            {model ?? "pine-chat-latest"}
-          </span>
-        </div>
-      </div>
       <div className="min-h-0 flex-1">
         <ChatThread
           store={store}
