@@ -9,7 +9,7 @@ import {
 } from "@headlessui/react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { ReactNode } from "react";
-import { EASE_OUT, SPRING_PANEL } from "@/lib/ease";
+import { EASE_IN_OUT, EASE_OUT, SPRING_MODAL } from "@/lib/ease";
 import { cn } from "@/lib/utils";
 
 const MotionBackdrop = motion.create(DialogBackdrop);
@@ -78,7 +78,8 @@ export function AnimatedModal({
           >
             <div className="flex min-h-full items-center justify-center">
               <MotionPanel
-                initial={reduce ? false : { opacity: 0, y: 8, scale: 0.96 }}
+                // CDS motionModalDialog：y 10 + scale 0.96 缩放入场，400/32 弹簧。
+                initial={reduce ? false : { opacity: 0, y: 10, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{
                   opacity: 0,
@@ -86,11 +87,11 @@ export function AnimatedModal({
                   scale: reduce ? 1 : 0.96,
                   transition: reduce
                     ? { duration: 0 }
-                    : { duration: 0.15, ease: EASE_OUT },
+                    : { duration: 0.15, ease: EASE_IN_OUT },
                 }}
-                transition={reduce ? { duration: 0 } : SPRING_PANEL}
+                transition={reduce ? { duration: 0 } : SPRING_MODAL}
                 className={cn(
-                  "max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-background text-foreground will-change-transform",
+                  "chat-modal-panel max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-background text-foreground will-change-transform",
                   panelClassName,
                 )}
               >
