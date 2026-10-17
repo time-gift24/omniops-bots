@@ -27,6 +27,5 @@ tokio = { workspace = true, optional = true }
 [dev-dependencies]
 opentelemetry-proto.workspace = true
 prost.workspace = true
-async-trait.workspace = true
 serde_json.workspace = true
 tokio.workspace = true
