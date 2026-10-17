@@ -33,7 +33,7 @@ export function ChatScreen() {
       key={editRequest?.nonce ?? "idle"}
       store={store}
       initialText={editRequest?.text}
-      className="mx-auto w-full max-w-[720px]"
+      className="mx-auto w-full max-w-[880px]"
     />
   );
 
@@ -49,7 +49,7 @@ export function ChatScreen() {
                 initial={reduce ? false : { opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={reduce ? { duration: 0 } : SPRING_PANEL}
-                className="flex w-full max-w-[720px] flex-col items-center gap-6"
+                className="flex w-full max-w-[880px] flex-col items-center gap-6"
               >
                 <div className="flex flex-col items-center gap-2 text-center">
                   <h1 className="text-2xl font-medium tracking-tight">
@@ -93,7 +93,7 @@ export function ChatScreen() {
               <div className="shrink-0 px-2 pb-2 sm:px-4 sm:pb-4">
                 <motion.div
                   layoutId={reduce ? undefined : "composer"}
-                  className="mx-auto max-w-[720px]"
+                  className="mx-auto max-w-[880px]"
                 >
                   {composer}
                 </motion.div>

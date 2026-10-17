@@ -49,9 +49,9 @@ export type AgentChatComposerProps = {
   onBlur?: () => void;
 };
 
-// 与 credits 变体实际生效的 leading-6 保持一致；min/max 行高换算必须
-// 跟随真实行高，否则空载最小高度与滚动起点都会漂移。
-const LINE_HEIGHT_REM = 1.5;
+// 与 credits 变体实际生效的 leading-5（14px 字号）保持一致；min/max 行高
+// 换算必须跟随真实行高，否则空载最小高度与滚动起点都会漂移。
+const LINE_HEIGHT_REM = 1.25;
 // Skill query is a trailing "/word" run that does not contain spaces or
 // another slash, measured from the caret backwards.
 const SLASH_QUERY = /(?:^|\s)\/([^\s/]*)$/;

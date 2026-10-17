@@ -10,6 +10,7 @@ import {
   AgentComposerAttach,
   AgentComposerAttachments,
   AgentComposerInput,
+  AgentComposerModel,
   AgentComposerSurface,
 } from "@/components/premium/agent-chat-input/composition";
 import type { AgentChatCreditsLabels } from "@/components/premium/agent-chat-input/credits-labels";
@@ -31,6 +32,14 @@ const LABELS: Partial<AgentChatCreditsLabels> = {
   removeAttachment: (name) => `移除附件 ${name}`,
   previewAttachment: (name) => `预览 ${name}`,
 };
+
+/** 研发助手可用的模型清单（mock；接入真实网关后由配置下发）。 */
+const MODELS = [
+  { id: "pine-1", label: "Pine 1" },
+  { id: "sonnet-5", label: "Sonnet 5" },
+  { id: "opus-4.8", label: "Opus 4.8" },
+  { id: "gpt-5.6", label: "GPT 5.6" },
+] as const;
 
 /** 线程状态 → 输入区状态：失败后可继续输入，error 仅作语义标记。 */
 function toComposerStatus(status: string): AgentChatInputStatus {
@@ -73,6 +82,7 @@ export function ChatComposer({
       skills={[]}
       status={toComposerStatus(state.status)}
       placeholder={placeholder}
+      models={MODELS}
       attachments={attachments}
       onAttachmentsChange={setAttachments}
       onStop={() => store.stop()}
@@ -87,12 +97,13 @@ export function ChatComposer({
         if (accepted) setAttachments([]);
         return accepted;
       }}
-      className={cn("max-w-[720px]", className)}
+      className={cn("max-w-[880px]", className)}
     >
       <AgentComposerSurface>
         <AgentComposerInput />
         <div className="flex items-center justify-between gap-3 px-1">
           <div className="flex min-w-0 items-center gap-0.5 text-muted-foreground">
+            <AgentComposerModel />
             <AgentComposerAttach />
           </div>
           <AgentComposerAction />

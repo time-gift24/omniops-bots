@@ -256,13 +256,13 @@ export function AgentChatCredits({
       autoFocus={autoFocus}
       placeholder={placeholder}
       disabled={disabled}
-      minRows={3}
+      minRows={2}
       maxRows={6}
       onChange={handleComposerChange}
       onSlashQueryChange={skillCommand.onQueryChange}
       onNavKeyDown={skillCommand.onNavKeyDown}
       onSubmit={submit}
-      className="min-h-20 px-2.5 pt-2.5 pb-2 !text-base leading-6 sm:px-3 sm:pt-3"
+      className="min-h-10 px-2.5 pt-2 pb-2 !text-sm leading-5"
     />
   );
   const toolbarProps: ComponentProps<typeof CreditsToolbar> = {
