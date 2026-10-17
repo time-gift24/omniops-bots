@@ -401,7 +401,26 @@ function SidebarRailShell({
                 data-slot="sidebar-rail-panel-header"
                 className="min-w-0 flex-1"
               >
-                {panelHeader === undefined ? (
+                {searching ? (
+                  // 搜索时标题原位换成输入框，不再额外挤出一行。
+                  <Input
+                    aria-label="筛选导航"
+                    ref={searchRef}
+                    value={query}
+                    onChange={(event) => setQuery(event)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Escape") {
+                        event.stopPropagation();
+                        setSearching(false);
+                        setQuery("");
+                        searchToggleRef.current?.focus();
+                      }
+                    }}
+                    placeholder="查找页面…"
+                    className="w-full"
+                    classNames={{ input: "px-3 text-sm" }}
+                  />
+                ) : panelHeader === undefined ? (
                   <h2 className="truncate text-xl font-medium">
                     {workspaceName}
                   </h2>
@@ -410,14 +429,14 @@ function SidebarRailShell({
                 )}
               </div>
               <MorphicTooltip
-                content="搜索导航"
+                content={searching ? "关闭搜索" : "搜索导航"}
                 side="bottom"
                 disabled={context.isMobile}
               >
                 <Button
                   variant="ghost"
                   size="icon"
-                  aria-label="搜索导航"
+                  aria-label={searching ? "关闭搜索" : "搜索导航"}
                   aria-expanded={searching}
                   ref={searchToggleRef}
                   onClick={() => {
@@ -427,7 +446,7 @@ function SidebarRailShell({
                   className={iconButtonClass}
                 >
                   <HugeiconsIcon
-                    icon={Search01Icon}
+                    icon={searching ? Cancel01Icon : Search01Icon}
                     aria-hidden="true"
                     size={16}
                   />
@@ -441,25 +460,6 @@ function SidebarRailShell({
                 />
               </AnimatedSidebarClose>
             </div>
-            {searching ? (
-              <Input
-                aria-label="筛选导航"
-                ref={searchRef}
-                value={query}
-                onChange={(event) => setQuery(event)}
-                onKeyDown={(event) => {
-                  if (event.key === "Escape") {
-                    event.stopPropagation();
-                    setSearching(false);
-                    setQuery("");
-                    searchToggleRef.current?.focus();
-                  }
-                }}
-                placeholder="查找页面…"
-                className="w-full"
-                classNames={{ input: "px-3 text-sm" }}
-              />
-            ) : null}
             <Button
               variant="ghost"
               onClick={() => {
