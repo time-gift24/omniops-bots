@@ -73,7 +73,8 @@ function MessageFooter({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="message-footer"
       className={cn(
-        "flex max-w-full min-w-0 items-center px-3 text-xs font-medium text-muted-foreground group-has-data-[variant=ghost]/message:px-0 group-data-[align=end]/message:justify-end",
+        // CDS 式安静操作行：默认隐藏，悬浮消息 / 键盘聚焦进入 / 触屏设备显现。
+        "flex max-w-full min-w-0 items-center px-3 text-xs font-medium text-muted-foreground opacity-0 transition-opacity group-has-data-[variant=ghost]/message:px-0 group-hover/message:opacity-100 group-data-[align=end]/message:justify-end focus-within:opacity-100 pointer-coarse:opacity-100",
         className
       )}
       {...props}
