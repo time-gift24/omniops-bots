@@ -14,10 +14,7 @@ import {
   AgentComposerSurface,
 } from "@/components/premium/agent-chat-input/composition";
 import type { AgentChatCreditsLabels } from "@/components/premium/agent-chat-input/credits-labels";
-import type {
-  AgentChatAttachment,
-  AgentChatInputStatus,
-} from "@/components/premium/agent-chat-input/types";
+import type { AgentChatInputStatus } from "@/components/premium/agent-chat-input/types";
 import { cn } from "@/lib/utils";
 
 const LABELS: Partial<AgentChatCreditsLabels> = {
@@ -51,38 +48,35 @@ function toComposerStatus(status: string): AgentChatInputStatus {
 
 export function ChatComposer({
   store,
-  model,
-  onModelChange,
-  initialText,
   className,
 }: {
   store: ThreadStore;
-  model: string;
-  onModelChange: (model: string) => void;
-  /** 初始文本（用户消息「编辑」动作）；父级用 key 变化触发重挂载生效。 */
-  initialText?: string;
   className?: string;
 }) {
   const state = useThreadState(store);
-  const [attachments, setAttachments] = React.useState<AgentChatAttachment[]>(
-    [],
+  const draft = React.useSyncExternalStore(
+    store.subscribeDraft,
+    store.getDraft,
+    store.getDraft,
   );
+  const model = draft.model ?? DEFAULT_CHAT_MODEL;
 
   return (
     <AgentChatCredits
       aria-label="消息输入"
       labels={LABELS}
-      defaultValue={initialText ?? ""}
-      clearOnSubmit
+      autoFocus
+      value={draft.text}
+      onValueChange={(text) => store.updateDraft({ text })}
       // 技能体系未上线：空列表让 `/` 保持纯文本，不触发面板。
       skills={[]}
       status={toComposerStatus(state.status)}
       placeholder=""
       models={MODELS}
       model={model}
-      onModelChange={onModelChange}
-      attachments={attachments}
-      onAttachmentsChange={setAttachments}
+      onModelChange={(model) => store.updateDraft({ model })}
+      attachments={draft.attachments}
+      onAttachmentsChange={(attachments) => store.updateDraft({ attachments })}
       onStop={() => store.stop()}
       onSubmit={(text, sent) => {
         const accepted = store.send(
@@ -93,7 +87,7 @@ export function ChatComposer({
           })),
           model,
         );
-        if (accepted) setAttachments([]);
+        if (accepted) store.updateDraft({ text: "", attachments: [] });
         return accepted;
       }}
       className={cn("max-w-[736px]", className)}

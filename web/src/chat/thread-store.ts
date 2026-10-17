@@ -13,9 +13,29 @@ import {
 
 export type ThreadSnapshot = { version: 1; state: ThreadViewState };
 
+export interface ThreadDraftAttachment {
+  id: string;
+  name: string;
+  type?: string;
+  size?: number;
+  file?: File;
+  url?: string;
+}
+
+export interface ThreadDraft {
+  text: string;
+  model?: string;
+  attachments: readonly ThreadDraftAttachment[];
+}
+
 export interface ThreadStore {
   getState(): ThreadViewState;
   subscribe(listener: () => void): () => void;
+  getDraft(): ThreadDraft;
+  updateDraft(patch: Partial<ThreadDraft>): void;
+  /** 输入变化只通知编辑器，不使消息列表跟随每次按键重渲染。 */
+  subscribeDraft(listener: () => void): () => void;
+  /** 提交给定内容，不修改草稿；输入框在接受提交后负责清理。 */
   send(
     text: string,
     attachments?: { name: string; mediaType: string }[],
@@ -34,6 +54,9 @@ export interface ThreadStore {
 export class ThreadStoreImpl implements ThreadStore {
   private state: ThreadViewState;
   private listeners = new Set<() => void>();
+  // ponytail: 草稿跟随内存会话；需要刷新恢复时再接持久化。
+  private draft: ThreadDraft = { text: "", attachments: [] };
+  private draftListeners = new Set<() => void>();
   private activeRequest: { messageId: string } | undefined;
   private gateway: ChatGateway;
   /** 每条回复的请求模型；undefined 保留网关的缺省选择。 */
@@ -51,8 +74,26 @@ export class ThreadStoreImpl implements ThreadStore {
     return () => this.listeners.delete(listener);
   };
 
+  getDraft = (): ThreadDraft => this.draft;
+
+  updateDraft = (patch: Partial<ThreadDraft>): void => {
+    this.draft = {
+      ...this.draft,
+      ...patch,
+      attachments: patch.attachments
+        ? [...patch.attachments]
+        : this.draft.attachments,
+    };
+    for (const listener of [...this.draftListeners]) listener();
+  };
+
+  subscribeDraft = (listener: () => void): (() => void) => {
+    this.draftListeners.add(listener);
+    return () => this.draftListeners.delete(listener);
+  };
+
   get listenerCount(): number {
-    return this.listeners.size;
+    return this.listeners.size + this.draftListeners.size;
   }
 
   get streaming(): boolean {
@@ -107,7 +148,12 @@ export class ThreadStoreImpl implements ThreadStore {
       .map((part) => part.text)
       .join("");
     const replyId = this.state.messages[index].id;
-    void this.consume(text, user.attachments, this.models.get(replyId), replyId);
+    void this.consume(
+      text,
+      user.attachments,
+      this.models.get(replyId),
+      replyId,
+    );
   };
 
   private async consume(
@@ -149,7 +195,11 @@ export class ThreadStoreImpl implements ThreadStore {
             role: "user" as const,
             text,
             ...(attachments?.length
-              ? { attachments: attachments.map((attachment) => ({ ...attachment })) }
+              ? {
+                  attachments: attachments.map((attachment) => ({
+                    ...attachment,
+                  })),
+                }
               : {}),
           },
         ],
@@ -158,16 +208,24 @@ export class ThreadStoreImpl implements ThreadStore {
       for await (const event of this.gateway.stream(request)) {
         if (this.activeRequest !== active) return;
         this.state = foldChatEvent(this.state, event, messageId);
-        const terminal = event.type === "completed" || this.state.status === "failed";
+        const terminal =
+          event.type === "completed" || this.state.status === "failed";
         if (terminal) this.activeRequest = undefined;
         this.emit();
         if (terminal) break;
       }
       if (this.activeRequest !== active) return;
-      this.state = foldChatEvent(this.state, {
-        type: "failed",
-        error: { kind: "truncated", message: "回复流提前结束，已保留已输出的内容。" },
-      }, messageId);
+      this.state = foldChatEvent(
+        this.state,
+        {
+          type: "failed",
+          error: {
+            kind: "truncated",
+            message: "回复流提前结束，已保留已输出的内容。",
+          },
+        },
+        messageId,
+      );
     } catch (cause) {
       if (this.activeRequest !== active) return;
       this.state = foldChatEvent(

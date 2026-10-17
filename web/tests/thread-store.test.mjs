@@ -289,6 +289,103 @@ test("send 只在接收非空且非忙碌的输入时返回 true", async (t) => 
   await waitFor(() => !store.streaming);
 });
 
+test("会话切换保留独立草稿、模型与附件，直接发送不改变草稿", async (t) => {
+  const { createThreadStoreRegistry } = await loadModules(t);
+  const end = Promise.withResolvers();
+  t.after(() => end.resolve());
+  let aborted = 0;
+  const registry = createThreadStoreRegistry(() => ({
+    abort() { aborted += 1; },
+    async *stream() { await end.promise; yield completed; },
+  }));
+  const first = registry.acquire("first");
+  const file = new File(["draft"], "notes.txt", { type: "text/plain" });
+  const attachment = { id: "file", name: file.name, type: file.type, file };
+  let stateNotifications = 0;
+  let draftNotifications = 0;
+  const unsubscribeState = first.subscribe(() => { stateNotifications += 1; });
+  const unsubscribeDraft = first.subscribeDraft(() => { draftNotifications += 1; });
+  first.updateDraft({ text: "unsent", model: "sonnet-5", attachments: [attachment] });
+  const originalDraft = first.getDraft();
+  assert.equal(stateNotifications, 0, "typing must not notify the message view");
+  assert.equal(draftNotifications, 1);
+  assert.equal(first.send(" \n "), false);
+  assert.equal(first.getDraft(), originalDraft);
+  unsubscribeState();
+  unsubscribeDraft();
+  registry.release("first");
+
+  const second = registry.acquire("second");
+  second.updateDraft({ text: "other draft", model: "pine-1" });
+  const secondDraft = second.getDraft();
+  registry.release("second");
+  assert.equal(registry.acquire("first"), first);
+  assert.equal(first.getDraft(), originalDraft);
+  assert.equal(first.getDraft().attachments[0].file, file);
+  assert.equal(first.send("suggested prompt", undefined, "sonnet-5"), true);
+  assert.equal(first.getDraft(), originalDraft);
+  assert.equal(second.getDraft(), secondDraft);
+
+  first.updateDraft({ text: "next message", attachments: [attachment] });
+  const pendingDraft = first.getDraft();
+  assert.equal(first.send("next message"), false);
+  assert.equal(first.getDraft(), pendingDraft);
+  registry.release("first");
+  assert.equal(aborted, 0);
+  end.resolve();
+  await waitFor(() => !first.streaming);
+  assert.equal(registry.acquire("first").getDraft(), pendingDraft);
+  assert.equal(first.getDraft().model, "sonnet-5");
+  assert.equal(first.getDraft().attachments[0].file, file);
+  assert.equal(first.send(pendingDraft.text, [{ name: file.name, mediaType: file.type }], pendingDraft.model), true);
+  await waitFor(() => !first.streaming);
+  assert.equal(first.getDraft(), pendingDraft);
+  assert.equal(second.getDraft(), secondDraft);
+  registry.release("first");
+});
+
+test("失败、停止和重试不清空正在编辑的下一条草稿", async (t) => {
+  const { ThreadStoreImpl } = await loadModules(t);
+  const end = Promise.withResolvers();
+  t.after(() => end.resolve());
+  let attempts = 0;
+  const store = new ThreadStoreImpl("draft-lifecycle", {
+    abort() {},
+    async *stream() {
+      const attempt = ++attempts;
+      yield { type: "started", metadata };
+      if (attempt === 1) {
+        yield { type: "failed", error: { kind: "transport", message: "failed" } };
+        return;
+      }
+      await end.promise;
+      yield completed;
+    },
+  });
+  assert.equal(store.send("first message"), true);
+  store.updateDraft({ text: "next draft", model: "sonnet-5" });
+  const draft = store.getDraft();
+  let notifications = 0;
+  const unsubscribe = store.subscribeDraft(() => { notifications += 1; });
+  t.after(unsubscribe);
+  await waitFor(() => !store.streaming);
+  assert.equal(store.getState().status, "failed");
+  assert.equal(store.getDraft(), draft);
+  store.retry();
+  await waitFor(() => attempts === 2);
+  assert.equal(store.getDraft(), draft);
+  store.stop();
+  assert.equal(store.getState().messages.at(-1).state, "stopped");
+  assert.equal(store.getDraft(), draft);
+  store.retry();
+  await waitFor(() => attempts === 3);
+  end.resolve();
+  await waitFor(() => !store.streaming);
+  assert.equal(store.getState().messages.at(-1).state, "done");
+  assert.equal(store.getDraft(), draft);
+  assert.equal(notifications, 0);
+});
+
 test("mock 新请求不会复活已经中止的旧请求", async (t) => {
   const { createMockGateway } = await loadModules(t);
   for (const text of ["normal", "[fail-send]"]) {

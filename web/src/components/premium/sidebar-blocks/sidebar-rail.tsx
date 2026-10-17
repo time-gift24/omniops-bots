@@ -68,9 +68,11 @@ export type SidebarRailSection = {
     label: string;
     items: readonly SidebarRailItem[];
   }[];
+  /** A section can own its rows while still supplying searchable items. */
+  renderContent?: (closeNavigation: () => void) => ReactNode;
 };
 
-const defaultSections: readonly SidebarRailSection[] = [
+export const defaultSections: readonly SidebarRailSection[] = [
   {
     id: "workspace",
     label: "工作区",
@@ -156,6 +158,7 @@ export type SidebarRailProps = {
   defaultItemId?: string;
   onItemSelect?: (item: SidebarRailItem, section: SidebarRailSection) => void;
   onCreate?: () => void;
+  createLabel?: string;
   account?: { name: string; initials: string };
   onAccountClick?: () => void;
   /** Replaces the panel title; search and collapse controls stay built in. Pass null to hide it. */
@@ -223,6 +226,7 @@ function SidebarRailShell({
   defaultItemId = "launch-direction",
   onItemSelect,
   onCreate,
+  createLabel = "新建页面",
   account = { name: "陈晓", initials: "陈" },
   onAccountClick,
   panelHeader,
@@ -257,12 +261,18 @@ function SidebarRailShell({
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (
-        event.defaultPrevented || event.repeat ||
-        !(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== "k"
-      ) return;
-      const modal = event.target instanceof Element
-        ? event.target.closest('[aria-modal="true"]:not([data-mobile="true"])')
-        : null;
+        event.defaultPrevented ||
+        event.repeat ||
+        !(event.metaKey || event.ctrlKey) ||
+        event.key.toLowerCase() !== "k"
+      )
+        return;
+      const modal =
+        event.target instanceof Element
+          ? event.target.closest(
+              '[aria-modal="true"]:not([data-mobile="true"])',
+            )
+          : null;
       if (modal && !modal.querySelector('[data-slot="command"]')) return;
       event.preventDefault();
       setSearchOpen((open) => !open);
@@ -273,6 +283,11 @@ function SidebarRailShell({
 
   function closePeek() {
     setFocused(false);
+  }
+
+  function closeNavigation() {
+    context.setOpenMobile(false);
+    if (!expanded && !context.isMobile) closePeek();
   }
 
   function toggleExpanded() {
@@ -335,6 +350,7 @@ function SidebarRailShell({
         variant="ghost"
         onClick={() => {
           setItemId("new-page");
+          if (onCreate) setSectionId(sections[0]?.id);
           onCreate?.();
           context.setOpenMobile(false);
           if (!expanded && !context.isMobile) {
@@ -345,7 +361,7 @@ function SidebarRailShell({
         className="h-9 justify-start rounded-full px-2 text-foreground"
       >
         <HugeiconsIcon icon={PlusSignIcon} aria-hidden="true" size={16} />
-        新建页面
+        {createLabel}
       </Button>
     </AnimatedSidebarHeader>
   );
@@ -402,7 +418,7 @@ function SidebarRailShell({
                   }
                   onClick={(event) => {
                     setSectionId(entry.id);
-                    if (entry.id !== section?.id) {
+                    if (entry.id !== section?.id && !entry.renderContent) {
                       const firstItem = entry.groups[0]?.items[0];
                       if (firstItem) {
                         setItemId(firstItem.id);
@@ -467,49 +483,51 @@ function SidebarRailShell({
         >
           {panelHeaderNode}
 
-          <AnimatedSidebarContent className="gap-5 px-2 pb-5 pt-3">
-            {groups.map((group) => (
-              <AnimatedSidebarGroup key={group.label} className="gap-2 p-0">
-                <AnimatedSidebarGroupLabel className="px-3 text-xs font-medium text-muted-foreground">
-                  {group.label}
-                </AnimatedSidebarGroupLabel>
-                <AnimatedSidebarGroupContent>
-                  <SharedLayoutBg
-                    as="ul"
-                    inset={0}
-                    pillClassName="rounded-full bg-muted/70"
-                    pillContainerClassName="inset-y-auto top-0 h-9"
-                    className="flex w-full min-w-0 list-none flex-col gap-0.5"
-                  >
-                    {group.items.map((item) => {
-                      const Icon = item.icon;
-                      return (
-                        <AnimatedSidebarMenuItem key={item.id}>
-                          <AnimatedSidebarMenuButton
-                            icon={
-                              Icon ? (
-                                <HugeiconsIcon
-                                  icon={Icon}
-                                  aria-hidden="true"
-                                  size={16}
-                                  strokeWidth={1.7}
-                                />
-                              ) : undefined
-                            }
-                            isActive={item.id === itemId}
-                            onSelect={() => selectItem(item)}
-                            className="rounded-full font-normal [&>span]:rounded-full"
-                          >
-                            {item.label}
-                          </AnimatedSidebarMenuButton>
-                        </AnimatedSidebarMenuItem>
-                      );
-                    })}
-                  </SharedLayoutBg>
-                </AnimatedSidebarGroupContent>
-              </AnimatedSidebarGroup>
-            ))}
-            {groups.length === 0 ? (
+          <AnimatedSidebarContent className="gap-5 px-2 pt-3 pb-5">
+            {section?.renderContent
+              ? section.renderContent(closeNavigation)
+              : groups.map((group) => (
+                  <AnimatedSidebarGroup key={group.label} className="gap-2 p-0">
+                    <AnimatedSidebarGroupLabel className="px-3 text-xs font-medium text-muted-foreground">
+                      {group.label}
+                    </AnimatedSidebarGroupLabel>
+                    <AnimatedSidebarGroupContent>
+                      <SharedLayoutBg
+                        as="ul"
+                        inset={0}
+                        pillClassName="rounded-full bg-muted/70"
+                        pillContainerClassName="inset-y-auto top-0 h-9"
+                        className="flex w-full min-w-0 list-none flex-col gap-0.5"
+                      >
+                        {group.items.map((item) => {
+                          const Icon = item.icon;
+                          return (
+                            <AnimatedSidebarMenuItem key={item.id}>
+                              <AnimatedSidebarMenuButton
+                                icon={
+                                  Icon ? (
+                                    <HugeiconsIcon
+                                      icon={Icon}
+                                      aria-hidden="true"
+                                      size={16}
+                                      strokeWidth={1.7}
+                                    />
+                                  ) : undefined
+                                }
+                                isActive={item.id === itemId}
+                                onSelect={() => selectItem(item)}
+                                className="rounded-full font-normal [&>span]:rounded-full"
+                              >
+                                {item.label}
+                              </AnimatedSidebarMenuButton>
+                            </AnimatedSidebarMenuItem>
+                          );
+                        })}
+                      </SharedLayoutBg>
+                    </AnimatedSidebarGroupContent>
+                  </AnimatedSidebarGroup>
+                ))}
+            {!section?.renderContent && groups.length === 0 ? (
               <output className="px-3 py-4 text-sm text-muted-foreground">
                 没有找到页面。
               </output>
@@ -576,9 +594,7 @@ function SidebarRailShell({
               variant="ghost"
               size="icon"
               aria-label={
-                expanded && !context.isMobile
-                  ? "收起导航"
-                  : "展开导航"
+                expanded && !context.isMobile ? "收起导航" : "展开导航"
               }
               aria-controls={context.isMobile ? undefined : panelId}
               aria-expanded={context.isMobile ? context.openMobile : expanded}
