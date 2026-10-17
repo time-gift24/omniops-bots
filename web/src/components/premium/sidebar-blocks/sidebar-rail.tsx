@@ -159,6 +159,8 @@ export type SidebarRailProps = {
   railFooter?: ReactNode;
   /** Replaces the workspace breadcrumbs; the navigation toggle stays built in. Pass null to hide them. */
   workspaceHeader?: ReactNode;
+  /** Overrides the content wrapper padding; chat-like surfaces pass p-0 and own their padding. */
+  contentClassName?: string;
   children?: ReactNode;
   className?: string;
 };
@@ -221,6 +223,7 @@ function SidebarRailShell({
   panelHeader,
   railFooter,
   workspaceHeader,
+  contentClassName,
   children,
   expanded,
   setExpanded,
@@ -566,7 +569,7 @@ function SidebarRailShell({
       </motion.div>
 
       <div className="relative flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 shrink-0 items-center gap-3 px-4 sm:px-6">
+        <header className="flex h-12 shrink-0 items-center gap-3 px-3 sm:px-4">
           <MorphicTooltip
             content={expanded ? "收起导航" : "展开导航"}
             side="bottom"
@@ -624,7 +627,12 @@ function SidebarRailShell({
             )}
           </div>
         </header>
-        <div className="min-h-0 flex-1 overflow-auto p-4 pt-6 sm:p-8 sm:pt-8">
+        <div
+          className={cn(
+            "min-h-0 flex-1 overflow-auto p-4 pt-6 sm:p-8 sm:pt-8",
+            contentClassName,
+          )}
+        >
           {children ?? (
             <div className="grid h-full place-content-center gap-3 text-center">
               <span className="mx-auto grid size-10 place-items-center rounded-full border border-border text-muted-foreground">
