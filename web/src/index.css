@@ -229,21 +229,93 @@
     margin-block: 2em;
     border-color: var(--border);
   }
-  .chat-markdown table {
-    margin-block: 1em;
-    width: 100%;
-    font-size: 0.75rem;
-    line-height: 1.6;
-    border-collapse: collapse;
+}
+
+/* Streamdown 的表格工具类需要在 layer 外覆盖；保留原生滚动与操作逻辑。 */
+.chat-markdown [data-streamdown="table-wrapper"] {
+  gap: 0.25rem;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.chat-markdown [data-streamdown="table-wrapper"] > div:has(> table) {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+:is(.chat-markdown, [data-streamdown="table-fullscreen"]) [data-streamdown="table"] {
+  margin: 0;
+  border: 0;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  background: transparent;
+}
+
+:is(.chat-markdown, [data-streamdown="table-fullscreen"]) [data-streamdown="table-header"] {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: color-mix(in oklab, var(--muted) 75%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+:is(.chat-markdown, [data-streamdown="table-fullscreen"]) :is(th, td) {
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  padding: 0.625rem 0.75rem;
+  background: transparent;
+  font-size: inherit;
+  text-align: start;
+  font-variant-numeric: tabular-nums;
+}
+
+:is(.chat-markdown, [data-streamdown="table-fullscreen"]) th {
+  border-bottom-color: var(--border-strong);
+  font-weight: 500;
+}
+
+/* 2.7 的工具栏没有 data 属性；排除关闭 controls 后仅剩的滚动容器。 */
+:is(.chat-markdown, [data-streamdown="table-fullscreen"]) [data-streamdown="table-wrapper"] > div:first-child:not(:last-child) {
+  order: 1;
+  align-self: flex-end;
+  position: relative;
+  z-index: 2;
+  gap: 0.125rem;
+
+  & > button,
+  & > div > button {
+    width: 2rem;
+    height: 2rem;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
   }
-  .chat-markdown :is(th, td) {
-    border: 1px solid var(--border);
-    padding: 0.375rem 0.75rem;
-    text-align: start;
+}
+
+:is(.chat-markdown, [data-streamdown="table-fullscreen"]) [data-streamdown="table-wrapper"] button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* 操作移到底部后，格式菜单向上打开，避免覆盖后续正文。 */
+:is(.chat-markdown, [data-streamdown="table-fullscreen"]) [data-streamdown="table-wrapper"] > div:first-child:not(:last-child) > div > div {
+  top: auto;
+  bottom: calc(100% + 0.25rem);
+  margin-top: 0;
+}
+
+/* Streamdown 自动为动画名加 sd- 前缀；新增文字由浅至实，字形始终清晰。 */
+@keyframes sd-chat-text-reveal {
+  from {
+    opacity: 0.35;
   }
-  .chat-markdown th {
-    background: var(--muted);
-    font-weight: 500;
+  to {
+    opacity: 1;
   }
 }
 

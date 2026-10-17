@@ -75,8 +75,9 @@ function MarkdownCode({
 
 const components = { code: MarkdownCode };
 const streamingAnimation: AnimateOptions = {
-  animation: "blurIn",
-  duration: 150,
+  animation: "chat-text-reveal",
+  duration: 280,
+  easing: "ease-out",
   sep: "char",
   // 同一批新增文字同时渐显，突发大段内容不排队延迟显示。
   stagger: 0,

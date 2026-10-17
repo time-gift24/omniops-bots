@@ -6,7 +6,7 @@ import {
   Attachment01Icon,
   Loading03Icon,
   Mic01Icon,
-  Square01Icon,
+  StopIcon,
 } from "@hugeicons-pro/core-stroke-rounded";
 import { AnimatePresence, motion } from "motion/react";
 import type { ReactNode } from "react";
@@ -130,7 +130,7 @@ export function CreditsToolbar({
           transition={reduce ? { duration: 0 } : SPRING_SWAP}
         >
           {busy && onStop ? (
-            <HugeiconsIcon icon={Square01Icon} aria-hidden className="size-3.5 fill-current" />
+            <HugeiconsIcon icon={StopIcon} aria-hidden className="size-5 fill-current" />
           ) : busy && showSendingSpinner ? (
             <HugeiconsIcon
               icon={Loading03Icon}

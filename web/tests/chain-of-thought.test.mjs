@@ -27,8 +27,8 @@ test("思考完成由步骤事件决定；停止和失败不再旋转或显示�
   t.after(() => server.close());
   const { ChainOfThought } = await server.ssrLoadModule("/src/components/chat/chain-of-thought.tsx");
   for (const [partState, messageState, title, summary, spinning] of [
-    ["running", "streaming", "正在思考…", "正在研究…", true],
-    ["done", "streaming", "已思考", "正在研究…", true],
+    ["running", "streaming", "正在思考…", "正在思考…", true],
+    ["done", "streaming", "已思考", "正在等待回复…", true],
     ["running", "stopped", "思考已停止", "研究已停止", false],
     ["running", "failed", "思考中断", "研究中断", false],
     ["done", "stopped", "已思考", "已研究 1 步", false],
@@ -59,9 +59,66 @@ test("组内等待保持活动提示，正文接管后完成，步骤自身保�
     }));
     assert.ok(html.includes("已思考"));
     assert.ok(html.includes("已搜索代码"));
-    assert.ok(html.includes(answering ? "已研究 2 步" : "正在研究…"));
+    assert.ok(html.includes(answering ? "已研究 2 步" : "正在等待回复…"));
     assert.equal(html.includes("chat-quiet-dot"), !answering);
   }
+});
+
+test("思考预览只在段首行完整后更新，完成或停止后保留首行", async (t) => {
+  const server = await createServer({ server: { middlewareMode: true, hmr: false }, appType: "custom" });
+  t.after(() => server.close());
+  const { ChainOfThought } = await server.ssrLoadModule("/src/components/chat/chain-of-thought.tsx");
+  for (const [text, messageState, preview] of [
+    ["**第一阶段还在写", "streaming", ""],
+    ["**第一阶段**\n检查日志", "streaming", "第一阶段"],
+    ["**第一阶段**\n检查日志\n\n第二阶段还在写", "streaming", "第一阶段"],
+    ["**第一阶段**\n检查日志\n\n**第二阶段**\n检查缓存", "streaming", "第二阶段"],
+    ["**第一阶段**\n\n第二阶段", "done", "第一阶段"],
+    ["**第一阶段**\n\n第二阶段", "stopped", "第一阶段"],
+  ]) {
+    const html = renderToString(createElement(ChainOfThought, {
+      parts: [{ kind: "reasoning", text, state: messageState === "done" ? "done" : "running" }],
+      streaming: messageState === "streaming", messageState, answering: false,
+    }));
+    const detail = html.match(/data-slot="trace-detail"[^>]*>(.*?)<\/span>/s)?.[1] ?? "";
+    assert.equal(detail, preview ? ` · ${preview}` : "", `${messageState}: ${text}`);
+    if (messageState === "stopped") {
+      assert.ok(html.includes("思考已停止"));
+      assert.ok(!html.includes("chat-quiet-dot"));
+    }
+  }
+});
+
+test("工具摘要优先当前活动，仅显示完整参数中受控的单行短详情", async (t) => {
+  const server = await createServer({ server: { middlewareMode: true, hmr: false }, appType: "custom" });
+  t.after(() => server.close());
+  const { ChainOfThought } = await server.ssrLoadModule("/src/components/chat/chain-of-thought.tsx");
+  const render = (inputText, messageState = "streaming") => renderToString(createElement(ChainOfThought, {
+    parts: [
+      { kind: "reasoning", text: "检查来源\n", state: "done" },
+      { kind: "tool", name: "readBuildLog", callId: "c0", inputText: '{"deployment":"dpl_old"}', state: "done" },
+      { kind: "tool", name: "searchCode", callId: "c1", inputText, state: "running" },
+    ],
+    streaming: messageState === "streaming", messageState, answering: false,
+  }));
+  const summary = (html) => html.match(/data-slot="trace-title"[^>]*>(.*?)<\/span>/s)?.[1];
+  for (const input of ['{"query":"not-complete', '{"token":"private-value"}', '{"query":{"raw":"private-value"}}']) {
+    const html = render(input);
+    assert.equal(summary(html), "正在搜索代码…");
+    assert.ok(!html.includes("not-complete") && !html.includes("private-value"));
+  }
+  const html = render('{"query":"cacheKey\\n  next.config.ts"}');
+  assert.equal(summary(html), "正在搜索代码…");
+  assert.ok(html.includes(" · cacheKey next.config.ts"));
+  assert.ok(html.includes("已思考") && html.includes("已读取构建日志"));
+
+  const grapheme = "👩🏽‍💻";
+  const longDetail = grapheme.repeat(100);
+  const truncated = render(JSON.stringify({ query: longDetail }), "stopped");
+  assert.ok(truncated.includes(`${grapheme.repeat(79)}…`));
+  assert.ok(!truncated.includes(longDetail));
+  assert.ok(truncated.includes("研究已停止") && truncated.includes("已停止搜索代码"));
+  assert.ok(!truncated.includes("chat-quiet-dot") && !truncated.includes("正在搜索代码"));
 });
 
 test("工具进行中结束回复也移除旋转状态", async (t) => {

@@ -22,6 +22,12 @@ export interface MockGatewayOptions {
   delayMs?: number;
 }
 
+const BUILD_REASONING = `**核对构建耗时**
+先确认缓存键的构成，再核对部署日志里的耗时分布。
+
+**定位缓存失效**
+对比安装、编译和图片处理阶段，优先检查耗时最高的一段。`;
+
 const REPLY_INTRO = `先把问题拆成两半：缓存键不该包含提交哈希。
 
 建议改为按图片目录键控：
@@ -355,7 +361,7 @@ export function createMockGateway(
 
     if (burst) {
       // burst：思考与工具就绪后整篇倾泻，压测长流与中途停止。
-      yield* emitReasoning(0, "先确认缓存键的构成，再核对部署日志里的耗时分布。");
+      yield* emitReasoning(0, BUILD_REASONING);
       if (!alive()) return;
       yield* emitTool(1, "readBuildLog", { deployment: "dpl_8Kx2" }, {
         output: { log: "install    41s\ncompile    38s\nimages   3m 52s" },
@@ -367,7 +373,7 @@ export function createMockGateway(
       if (!alive()) return;
     } else {
       // 普通路径：三轮「思考 → 工具 → 正文」交替，贴近真实 agent 节奏。
-      yield* emitReasoning(0, "先确认缓存键的构成，再核对部署日志里的耗时分布。");
+      yield* emitReasoning(0, BUILD_REASONING);
       if (!alive()) return;
       yield* emitTool(1, "readBuildLog", { deployment: "dpl_8Kx2" }, {
         output: { log: "install    41s\ncompile    38s\nimages   3m 52s" },
@@ -376,14 +382,14 @@ export function createMockGateway(
       yield* emitText(2, seg1);
       if (!alive()) return;
 
-      yield* emitReasoning(3, "图片阶段耗时最高，达到 3 分 52 秒。去找拼缓存键的位置。");
+      yield* emitReasoning(3, "**检查图片缓存**\n图片阶段耗时最高，达到 3 分 52 秒。\n\n接下来检查：\n- `cacheKey` 的组成\n- 部署标识是否参与缓存键\n- 图片内容和转换参数是否被正确区分");
       if (!alive()) return;
       yield* emitTool(4, "searchCode", { query: "cacheKey" }, searchCodeResult);
       if (!alive()) return;
       yield* emitText(5, REPLY_SEG_2);
       if (!alive()) return;
 
-      yield* emitReasoning(6, "方案可行。再对照一下社区里图片缓存键的常见设计。");
+      yield* emitReasoning(6, "**交叉验证方案**\n当前定位与日志一致，再对照图片缓存键的常见设计。\n\n**明确验证步骤**\n方案应同时覆盖首次构建、重复构建和图片变更后的增量构建。");
       if (!alive()) return;
       yield* emitTool(
         7,

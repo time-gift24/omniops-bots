@@ -93,10 +93,10 @@ export function ChatThread({
   return (
     <MessageScrollerProvider autoScroll scrollPreviousItemPeek={64}>
       <MessageScroller>
-        <MessageScrollerViewport>
+        <MessageScrollerViewport className="px-4 sm:px-8">
           <MessageScrollerContent
             aria-busy={busy}
-            className="mx-auto w-full max-w-[880px] gap-8 px-4 py-6 sm:px-5 sm:py-6"
+            className="mx-auto w-full max-w-[736px] gap-8 px-4 py-6"
           >
             {state.messages.map((message) => (
               <MessageScrollerItem

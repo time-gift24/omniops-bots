@@ -62,8 +62,9 @@ test("卸载后流继续折叠，重挂载（再次订阅）即见最新状态",
 
 test("stop 保留已输出内容；流式中的线程不被驱逐", async (t) => {
   const { createThreadStoreRegistry, createMockGateway } = await loadModules(t);
-  const registry = createThreadStoreRegistry(() => createMockGateway({ delayMs: 20 }));
+  const registry = createThreadStoreRegistry(() => createMockGateway({ delayMs: 1 }));
   const store = registry.acquire("t1");
+  t.after(() => store.stop());
 
   store.send("[slow] 长回复");
   await waitFor(() => store.getState().messages.at(-1)?.role === "assistant" &&

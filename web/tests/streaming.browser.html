@@ -71,7 +71,7 @@
     const parts = [{ kind: "reasoning", text: "已完成第一步，等待工具", state: "done" }];
     const props = { key: "disclosure", parts, streaming: true, answering: false };
     render(ChainOfThought, props);
-    assert(fixture.textContent.includes("正在研究") && fixture.textContent.includes("已思考"), "Group stays running between completed steps");
+    assert(fixture.textContent.includes("等待回复") && fixture.textContent.includes("已思考"), "Group stays running between completed steps");
     let triggers = fixture.querySelectorAll('[data-slot="trace-collapsible-trigger"]');
     triggers[1].focus();
     click(triggers[1]);
@@ -99,6 +99,49 @@
     render(ChainOfThought, { key: "stopped", parts: [{ ...parts[0], state: "running" }], streaming: false, messageState: "stopped", answering: false });
     assert(fixture.textContent.includes("研究已停止") && !fixture.querySelector(".chat-quiet-dot"), "Stop must remove group activity");
     passed.push("Group waiting, focus protection, animated close, nested state, stop");
+
+    const previewProps = { key: "reasoning-preview", streaming: true, answering: false };
+    const renderReasoning = text => render(ChainOfThought, {
+      ...previewProps, parts: [{ kind: "reasoning", text, state: "running" }],
+    });
+    renderReasoning("**先确认");
+    const reasoningTrigger = fixture.querySelectorAll('[data-slot="trace-collapsible-trigger"]')[1];
+    const pendingTitle = reasoningTrigger.textContent;
+    renderReasoning("**先确认范围**");
+    assert(reasoningTrigger.textContent === pendingTitle && !reasoningTrigger.querySelector('[data-slot="trace-detail"]'), "Incomplete first line must not change reasoning preview per token");
+    renderReasoning("**先确认范围**\n下一行仍");
+    const completedPreview = reasoningTrigger.querySelector('[data-slot="trace-detail"]')?.textContent;
+    assert(completedPreview?.includes("先确认范围") && !completedPreview.includes("**"), "Completed first line must appear as plain preview");
+    renderReasoning("**先确认范围**\n下一行仍在生成");
+    assert(reasoningTrigger.querySelector('[data-slot="trace-detail"]')?.textContent === completedPreview, "Incomplete following line must not churn the completed preview");
+    click(reasoningTrigger);
+    renderReasoning("**先确认范围**\n\n- 第一项\n- 第二项\n");
+    await wait(30);
+    assert(!reasoningTrigger.querySelector('[data-slot="trace-detail"]'), "Expanded reasoning must hide the duplicate preview");
+    assert(fixture.querySelector('.chat-markdown [data-streamdown="strong"]')?.textContent === "先确认范围" && fixture.querySelectorAll(".chat-markdown ul > li").length === 2, "Expanded reasoning must render real Markdown emphasis and list elements");
+    passed.push("Stable completed-line reasoning preview; expanded Markdown emphasis and lists");
+
+    const toolProps = { key: "tool-summary", streaming: true, answering: false };
+    const tool = { kind: "tool", callId: "first", name: "searchWeb", state: "running", inputText: '{"query":"raw-fragment-should-not-render"' };
+    render(ChainOfThought, { ...toolProps, parts: [tool] });
+    const toolTrigger = fixture.querySelector('[data-slot="trace-collapsible-trigger"]');
+    click(toolTrigger);
+    assert(toolTrigger.getAttribute("aria-expanded") === "false" && !toolTrigger.querySelector('[data-slot="trace-detail"]'), "Collapsed tool must wait for complete JSON before showing detail");
+    assert(!fixture.textContent.includes("raw-fragment-should-not-render") && !fixture.textContent.includes('{"query"'), "Partial JSON must not leak into tool labels");
+    const longQuery = "W".repeat(200);
+    fixture.style.width = "280px";
+    render(ChainOfThought, { ...toolProps, parts: [{ ...tool, inputText: JSON.stringify({ query: longQuery }) }] });
+    const toolDetail = toolTrigger.querySelector('[data-slot="trace-detail"]');
+    assert(toolDetail?.textContent.endsWith("…") && toolDetail.textContent.length < longQuery.length, "Long tool detail must be shortened");
+    assert(toolTrigger.getBoundingClientRect().right <= fixture.getBoundingClientRect().right + 1 && fixture.scrollWidth <= fixture.clientWidth + 1, "Long tool detail must not widen the narrow container");
+    render(ChainOfThought, { ...toolProps, parts: [
+      { ...tool, state: "done", inputText: JSON.stringify({ query: longQuery }), output: "complete" },
+      { kind: "tool", callId: "next", name: "readBuildLog", state: "running", inputText: JSON.stringify({ deployment: "run-preview" }) },
+    ] });
+    assert(toolTrigger.getAttribute("aria-expanded") === "false", "Streaming tool changes must preserve manually closed group");
+    assert(toolTrigger.textContent.includes("读取构建日志") && toolTrigger.textContent.includes("run-preview") && !toolTrigger.textContent.includes("搜索网页"), "Collapsed group must show the current tool action and controlled detail");
+    fixture.style.removeProperty("width");
+    passed.push("Safe tool summaries, narrow-width truncation, manual closure survives tool changes");
 
     let rejectWrite;
     clipboard({ writeText: () => new Promise((_, reject) => { rejectWrite = reject; }) });

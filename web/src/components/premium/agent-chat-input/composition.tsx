@@ -5,7 +5,7 @@ import {
   ArrowUp01Icon,
   Attachment01Icon,
   Loading03Icon,
-  Square01Icon,
+  StopIcon,
 } from "@hugeicons-pro/core-stroke-rounded";
 import {
   type ComponentProps,
@@ -259,7 +259,7 @@ export function AgentComposerAction({
     >
       {busy ? (
         stop ? (
-          <HugeiconsIcon icon={Square01Icon} aria-hidden className="size-4 fill-current" />
+          <HugeiconsIcon icon={StopIcon} aria-hidden className="size-5 fill-current" />
         ) : (showSpinner ?? showSendingSpinner) ? (
           <HugeiconsIcon
             icon={Loading03Icon}

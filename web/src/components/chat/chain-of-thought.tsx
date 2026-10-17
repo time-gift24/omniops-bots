@@ -5,7 +5,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import {
   AlertCircleIcon,
   CheckIcon,
-  Square01Icon,
+  StopIcon,
 } from "@hugeicons-pro/core-stroke-rounded";
 
 import type { MessageState, PartView, ToolState } from "@/chat/fold.ts";
@@ -19,6 +19,7 @@ import {
   TraceTitle,
 } from "@/components/ui/trace";
 import { CodeBlock, CodeBlockContent } from "@/components/ui/code-block";
+import { Markdown } from "@/components/chat/markdown";
 
 /** 工具名 → 中文动词。未知工具回退为「执行」。 */
 const TOOL_VERBS: Record<string, string> = {
@@ -26,6 +27,93 @@ const TOOL_VERBS: Record<string, string> = {
   searchCode: "搜索代码",
   searchWeb: "搜索网页",
 };
+
+const detailSegmenter = new Intl.Segmenter(undefined, {
+  granularity: "grapheme",
+});
+const TOOL_DETAIL_KEYS = [
+  "title",
+  "description",
+  "objective",
+  "task",
+  "command",
+  "cmd",
+  "query",
+  "queries",
+  "pattern",
+  "file_path",
+  "path",
+  "url",
+  "uri",
+  "deployment",
+];
+
+function shortDetail(text: string): string {
+  const characters = Array.from(
+    detailSegmenter.segment(text.replace(/\s+/g, " ").trim()),
+    ({ segment }) => segment,
+  );
+  return characters.length > 80
+    ? `${characters.slice(0, 79).join("")}…`
+    : characters.join("");
+}
+
+function toolDetail(inputText: string): string {
+  let input: unknown;
+  try {
+    input = JSON.parse(inputText);
+  } catch {
+    // 参数尚未接收完整时保持动作名，不把半截 JSON 当作详情。
+    return "";
+  }
+  if (input === null || typeof input !== "object" || Array.isArray(input))
+    return "";
+  for (const key of TOOL_DETAIL_KEYS) {
+    const value: unknown = Reflect.get(input, key);
+    const text =
+      typeof value === "string"
+        ? value
+        : Array.isArray(value) &&
+            value.every((item) => typeof item === "string")
+          ? value.join(", ")
+          : "";
+    const detail = shortDetail(text);
+    if (detail) return detail;
+  }
+  return "";
+}
+
+function reasoningPreview(text: string, running: boolean): string {
+  const lines = text.trimStart().split(/\r?\n/);
+  let preview = lines[0] ?? "";
+  if (running) {
+    lines.pop(); // 未收到换行的首行仍在生成，不随每个 token 改写摘要。
+    preview = "";
+    let paragraphStart = true;
+    for (const line of lines) {
+      if (!line.trim()) paragraphStart = true;
+      else if (paragraphStart) {
+        preview = line;
+        paragraphStart = false;
+      }
+    }
+  }
+  return shortDetail(preview.replaceAll("**", "").replace(/^#{1,6}\s+/, ""));
+}
+
+function StepTitle({ title, detail }: { title: string; detail?: string }) {
+  return (
+    <TraceTitle>
+      {title}
+      {detail && (
+        <span
+          data-slot="trace-detail"
+          className="font-normal text-muted-foreground/75"
+        >{` · ${detail}`}</span>
+      )}
+    </TraceTitle>
+  );
+}
 
 function StatusIcon({ status }: { status?: "running" | "error" | "pending" }) {
   if (status === "running") {
@@ -47,7 +135,7 @@ function StatusIcon({ status }: { status?: "running" | "error" | "pending" }) {
         status === "error"
           ? AlertCircleIcon
           : status === "pending"
-            ? Square01Icon
+            ? StopIcon
             : CheckIcon
       }
       className="size-3.5"
@@ -107,7 +195,10 @@ function ToolStep({
       <TraceIcon>
         <StatusIcon status={status} />
       </TraceIcon>
-      <TraceTitle>{toolTitle(part.name, part.state, messageState)}</TraceTitle>
+      <StepTitle
+        title={toolTitle(part.name, part.state, messageState)}
+        detail={toolDetail(part.inputText)}
+      />
     </TraceLine>
   );
 
@@ -128,6 +219,7 @@ function ReasoningStep({
   part: Extract<PartView, { kind: "reasoning" }>;
   messageState: MessageState;
 }) {
+  const [open, setOpen] = React.useState(false);
   const status = stepStatus(part.state, messageState);
   let title = "已思考";
   if (status === "running") title = "正在思考…";
@@ -140,15 +232,23 @@ function ReasoningStep({
       <TraceIcon>
         <StatusIcon status={status} />
       </TraceIcon>
-      <TraceTitle>{title}</TraceTitle>
+      <StepTitle
+        title={title}
+        detail={open ? "" : reasoningPreview(part.text, status === "running")}
+      />
     </TraceLine>
   );
   if (!part.text) return line;
   return (
-    <TraceCollapsible>
+    <TraceCollapsible open={open} onOpenChange={setOpen}>
       <TraceCollapsibleTrigger>{line}</TraceCollapsibleTrigger>
       <TraceCollapsibleContent>
-        <p className="whitespace-pre-wrap">{part.text}</p>
+        <Markdown
+          streaming={status === "running"}
+          className="text-[0.8125rem] text-muted-foreground"
+        >
+          {part.text}
+        </Markdown>
       </TraceCollapsibleContent>
     </TraceCollapsible>
   );
@@ -211,8 +311,27 @@ export function ChainOfThought({
   }, [settled]);
 
   let summary = `已研究 ${parts.length} 步${failed > 0 ? `，${failed} 步失败` : ""}`;
+  let summaryDetail = "";
+  for (let index = parts.length - 1; index >= 0 && !summaryDetail; index--) {
+    const part = parts[index];
+    if (part.kind === "tool") summaryDetail = toolDetail(part.inputText);
+    else if (part.kind === "reasoning")
+      summaryDetail = reasoningPreview(part.text, false);
+  }
   if (running) {
-    summary = "正在研究…";
+    const tool = parts.findLast(
+      (part) => part.kind === "tool" && part.state === "running",
+    );
+    const reasoning = parts.findLast(
+      (part) => part.kind === "reasoning" && part.state === "running",
+    );
+    if (tool?.kind === "tool") {
+      summary = toolTitle(tool.name, tool.state, messageState);
+      summaryDetail = toolDetail(tool.inputText);
+    } else if (reasoning?.kind === "reasoning") {
+      summary = "正在思考…";
+      summaryDetail = reasoningPreview(reasoning.text, true);
+    } else summary = "正在等待回复…";
   } else if (interrupted) {
     summary = "研究已结束";
     if (messageState === "failed") summary = "研究中断";
@@ -230,7 +349,7 @@ export function ChainOfThought({
             <TraceIcon>
               <StatusIcon status={status} />
             </TraceIcon>
-            <TraceTitle>{summary}</TraceTitle>
+            <StepTitle title={summary} detail={expanded ? "" : summaryDetail} />
           </TraceLine>
         </TraceCollapsibleTrigger>
         {/* 保留子步骤状态；读者进入详情后，由手动开合接管，避免正文到达时藏起焦点。 */}

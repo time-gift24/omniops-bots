@@ -33,7 +33,7 @@ export function ChatScreen() {
       key={editRequest?.nonce ?? "idle"}
       store={store}
       initialText={editRequest?.text}
-      className="mx-auto w-full max-w-[880px]"
+      className="mx-auto w-full"
     />
   );
 
@@ -44,12 +44,12 @@ export function ChatScreen() {
           {empty ? (
             // CDS desktop 空态：问候 + 居中 composer + 建议；开聊后
             // composer 以共享 layoutId 平滑落底。
-            <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4">
+            <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4 sm:px-8">
               <motion.div
                 initial={reduce ? false : { opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={reduce ? { duration: 0 } : SPRING_PANEL}
-                className="flex w-full max-w-[880px] flex-col items-center gap-6"
+                className="flex w-full max-w-[736px] flex-col items-center gap-6"
               >
                 <div className="flex flex-col items-center gap-2 text-center">
                   <h1 className="text-2xl font-medium tracking-tight">
@@ -90,10 +90,10 @@ export function ChatScreen() {
                   }
                 />
               </div>
-              <div className="shrink-0 px-2 pb-2 sm:px-4 sm:pb-4">
+              <div className="shrink-0 px-4 pb-4 sm:px-8 sm:pb-6">
                 <motion.div
                   layoutId={reduce ? undefined : "composer"}
-                  className="mx-auto max-w-[880px]"
+                  className="mx-auto max-w-[736px]"
                 >
                   {composer}
                 </motion.div>

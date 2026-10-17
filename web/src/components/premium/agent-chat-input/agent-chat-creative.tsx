@@ -11,7 +11,7 @@ import {
   MonitorIcon,
   RectangleHorizontalIcon,
   RectangleVerticalIcon,
-  Square01Icon,
+  SquareIcon,
   Video01Icon,
 } from "@hugeicons-pro/core-stroke-rounded";
 import type { ReactNode } from "react";
@@ -78,7 +78,7 @@ const RESOLUTIONS: CreativeChoice[] = [
 const RATIOS: CreativeChoice[] = [
   { value: "16:9", label: "Landscape · 16:9", icon: RectangleHorizontalIcon },
   { value: "9:16", label: "Portrait · 9:16", icon: RectangleVerticalIcon },
-  { value: "1:1", label: "Square · 1:1", icon: Square01Icon },
+  { value: "1:1", label: "Square · 1:1", icon: SquareIcon },
   { value: "4:3", label: "Landscape · 4:3", icon: RectangleHorizontalIcon },
   { value: "3:4", label: "Portrait · 3:4", icon: RectangleVerticalIcon },
 ];

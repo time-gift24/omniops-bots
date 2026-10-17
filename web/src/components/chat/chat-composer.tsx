@@ -56,12 +56,10 @@ function toComposerStatus(status: string): AgentChatInputStatus {
  */
 export function ChatComposer({
   store,
-  placeholder = "描述你的问题或任务…",
   initialText,
   className,
 }: {
   store: ThreadStore;
-  placeholder?: string;
   /** 初始文本（用户消息「编辑」动作）；父级用 key 变化触发重挂载生效。 */
   initialText?: string;
   className?: string;
@@ -83,7 +81,7 @@ export function ChatComposer({
       // 技能体系未上线：空列表让 `/` 保持纯文本，不触发面板。
       skills={[]}
       status={toComposerStatus(state.status)}
-      placeholder={placeholder}
+      placeholder=""
       models={MODELS}
       model={model}
       onModelChange={setModel}
@@ -102,9 +100,9 @@ export function ChatComposer({
         if (accepted) setAttachments([]);
         return accepted;
       }}
-      className={cn("max-w-[880px]", className)}
+      className={cn("max-w-[736px]", className)}
     >
-      <AgentComposerSurface>
+      <AgentComposerSurface className="px-1 py-2">
         <AgentComposerInput />
         <div className="flex items-center justify-between gap-3 px-1">
           <div className="flex min-w-0 items-center gap-0.5 text-muted-foreground">
