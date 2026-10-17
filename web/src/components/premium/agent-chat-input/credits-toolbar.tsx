@@ -1,6 +1,13 @@
 "use client";
 
-import { ArrowUp, LoaderCircle, Mic, Paperclip, Square } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  ArrowUp01Icon,
+  Attachment01Icon,
+  Loading03Icon,
+  Mic01Icon,
+  Square01Icon,
+} from "@hugeicons-pro/core-stroke-rounded";
 import { AnimatePresence, motion } from "motion/react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/motion/button";
@@ -62,7 +69,7 @@ export function CreditsToolbar({
       disabled={disabled || busy}
       reduce={reduce}
     >
-      <Paperclip className="size-[18px]" />
+      <HugeiconsIcon icon={Attachment01Icon} className="size-[18px]" />
     </ActionButton>
   );
   const voice = (
@@ -72,7 +79,7 @@ export function CreditsToolbar({
       disabled={disabled || busy || !onVoice}
       reduce={reduce}
     >
-      <Mic className="size-[18px]" />
+      <HugeiconsIcon icon={Mic01Icon} className="size-[18px]" />
     </ActionButton>
   );
   const search = (
@@ -123,14 +130,15 @@ export function CreditsToolbar({
           transition={reduce ? { duration: 0 } : SPRING_SWAP}
         >
           {busy && onStop ? (
-            <Square aria-hidden className="size-3.5 fill-current" />
+            <HugeiconsIcon icon={Square01Icon} aria-hidden className="size-3.5 fill-current" />
           ) : busy && showSendingSpinner ? (
-            <LoaderCircle
+            <HugeiconsIcon
+              icon={Loading03Icon}
               aria-hidden
               className="size-4 motion-safe:animate-spin"
             />
           ) : (
-            <ArrowUp className="size-5" strokeWidth={2.4} />
+            <HugeiconsIcon icon={ArrowUp01Icon} className="size-5" strokeWidth={2.4} />
           )}
         </motion.span>
       </AnimatePresence>

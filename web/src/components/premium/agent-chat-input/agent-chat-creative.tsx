@@ -1,19 +1,19 @@
 "use client";
 
+import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import {
-  ArrowUp,
-  ChevronDown,
-  ImageIcon,
-  LoaderCircle,
-  type LucideIcon,
-  Monitor,
-  Paperclip,
-  RectangleHorizontal,
-  RectangleVertical,
-  Square,
-  Video,
-  X,
-} from "lucide-react";
+  ArrowDown01Icon,
+  ArrowUp01Icon,
+  Attachment01Icon,
+  Cancel01Icon,
+  Image01Icon,
+  Loading03Icon,
+  MonitorIcon,
+  RectangleHorizontalIcon,
+  RectangleVerticalIcon,
+  Square01Icon,
+  Video01Icon,
+} from "@hugeicons-pro/core-stroke-rounded";
 import type { ReactNode } from "react";
 import { useRef, useState } from "react";
 import { Button } from "@/components/motion/button";
@@ -65,22 +65,22 @@ const MODELS: CreativePromptModel[] = SAMPLE_MODELS.map(
   ({ name, ...model }) => ({ ...model, label: name }),
 );
 const OPTIONS = ["Image", "4K", "16:9"];
-type CreativeChoice = { value: string; label: string; icon?: LucideIcon };
+type CreativeChoice = { value: string; label: string; icon?: IconSvgElement };
 const TYPES: CreativeChoice[] = [
-  { value: "Image", label: "Image", icon: ImageIcon },
-  { value: "Video", label: "Video", icon: Video },
+  { value: "Image", label: "Image", icon: Image01Icon },
+  { value: "Video", label: "Video", icon: Video01Icon },
 ];
 const RESOLUTIONS: CreativeChoice[] = [
-  { value: "HD", label: "HD · 1080p", icon: Monitor },
-  { value: "2K", label: "2K · 1440p", icon: Monitor },
-  { value: "4K", label: "4K · 2160p", icon: Monitor },
+  { value: "HD", label: "HD · 1080p", icon: MonitorIcon },
+  { value: "2K", label: "2K · 1440p", icon: MonitorIcon },
+  { value: "4K", label: "4K · 2160p", icon: MonitorIcon },
 ];
 const RATIOS: CreativeChoice[] = [
-  { value: "16:9", label: "Landscape · 16:9", icon: RectangleHorizontal },
-  { value: "9:16", label: "Portrait · 9:16", icon: RectangleVertical },
-  { value: "1:1", label: "Square · 1:1", icon: Square },
-  { value: "4:3", label: "Landscape · 4:3", icon: RectangleHorizontal },
-  { value: "3:4", label: "Portrait · 3:4", icon: RectangleVertical },
+  { value: "16:9", label: "Landscape · 16:9", icon: RectangleHorizontalIcon },
+  { value: "9:16", label: "Portrait · 9:16", icon: RectangleVerticalIcon },
+  { value: "1:1", label: "Square · 1:1", icon: Square01Icon },
+  { value: "4:3", label: "Landscape · 4:3", icon: RectangleHorizontalIcon },
+  { value: "3:4", label: "Portrait · 3:4", icon: RectangleVerticalIcon },
 ];
 
 function CreativeOptionPicker({
@@ -114,10 +114,10 @@ function CreativeOptionPicker({
           className="h-10 gap-1.5 rounded-full bg-background px-3"
         >
           {Icon && (
-            <Icon aria-hidden className="size-4 text-muted-foreground" />
+            <HugeiconsIcon icon={Icon} aria-hidden className="size-4 text-muted-foreground" />
           )}
           {choice ? (showLabel ? choice.label : choice.value) : "No models"}
-          <ChevronDown aria-hidden className="size-3.5 text-muted-foreground" />
+          <HugeiconsIcon icon={ArrowDown01Icon} aria-hidden className="size-3.5 text-muted-foreground" />
         </Button>
       </AnimatedDropdownTrigger>
       <AnimatedDropdownContent side="top" align={align} className="w-56">
@@ -126,10 +126,11 @@ function CreativeOptionPicker({
           {choices.map((item) => (
             <AnimatedDropdownRadioItem key={item.value} value={item.value}>
               {item.icon && (
-                <item.icon
+                <HugeiconsIcon
+                  icon={item.icon}
                   aria-hidden
                   className="size-4 shrink-0 text-muted-foreground"
-                />
+                  />
               )}
               {item.label}
             </AnimatedDropdownRadioItem>
@@ -269,9 +270,9 @@ export function AgentChatCreative({
       className="size-10 rounded-full"
     >
       {busy && showSpinner ? (
-        <LoaderCircle className="size-4 motion-safe:animate-spin" />
+        <HugeiconsIcon icon={Loading03Icon} className="size-4 motion-safe:animate-spin" />
       ) : (
-        <ArrowUp aria-hidden className="size-5" />
+        <HugeiconsIcon icon={ArrowUp01Icon} aria-hidden className="size-5" />
       )}
     </Button>
   );
@@ -286,7 +287,7 @@ export function AgentChatCreative({
       aria-label="Attach images"
       onClick={() => input.current?.click()}
     >
-      <Paperclip aria-hidden className="size-5" />
+      <HugeiconsIcon icon={Attachment01Icon} aria-hidden className="size-5" />
     </Button>
   );
   const toolbarPart = (
@@ -320,7 +321,7 @@ export function AgentChatCreative({
               setFiles((previous) => previous.filter((_, i) => i !== index))
             }
           >
-            <X className="size-3" />
+            <HugeiconsIcon icon={Cancel01Icon} className="size-3" />
           </Button>
         </li>
       ))}

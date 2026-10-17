@@ -1,6 +1,7 @@
 "use client";
 
-import { Globe2 } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Globe02Icon } from "@hugeicons-pro/core-stroke-rounded";
 import { motion } from "motion/react";
 import { Button } from "@/components/motion/button";
 import { EASE_OUT, SPRING_PRESS } from "@/lib/ease";
@@ -45,7 +46,10 @@ export function CreditsSearchToggle({
           : "text-muted-foreground hover:bg-muted hover:text-foreground",
       )}
     >
-      <Globe2 className="absolute top-1/2 left-[9px] size-[18px] -translate-y-1/2" />
+      <HugeiconsIcon
+        icon={Globe02Icon}
+        className="absolute top-1/2 left-[9px] size-[18px] -translate-y-1/2"
+      />
       <motion.span
         aria-hidden={!enabled}
         initial={false}

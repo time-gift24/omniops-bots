@@ -10,7 +10,8 @@ import {
 import { cn } from "cn"
 
 import { Button } from "@/components/ui/button"
-import { ArrowDownIcon } from "lucide-react"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { ArrowDown01Icon } from "@hugeicons-pro/core-stroke-rounded"
 
 function MessageScrollerProvider(
   props: React.ComponentProps<typeof MessageScrollerPrimitive.Provider>
@@ -107,8 +108,7 @@ function MessageScrollerButton({
     >
       {children ?? (
         <>
-          <ArrowDownIcon
-          />
+          <HugeiconsIcon icon={ArrowDown01Icon} />
           <span className="sr-only">
             {direction === "end" ? "Scroll to end" : "Scroll to start"}
           </span>

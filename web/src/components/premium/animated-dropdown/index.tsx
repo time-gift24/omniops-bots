@@ -1,7 +1,12 @@
 "use client";
 
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
-import { Check, ChevronRight, Minus } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  ArrowRight01Icon,
+  CheckIcon,
+  MinusSignIcon,
+} from "@hugeicons-pro/core-stroke-rounded";
 import { motion, useReducedMotion } from "motion/react";
 import {
   type ComponentPropsWithoutRef,
@@ -458,8 +463,8 @@ export const AnimatedDropdownCheckboxItem = forwardRef<
         aria-hidden
         className="absolute right-2.5 grid size-5 place-items-center"
       >
-        <Check className="absolute size-3.5 scale-50 opacity-0 transition-[opacity,transform] duration-150 group-data-[state=checked]:scale-100 group-data-[state=checked]:opacity-100" />
-        <Minus className="absolute size-3.5 scale-50 opacity-0 transition-[opacity,transform] duration-150 group-data-[state=indeterminate]:scale-100 group-data-[state=indeterminate]:opacity-100" />
+        <HugeiconsIcon icon={CheckIcon} className="absolute size-3.5 scale-50 opacity-0 transition-[opacity,transform] duration-150 group-data-[state=checked]:scale-100 group-data-[state=checked]:opacity-100" />
+        <HugeiconsIcon icon={MinusSignIcon} className="absolute size-3.5 scale-50 opacity-0 transition-[opacity,transform] duration-150 group-data-[state=indeterminate]:scale-100 group-data-[state=indeterminate]:opacity-100" />
       </span>
       {children}
     </DropdownMenuPrimitive.CheckboxItem>
@@ -481,7 +486,7 @@ export const AnimatedDropdownRadioItem = forwardRef<
         aria-hidden
         className="absolute right-2.5 grid size-5 place-items-center"
       >
-        <Check className="size-3.5 scale-50 opacity-0 transition-[opacity,transform] duration-150 group-data-[state=checked]:scale-100 group-data-[state=checked]:opacity-100" />
+        <HugeiconsIcon icon={CheckIcon} className="size-3.5 scale-50 opacity-0 transition-[opacity,transform] duration-150 group-data-[state=checked]:scale-100 group-data-[state=checked]:opacity-100" />
       </span>
       {children}
     </DropdownMenuPrimitive.RadioItem>
@@ -543,7 +548,7 @@ export const AnimatedDropdownSubTrigger = forwardRef<
       {...props}
     >
       {children}
-      <ChevronRight
+      <HugeiconsIcon icon={ArrowRight01Icon}
         aria-hidden
         className="ml-auto size-4 text-muted-foreground transition-transform duration-150 group-data-[state=open]:translate-x-0.5"
       />

@@ -1,6 +1,11 @@
 "use client";
 
-import { ChevronDown, Cpu, Search } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  ArrowDown01Icon,
+  CpuIcon,
+  Search01Icon,
+} from "@hugeicons-pro/core-stroke-rounded";
 import { motion, useReducedMotion } from "motion/react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/motion/button";
@@ -57,7 +62,7 @@ function ModelMark({ model }: { model: ModelPickerOption }) {
             style={{ backgroundImage: `url("${source}")` }}
           />
         ) : (
-          <Cpu className="size-4 text-muted-foreground" />
+          <HugeiconsIcon icon={CpuIcon} className="size-4 text-muted-foreground" />
         ))}
     </span>
   );
@@ -154,7 +159,7 @@ function ModelPickerMenu({
           <div className="relative z-20 flex items-center justify-between gap-3 bg-background px-4 pt-3 pb-1">
             <span className="text-sm text-muted-foreground">Models</span>
             <Input
-              leftIcon={<Search aria-hidden className="size-4" />}
+              leftIcon={<HugeiconsIcon icon={Search01Icon} aria-hidden className="size-4" />}
               ref={input}
               aria-label="Quick search models"
               placeholder="Quick search"
@@ -229,7 +234,7 @@ function ModelPickerMenu({
           ))}
           {filtered.length === 0 && (
             <div className="flex h-full flex-col items-center justify-center gap-2 px-5 text-center">
-              <Search className="size-5 text-muted-foreground" />
+              <HugeiconsIcon icon={Search01Icon} className="size-5 text-muted-foreground" />
               <p className="text-sm font-medium">No models found</p>
               <p className="text-xs text-muted-foreground">
                 Try a model name or provider.
@@ -243,7 +248,7 @@ function ModelPickerMenu({
               rightIcon={
                 <kbd className="text-xs text-muted-foreground">esc</kbd>
               }
-              leftIcon={<Search aria-hidden className="size-4" />}
+              leftIcon={<HugeiconsIcon icon={Search01Icon} aria-hidden className="size-4" />}
               ref={input}
               aria-label="Search models"
               placeholder="Search models or providers…"
@@ -306,7 +311,7 @@ export function ModelPicker({
               {selected?.name ?? placeholder}
             </span>
           </span>
-          <ChevronDown
+          <HugeiconsIcon icon={ArrowDown01Icon}
             className={cn(
               "size-4 shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none",
               open && "rotate-180",

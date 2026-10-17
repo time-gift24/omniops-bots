@@ -1,6 +1,7 @@
 "use client";
 
-import { FileText, Image as ImageIcon } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { File01Icon, Image01Icon } from "@hugeicons-pro/core-stroke-rounded";
 import type { AgentChatAttachment, AgentChatInputOption } from "./types";
 
 export function findLabel(
@@ -14,14 +15,14 @@ export function attachmentIcon(type?: string) {
   if (type?.startsWith("image/")) {
     return (
       <span className="shrink-0 text-muted-foreground">
-        <ImageIcon className="size-3.5" />
+        <HugeiconsIcon icon={Image01Icon} className="size-3.5" />
       </span>
     );
   }
 
   return (
     <span className="shrink-0 text-muted-foreground">
-      <FileText className="size-3.5" />
+      <HugeiconsIcon icon={File01Icon} className="size-3.5" />
     </span>
   );
 }

@@ -1,6 +1,12 @@
 "use client";
 
-import { ArrowUp, LoaderCircle, Paperclip, Square } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  ArrowUp01Icon,
+  Attachment01Icon,
+  Loading03Icon,
+  Square01Icon,
+} from "@hugeicons-pro/core-stroke-rounded";
 import {
   type ComponentProps,
   createContext,
@@ -186,7 +192,7 @@ export function AgentComposerAttach({ className }: { className?: string }) {
         className,
       )}
     >
-      <Paperclip aria-hidden className="size-5" />
+      <HugeiconsIcon icon={Attachment01Icon} aria-hidden className="size-5" />
     </Button>
   );
 }
@@ -253,17 +259,18 @@ export function AgentComposerAction({
     >
       {busy ? (
         stop ? (
-          <Square aria-hidden className="size-4 fill-current" />
+          <HugeiconsIcon icon={Square01Icon} aria-hidden className="size-4 fill-current" />
         ) : (showSpinner ?? showSendingSpinner) ? (
-          <LoaderCircle
+          <HugeiconsIcon
+            icon={Loading03Icon}
             aria-hidden
             className="size-4 motion-safe:animate-spin"
-          />
+            />
         ) : (
-          <ArrowUp aria-hidden className="size-5" />
+          <HugeiconsIcon icon={ArrowUp01Icon} aria-hidden className="size-5" />
         )
       ) : (
-        <ArrowUp aria-hidden className="size-5" />
+        <HugeiconsIcon icon={ArrowUp01Icon} aria-hidden className="size-5" />
       )}
     </Button>
   );

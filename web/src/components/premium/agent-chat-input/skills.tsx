@@ -1,6 +1,7 @@
 "use client";
 
-import { Box, Check } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { CheckIcon, PackageIcon } from "@hugeicons-pro/core-stroke-rounded";
 import { motion } from "motion/react";
 import { Button } from "@/components/motion/button";
 import { SPRING_LAYOUT } from "@/lib/ease";
@@ -73,7 +74,7 @@ export function SkillSelector({
                   )}
                 />
                 <span className="grid size-6 shrink-0 place-items-center text-muted-foreground">
-                  {skill.icon ?? <Box className="size-4" />}
+                  {skill.icon ?? <HugeiconsIcon icon={PackageIcon} className="size-4" />}
                 </span>
                 <span className="flex min-w-0 flex-1 items-baseline gap-2">
                   <span className="shrink-0 font-medium text-foreground">
@@ -86,7 +87,7 @@ export function SkillSelector({
                   ) : null}
                 </span>
                 {selected ? (
-                  <Check className="size-4 shrink-0 text-accent" />
+                  <HugeiconsIcon icon={CheckIcon} className="size-4 shrink-0 text-accent" />
                 ) : (
                   <span className="shrink-0 text-muted-foreground">
                     Personal

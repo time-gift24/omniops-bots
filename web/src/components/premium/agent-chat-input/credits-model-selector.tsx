@@ -1,6 +1,10 @@
 "use client";
 
-import { Check, ChevronDown } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  ArrowDown01Icon,
+  CheckIcon,
+} from "@hugeicons-pro/core-stroke-rounded";
 import { useState } from "react";
 import { Button } from "@/components/motion/button";
 import {
@@ -61,7 +65,8 @@ export function CreditsModelSelector({
         >
           <span aria-hidden>{selected.icon}</span>
           <span className="truncate">{selected.label}</span>
-          <ChevronDown
+          <HugeiconsIcon
+            icon={ArrowDown01Icon}
             className={cn(
               "size-3 shrink-0 text-muted-foreground transition-transform duration-200",
               open && "rotate-180",
@@ -105,7 +110,8 @@ export function CreditsModelSelector({
               <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
                 {model.label}
               </span>
-              <Check
+              <HugeiconsIcon
+                icon={CheckIcon}
                 className={cn(
                   "size-3.5 shrink-0 text-primary transition-opacity",
                   active ? "opacity-100" : "opacity-0",

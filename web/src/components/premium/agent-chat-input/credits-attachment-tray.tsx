@@ -1,6 +1,7 @@
 "use client";
 
-import { FileText, X } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Cancel01Icon, File01Icon } from "@hugeicons-pro/core-stroke-rounded";
 import { AnimatePresence, motion } from "motion/react";
 import { Button } from "@/components/motion/button";
 import { SPRING_PANEL, SPRING_PRESS, SPRING_SWAP } from "@/lib/ease";
@@ -69,7 +70,7 @@ export function CreditsAttachmentTray({
                     </Button>
                   ) : (
                     <span className="grid size-7 shrink-0 place-items-center bg-muted text-muted-foreground rounded-full">
-                      <FileText className="size-3.5" />
+                      <HugeiconsIcon icon={File01Icon} className="size-3.5" />
                     </span>
                   )}
                   <span className="max-w-24 truncate text-foreground text-xs">
@@ -84,7 +85,7 @@ export function CreditsAttachmentTray({
                     transition={SPRING_PRESS}
                     className="pointer-events-none grid h-6 w-0 shrink-0 scale-75 place-items-center overflow-hidden text-muted-foreground opacity-0 transition-[width,opacity,transform,color,background-color] duration-200 ease-out group-hover:pointer-events-auto group-hover:w-6 group-hover:scale-100 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:w-6 group-focus-within:scale-100 group-focus-within:opacity-100 hover:bg-muted hover:text-foreground focus-visible:w-6 focus-visible:scale-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
-                    <X className="size-3" />
+                    <HugeiconsIcon icon={Cancel01Icon} className="size-3" />
                   </Button>
                 </motion.div>
               );

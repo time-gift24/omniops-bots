@@ -1,6 +1,11 @@
 "use client";
 
-import { Box, Check, X } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  Cancel01Icon,
+  CheckIcon,
+  PackageIcon,
+} from "@hugeicons-pro/core-stroke-rounded";
 import { AnimatePresence, motion } from "motion/react";
 import { Button } from "@/components/motion/button";
 import { SPRING_PANEL } from "@/lib/ease";
@@ -90,7 +95,7 @@ export function CreditsTopLayer({
                           )}
                         />
                         <span className="grid size-6 shrink-0 place-items-center text-muted-foreground">
-                          {skill.icon ?? <Box className="size-4" />}
+                          {skill.icon ?? <HugeiconsIcon icon={PackageIcon} className="size-4" />}
                         </span>
                         <span className="min-w-0 flex-1 truncate font-medium text-foreground">
                           {skill.label}
@@ -101,7 +106,7 @@ export function CreditsTopLayer({
                           </span>
                         ) : null}
                         {selected ? (
-                          <Check className="size-4 shrink-0 text-accent" />
+                          <HugeiconsIcon icon={CheckIcon} className="size-4 shrink-0 text-accent" />
                         ) : null}
                       </Button>
                     );
@@ -140,7 +145,7 @@ export function CreditsTopLayer({
                 onClick={onDismiss}
                 className="grid size-6 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-background hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <X className="size-4" />
+                <HugeiconsIcon icon={Cancel01Icon} className="size-4" />
               </Button>
             </div>
           </motion.div>

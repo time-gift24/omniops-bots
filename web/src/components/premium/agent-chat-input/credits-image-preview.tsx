@@ -1,6 +1,7 @@
 "use client";
 
-import { X } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Cancel01Icon } from "@hugeicons-pro/core-stroke-rounded";
 import {
   AnimatedModal,
   AnimatedModalTitle,
@@ -43,7 +44,7 @@ export function CreditsImagePreview({
         onClick={onClose}
         className="absolute right-3 top-3 z-10"
       >
-        <X aria-hidden className="size-4" />
+        <HugeiconsIcon icon={Cancel01Icon} aria-hidden className="size-4" />
       </Button>
       {src && attachment ? (
         <>
