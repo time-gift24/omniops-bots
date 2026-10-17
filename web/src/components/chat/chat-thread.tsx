@@ -1,23 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Message01Icon } from "@hugeicons-pro/core-stroke-rounded";
 
 import type { ThreadStore } from "@/chat/thread-store.ts";
 import type { ChatMessageView } from "@/chat/fold.ts";
 import { useThreadState } from "@/chat/react.ts";
 import { MessageView } from "@/components/chat/message-view";
 import { AIThinkingLoader } from "@/components/premium/ai-thinking-loader";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
-import { Button } from "@/components/ui/button";
 import {
   MessageScroller,
   MessageScrollerButton,
@@ -26,12 +15,6 @@ import {
   MessageScrollerProvider,
   MessageScrollerViewport,
 } from "@/components/ui/message-scroller";
-
-const SUGGESTIONS = [
-  "为什么这次构建这么慢？",
-  "帮我排查一下昨天部署失败的原因",
-  "总结一下这个仓库本周的变更",
-];
 
 /** 过场退场时长（ms），与 index.css 的 chat-swap-out 一致。 */
 const LOADER_EXIT_MS = 220;
@@ -106,37 +89,6 @@ export function ChatThread({
 }) {
   const state = useThreadState(store);
   const busy = state.status === "submitted" || state.status === "streaming";
-
-  if (state.messages.length === 0) {
-    return (
-      <Empty className="h-full">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <HugeiconsIcon icon={Message01Icon} className="size-5" />
-          </EmptyMedia>
-          <EmptyTitle>开始一段新对话</EmptyTitle>
-          <EmptyDescription>
-            描述你的问题或任务，agent 会展示它的每一步推理。
-          </EmptyDescription>
-        </EmptyHeader>
-        <EmptyContent>
-          <div className="flex flex-wrap justify-center gap-2">
-            {SUGGESTIONS.map((suggestion) => (
-              <Button
-                key={suggestion}
-                variant="outline"
-                size="sm"
-                className="rounded-full"
-                onClick={() => store.send(suggestion)}
-              >
-                {suggestion}
-              </Button>
-            ))}
-          </div>
-        </EmptyContent>
-      </Empty>
-    );
-  }
 
   return (
     <MessageScrollerProvider autoScroll scrollPreviousItemPeek={64}>
