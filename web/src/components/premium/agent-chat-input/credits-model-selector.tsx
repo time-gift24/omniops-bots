@@ -46,6 +46,7 @@ export function CreditsModelSelector({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const selected =
     models.find((model) => model.id === selectedModel) ?? models[0];
+  if (disabled && open) setOpen(false);
 
   function changeOpen(next: boolean) {
     if (!next) triggerRef.current?.focus({ preventScroll: true });
@@ -55,7 +56,7 @@ export function CreditsModelSelector({
   if (!selected) return null;
 
   return (
-    <MorphPopover open={open} onOpenChange={changeOpen}>
+    <MorphPopover open={open && !disabled} onOpenChange={changeOpen}>
       <MorphPopoverTrigger>
         <Button
           ref={triggerRef}
@@ -100,6 +101,7 @@ export function CreditsModelSelector({
               variant="plain"
               key={model.id}
               type="button"
+              disabled={disabled}
               role="menuitemradio"
               aria-checked={active}
               onClick={() => {

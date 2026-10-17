@@ -15,8 +15,12 @@ export function useThreadStore(
   threadId: ThreadId,
   registry: ThreadStoreRegistry = defaultThreadRegistry,
 ): ThreadStore {
-  const store = React.useMemo(() => registry.acquire(threadId), [registry, threadId]);
-  React.useEffect(() => {
+  const [, checkStore] = React.useReducer((revision: number) => revision + 1, 0);
+  const store = registry.get(threadId);
+  React.useLayoutEffect(() => {
+    const retained = registry.acquire(threadId, store);
+    // Another consumer may have replaced an evicted entry between render and commit.
+    if (retained !== store) checkStore();
     return () => registry.release(threadId);
   }, [registry, threadId, store]);
   return store;

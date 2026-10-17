@@ -10,14 +10,15 @@
   import { flushSync } from "react-dom";
   import "/src/index.css";
   import { SidebarRail } from "/src/components/premium/sidebar-blocks/sidebar-rail.tsx";
+  import { AnimatedModal, AnimatedModalTitle } from "/src/components/motion/animated-modal.tsx";
   import { CreditsModelSelector } from "/src/components/premium/agent-chat-input/credits-model-selector.tsx";
 
   const result = document.querySelector("#result");
   const viewport = new URLSearchParams(location.search).get("viewport");
   const wait = (ms = 20) => new Promise(resolve => setTimeout(resolve, ms));
   const assert = (condition, message) => { if (!condition) throw new Error(message); };
-  const until = async (condition, message) => {
-    const deadline = performance.now() + 5000;
+  const until = async (condition, message, timeout = 5000) => {
+    const deadline = performance.now() + timeout;
     while (!condition() && performance.now() < deadline) await wait();
     assert(condition(), message);
   };
@@ -36,6 +37,7 @@
 
   function Fixture() {
     const [model, setModel] = React.useState("pine");
+    const [previewOpen, setPreviewOpen] = React.useState(false);
     return React.createElement(SidebarRail, null,
       React.createElement("input", { "aria-label": "Keyboard origin" }),
       React.createElement(CreditsModelSelector, {
@@ -44,6 +46,11 @@
         disabled: false,
         onModelChange: setModel,
       }),
+      React.createElement("button", { onClick: () => setPreviewOpen(true) }, "Open preview"),
+      React.createElement(AnimatedModal, { open: previewOpen, onOpenChange: setPreviewOpen },
+        React.createElement(AnimatedModalTitle, null, "Image preview"),
+        React.createElement("button", { "data-autofocus": true, onClick: () => setPreviewOpen(false) }, "Close preview"),
+      ),
     );
   }
 
@@ -57,7 +64,7 @@
         frame.src = `${location.pathname}?viewport=${name}`;
         document.querySelector("#fixture").append(frame);
         await until(() => frame.contentDocument?.querySelector("#result")?.dataset.passed,
-          `${name} fixture did not finish`);
+          `${name} fixture did not finish`, 30000);
         const childResult = frame.contentDocument.querySelector("#result");
         assert(childResult.dataset.passed === "true", childResult.textContent);
         passed.push(childResult.textContent);
@@ -116,15 +123,37 @@
       modelTrigger().focus();
       click(modelTrigger());
       await until(() => models().length === 2 && document.activeElement === models()[0], "Model popover did not focus selected model");
+      key("Escape");
+      await wait(20);
+      click(modelTrigger());
+      await until(() => models().length === 2 && document.activeElement === models()[0], "Rapid model reopen did not restore selected-item focus");
       models()[1].focus();
       click(models()[1]);
       await until(() => !models().length && document.activeElement === modelTrigger(), "Model selection did not restore trigger focus");
       assert(modelTrigger().textContent.includes("Sonnet"), "Model selection did not update the selected model");
       click(modelTrigger());
       await until(() => models().length === 2 && document.activeElement === models()[1], "Reopened popover did not focus new selection");
+      key("k", { ctrlKey: true });
+      await until(() => document.activeElement === searchInput(), "Search did not open above model popover");
+      key("Escape");
+      await until(() => !dialog() && models().length === 2 && document.activeElement === models()[1], "Search Escape also dismissed the underlying model popover");
       key("Escape");
       await until(() => !models().length && document.activeElement === modelTrigger(), "Model Escape did not restore trigger focus");
       passed.push("model open, select, reopen and Escape preserve focus");
+
+      const preview = [...document.querySelectorAll("button")].find(button => button.textContent === "Open preview");
+      preview.focus();
+      click(preview);
+      await until(() => document.activeElement.textContent === "Close preview", "Preview did not receive focus");
+      const sidebarState = document.querySelector('[data-slot="sidebar-wrapper"]').dataset.state;
+      key("k", { ctrlKey: true });
+      key("b", { ctrlKey: true });
+      assert(!dialog() && document.activeElement.textContent === "Close preview", "Navigation shortcut stole focus from a modal");
+      assert(document.querySelector('[data-slot="sidebar-wrapper"]').dataset.state === sidebarState, "Sidebar shortcut changed the background while a modal was open");
+      assert(!mobile || drawer().getAttribute("aria-hidden") === "true", "Sidebar shortcut opened a drawer behind the modal");
+      key("Escape");
+      await until(() => document.activeElement === preview, "Closing preview did not restore its opener");
+      passed.push("rapid reopen, nested Escape and modal shortcut isolation");
     }
     result.textContent = `PASS ${viewport ?? "all viewports"}: ${passed.join("; ")}`;
     result.dataset.passed = "true";

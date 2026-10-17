@@ -3,8 +3,10 @@ import type { ThreadId } from "./dto.ts";
 import { ThreadStoreImpl, type ThreadSnapshot, type ThreadStore } from "./thread-store.ts";
 
 export interface ThreadStoreRegistry {
-  /** 命中缓存或懒创建，引用计数 +1。 */
-  acquire(threadId: ThreadId): ThreadStore;
+  /** 获取或创建缓存项，不持有挂载引用；供渲染阶段读取。 */
+  get(threadId: ThreadId): ThreadStore;
+  /** 引用计数 +1；渲染后已驱逐时保留 renderedStore 的同一实例。 */
+  acquire(threadId: ThreadId, renderedStore?: ThreadStore): ThreadStore;
   /** 引用计数 -1，归零后进入可驱逐状态；不中止流。 */
   release(threadId: ThreadId): void;
   snapshot(threadId: ThreadId): ThreadSnapshot | undefined;
@@ -13,7 +15,7 @@ export interface ThreadStoreRegistry {
 }
 
 interface Entry {
-  store: ThreadStoreImpl;
+  store: ThreadStore;
   refs: number;
   lastUsed: number;
 }
@@ -22,22 +24,31 @@ export function createThreadStoreRegistry(
   gatewayFor: (threadId: ThreadId) => ChatGateway,
 ): ThreadStoreRegistry {
   const entries = new Map<ThreadId, Entry>();
+  let lastUsed = 0;
 
   const touch = (entry: Entry) => {
-    entry.lastUsed = Date.now();
+    entry.lastUsed = ++lastUsed;
+  };
+
+  const getEntry = (threadId: ThreadId, renderedStore?: ThreadStore): Entry => {
+    let entry = entries.get(threadId);
+    if (!entry) {
+      entry = {
+        store: renderedStore ?? new ThreadStoreImpl(threadId, gatewayFor(threadId)),
+        refs: 0,
+        lastUsed: ++lastUsed,
+      };
+      entries.set(threadId, entry);
+    }
+    return entry;
   };
 
   return {
-    acquire(threadId) {
-      let entry = entries.get(threadId);
-      if (!entry) {
-        entry = {
-          store: new ThreadStoreImpl(threadId, gatewayFor(threadId)),
-          refs: 0,
-          lastUsed: Date.now(),
-        };
-        entries.set(threadId, entry);
-      }
+    get(threadId) {
+      return getEntry(threadId).store;
+    },
+    acquire(threadId, renderedStore) {
+      const entry = getEntry(threadId, renderedStore);
       entry.refs += 1;
       touch(entry);
       return entry.store;
@@ -55,6 +66,9 @@ export function createThreadStoreRegistry(
     },
 
     evictIdle(maxIdle = 0) {
+      if (!Number.isInteger(maxIdle) || maxIdle < 0) {
+        throw new RangeError("maxIdle 必须是非负整数");
+      }
       const idle = [...entries.entries()]
         .filter(
           ([, entry]) =>

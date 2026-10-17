@@ -118,15 +118,15 @@ function optionalString(value: unknown, field: string): string | undefined {
 
 function optionalNumber(value: unknown, field: string): number | undefined {
   if (value === undefined) return undefined;
-  if (typeof value !== "number" || !Number.isFinite(value)) {
-    throw new WireFormatError(`${field} 必须是有限数字，实际为 ${String(value)}`);
+  if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0) {
+    throw new WireFormatError(`${field} 必须是非负安全整数`);
   }
   return value;
 }
 
 function requirePartId(value: unknown, field: string): number {
-  if (typeof value !== "number" || !Number.isInteger(value) || value < 0) {
-    throw new WireFormatError(`${field} 必须是非负整数，实际为 ${String(value)}`);
+  if (typeof value !== "number" || !Number.isInteger(value) || value < 0 || value > 0xffffffff) {
+    throw new WireFormatError(`${field} 必须是 u32 范围内的整数`);
   }
   return value;
 }

@@ -1,10 +1,5 @@
 import * as React from "react"
-import {
-  createHighlighterCore,
-  type GrammarState,
-  type HighlighterCore,
-} from "shiki/core"
-import { createJavaScriptRegexEngine } from "shiki/engine/javascript"
+import type { GrammarState, HighlighterCore } from "shiki/core"
 
 const languages = {
   bash: () => import("shiki/langs/shellscript.mjs"),
@@ -37,14 +32,18 @@ const aliases: Record<string, keyof typeof languages> = {
 let highlighter: Promise<HighlighterCore> | undefined
 
 function getHighlighter() {
-  highlighter ??= createHighlighterCore({
-    themes: [
-      import("shiki/themes/vitesse-light.mjs"),
-      import("shiki/themes/vitesse-dark.mjs"),
-    ],
-    langs: [],
-    engine: createJavaScriptRegexEngine({ forgiving: true }),
-  })
+  highlighter ??= Promise.all([
+    import("shiki/core"),
+    import("shiki/engine/javascript"),
+    import("shiki/themes/vitesse-light.mjs"),
+    import("shiki/themes/vitesse-dark.mjs"),
+  ]).then(([{ createHighlighterCore }, { createJavaScriptRegexEngine }, light, dark]) =>
+    createHighlighterCore({
+      themes: [light, dark],
+      langs: [],
+      engine: createJavaScriptRegexEngine({ forgiving: true }),
+    })
+  )
 
   return highlighter
 }
@@ -56,11 +55,11 @@ function getLanguage(language: string) {
     return name
   }
 
-  if (name in languages) {
+  if (Object.hasOwn(languages, name)) {
     return name as keyof typeof languages
   }
 
-  return aliases[name] ?? null
+  return Object.hasOwn(aliases, name) ? aliases[name] : null
 }
 
 // Unsupported languages return null.
@@ -71,10 +70,13 @@ export async function loadHighlighter(language: string) {
     return null
   }
 
-  const shiki = await getHighlighter()
+  const [shiki, grammar] = await Promise.all([
+    getHighlighter(),
+    lang === "ansi" ? undefined : languages[lang](),
+  ])
 
-  if (lang !== "ansi" && !shiki.getLoadedLanguages().includes(lang)) {
-    await shiki.loadLanguage(languages[lang])
+  if (grammar && !shiki.getLoadedLanguages().includes(lang)) {
+    await shiki.loadLanguage(grammar)
   }
 
   return {
@@ -88,11 +90,7 @@ export async function loadHighlighter(language: string) {
           grammarState: state,
         }).tokens
 
-      // ANSI has no grammar state; tokenize per line for consistent streaming colors.
-      const tokens =
-        lang === "ansi"
-          ? code.split("\n").flatMap((line) => tokenize(line))
-          : tokenize(code)
+      const tokens = tokenize(code)
 
       return {
         lines: tokens.map((line) =>

@@ -4,6 +4,7 @@ import type { KeyboardEvent } from "react";
 import {
   forwardRef,
   useCallback,
+  useEffect,
   useImperativeHandle,
   useLayoutEffect,
   useReducer,
@@ -53,6 +54,12 @@ export type AgentChatComposerProps = {
 const LINE_HEIGHT_REM = 1.25;
 const SLASH_QUERY = /(?:^|\s)\/([^\s/]*)$/;
 const SLASH_TOKEN = /\/([^\s/]*)$/;
+
+function limitText(text: string, maxLength?: number) {
+  if (maxLength === undefined) return text;
+  const limited = text.slice(0, Math.max(0, maxLength));
+  return /[\uD800-\uDBFF]$/.test(limited) ? limited.slice(0, -1) : limited;
+}
 
 function isSkillPill(node: Node | null) {
   return (
@@ -147,7 +154,10 @@ function insertSkillAtCaret(
   }
 
   let range: Range;
-  if (selection.rangeCount > 0 && editor.contains(selection.anchorNode)) {
+  if (
+    selection.rangeCount > 0 &&
+    editor.contains(selection.getRangeAt(0).commonAncestorContainer)
+  ) {
     range = selection.getRangeAt(0);
   } else {
     range = document.createRange();
@@ -155,6 +165,7 @@ function insertSkillAtCaret(
     range.collapse(false);
   }
 
+  range.deleteContents();
   const node = range.startContainer;
   if (node.nodeType === Node.TEXT_NODE) {
     const offset = range.startOffset;
@@ -247,9 +258,13 @@ function seedEditor(
   while (i < value.length) {
     const char = value[i];
 
-    if (char === "/") {
+    if (char === "/" && (i === 0 || /\s/.test(value[i - 1]))) {
       const rest = value.slice(i + 1);
-      const skill = ordered.find((entry) => rest.startsWith(entry.label));
+      const skill = ordered.find(
+        (entry) =>
+          rest.startsWith(entry.label) &&
+          (rest.length === entry.label.length || /\s/.test(rest[entry.label.length])),
+      );
       if (skill) {
         flush();
         fragment.appendChild(buildPill(skill));
@@ -309,6 +324,38 @@ export const AgentChatComposer = forwardRef<
   const skillsRef = useRef(skills);
   skillsRef.current = skills;
 
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    const beforeInput = (event: InputEvent) => {
+      if (disabled) {
+        event.preventDefault();
+        return;
+      }
+      if (maxLength === undefined || !event.cancelable || event.isComposing) return;
+      const insertion =
+        event.inputType === "insertLineBreak" || event.inputType === "insertParagraph"
+          ? "\n"
+          : event.data;
+      if (!event.inputType.startsWith("insert") || insertion === null) return;
+      const selection = window.getSelection();
+      const selectedLength =
+        selection?.rangeCount &&
+        editor.contains(selection.getRangeAt(0).commonAncestorContainer)
+          ? selection.toString().length
+          : 0;
+      if (
+        serializeEditor(editor).text.length - selectedLength + insertion.length >
+        Math.max(0, maxLength)
+      ) {
+        // Reject cancelable edits before DOM mutation so native undo keeps its history.
+        event.preventDefault();
+      }
+    };
+    editor.addEventListener("beforeinput", beforeInput);
+    return () => editor.removeEventListener("beforeinput", beforeInput);
+  }, [disabled, maxLength]);
+
   const emit = useCallback(() => {
     const editor = editorRef.current;
     if (!editor) {
@@ -345,8 +392,7 @@ export const AgentChatComposer = forwardRef<
       (initialized.current
         ? serializeEditor(editor).text
         : initialText.current);
-    const limited =
-      maxLength === undefined ? next : next.slice(0, Math.max(0, maxLength));
+    const limited = limitText(next, maxLength);
     if (!initialized.current || serializeEditor(editor).text !== limited) {
       seedEditor(editor, limited, skillsRef.current);
       onSlashQueryChange?.(null);
@@ -371,7 +417,7 @@ export const AgentChatComposer = forwardRef<
       },
       insertSkill: (skill) => {
         const editor = editorRef.current;
-        if (editor) {
+        if (editor && !disabled) {
           insertSkillAtCaret(editor, skill, emit);
         }
       },
@@ -382,11 +428,11 @@ export const AgentChatComposer = forwardRef<
       getSlashQuery: () =>
         editorRef.current ? readSlashQuery(editorRef.current) : null,
     }),
-    [emit],
+    [disabled, emit],
   );
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.nativeEvent.isComposing || composing.current) return;
+    if (disabled || event.nativeEvent.isComposing || composing.current) return;
     if (onNavKeyDown?.(event)) {
       return;
     }
@@ -426,6 +472,11 @@ export const AgentChatComposer = forwardRef<
       data-placeholder={placeholder}
       data-empty="true"
       onInput={emit}
+      onSelect={() => {
+        if (!composing.current && editorRef.current) {
+          onSlashQueryChange?.(readSlashQuery(editorRef.current));
+        }
+      }}
       onCompositionStart={() => {
         composing.current = true;
       }}
@@ -435,6 +486,7 @@ export const AgentChatComposer = forwardRef<
       }}
       onPaste={(event) => {
         event.preventDefault();
+        if (disabled) return;
         const editor = editorRef.current;
         const selection = window.getSelection();
         if (!editor || !selection?.rangeCount) return;
@@ -448,9 +500,9 @@ export const AgentChatComposer = forwardRef<
                 0,
                 maxLength -
                   serializeEditor(editor).text.length +
-                  range.toString().length,
+                  selection.toString().length,
               );
-        const insertion = text.slice(0, available);
+        const insertion = limitText(text, available);
         if (!insertion) return;
         // insertHTML starts its own undo step; textContent keeps clipboard HTML inert.
         const plainText = document.createElement("span");

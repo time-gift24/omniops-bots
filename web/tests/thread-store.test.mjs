@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { createServer } from "vite";
 
 async function loadModules(t) {
-  const server = await createServer({ server: { middlewareMode: true }, appType: "custom" });
+  const server = await createServer({ configFile: false, server: { middlewareMode: true, hmr: false, ws: false }, appType: "custom", optimizeDeps: { noDiscovery: true, include: [] } });
   t.after(() => server.close());
   const { ThreadStoreImpl } = await server.ssrLoadModule("/src/chat/thread-store.ts");
   const { createThreadStoreRegistry } = await server.ssrLoadModule("/src/chat/registry.ts");

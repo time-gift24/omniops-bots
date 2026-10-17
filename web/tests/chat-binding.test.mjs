@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { createServer } from "vite";
 
 async function loadModules(t) {
-  const server = await createServer({ server: { middlewareMode: true, hmr: false }, appType: "custom" });
+  const server = await createServer({ configFile: false, server: { middlewareMode: true, hmr: false, ws: false }, appType: "custom", optimizeDeps: { noDiscovery: true, include: [] } });
   t.after(() => server.close());
   const binding = await server.ssrLoadModule("/src/chat/binding.ts");
   const { defaultThreadRegistry } = await server.ssrLoadModule("/src/chat/react.ts");

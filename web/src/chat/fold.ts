@@ -3,12 +3,13 @@ import type {
   ChatEvent,
   ChatMetadata,
   ChatUsage,
+  OutputContent,
   ThreadId,
 } from "./dto.ts";
 
 export type ToolState = "running" | "done" | "error";
 
-export type PartView =
+export type PartView = { id?: number; complete?: boolean } & (
   | { kind: "text"; text: string }
   | { kind: "reasoning"; text: string; state: "running" | "done" }
   | {
@@ -19,7 +20,8 @@ export type PartView =
       output?: unknown;
       state: ToolState;
       errorText?: string;
-    };
+    }
+);
 
 export type MessageState = "streaming" | "done" | "failed" | "stopped";
 
@@ -128,10 +130,41 @@ function mutatePart(
   mutate: (part: PartView, index: number) => PartView,
 ): ChatMessageView {
   const parts = [...message.parts];
-  const index = parts.length > partId ? partId : -1;
+  const index = parts.findIndex((part) => part.id === partId);
   if (index < 0) return message;
   parts[index] = mutate(parts[index], index);
   return { ...message, parts };
+}
+
+function completedPart(content: OutputContent, previous?: PartView): PartView {
+  const identity = previous?.id === undefined ? {} : { id: previous.id };
+  if (content.type === "tool-call") {
+    return {
+      ...identity,
+      kind: "tool",
+      ...content.call,
+      state: content.call.errorText ? "error" : "done",
+      complete: true,
+    };
+  }
+  if (content.type === "reasoning") {
+    return { ...identity, kind: "reasoning", text: content.text, state: "done", complete: true };
+  }
+  return { ...identity, kind: "text", text: content.text, complete: true };
+}
+
+function reconcileCompletedParts(parts: PartView[], contents: OutputContent[]): PartView[] {
+  const remaining = [...parts];
+  return contents.map((content) => {
+    let index = remaining.findIndex((part) => content.type === "tool-call"
+      ? part.kind === "tool" && part.complete && part.callId === content.call.callId
+      : part.kind === content.type);
+    if (index < 0 && content.type === "tool-call") {
+      index = remaining.findIndex((part) => part.kind === "tool" && !part.complete);
+    }
+    const previous = index < 0 ? undefined : remaining.splice(index, 1)[0];
+    return completedPart(content, previous);
+  });
 }
 
 export function foldChatEvent(
@@ -139,10 +172,31 @@ export function foldChatEvent(
   event: ChatEvent,
   messageId?: string,
 ): ThreadViewState {
+  const message = messageId === undefined
+    ? state.messages.at(-1)
+    : state.messages.find((entry) => entry.id === messageId);
+  const reject = () => foldChatEvent(state, {
+    type: "failed",
+    error: { kind: "invalid-response", message: "回复事件顺序或部分标识不合法。" },
+  }, messageId);
+  if (event.type === "started" && state.status === "streaming") return reject();
+  if (event.type !== "started" && message?.role === "assistant" && message.state !== "streaming") {
+    return state;
+  }
+  if ("partId" in event) {
+    const part = message?.parts.find((entry) => entry.id === event.partId);
+    if (
+      state.status !== "streaming" ||
+      !Number.isInteger(event.partId) || event.partId < 0 || event.partId > 0xffffffff ||
+      (event.type === "part-started" ? part !== undefined : !part || part.complete)
+    ) return reject();
+    if (event.type === "part-completed" && part &&
+      event.content.type !== (part.kind === "tool" ? "tool-call" : part.kind)) return reject();
+  }
   switch (event.type) {
     case "started":
       return withInFlightAssistant(
-        { ...state, status: "streaming", metadata: event.metadata },
+        { ...state, status: "streaming", metadata: event.metadata, usage: undefined },
         (message) => ({ ...message, parts: [], state: "streaming" }),
         true,
         messageId,
@@ -164,8 +218,7 @@ export function foldChatEvent(
               : event.kind === "reasoning"
                 ? { kind: "reasoning", text: "", state: "running" }
                 : { kind: "text", text: "" };
-          const parts = [...message.parts];
-          parts[event.partId] = part;
+          const parts = [...message.parts, { ...part, id: event.partId }];
           return { ...message, parts };
         },
         false,
@@ -190,27 +243,7 @@ export function foldChatEvent(
       return withInFlightAssistant(
         state,
         (message) =>
-          mutatePart(message, event.partId, (part) => {
-            const content = event.content;
-            if (content.type === "tool-call" && part.kind === "tool") {
-              return {
-                ...part,
-                callId: content.call.callId,
-                name: content.call.name,
-                inputText: content.call.inputText,
-                output: content.call.output,
-                errorText: content.call.errorText,
-                state: content.call.errorText ? "error" : "done",
-              };
-            }
-            if (content.type === "reasoning" && part.kind === "reasoning") {
-              return { ...part, text: content.text, state: "done" };
-            }
-            if (content.type === "text" && part.kind === "text") {
-              return { ...part, text: content.text };
-            }
-            return part;
-          }),
+          mutatePart(message, event.partId, (part) => completedPart(event.content, part)),
         false,
         messageId,
       );
@@ -226,7 +259,11 @@ export function foldChatEvent(
           usage: event.response.usage,
           metadata: event.response.metadata,
         },
-        (message) => ({ ...message, state: "done" }),
+        (message) => ({
+          ...message,
+          state: "done",
+          parts: reconcileCompletedParts(message.parts, event.response.assistant.parts),
+        }),
         false,
         messageId,
       );

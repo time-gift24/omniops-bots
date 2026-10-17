@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { createServer } from "vite";
 
 async function loadFold(t) {
-  const server = await createServer({ server: { middlewareMode: true }, appType: "custom" });
+  const server = await createServer({ configFile: false, server: { middlewareMode: true, hmr: false, ws: false }, appType: "custom", optimizeDeps: { noDiscovery: true, include: [] } });
   t.after(() => server.close());
   return server.ssrLoadModule("/src/chat/fold.ts");
 }
@@ -57,7 +57,11 @@ test("完整流式回合：事件依次折叠为运行中 → 完成的视图状
   state = foldChatEvent(state, {
     type: "completed",
     response: {
-      assistant: { parts: [{ type: "text", text: "因为缓存键" }] },
+      assistant: { parts: [
+        { type: "reasoning", text: "先想一下" },
+        { type: "tool-call", call: { callId: "c1", name: "searchCode", inputText: '{"query":"x"}', output: { files: ["a.ts"] } } },
+        { type: "text", text: "因为缓存键" },
+      ] },
       finish: { reason: "stop" },
       usage: { inputTokens: 10, outputTokens: 20 },
       metadata,
@@ -76,6 +80,7 @@ test("完整流式回合：事件依次折叠为运行中 → 完成的视图状
   assert.equal(reply.parts[1].name, "searchCode");
   assert.equal(reply.parts[1].inputText, '{"query":"x"}');
   assert.equal(reply.parts[2].text, "因为缓存键");
+  assert.deepEqual(reply.parts.map(part => part.id), [0, 1, 2]);
   assert.equal(state.usage.outputTokens, 20);
 });
 
@@ -156,7 +161,7 @@ test("思考中停止或失败保留文本，未完成步骤不伪装成完成",
   assert.equal(failed.messages[0].state, "failed");
   for (const ended of [stopped, failed]) {
     assert.deepEqual(ended.messages[0].parts[0], {
-      kind: "reasoning", text: "正在检查", state: "running",
+      id: 0, kind: "reasoning", text: "正在检查", state: "running",
     });
   }
 });

@@ -41,7 +41,8 @@ export function useHighlightedCode(value: string, language: string) {
     next = { highlighter, text: "", lines: [] }
   }
 
-  const end = code.lastIndexOf("\n") + 1
+  // ANSI colors span lines, but Shiki exposes no resumable ANSI grammar state.
+  const end = language.toLowerCase() === "ansi" ? 0 : code.lastIndexOf("\n") + 1
 
   if (highlighter && end > next.text.length) {
     const result = highlighter.highlight(
@@ -69,6 +70,6 @@ export function useHighlightedCode(value: string, language: string) {
       return code.split("\n")
     }
 
-    return [...next.lines, highlighter.highlight(tail, next.state).lines[0]]
+    return [...next.lines, ...highlighter.highlight(tail, next.state).lines]
   }, [code, highlighter, next, tail])
 }

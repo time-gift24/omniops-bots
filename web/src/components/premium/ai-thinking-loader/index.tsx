@@ -29,12 +29,12 @@ const labels: Record<AIThinkingLoaderVariant, string> = {
 };
 
 const colors: Record<AIThinkingLoaderVariant, string> = {
-  orbit: "text-emerald-600 dark:text-emerald-400",
-  scan: "text-blue-600 dark:text-blue-400",
-  wave: "text-pink-600 dark:text-pink-400",
-  assemble: "text-orange-600 dark:text-orange-400",
-  diamond: "text-primary",
-  nodes: "text-rose-600 dark:text-rose-400",
+  orbit: "text-primary",
+  scan: "text-violet-600 dark:text-violet-400",
+  wave: "text-primary",
+  assemble: "text-muted-foreground",
+  diamond: "text-yellow-600 dark:text-yellow-400",
+  nodes: "text-primary",
 };
 
 const ring = [
@@ -183,10 +183,12 @@ export function AIThinkingLoader({
           })
         )}
       </svg>
-      <span>
-        {label}
-        <span aria-hidden="true">…</span>
-      </span>
+      {label && (
+        <span>
+          {label}
+          <span aria-hidden="true">…</span>
+        </span>
+      )}
     </output>
   );
 }

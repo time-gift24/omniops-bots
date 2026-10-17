@@ -112,7 +112,9 @@ export function MorphPopover({
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !e.defaultPrevented) close();
+    };
     const onPointer = (e: PointerEvent) => {
       const target = e.target as Node;
       if (
@@ -262,7 +264,7 @@ function MorphPopoverSurface({
   const below = layout
     ? Math.max(
         0,
-        window.innerHeight -
+        layout.viewport.height -
           layout.trigger.top -
           layout.trigger.height -
           sideOffset -
@@ -288,7 +290,7 @@ function MorphPopoverSurface({
         gutter,
         Math.min(
           preferredLeft,
-          window.innerWidth - layout.content.width - gutter,
+          layout.viewport.width - layout.content.width - gutter,
         ),
       )
     : 0;
@@ -310,9 +312,12 @@ function MorphPopoverSurface({
   const ready = layout !== null;
   const focusedOnOpen = useRef(false);
   useEffect(() => {
+    if (!isPresent) {
+      focusedOnOpen.current = false;
+      return;
+    }
     if (
       !ready ||
-      !isPresent ||
       focusedOnOpen.current ||
       !ctx.contentRef.current
     )

@@ -192,7 +192,7 @@ export function ThemeProvider({
         return
       }
 
-      if (event.key !== storageKey) {
+      if (event.key !== null && event.key !== storageKey) {
         return
       }
 

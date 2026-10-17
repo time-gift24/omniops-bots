@@ -16,6 +16,7 @@ export function CreditsAttachmentTray({
   labels = DEFAULT_CREDITS_LABELS,
   attachments,
   previewUrls,
+  disabled = false,
   reduce,
   onPreview,
   onRemove,
@@ -23,6 +24,7 @@ export function CreditsAttachmentTray({
   labels?: AgentChatCreditsLabels;
   attachments: readonly AgentChatAttachment[];
   previewUrls: Record<string, string>;
+  disabled?: boolean;
   reduce?: boolean | null;
   onPreview: (id: string) => void;
   onRemove: (id: string) => void;
@@ -89,6 +91,7 @@ export function CreditsAttachmentTray({
                     variant="plain"
                     type="button"
                     aria-label={labels.removeAttachment(attachment.name)}
+                    disabled={disabled}
                     onClick={() => onRemove(attachment.id)}
                     whileTap={reduce ? undefined : { scale: 0.92 }}
                     transition={SPRING_PRESS}

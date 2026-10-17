@@ -155,15 +155,17 @@ export function AgentChatCredits({
     defaultValue: defaultSkillIds,
     onChange: onSkillIdsChange,
   });
-  const [selectedModel, setSelectedModel] = useControllableString({
+  const [requestedModel, setSelectedModel] = useControllableString({
     value: model,
     defaultValue: defaultModel,
     onChange: onModelChange,
   });
+  const selectedModel =
+    (models.find((option) => option.id === requestedModel) ?? models[0])?.id ?? "";
 
   const currentAttachments = attachments ?? internalAttachments;
   const previewUrls = useAttachmentPreviewUrls(currentAttachments);
-  const skillCommand = useSkillCommand({ skills, composerRef });
+  const skillCommand = useSkillCommand({ skills, composerRef, disabled });
   const isSearchEnabled = searchEnabled ?? internalSearchEnabled;
   const previewAttachment = previewAttachmentId
     ? currentAttachments.find((item) => item.id === previewAttachmentId)
@@ -175,6 +177,7 @@ export function AgentChatCredits({
   const canSubmit =
     !disabled &&
     !busy &&
+    selectedModel.length > 0 &&
     (maxLength === undefined || text.length <= Math.max(0, maxLength)) &&
     text.trim().length > 0;
 
@@ -211,6 +214,10 @@ export function AgentChatCredits({
   }
 
   function handleFiles(event: ChangeEvent<HTMLInputElement>) {
+    if (disabled || busy) {
+      event.target.value = "";
+      return;
+    }
     const files = Array.from(event.target.files ?? []);
     if (files.length > 0) {
       const next = [
@@ -231,6 +238,7 @@ export function AgentChatCredits({
   }
 
   function removeAttachment(id: string) {
+    if (disabled || busy) return;
     const next = currentAttachments.filter((item) => item.id !== id);
     if (attachments === undefined) setInternalAttachments(next);
     onAttachmentsChange?.(next);
@@ -302,6 +310,7 @@ export function AgentChatCredits({
       labels={labels}
       attachments={currentAttachments}
       previewUrls={previewUrls}
+      disabled={disabled || busy}
       reduce={reduce}
       onPreview={setPreviewAttachmentId}
       onRemove={removeAttachment}
@@ -373,6 +382,7 @@ export function AgentChatCredits({
           ref={fileInputRef}
           type="file"
           multiple
+          disabled={disabled || busy}
           hidden
           accept={acceptedFileTypes}
           onChange={handleFiles}

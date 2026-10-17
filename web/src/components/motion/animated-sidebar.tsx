@@ -247,6 +247,11 @@ export function AnimatedSidebarProvider({
 
   useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.repeat) return;
+      if (
+        event.target instanceof Element &&
+        event.target.closest('[aria-modal="true"]:not([data-mobile="true"])')
+      ) return;
       if (
         event.key.toLowerCase() === SIDEBAR_KEYBOARD_SHORTCUT &&
         (event.metaKey || event.ctrlKey)

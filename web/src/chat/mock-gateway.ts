@@ -9,7 +9,7 @@
  */
 
 import type { ChatGateway } from "./gateway.ts";
-import type { ChatEvent, ChatRequest, ChatUsage } from "./dto.ts";
+import type { ChatEvent, ChatRequest, ChatUsage, OutputContent } from "./dto.ts";
 
 export interface MockGatewayOptions {
   /** 每个事件之间的基础延迟（ms），默认 45。 */
@@ -236,7 +236,8 @@ export function createMockGateway(
   ): AsyncGenerator<ChatEvent> {
     const text = request.messages.at(-1)?.text ?? "";
     const burst = text.includes("[burst]");
-    const profile = MODEL_PROFILES[request.model ?? ""] ?? MODEL_PROFILES["pine-1"];
+    const model = request.model ?? "pine-1";
+    const profile = MODEL_PROFILES[Object.hasOwn(MODEL_PROFILES, model) ? model : "pine-1"];
     const delay = baseDelay * (text.includes("[slow]") ? 8 : 1) * profile.pace;
     const tick = () => sleep(delay, signal);
     const alive = () => !signal.aborted;
@@ -245,7 +246,7 @@ export function createMockGateway(
     const metadata = {
       providerName: "mock-provider",
       protocolName: "mock.streaming",
-      requestedModel: request.model ?? "pine-1",
+      requestedModel: model,
       resolvedModel: profile.resolved,
       requestId: "req_mock_001",
       responseId: "resp_mock_001",
@@ -268,6 +269,7 @@ export function createMockGateway(
     yield { type: "started", metadata };
     await tick();
     if (!alive()) return;
+    const parts: OutputContent[] = [];
 
     async function* emitReasoning(
       partId: number,
@@ -282,10 +284,12 @@ export function createMockGateway(
         yield { type: "delta", partId, text: chunk };
       }
       if (!alive()) return;
+      const content: OutputContent = { type: "reasoning", text: reasoning };
+      parts.push(content);
       yield {
         type: "part-completed",
         partId,
-        content: { type: "reasoning", text: reasoning },
+        content,
       };
     }
 
@@ -304,13 +308,15 @@ export function createMockGateway(
       }
       await sleep(baseDelay * 24, signal);
       if (!alive()) return;
+      const content: OutputContent = {
+        type: "tool-call",
+        call: { callId: `call_${partId}`, name, inputText, ...result },
+      };
+      parts.push(content);
       yield {
         type: "part-completed",
         partId,
-        content: {
-          type: "tool-call",
-          call: { callId: `call_${partId}`, name, inputText, ...result },
-        },
+        content,
       };
     }
 
@@ -329,10 +335,12 @@ export function createMockGateway(
         yield { type: "delta", partId, text: chunk };
       }
       if (!alive()) return;
+      const content: OutputContent = { type: "text", text };
+      parts.push(content);
       yield {
         type: "part-completed",
         partId,
-        content: { type: "text", text },
+        content,
       };
     }
 
@@ -344,7 +352,6 @@ export function createMockGateway(
     const seg1 = profile.opener
       ? `${profile.opener}\n\n${REPLY_SEG_1}`
       : REPLY_SEG_1;
-    const demoReply = [seg1, REPLY_SEG_2, REPLY_SEG_3].join("\n\n");
 
     if (burst) {
       yield* emitReasoning(0, BUILD_REASONING);
@@ -394,8 +401,6 @@ export function createMockGateway(
       if (!alive()) return;
     }
 
-    const reply = burst ? BURST_REPLY : demoReply;
-
     const usage: ChatUsage = {
       inputTokens: 312,
       outputTokens: 486,
@@ -407,7 +412,7 @@ export function createMockGateway(
     yield {
       type: "completed",
       response: {
-        assistant: { parts: [{ type: "text", text: reply }] },
+        assistant: { parts },
         finish: { reason: "stop" },
         usage,
         metadata,

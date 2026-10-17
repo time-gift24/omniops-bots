@@ -84,9 +84,13 @@ function ModelPickerMenu({
   const providerModels = [
     ...new Map(models.map((model) => [model.provider, model])).values(),
   ];
-  const [activeProvider, setActiveProvider] = useState(
+  const [requestedProvider, setActiveProvider] = useState(
     models.find((model) => model.id === value)?.provider ?? models[0]?.provider,
   );
+  const activeProvider =
+    providerModels.find((model) => model.provider === requestedProvider)?.provider ??
+    models.find((model) => model.id === value)?.provider ??
+    models[0]?.provider;
   const rail = variant === "provider-rail";
   const input = useRef<HTMLInputElement>(null);
   const list = useRef<HTMLDivElement>(null);

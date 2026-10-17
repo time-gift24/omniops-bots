@@ -60,7 +60,7 @@ export class ThreadStoreImpl implements ThreadStore {
   }
 
   snapshot(): ThreadSnapshot {
-    return { version: 1, state: this.state };
+    return { version: 1, state: structuredClone(this.state) };
   }
 
   send = (
@@ -71,8 +71,9 @@ export class ThreadStoreImpl implements ThreadStore {
     const trimmed = text.trim();
     if (!trimmed || this.streaming) return false;
 
-    this.state = appendUserMessage(this.state, trimmed, attachments);
-    void this.consume(trimmed, attachments, model);
+    const files = attachments?.map((attachment) => ({ ...attachment }));
+    this.state = appendUserMessage(this.state, trimmed, files);
+    void this.consume(trimmed, files, model);
     return true;
   };
 
@@ -81,7 +82,11 @@ export class ThreadStoreImpl implements ThreadStore {
     if (!request) return;
     this.activeRequest = undefined;
     this.state = markStopped(this.state, request.messageId);
-    this.gateway.abort();
+    try {
+      this.gateway.abort();
+    } catch {
+      // 本地停止已生效，传输关闭失败不能阻止状态通知。
+    }
     this.emit();
   };
 
@@ -127,6 +132,8 @@ export class ThreadStoreImpl implements ThreadStore {
       ...this.state,
       status: "submitted",
       error: undefined,
+      metadata: undefined,
+      usage: undefined,
       messages: existing
         ? this.state.messages.map((message) =>
             message.id === messageId ? reply : message,
@@ -141,7 +148,9 @@ export class ThreadStoreImpl implements ThreadStore {
           {
             role: "user" as const,
             text,
-            ...(attachments?.length ? { attachments } : {}),
+            ...(attachments?.length
+              ? { attachments: attachments.map((attachment) => ({ ...attachment })) }
+              : {}),
           },
         ],
         ...(model ? { model } : {}),
@@ -149,16 +158,16 @@ export class ThreadStoreImpl implements ThreadStore {
       for await (const event of this.gateway.stream(request)) {
         if (this.activeRequest !== active) return;
         this.state = foldChatEvent(this.state, event, messageId);
+        const terminal = event.type === "completed" || this.state.status === "failed";
+        if (terminal) this.activeRequest = undefined;
         this.emit();
+        if (terminal) break;
       }
       if (this.activeRequest !== active) return;
-      // 缺少终止事件的 EOF 按本地停止处理，保留已输出内容。
-      if (
-        this.state.status === "streaming" ||
-        this.state.status === "submitted"
-      ) {
-        this.state = markStopped(this.state, messageId);
-      }
+      this.state = foldChatEvent(this.state, {
+        type: "failed",
+        error: { kind: "truncated", message: "回复流提前结束，已保留已输出的内容。" },
+      }, messageId);
     } catch (cause) {
       if (this.activeRequest !== active) return;
       this.state = foldChatEvent(
@@ -181,6 +190,6 @@ export class ThreadStoreImpl implements ThreadStore {
   }
 
   private emit(): void {
-    for (const listener of this.listeners) listener();
+    for (const listener of [...this.listeners]) listener();
   }
 }

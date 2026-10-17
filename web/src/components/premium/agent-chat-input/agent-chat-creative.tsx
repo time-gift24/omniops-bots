@@ -171,7 +171,9 @@ export function AgentChatCreative({
   const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const selected = models.find((item) => item.id === model) ?? models[0];
+  const selected =
+    models.find((item) => item.id === model && !item.disabled) ??
+    models.find((item) => !item.disabled);
   async function submit() {
     if (!prompt.trim() || busy || !selected || !onSubmit) return;
     setBusy(true);

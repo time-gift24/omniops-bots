@@ -115,7 +115,7 @@ export function MessageView({
       <Message align="end" className="chat-bubble-enter">
         <MessageContent className="gap-2">
           <Bubble align="end" variant="muted">
-            <BubbleContent>{text}</BubbleContent>
+            <BubbleContent className="whitespace-pre-wrap">{text}</BubbleContent>
             {message.attachments && message.attachments.length > 0 && (
               <ul
                 aria-label="消息附件"

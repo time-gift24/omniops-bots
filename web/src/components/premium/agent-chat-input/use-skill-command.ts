@@ -9,24 +9,29 @@ import type { AgentChatSkill } from "./types";
 export type UseSkillCommandParams = {
   skills: readonly AgentChatSkill[];
   composerRef: RefObject<AgentChatComposerHandle | null>;
+  disabled?: boolean;
 };
 
 export function useSkillCommand({
   skills,
   composerRef,
+  disabled = false,
 }: UseSkillCommandParams) {
   const [query, setQuery] = useState<string | null>(null);
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [requestedIndex, setActiveIndex] = useState(0);
 
   const options = query === null ? [] : filterSkills(skills, query);
-  const visible = query !== null && skills.length > 0;
+  const activeIndex = Math.min(requestedIndex, Math.max(0, options.length - 1));
+  const visible = !disabled && query !== null && skills.length > 0;
 
   function onQueryChange(nextQuery: string | null) {
+    if (nextQuery === query) return;
     setQuery(skills.length > 0 ? nextQuery : null);
     setActiveIndex(0);
   }
 
   function select(skillId: string) {
+    if (disabled) return;
     const skill = skills.find((entry) => entry.id === skillId);
     if (skill) {
       composerRef.current?.insertSkill(skill);
@@ -36,7 +41,12 @@ export function useSkillCommand({
   }
 
   function onNavKeyDown(event: KeyboardEvent<HTMLDivElement>): boolean {
-    if (query === null) {
+    if (disabled || query === null) {
+      return false;
+    }
+    const currentQuery = composerRef.current?.getSlashQuery() ?? null;
+    if (currentQuery !== query) {
+      onQueryChange(currentQuery);
       return false;
     }
 
@@ -52,13 +62,13 @@ export function useSkillCommand({
 
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      setActiveIndex((index) => (index + 1) % options.length);
+      setActiveIndex((activeIndex + 1) % options.length);
       return true;
     }
 
     if (event.key === "ArrowUp") {
       event.preventDefault();
-      setActiveIndex((index) => (index - 1 + options.length) % options.length);
+      setActiveIndex((activeIndex - 1 + options.length) % options.length);
       return true;
     }
 

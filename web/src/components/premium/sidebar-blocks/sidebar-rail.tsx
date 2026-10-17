@@ -257,12 +257,15 @@ function SidebarRailShell({
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (
-        (event.metaKey || event.ctrlKey) &&
-        event.key.toLowerCase() === "k"
-      ) {
-        event.preventDefault();
-        setSearchOpen((open) => !open);
-      }
+        event.defaultPrevented || event.repeat ||
+        !(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== "k"
+      ) return;
+      const modal = event.target instanceof Element
+        ? event.target.closest('[aria-modal="true"]:not([data-mobile="true"])')
+        : null;
+      if (modal && !modal.querySelector('[data-slot="command"]')) return;
+      event.preventDefault();
+      setSearchOpen((open) => !open);
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);

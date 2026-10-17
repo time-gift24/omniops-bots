@@ -8,6 +8,10 @@ import {
 } from "react";
 
 export type PortalLayout = {
+  viewport: {
+    width: number;
+    height: number;
+  };
   trigger: {
     left: number;
     top: number;
@@ -27,7 +31,9 @@ function sameLayout(a: PortalLayout | null, b: PortalLayout) {
     a.trigger.width === b.trigger.width &&
     a.trigger.height === b.trigger.height &&
     a.content.width === b.content.width &&
-    a.content.height === b.content.height
+    a.content.height === b.content.height &&
+    a.viewport.width === b.viewport.width &&
+    a.viewport.height === b.viewport.height
   );
 }
 
@@ -49,6 +55,10 @@ export function usePopoverPortalPosition<
 
     const rect = trigger.getBoundingClientRect();
     const next: PortalLayout = {
+      viewport: {
+        width: window.innerWidth,
+        height: window.innerHeight,
+      },
       trigger: {
         left: rect.left,
         top: rect.top,

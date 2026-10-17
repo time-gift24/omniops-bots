@@ -56,7 +56,9 @@
     assert(realStorage.getItem(storageKey) === "light", "Theme selection must persist when storage works");
     flushSync(() => window.dispatchEvent(new StorageEvent("storage", { key: storageKey, newValue: "dark", storageArea: realStorage })));
     expectTheme("dark");
-    result.textContent = "PASS: denied storage access/methods, fallback, in-memory selection, keyboard toggle, persistence and cross-tab updates";
+    flushSync(() => window.dispatchEvent(new StorageEvent("storage", { key: null, newValue: null, storageArea: realStorage })));
+    expectTheme("light");
+    result.textContent = "PASS: denied storage access/methods, fallback, in-memory selection, keyboard toggle, persistence, cross-tab updates and storage clear";
     result.dataset.passed = "true";
   } catch (error) {
     result.textContent = `FAIL: ${error.message}`;

@@ -24,12 +24,15 @@
   const h = React.createElement;
   const wait = (ms = 0) => new Promise(resolve => setTimeout(resolve, ms));
   const assert = (condition, message) => { if (!condition) throw new Error(message); };
-  const render = (component, props) => flushSync(() => root.render(h(TooltipProvider, null, h(component, props))));
+  const render = (component, props) => {
+    flushSync(() => root.render(h(TooltipProvider, null, h(component, props))));
+    if (reduced) activateReducedMotion();
+  };
   const click = element => flushSync(() => element.click());
   const passed = [];
   const reduced = new URLSearchParams(location.search).has("reduced");
   // Activate the actual emitted CSS branch on this fixture only; no OS settings change.
-  if (reduced) {
+  function activateReducedMotion() {
     const activate = rules => {
       for (const rule of rules) {
         if (rule instanceof CSSMediaRule && rule.conditionText.includes("prefers-reduced-motion: reduce")) {
@@ -43,6 +46,7 @@
     };
     for (const sheet of document.styleSheets) activate(sheet.cssRules);
   }
+  if (reduced) activateReducedMotion();
   const clipboardDescriptor = Object.getOwnPropertyDescriptor(navigator, "clipboard");
   const clipboard = value => Object.defineProperty(navigator, "clipboard", { configurable: true, value });
 
@@ -57,15 +61,26 @@
       retry() {}, send() {},
     };
     render(ChatThread, { store });
-    assert(fixture.querySelector(".beui-ai-loader"), "Waiting must show loader");
+    const waitingLoader = fixture.querySelector('.beui-ai-loader[data-variant="diamond"]');
+    assert(waitingLoader, "Waiting must show loader");
     state = { ...state, messages: [{ ...state.messages[0], parts: [{ kind: "reasoning", text: "检查缓存", state: "running" }] }] };
     flushSync(() => listeners.forEach(listener => listener()));
+    if (reduced) activateReducedMotion();
     if (reduced) {
       const exiting = fixture.querySelector(".chat-swap-out");
       assert(!exiting || getComputedStyle(exiting).display === "none", "Reduced motion must immediately hide exiting loader");
     }
     await wait(260);
-    assert(!fixture.querySelector(".beui-ai-loader"), "Loader must leave after first content");
+    assert(!waitingLoader.isConnected, "Waiting loader must leave after first content");
+    const orbit = fixture.querySelector('.beui-ai-loader[data-variant="orbit"]');
+    assert(orbit?.querySelectorAll("rect").length === 12, "Running group must keep the 12-pixel orbit");
+    assert(!orbit.querySelector("span"), "Step icon must not duplicate its status label");
+    assert(getComputedStyle(orbit.querySelector("svg")).width === "16px", "Orbit must fit the step icon slot");
+    assert(getComputedStyle(orbit.querySelector("rect")).animationName === (reduced || matchMedia("(prefers-reduced-motion: reduce)").matches ? "none" : "beui-ai-pixel"), "Orbit must respect reduced motion");
+    const diamond = fixture.querySelector('[data-slot="trace-icon"] .beui-ai-loader[data-variant="diamond"]');
+    assert(diamond?.querySelectorAll("rect").length === 8, "Reasoning step must use the diamond");
+    assert(!diamond.querySelector("span") && getComputedStyle(diamond.querySelector("svg")).width === "16px", "Reasoning icon must fit its slot without duplicating the label");
+    assert(getComputedStyle(diamond.querySelector("rect")).animationName === (reduced || matchMedia("(prefers-reduced-motion: reduce)").matches ? "none" : "beui-ai-pixel"), "Diamond must respect reduced motion");
     passed.push("Loader → content, including reduced-motion visibility");
 
     let historicalSerializations = 0;
@@ -123,7 +138,7 @@
     triggers = fixture.querySelectorAll('[data-slot="trace-collapsible-trigger"]');
     assert(triggers[1].getAttribute("aria-expanded") === "true", "Reopening must preserve child disclosure state");
     render(ChainOfThought, { key: "stopped", parts: [{ ...parts[0], state: "running" }], streaming: false, messageState: "stopped", answering: false });
-    assert(fixture.textContent.includes("研究已停止") && !fixture.querySelector(".chat-quiet-dot"), "Stop must remove group activity");
+    assert(fixture.textContent.includes("研究已停止") && !fixture.querySelector('.beui-ai-loader'), "Stop must remove group and step activity");
     passed.push("Group waiting, focus protection, animated close, nested state, stop");
 
     const previewProps = { key: "reasoning-preview", streaming: true, answering: false };
@@ -150,6 +165,9 @@
     const toolProps = { key: "tool-summary", streaming: true, answering: false };
     const tool = { kind: "tool", callId: "first", name: "searchWeb", state: "running", inputText: '{"query":"raw-fragment-should-not-render"' };
     render(ChainOfThought, { ...toolProps, parts: [tool] });
+    const scan = fixture.querySelector('.beui-ai-loader[data-variant="scan"]');
+    assert(scan?.querySelectorAll("rect").length === 25, "Tool step must use the scan grid");
+    assert(getComputedStyle(scan.querySelector("rect")).animationName === (reduced || matchMedia("(prefers-reduced-motion: reduce)").matches ? "none" : "beui-ai-pixel"), "Scan must respect reduced motion");
     const toolTrigger = fixture.querySelector('[data-slot="trace-collapsible-trigger"]');
     click(toolTrigger);
     assert(toolTrigger.getAttribute("aria-expanded") === "false" && !toolTrigger.querySelector('[data-slot="trace-detail"]'), "Collapsed tool must wait for complete JSON before showing detail");
@@ -189,12 +207,16 @@
     let expected;
     for await (const event of gateway.stream({ messages: [{ role: "user", text: "检查缓存" }] })) {
       folded = foldChatEvent(folded, event);
-      if (event.type === "completed") expected = event.response.assistant.parts[0].text;
+      if (event.type === "completed") expected = event.response.assistant.parts
+        .filter(part => part.type === "text")
+        .map(part => part.text)
+        .join("\n\n");
     }
     render(MessageView, { key: "assistant", message: folded.messages.at(-1), streaming: false, onRetry() {} });
     click(fixture.querySelector('[data-slot="message-footer"] button'));
     await wait(30);
     assert(copiedText === expected, "Copied interleaved answer must retain Markdown boundaries");
+    assert(copiedText.includes("\n\n## ") && copiedText.includes("\n\n```ts\n"), "Copied Markdown must retain heading and fenced-code boundaries");
     clipboard(undefined);
     render(MessageView, { key: "user", message: { id: "u", role: "user", state: "done", parts: [{ kind: "text", text: "用户原文" }] }, streaming: false, onRetry() {} });
     click(fixture.querySelector('[data-slot="message-footer"] button'));

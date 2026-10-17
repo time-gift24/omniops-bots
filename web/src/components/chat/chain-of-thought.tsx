@@ -20,6 +20,10 @@ import {
 } from "@/components/ui/trace";
 import { CodeBlock, CodeBlockContent } from "@/components/ui/code-block";
 import { Markdown } from "@/components/chat/markdown";
+import {
+  AIThinkingLoader,
+  type AIThinkingLoaderVariant,
+} from "@/components/premium/ai-thinking-loader";
 
 const TOOL_VERBS: Record<string, string> = {
   readBuildLog: "读取构建日志",
@@ -48,13 +52,12 @@ const TOOL_DETAIL_KEYS = [
 ];
 
 function shortDetail(text: string): string {
-  const characters = Array.from(
-    detailSegmenter.segment(text.replace(/\s+/g, " ").trim()),
-    ({ segment }) => segment,
-  );
-  return characters.length > 80
-    ? `${characters.slice(0, 79).join("")}…`
-    : characters.join("");
+  const characters: string[] = [];
+  for (const { segment } of detailSegmenter.segment(text.replace(/\s+/g, " ").trim())) {
+    characters.push(segment);
+    if (characters.length > 80) return `${characters.slice(0, 79).join("")}…`;
+  }
+  return characters.join("");
 }
 
 function toolDetail(inputText: string): string {
@@ -114,17 +117,20 @@ function StepTitle({ title, detail }: { title: string; detail?: string }) {
   );
 }
 
-function StatusIcon({ status }: { status?: "running" | "error" | "pending" }) {
+function StatusIcon({
+  status,
+  variant = "orbit",
+}: {
+  status?: "running" | "error" | "pending";
+  variant?: AIThinkingLoaderVariant;
+}) {
   if (status === "running") {
     return (
-      <span className="flex items-center gap-0.5">
-        {[0, 1, 2].map((i) => (
-          <span
-            key={i}
-            className="chat-quiet-dot size-1 rounded-full bg-primary"
-          />
-        ))}
-      </span>
+      <AIThinkingLoader
+        variant={variant}
+        label=""
+        className="[&>svg]:size-4"
+      />
     );
   }
   return (
@@ -152,7 +158,9 @@ function toolTitle(
   state: ToolState,
   messageState: MessageState,
 ): string {
-  const verb = TOOL_VERBS[name] ?? `执行 ${name || "工具"}`;
+  const verb = Object.hasOwn(TOOL_VERBS, name)
+    ? TOOL_VERBS[name]
+    : `执行 ${name || "工具"}`;
   if (state === "running") {
     if (messageState === "streaming") return `正在${verb}…`;
     if (messageState === "failed") return `${verb}中断`;
@@ -173,13 +181,13 @@ function ToolStep({
 
   const detail =
     part.state === "error" && part.errorText ? (
-      <CodeBlock size="sm" variant="destructive">
+      <CodeBlock variant="destructive">
         <CodeBlockContent wrap className="max-h-64">
           {part.errorText}
         </CodeBlockContent>
       </CodeBlock>
     ) : part.output !== undefined ? (
-      <CodeBlock size="sm">
+      <CodeBlock>
         <CodeBlockContent wrap className="max-h-64">
           {typeof part.output === "string"
             ? part.output
@@ -191,7 +199,7 @@ function ToolStep({
   const line = (
     <TraceLine status={status}>
       <TraceIcon>
-        <StatusIcon status={status} />
+        <StatusIcon status={status} variant="scan" />
       </TraceIcon>
       <StepTitle
         title={toolTitle(part.name, part.state, messageState)}
@@ -228,7 +236,7 @@ function ReasoningStep({
   const line = (
     <TraceLine status={status}>
       <TraceIcon>
-        <StatusIcon status={status} />
+        <StatusIcon status={status} variant="diamond" />
       </TraceIcon>
       <StepTitle
         title={title}
@@ -243,7 +251,7 @@ function ReasoningStep({
       <TraceCollapsibleContent>
         <Markdown
           streaming={status === "running"}
-          className="text-[0.8125rem] text-muted-foreground"
+          className="text-sm text-muted-foreground"
         >
           {part.text}
         </Markdown>
