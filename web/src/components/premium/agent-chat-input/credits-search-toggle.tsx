@@ -40,9 +40,9 @@ export function CreditsSearchToggle({
         scale: SPRING_PRESS,
       }}
       className={cn(
-        "relative h-9 shrink-0 overflow-hidden rounded-full text-sm transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] [--search-bg:#dceeff] [--search-fg:#1677d2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:[--search-bg:#15324a] dark:[--search-fg:#70baff]",
+        "relative h-9 shrink-0 overflow-hidden rounded-full text-sm transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         enabled
-          ? "bg-(--search-bg) text-(--search-fg)"
+          ? "bg-primary/10 text-primary"
           : "text-muted-foreground hover:bg-muted hover:text-foreground",
       )}
     >
