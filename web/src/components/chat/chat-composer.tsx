@@ -71,6 +71,8 @@ export function ChatComposer({
   const [attachments, setAttachments] = React.useState<AgentChatAttachment[]>(
     [],
   );
+  // 模型受控：选择随发送进入请求，retry 由 store 沿用。
+  const [model, setModel] = React.useState<string>(MODELS[0].id);
 
   return (
     <AgentChatCredits
@@ -83,6 +85,8 @@ export function ChatComposer({
       status={toComposerStatus(state.status)}
       placeholder={placeholder}
       models={MODELS}
+      model={model}
+      onModelChange={setModel}
       attachments={attachments}
       onAttachmentsChange={setAttachments}
       onStop={() => store.stop()}
@@ -93,6 +97,7 @@ export function ChatComposer({
             name: attachment.name,
             mediaType: attachment.type ?? "application/octet-stream",
           })),
+          model,
         );
         if (accepted) setAttachments([]);
         return accepted;
@@ -103,10 +108,12 @@ export function ChatComposer({
         <AgentComposerInput />
         <div className="flex items-center justify-between gap-3 px-1">
           <div className="flex min-w-0 items-center gap-0.5 text-muted-foreground">
-            <AgentComposerModel />
             <AgentComposerAttach />
           </div>
-          <AgentComposerAction />
+          <div className="flex shrink-0 items-center gap-1">
+            <AgentComposerModel />
+            <AgentComposerAction />
+          </div>
         </div>
       </AgentComposerSurface>
       <AgentComposerAttachments />

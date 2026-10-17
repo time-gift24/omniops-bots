@@ -24,6 +24,7 @@ export interface ThreadStore {
   send(
     text: string,
     attachments?: { name: string; mediaType: string }[],
+    model?: string,
   ): boolean;
   /** 唯一会调用 gateway.abort() 的入口。 */
   stop(): void;
@@ -41,6 +42,8 @@ export class ThreadStoreImpl implements ThreadStore {
   private listeners = new Set<() => void>();
   private activeRequest: { messageId: string } | undefined;
   private gateway: ChatGateway;
+  /** 最近一次发送使用的模型；retry 沿用同一模型。 */
+  private lastModel: string | undefined;
 
   constructor(threadId: ThreadId, gateway: ChatGateway) {
     this.gateway = gateway;
@@ -69,10 +72,12 @@ export class ThreadStoreImpl implements ThreadStore {
   send = (
     text: string,
     attachments?: { name: string; mediaType: string }[],
+    model?: string,
   ): boolean => {
     const trimmed = text.trim();
     if (!trimmed || this.streaming) return false;
 
+    this.lastModel = model;
     this.state = appendUserMessage(this.state, trimmed, attachments);
     void this.consume(trimmed, attachments);
     return true;
@@ -143,6 +148,7 @@ export class ThreadStoreImpl implements ThreadStore {
             ...(attachments?.length ? { attachments } : {}),
           },
         ],
+        ...(this.lastModel ? { model: this.lastModel } : {}),
       };
       for await (const event of this.gateway.stream(request)) {
         if (this.activeRequest !== active) return;

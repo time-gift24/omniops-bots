@@ -9,6 +9,9 @@
  *
  * 普通路径为三轮「思考 → 工具 → 正文」交替；burst 路径保持
  * partId 0-2 步骤 + partId 3 整篇正文的结构（测试钉住）。
+ *
+ * 请求带 `model` 时按 MODEL_PROFILES 区分人格：开场白、回复节奏与
+ * metadata 的 requested/resolved 模型随选择变化；缺省为 pine-1。
  */
 
 import type { ChatGateway } from "./gateway.ts";
@@ -191,6 +194,29 @@ const sleep = (ms: number, signal: { aborted: boolean }) =>
     setTimeout(resolve, ms);
   });
 
+/** 各模型的 mock 人格：开场白不同，回复节奏不同（相对倍率）。 */
+const MODEL_PROFILES: Record<
+  string,
+  { opener?: string; pace: number; resolved: string }
+> = {
+  "pine-1": { pace: 1, resolved: "pine-1-2026-10" },
+  "sonnet-5": {
+    opener: "直接给结论：",
+    pace: 0.6,
+    resolved: "sonnet-5-2026-10",
+  },
+  "opus-4.8": {
+    opener: "这个问题值得拆开仔细看，先把证据链补齐。",
+    pace: 1.6,
+    resolved: "opus-4.8-2026-09",
+  },
+  "gpt-5.6": {
+    opener: "我从缓存键的构成入手分析。",
+    pace: 0.8,
+    resolved: "gpt-5.6-2026-10",
+  },
+};
+
 /** 把文本切成若干片段，模拟 token 级流式增量。小片段 + 短间隔，吐字更连贯。 */
 function chunkText(text: string, size = 3): string[] {
   const characters = Array.from(text);
@@ -213,7 +239,8 @@ export function createMockGateway(
   ): AsyncGenerator<ChatEvent> {
     const text = request.messages.at(-1)?.text ?? "";
     const burst = text.includes("[burst]");
-    const delay = baseDelay * (text.includes("[slow]") ? 8 : 1);
+    const profile = MODEL_PROFILES[request.model ?? ""] ?? MODEL_PROFILES["pine-1"];
+    const delay = baseDelay * (text.includes("[slow]") ? 8 : 1) * profile.pace;
     const tick = () => sleep(delay, signal);
     const alive = () => !signal.aborted;
     if (!alive()) return;
@@ -221,8 +248,8 @@ export function createMockGateway(
     const metadata = {
       providerName: "mock-provider",
       protocolName: "mock.streaming",
-      requestedModel: "pine-chat-latest",
-      resolvedModel: "pine-chat-2026-10",
+      requestedModel: request.model ?? "pine-1",
+      resolvedModel: profile.resolved,
       requestId: "req_mock_001",
       responseId: "resp_mock_001",
     };
@@ -320,6 +347,12 @@ export function createMockGateway(
       ? { errorText: "索引服务 503：search backend unavailable" }
       : { output: { files: ["next.config.ts", "scripts/optimize-images.ts"] } };
 
+    // 模型人格的开场白只进普通路径首段；burst 是压测路径，内容保持钉住。
+    const seg1 = profile.opener
+      ? `${profile.opener}\n\n${REPLY_SEG_1}`
+      : REPLY_SEG_1;
+    const demoReply = [seg1, REPLY_SEG_2, REPLY_SEG_3].join("\n\n");
+
     if (burst) {
       // burst：思考与工具就绪后整篇倾泻，压测长流与中途停止。
       yield* emitReasoning(0, "先确认缓存键的构成，再核对部署日志里的耗时分布。");
@@ -340,7 +373,7 @@ export function createMockGateway(
         output: { log: "install    41s\ncompile    38s\nimages   3m 52s" },
       });
       if (!alive()) return;
-      yield* emitText(2, REPLY_SEG_1);
+      yield* emitText(2, seg1);
       if (!alive()) return;
 
       yield* emitReasoning(3, "图片阶段耗时最高，达到 3 分 52 秒。去找拼缓存键的位置。");
@@ -370,7 +403,7 @@ export function createMockGateway(
       if (!alive()) return;
     }
 
-    const reply = burst ? BURST_REPLY : DEMO_REPLY;
+    const reply = burst ? BURST_REPLY : demoReply;
 
     const usage: ChatUsage = {
       inputTokens: 312,

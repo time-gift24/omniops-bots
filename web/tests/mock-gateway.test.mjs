@@ -119,3 +119,46 @@ test("burst 经 ThreadStore.stop 保留已输出正文，网关结束后状态�
   )
   assert.ok(!events.some((event) => event.type === "completed"))
 })
+
+test("模型选择贯通：metadata 反映请求模型，开场白与最终回复一致", async (t) => {
+  const { createMockGateway } = await loadModules(t)
+  const gateway = createMockGateway({ delayMs: 0 })
+  const events = []
+  for await (const event of gateway.stream({
+    messages: [{ role: "user", text: "普通问题" }],
+    model: "sonnet-5",
+  }))
+    events.push(event)
+
+  const started = events.find((event) => event.type === "started")
+  assert.equal(started.metadata.requestedModel, "sonnet-5")
+  assert.equal(started.metadata.resolvedModel, "sonnet-5-2026-10")
+
+  // 开场白进首段正文（partId 2；0/1 是推理与工具），且 completed 的
+  // 完整回复以同一开场白开头。
+  const seg1 = events
+    .filter((event) => event.type === "delta" && event.partId === 2)
+    .map((event) => event.text)
+    .join("")
+  assert.ok(seg1.startsWith("直接给结论："))
+  assert.equal(events.at(-1).type, "completed")
+  assert.ok(
+    events.at(-1).response.assistant.parts[0].text.startsWith("直接给结论：")
+  )
+  assert.equal(events.at(-1).response.metadata.requestedModel, "sonnet-5")
+})
+
+test("缺省模型回退 pine-1，无开场白", async (t) => {
+  const { createMockGateway } = await loadModules(t)
+  const events = []
+  for await (const event of createMockGateway({ delayMs: 0 }).stream({
+    messages: [{ role: "user", text: "普通问题" }],
+  }))
+    events.push(event)
+  const started = events.find((event) => event.type === "started")
+  assert.equal(started.metadata.requestedModel, "pine-1")
+  const firstText = events.find(
+    (event) => event.type === "part-completed" && event.content.type === "text"
+  )
+  assert.ok(firstText.content.text.startsWith("## 先定位耗时"))
+})

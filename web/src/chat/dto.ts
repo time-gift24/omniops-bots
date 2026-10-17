@@ -111,4 +111,6 @@ export interface ChatRequestMessage {
 export interface ChatRequest {
   messages: ChatRequestMessage[];
   instructions?: string;
+  /** 请求模型 ID（扩展位，↔ 后端 GenerationRequest 的模型字段）。 */
+  model?: string;
 }
