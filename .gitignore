@@ -60,3 +60,6 @@ desktop.ini
 .env.*
 !.env.example
 *.log
+
+# Local learning and research materials
+/references/
