@@ -39,7 +39,7 @@ test("send → 流式完成：状态回到 idle，回复完整", async (t) => {
 
 test("卸载后流继续折叠，重挂载（再次订阅）即见最新状态", async (t) => {
   const { ThreadStoreImpl, createMockGateway } = await loadModules(t);
-  const store = new ThreadStoreImpl("t1", createMockGateway({ delayMs: 5 }));
+  const store = new ThreadStoreImpl("t1", createMockGateway({ delayMs: 1 }));
 
   const seen = [];
   const unsubscribe = store.subscribe(() => seen.push(store.getState()));

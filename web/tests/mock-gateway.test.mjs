@@ -1,0 +1,118 @@
+import assert from "node:assert/strict"
+import { test } from "node:test"
+import { createServer } from "vite"
+
+async function loadModules(t) {
+  const server = await createServer({
+    server: { middlewareMode: true, hmr: false },
+    appType: "custom",
+  })
+  t.after(() => server.close())
+  const { createMockGateway } = await server.ssrLoadModule(
+    "/src/chat/mock-gateway.ts"
+  )
+  const { ThreadStoreImpl } = await server.ssrLoadModule(
+    "/src/chat/thread-store.ts"
+  )
+  return { createMockGateway, ThreadStoreImpl }
+}
+
+const request = { messages: [{ role: "user", text: "[burst] 检查构建缓存" }] }
+
+test("burst 增量保留中文、emoji 和完整 Markdown，与最终回复一致", async (t) => {
+  const { createMockGateway } = await loadModules(t)
+  const events = []
+  for await (const event of createMockGateway({ delayMs: 0 }).stream(request))
+    events.push(event)
+  const chunks = events.filter(
+    (event) => event.type === "delta" && event.partId === 3
+  )
+  const text = chunks.map((event) => event.text).join("")
+  assert.ok(Array.from(text).length > 10000)
+  assert.ok(chunks.every((event) => event.text.isWellFormed()))
+  assert.match(text, /🔍[\s\S]*```ts[\s\S]*```[\s\S]*✅/)
+  assert.match(text, /缓存暂时不可用/)
+  assert.match(text, /难以确认收益。$/)
+  assert.equal(
+    events.find(
+      (event) => event.type === "part-completed" && event.partId === 3
+    ).content.text,
+    text
+  )
+  assert.equal(events.at(-1).type, "completed")
+  assert.equal(events.at(-1).response.assistant.parts[0].text, text)
+})
+
+test("burst 在正文中途、最后一段或 usage 后 abort 均不再输出事件", async (t) => {
+  const { createMockGateway } = await loadModules(t)
+  for (const boundary of ["first-delta", "last-delta", "usage"]) {
+    const gateway = createMockGateway({ delayMs: 0 })
+    const stream = gateway.stream(request)
+    while (true) {
+      const { value: event, done } = await stream.next()
+      assert.equal(done, false, `missing abort boundary: ${boundary}`)
+      const textDelta = event.type === "delta" && event.partId === 3
+      if (
+        (boundary === "first-delta" && textDelta) ||
+        (boundary === "last-delta" &&
+          textDelta &&
+          event.text.endsWith("难以确认收益。")) ||
+        (boundary === "usage" && event.type === "usage")
+      )
+        break
+    }
+    const pending = boundary === "first-delta" ? stream.next() : undefined
+    gateway.abort()
+    assert.equal((await (pending ?? stream.next())).done, true, boundary)
+  }
+})
+
+test("burst 经 ThreadStore.stop 保留已输出正文，网关结束后状态仍为 stopped", async (t) => {
+  const { createMockGateway, ThreadStoreImpl } = await loadModules(t)
+  const gateway = createMockGateway({ delayMs: 0 })
+  const ended = Promise.withResolvers()
+  const events = []
+  const store = new ThreadStoreImpl("burst-stop", {
+    abort: () => gateway.abort(),
+    async *stream(input) {
+      try {
+        for await (const event of gateway.stream(input)) {
+          events.push(event)
+          yield event
+        }
+      } finally {
+        ended.resolve()
+      }
+    },
+  })
+  let stopped
+  store.subscribe(() => {
+    const reply = store.getState().messages.at(-1)
+    if (
+      store.streaming &&
+      reply?.parts.some((part) => part.kind === "text" && part.text)
+    ) {
+      store.stop()
+      stopped = store.getState()
+    }
+  })
+  assert.equal(store.send("[burst] 中途停止"), true)
+  await ended.promise
+  assert.ok(stopped)
+  assert.equal(store.getState(), stopped)
+  assert.equal(store.streaming, false)
+  assert.equal(stopped.status, "idle")
+  assert.equal(stopped.messages.at(-1).state, "stopped")
+  const text = stopped.messages
+    .at(-1)
+    .parts.find((part) => part.kind === "text").text
+  assert.match(text, /🔍/)
+  assert.ok(!text.includes("难以确认收益。"))
+  assert.equal(events.at(-1).type, "delta")
+  assert.equal(
+    events.filter((event) => event.type === "delta" && event.partId === 3)
+      .length,
+    1
+  )
+  assert.ok(!events.some((event) => event.type === "completed"))
+})

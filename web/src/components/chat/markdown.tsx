@@ -4,6 +4,7 @@ import * as React from "react";
 import {
   Streamdown,
   useIsCodeFenceIncomplete,
+  type AnimateOptions,
   type ExtraProps,
 } from "streamdown";
 
@@ -73,19 +74,30 @@ function MarkdownCode({
 }
 
 const components = { code: MarkdownCode };
+const streamingAnimation: AnimateOptions = {
+  animation: "blurIn",
+  duration: 150,
+  sep: "char",
+  // 同一批新增文字同时渐显，突发大段内容不排队延迟显示。
+  stagger: 0,
+};
 
 /** Agent 回复的 Markdown 渲染：排版样式在 index.css 的 .chat-markdown，fenced 代码路由到 CodeBlock。 */
 export function Markdown({
   children,
   className,
+  streaming = false,
 }: {
   children: string;
   className?: string;
+  streaming?: boolean;
 }) {
   return (
     <Streamdown
       className={cn("chat-markdown", className)}
       components={components}
+      animated={streaming ? streamingAnimation : false}
+      isAnimating={streaming}
     >
       {children}
     </Streamdown>
