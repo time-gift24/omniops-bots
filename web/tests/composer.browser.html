@@ -10,7 +10,11 @@
   import { flushSync } from "react-dom";
   import "/src/index.css";
   import { ChatComposer } from "/src/components/chat/chat-composer.tsx";
+  import { ChatScreen } from "/src/components/chat/chat-screen.tsx";
   import { AgentChatComposer } from "/src/components/premium/agent-chat-input/composer.tsx";
+  import { AgentChatCredits } from "/src/components/premium/agent-chat-input/agent-chat-credits.tsx";
+  import { bindChatGateway } from "/src/chat/binding.ts";
+  import { defaultThreadRegistry } from "/src/chat/react.ts";
 
   const fixture = document.querySelector("#fixture");
   const result = document.querySelector("#result");
@@ -20,6 +24,17 @@
   };
   const editor = () => fixture.querySelector('[role="textbox"]');
   const sendButton = () => fixture.querySelector('button[aria-label="发送"]');
+  const wait = () => new Promise(resolve => setTimeout(resolve, 0));
+  const click = element => flushSync(() => element.click());
+  const modelButton = () => fixture.querySelector('button[aria-label^="选择模型"]');
+  const selectModel = async (label) => {
+    click(modelButton());
+    await wait();
+    const option = [...document.querySelectorAll('[data-morph-popover-portal]:not([inert]) button')]
+      .find(button => button.textContent === label);
+    assert(option, `Model ${label} must be available`);
+    click(option);
+  };
   const insert = (text) => flushSync(() => {
     editor().focus();
     assert(document.execCommand("insertText", false, text), "Native insertion failed");
@@ -41,7 +56,7 @@
       send: () => { attempts += 1; return accepted; },
       stop: () => {},
     };
-    flushSync(() => root.render(React.createElement(ChatComposer, { store })));
+    flushSync(() => root.render(React.createElement(ChatComposer, { store, model: "pine-1", onModelChange: () => {} })));
     const fileInput = fixture.querySelector('input[type="file"]');
     const files = new DataTransfer();
     files.items.add(new File(["test"], "attachment.txt", { type: "text/plain" }));
@@ -84,7 +99,48 @@
     window.getSelection().addRange(range);
     paste("line 1\n\n<html>");
     assert(ref.current.serialize().text === "line 1\n\n<html>", "Paste must preserve newlines and literal HTML text");
-    result.textContent = "PASS: attachment gating, rejected/accepted submissions, plain paste, maxLength, undo and redo";
+
+    let submittedText;
+    const creditsProps = { skills: [], maxLength: 5, defaultValue: "oversized", onSubmit: text => { submittedText = text; } };
+    flushSync(() => root.render(React.createElement(AgentChatCredits, creditsProps)));
+    const creditsSend = () => fixture.querySelector('button[aria-label="Send message"]');
+    assert(editor().textContent === "overs" && !creditsSend().disabled, "Clamped initial text must remain sendable");
+    click(creditsSend());
+    assert(submittedText === "overs", "Submission must match the visible clamped text");
+    flushSync(() => root.render(React.createElement(AgentChatCredits, { ...creditsProps, maxLength: 3 })));
+    assert(editor().textContent === "ove" && !creditsSend().disabled, "Lowering maxLength must update the submit state");
+    click(creditsSend());
+    assert(submittedText === "ove", "Lowered maxLength must reach the submitted text");
+
+    const requests = [];
+    bindChatGateway(() => ({
+      async *stream(request) {
+        requests.push(request);
+        yield { type: "failed", error: { kind: "unavailable", message: "Fixture response" } };
+      },
+      abort() {},
+    }));
+    flushSync(() => root.render(React.createElement(ChatScreen)));
+    await selectModel("GPT 5.6");
+    insert("Keep my model");
+    click(sendButton());
+    await wait();
+    assert(requests[0]?.model === "gpt-5.6", "First message must use the selected model");
+    assert(modelButton().textContent === "GPT 5.6", "First submission must preserve the model across the layout change");
+    click(fixture.querySelector('button[aria-label="编辑"]'));
+    assert(editor().textContent === "Keep my model" && modelButton().textContent === "GPT 5.6", "Editing a message must preserve the selected model");
+    click(sendButton());
+    await wait();
+    assert(requests[1]?.model === "gpt-5.6", "Edited message must use the selected model");
+
+    flushSync(() => root.render(null));
+    defaultThreadRegistry.evictIdle();
+    flushSync(() => root.render(React.createElement(ChatScreen)));
+    await selectModel("GPT 5.6");
+    click([...fixture.querySelectorAll('button')].find(button => button.textContent === "为什么这次构建这么慢？"));
+    await wait();
+    assert(requests[2]?.model === "gpt-5.6", "Suggested prompts must use the selected model");
+    result.textContent = "PASS: attachment gating, rejected/accepted submissions, plain paste, maxLength, undo/redo, model persistence and suggested prompts";
     result.dataset.passed = "true";
   } catch (error) {
     result.textContent = `FAIL: ${error.message}`;

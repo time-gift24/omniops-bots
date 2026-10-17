@@ -207,6 +207,33 @@ test("重试最新失败回合不删除之前的失败消息或生成重复 ID",
   assert.deepEqual(store.getState().messages.slice(0, 3), before.slice(0, 3));
 });
 
+test("历史重试沿用目标回合的模型，包括未指定模型的缺省选择", async (t) => {
+  const { ThreadStoreImpl } = await loadModules(t);
+  for (const models of [["pine-1", "sonnet-5"], [undefined, "sonnet-5"], ["gpt-5.6", undefined]]) {
+    const requests = [];
+    const store = new ThreadStoreImpl("models", {
+      abort() {},
+      async *stream(request) {
+        requests.push(request);
+        yield { type: "started", metadata };
+        yield completed;
+      },
+    });
+    store.send("first", undefined, models[0]);
+    await waitFor(() => !store.streaming);
+    store.send("second", undefined, models[1]);
+    await waitFor(() => !store.streaming);
+
+    const messages = store.getState().messages;
+    for (const [index, reply] of [[0, messages[1]], [1, messages[3]], [0, messages[1]]]) {
+      store.retry(reply.id);
+      await waitFor(() => !store.streaming);
+      assert.deepEqual(requests.at(-1), requests[index]);
+      assert.equal(Object.hasOwn(requests.at(-1), "model"), models[index] !== undefined);
+    }
+  }
+});
+
 test("已完成与已停止回复重新生成时重置状态，停止或失败更新同一消息", async (t) => {
   const { ThreadStoreImpl } = await loadModules(t);
   let attempts = 0;

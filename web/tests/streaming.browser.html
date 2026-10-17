@@ -68,6 +68,32 @@
     assert(!fixture.querySelector(".beui-ai-loader"), "Loader must leave after first content");
     passed.push("Loader → content, including reduced-motion visibility");
 
+    let historicalSerializations = 0;
+    const history = Array.from({ length: 3 }, (_, index) => ({
+      id: `history-${index}`, role: "assistant", state: "done", parts: [{
+        kind: "tool", callId: `tool-${index}`, name: "searchCode", inputText: "{}", state: "done",
+        output: { toJSON() { historicalSerializations++; return { result: "unchanged" }; } },
+      }],
+    }));
+    state = { ...state, messages: [...history, { id: "live", role: "assistant", state: "streaming", parts: [{ kind: "text", text: "当前回复" }] }] };
+    flushSync(() => listeners.forEach(listener => listener()));
+    const initialSerializations = historicalSerializations;
+    assert(initialSerializations > 0, "Historical tool output must render initially");
+    for (let index = 0; index < 5; index++) {
+      const live = state.messages.at(-1);
+      state = { ...state, messages: [...history, { ...live, parts: [{ kind: "text", text: `${live.parts[0].text}增量` }] }] };
+      flushSync(() => listeners.forEach(listener => listener()));
+    }
+    state = { ...state, status: "idle", messages: [...history, { ...state.messages.at(-1), state: "done" }] };
+    flushSync(() => listeners.forEach(listener => listener()));
+    assert(historicalSerializations === initialSerializations, "Streaming updates and completion must not re-render unchanged history");
+    assert(fixture.textContent.includes(`当前回复${"增量".repeat(5)}`), "Live reply must still receive every delta");
+    let retried;
+    store.retry = id => { retried = id; };
+    click(fixture.querySelector('[aria-label="重试"]'));
+    assert(retried === history[0].id, "Memoized history must still retry its own message");
+    passed.push("Streaming updates skip historical rendering and preserve retry actions");
+
     const parts = [{ kind: "reasoning", text: "已完成第一步，等待工具", state: "done" }];
     const props = { key: "disclosure", parts, streaming: true, answering: false };
     render(ChainOfThought, props);

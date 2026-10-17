@@ -350,6 +350,7 @@ export const AgentChatComposer = forwardRef<
     if (!initialized.current || serializeEditor(editor).text !== limited) {
       seedEditor(editor, limited, skillsRef.current);
       onSlashQueryChange?.(null);
+      if (limited !== next) onChange?.(serializeEditor(editor));
     }
     editor.dataset.empty = limited.length === 0 ? "true" : "false";
     acceptedHTML.current = editor.innerHTML;

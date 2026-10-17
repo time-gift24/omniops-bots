@@ -5,7 +5,7 @@ import {
   ArrowDown01Icon,
   CheckIcon,
 } from "@hugeicons-pro/core-stroke-rounded";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/motion/button";
 import {
   MorphPopover,
@@ -43,15 +43,22 @@ export function CreditsModelSelector({
   onModelChange: (model: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const selected =
     models.find((model) => model.id === selectedModel) ?? models[0];
+
+  function changeOpen(next: boolean) {
+    if (!next) triggerRef.current?.focus({ preventScroll: true });
+    setOpen(next);
+  }
 
   if (!selected) return null;
 
   return (
-    <MorphPopover open={open} onOpenChange={setOpen}>
+    <MorphPopover open={open} onOpenChange={changeOpen}>
       <MorphPopoverTrigger>
         <Button
+          ref={triggerRef}
           variant="plain"
           type="button"
           disabled={disabled}
@@ -82,6 +89,9 @@ export function CreditsModelSelector({
         sideOffset={4}
         radius={12}
         className="w-44 p-1"
+        onOpenAutoFocus={(content) => {
+          content.querySelector<HTMLElement>('[aria-checked="true"]')?.focus({ preventScroll: true });
+        }}
       >
         {models.map((model) => {
           const active = model.id === selected.id;
@@ -94,7 +104,7 @@ export function CreditsModelSelector({
               aria-checked={active}
               onClick={() => {
                 onModelChange(model.id);
-                setOpen(false);
+                changeOpen(false);
               }}
               className="group/row relative isolate flex min-h-9 w-full items-center gap-2 px-2 py-1 text-left focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
             >

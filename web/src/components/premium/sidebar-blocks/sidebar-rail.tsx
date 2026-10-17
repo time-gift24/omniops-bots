@@ -38,8 +38,15 @@ import {
   useAnimatedSidebar,
 } from "@/components/motion/animated-sidebar";
 import { Button } from "@/components/motion/button";
-import { Input } from "@/components/motion/input";
 import { SharedLayoutBg } from "@/components/motion/shared-layout-bg";
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   MorphicTooltip,
   MorphicTooltipProvider,
@@ -238,24 +245,28 @@ function SidebarRailShell({
   const reduce = useReducedMotion();
   const [sectionId, setSectionId] = useState(sections[0]?.id);
   const [itemId, setItemId] = useState(defaultItemId);
-  const [query, setQuery] = useState("");
-  const [searching, setSearching] = useState(false);
-  const searchRef = useRef<HTMLInputElement>(null);
-  const searchToggleRef = useRef<HTMLButtonElement>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
   const panelId = useId();
   const section =
     sections.find((entry) => entry.id === sectionId) ?? sections[0];
   const selectedItem = sections
     .flatMap((entry) => entry.groups.flatMap((group) => group.items))
     .find((item) => item.id === itemId);
-  const groups = (section?.groups ?? [])
-    .map((group) => ({
-      ...group,
-      items: group.items.filter((item) =>
-        item.label.toLowerCase().includes(query.trim().toLowerCase()),
-      ),
-    }))
-    .filter((group) => group.items.length > 0);
+  const groups = section?.groups ?? [];
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (
+        (event.metaKey || event.ctrlKey) &&
+        event.key.toLowerCase() === "k"
+      ) {
+        event.preventDefault();
+        setSearchOpen((open) => !open);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   function closePeek() {
     setFocused(false);
@@ -275,9 +286,66 @@ function SidebarRailShell({
     }
   }
 
-  useEffect(() => {
-    if (searching) searchRef.current?.focus({ preventScroll: true });
-  }, [searching]);
+  function selectSearchItem(target: SidebarRailSection, item: SidebarRailItem) {
+    setSectionId(target.id);
+    setItemId(item.id);
+    onItemSelect?.(item, target);
+    setSearchOpen(false);
+    context.setOpenMobile(false);
+    if (!expanded && !context.isMobile) {
+      toggleRef.current?.focus({ preventScroll: true });
+      closePeek();
+    }
+  }
+
+  const panelHeaderNode = (
+    <AnimatedSidebarHeader className="gap-3 p-4 pb-2">
+      <div className="flex items-center gap-1">
+        <div data-slot="sidebar-rail-panel-header" className="min-w-0 flex-1">
+          {panelHeader === undefined ? (
+            <h2 className="truncate text-xl font-medium">{workspaceName}</h2>
+          ) : (
+            panelHeader
+          )}
+        </div>
+        <MorphicTooltip
+          content="搜索导航（⌘K）"
+          side="bottom"
+          disabled={context.isMobile}
+        >
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="搜索导航"
+            aria-haspopup="dialog"
+            onClick={() => setSearchOpen(true)}
+            className={iconButtonClass}
+          >
+            <HugeiconsIcon icon={Search01Icon} aria-hidden="true" size={16} />
+          </Button>
+        </MorphicTooltip>
+        <AnimatedSidebarClose className="size-9 rounded-full text-muted-foreground hover:bg-muted md:hidden">
+          <HugeiconsIcon icon={Cancel01Icon} aria-hidden="true" size={16} />
+        </AnimatedSidebarClose>
+      </div>
+      <Button
+        variant="ghost"
+        onClick={() => {
+          setItemId("new-page");
+          onCreate?.();
+          context.setOpenMobile(false);
+          if (!expanded && !context.isMobile) {
+            toggleRef.current?.focus({ preventScroll: true });
+            closePeek();
+          }
+        }}
+        className="h-9 justify-start rounded-full px-2 text-foreground"
+      >
+        <HugeiconsIcon icon={PlusSignIcon} aria-hidden="true" size={16} />
+        新建页面
+      </Button>
+    </AnimatedSidebarHeader>
+  );
 
   return (
     <>
@@ -331,7 +399,6 @@ function SidebarRailShell({
                   }
                   onClick={(event) => {
                     setSectionId(entry.id);
-                    setQuery("");
                     if (entry.id !== section?.id) {
                       const firstItem = entry.groups[0]?.items[0];
                       if (firstItem) {
@@ -395,92 +462,7 @@ function SidebarRailShell({
             !expanded && context.open && "bg-popover shadow-md",
           )}
         >
-          <AnimatedSidebarHeader className="gap-3 p-4 pb-2">
-            <div className="flex items-center gap-1">
-              <div
-                data-slot="sidebar-rail-panel-header"
-                className="min-w-0 flex-1"
-              >
-                {searching ? (
-                  // 搜索时标题原位换成输入框，不再额外挤出一行。
-                  <Input
-                    aria-label="筛选导航"
-                    ref={searchRef}
-                    value={query}
-                    onChange={(event) => setQuery(event)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Escape") {
-                        event.stopPropagation();
-                        setSearching(false);
-                        setQuery("");
-                        searchToggleRef.current?.focus();
-                      }
-                    }}
-                    placeholder="查找页面…"
-                    className="w-full"
-                    classNames={{ input: "px-3 text-sm" }}
-                  />
-                ) : panelHeader === undefined ? (
-                  <h2 className="truncate text-xl font-medium">
-                    {workspaceName}
-                  </h2>
-                ) : (
-                  panelHeader
-                )}
-              </div>
-              <MorphicTooltip
-                content={searching ? "关闭搜索" : "搜索导航"}
-                side="bottom"
-                disabled={context.isMobile}
-              >
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={searching ? "关闭搜索" : "搜索导航"}
-                  aria-expanded={searching}
-                  ref={searchToggleRef}
-                  onClick={() => {
-                    setSearching(!searching);
-                    if (searching) setQuery("");
-                  }}
-                  className={iconButtonClass}
-                >
-                  <HugeiconsIcon
-                    icon={searching ? Cancel01Icon : Search01Icon}
-                    aria-hidden="true"
-                    size={16}
-                  />
-                </Button>
-              </MorphicTooltip>
-              <AnimatedSidebarClose className="size-9 rounded-full text-muted-foreground hover:bg-muted md:hidden">
-                <HugeiconsIcon
-                  icon={Cancel01Icon}
-                  aria-hidden="true"
-                  size={16}
-                />
-              </AnimatedSidebarClose>
-            </div>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setItemId("new-page");
-                onCreate?.();
-                context.setOpenMobile(false);
-                if (!expanded && !context.isMobile) {
-                  toggleRef.current?.focus({ preventScroll: true });
-                  closePeek();
-                }
-              }}
-              className="h-9 justify-start rounded-full px-2 text-foreground"
-            >
-              <HugeiconsIcon
-                icon={PlusSignIcon}
-                aria-hidden="true"
-                size={16}
-              />
-              新建页面
-            </Button>
-          </AnimatedSidebarHeader>
+          {panelHeaderNode}
 
           <AnimatedSidebarContent className="gap-5 px-2 pb-5 pt-3">
             {groups.map((group) => (
@@ -532,6 +514,52 @@ function SidebarRailShell({
           </AnimatedSidebarContent>
         </AnimatedSidebar>
       </motion.div>
+
+      <CommandDialog
+        open={searchOpen}
+        onOpenChange={setSearchOpen}
+        title="搜索导航"
+        description="搜索页面、资料库和设置"
+        fallbackFocusRef={toggleRef}
+      >
+        <CommandInput
+          placeholder="查找页面…"
+          wrapperClassName="h-12 rounded-none border-0 border-b border-border bg-transparent px-4 focus-within:ring-0"
+        />
+        <CommandList className="max-h-[min(24rem,60dvh)]">
+          <CommandEmpty>没有找到页面。</CommandEmpty>
+          {sections.map((entry) =>
+            entry.groups.map((group) => (
+              <CommandGroup
+                key={`${entry.id}:${group.label}`}
+                heading={`${entry.label} · ${group.label}`}
+              >
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <CommandItem
+                      key={item.id}
+                      value={`${item.label} ${entry.label} ${group.label} ${entry.id} ${item.id}`}
+                      onSelect={() => selectSearchItem(entry, item)}
+                    >
+                      {Icon ? (
+                        <HugeiconsIcon
+                          icon={Icon}
+                          aria-hidden="true"
+                          size={16}
+                          strokeWidth={1.7}
+                          className="text-muted-foreground"
+                        />
+                      ) : null}
+                      <span className="truncate">{item.label}</span>
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            )),
+          )}
+        </CommandList>
+      </CommandDialog>
 
       <div className="relative flex min-w-0 flex-1 flex-col">
         <header className="flex h-12 shrink-0 items-center gap-3 px-3 sm:px-4">

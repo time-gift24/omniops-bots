@@ -1,0 +1,71 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Theme storage regression check</title>
+<!-- Run npm run dev, then open /tests/theme.browser.html. -->
+<div id="fixture"></div>
+<pre id="result">Running…</pre>
+<script type="module">
+  import React from "react";
+  import { createRoot } from "react-dom/client";
+  import { flushSync } from "react-dom";
+  import { ThemeProvider, useTheme } from "/src/components/theme-provider.tsx";
+
+  const fixture = document.querySelector("#fixture");
+  const result = document.querySelector("#result");
+  const root = createRoot(fixture);
+  const descriptor = Object.getOwnPropertyDescriptor(window, "localStorage");
+  const assert = (condition, message) => { if (!condition) throw new Error(message); };
+  const storageKey = "cognacta-theme-regression";
+  const realStorage = window.localStorage;
+  const originalValue = realStorage.getItem(storageKey);
+  let setTheme;
+  let currentTheme;
+  function Probe() {
+    const theme = useTheme();
+    setTheme = theme.setTheme;
+    currentTheme = theme.theme;
+    return React.createElement("span", null, theme.theme);
+  }
+  const render = key => flushSync(() => root.render(React.createElement(
+    ThemeProvider, { key, defaultTheme: "light", storageKey, disableTransitionOnChange: false }, React.createElement(Probe),
+  )));
+  const denied = () => { throw new DOMException("Storage denied", "SecurityError"); };
+  const expectTheme = theme => assert(currentTheme === theme && document.documentElement.classList.contains(theme), `Expected visible ${theme} theme`);
+  try {
+    Object.defineProperty(window, "localStorage", { configurable: true, get: denied });
+    render("blocked-access");
+    expectTheme("light");
+    flushSync(() => setTheme("dark"));
+    expectTheme("dark");
+    flushSync(() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "d", bubbles: true })));
+    expectTheme("light");
+    window.dispatchEvent(new StorageEvent("storage", { key: storageKey, newValue: "dark", storageArea: realStorage }));
+    expectTheme("light");
+
+    Object.defineProperty(window, "localStorage", { configurable: true, value: { getItem: denied, setItem: denied } });
+    render("blocked-methods");
+    expectTheme("light");
+    flushSync(() => setTheme("dark"));
+    expectTheme("dark");
+
+    Object.defineProperty(window, "localStorage", descriptor);
+    realStorage.setItem(storageKey, "dark");
+    render("working-storage");
+    expectTheme("dark");
+    flushSync(() => setTheme("light"));
+    assert(realStorage.getItem(storageKey) === "light", "Theme selection must persist when storage works");
+    flushSync(() => window.dispatchEvent(new StorageEvent("storage", { key: storageKey, newValue: "dark", storageArea: realStorage })));
+    expectTheme("dark");
+    result.textContent = "PASS: denied storage access/methods, fallback, in-memory selection, keyboard toggle, persistence and cross-tab updates";
+    result.dataset.passed = "true";
+  } catch (error) {
+    result.textContent = `FAIL: ${error.message}`;
+    result.dataset.passed = "false";
+    throw error;
+  } finally {
+    root.unmount();
+    Object.defineProperty(window, "localStorage", descriptor);
+    if (originalValue === null) realStorage.removeItem(storageKey);
+    else realStorage.setItem(storageKey, originalValue);
+  }
+</script>

@@ -36,8 +36,8 @@ export class ThreadStoreImpl implements ThreadStore {
   private listeners = new Set<() => void>();
   private activeRequest: { messageId: string } | undefined;
   private gateway: ChatGateway;
-  /** 最近一次发送使用的模型；retry 沿用同一模型。 */
-  private lastModel: string | undefined;
+  /** 每条回复的请求模型；undefined 保留网关的缺省选择。 */
+  private models = new Map<string, string | undefined>();
 
   constructor(threadId: ThreadId, gateway: ChatGateway) {
     this.gateway = gateway;
@@ -71,9 +71,8 @@ export class ThreadStoreImpl implements ThreadStore {
     const trimmed = text.trim();
     if (!trimmed || this.streaming) return false;
 
-    this.lastModel = model;
     this.state = appendUserMessage(this.state, trimmed, attachments);
-    void this.consume(trimmed, attachments);
+    void this.consume(trimmed, attachments, model);
     return true;
   };
 
@@ -102,16 +101,19 @@ export class ThreadStoreImpl implements ThreadStore {
       .filter((part) => part.kind === "text")
       .map((part) => part.text)
       .join("");
-    void this.consume(text, user.attachments, this.state.messages[index].id);
+    const replyId = this.state.messages[index].id;
+    void this.consume(text, user.attachments, this.models.get(replyId), replyId);
   };
 
   private async consume(
     text: string,
-    attachments?: { name: string; mediaType: string }[],
+    attachments: { name: string; mediaType: string }[] | undefined,
+    model: string | undefined,
     messageId = `m-${this.state.messages.length + 1}`,
   ): Promise<void> {
     const active = { messageId };
     this.activeRequest = active;
+    this.models.set(messageId, model);
     const reply: ChatMessageView = {
       id: messageId,
       role: "assistant",
@@ -142,7 +144,7 @@ export class ThreadStoreImpl implements ThreadStore {
             ...(attachments?.length ? { attachments } : {}),
           },
         ],
-        ...(this.lastModel ? { model: this.lastModel } : {}),
+        ...(model ? { model } : {}),
       };
       for await (const event of this.gateway.stream(request)) {
         if (this.activeRequest !== active) return;

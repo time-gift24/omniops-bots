@@ -4,7 +4,7 @@ import * as React from "react";
 import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 
 import { useThreadState, useThreadStore } from "@/chat/react.ts";
-import { ChatComposer } from "@/components/chat/chat-composer";
+import { ChatComposer, DEFAULT_CHAT_MODEL } from "@/components/chat/chat-composer";
 import { ChatThread } from "@/components/chat/chat-thread";
 import { Button } from "@/components/ui/button";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -24,6 +24,10 @@ export function ChatScreen() {
   const store = useThreadStore(MAIN_THREAD_ID);
   const state = useThreadState(store);
   const [editRequest, setEditRequest] = React.useState<EditRequest | null>(null);
+  const [model, setModel] = React.useState<string>(DEFAULT_CHAT_MODEL);
+  const editMessage = React.useCallback((text: string) => {
+    setEditRequest((previous) => ({ text, nonce: (previous?.nonce ?? 0) + 1 }));
+  }, []);
   const reduce = useReducedMotion();
   const empty = state.messages.length === 0;
 
@@ -31,6 +35,8 @@ export function ChatScreen() {
     <ChatComposer
       key={editRequest?.nonce ?? "idle"}
       store={store}
+      model={model}
+      onModelChange={setModel}
       initialText={editRequest?.text}
       className="mx-auto w-full"
     />
@@ -69,7 +75,7 @@ export function ChatScreen() {
                       variant="outline"
                       size="sm"
                       className="rounded-full"
-                      onClick={() => store.send(suggestion)}
+                      onClick={() => store.send(suggestion, undefined, model)}
                     >
                       {suggestion}
                     </Button>
@@ -82,9 +88,7 @@ export function ChatScreen() {
               <div className="min-h-0 flex-1">
                 <ChatThread
                   store={store}
-                  onEditMessage={(text) =>
-                    setEditRequest({ text, nonce: Date.now() })
-                  }
+                  onEditMessage={editMessage}
                 />
               </div>
               <div className="shrink-0 px-4 pb-4 sm:px-8 sm:pb-6">

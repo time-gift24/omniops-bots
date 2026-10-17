@@ -8,7 +8,7 @@ import type { ThreadStore } from "./thread-store.ts";
 
 /** store 生命周期独立于组件。 */
 export const defaultThreadRegistry: ThreadStoreRegistry =
-  createThreadStoreRegistry(() => getChatGateway());
+  createThreadStoreRegistry(getChatGateway);
 
 /** 卸载只释放引用，不中止流。 */
 export function useThreadStore(

@@ -84,9 +84,11 @@ export function ThemeProvider({
   ...props
 }: ThemeProviderProps) {
   const [theme, setThemeState] = React.useState<Theme>(() => {
-    const storedTheme = localStorage.getItem(storageKey)
-    if (isTheme(storedTheme)) {
-      return storedTheme
+    try {
+      const storedTheme = localStorage.getItem(storageKey)
+      if (isTheme(storedTheme)) return storedTheme
+    } catch {
+      // Storage can be unavailable; the in-memory theme still works.
     }
 
     return defaultTheme
@@ -94,7 +96,11 @@ export function ThemeProvider({
 
   const setTheme = React.useCallback(
     (nextTheme: Theme) => {
-      localStorage.setItem(storageKey, nextTheme)
+      try {
+        localStorage.setItem(storageKey, nextTheme)
+      } catch {
+        // Persistence must not prevent a theme change.
+      }
       setThemeState(nextTheme)
     },
     [storageKey]
@@ -156,19 +162,15 @@ export function ThemeProvider({
         return
       }
 
-      setThemeState((currentTheme) => {
-        const nextTheme =
-          currentTheme === "dark"
-            ? "light"
-            : currentTheme === "light"
-              ? "dark"
-              : getSystemTheme() === "dark"
-                ? "light"
-                : "dark"
-
-        localStorage.setItem(storageKey, nextTheme)
-        return nextTheme
-      })
+      const nextTheme =
+        theme === "dark"
+          ? "light"
+          : theme === "light"
+            ? "dark"
+            : getSystemTheme() === "dark"
+              ? "light"
+              : "dark"
+      setTheme(nextTheme)
     }
 
     window.addEventListener("keydown", handleKeyDown)
@@ -176,11 +178,17 @@ export function ThemeProvider({
     return () => {
       window.removeEventListener("keydown", handleKeyDown)
     }
-  }, [storageKey])
+  }, [theme, setTheme])
 
   React.useEffect(() => {
+    let storage: Storage
+    try {
+      storage = window.localStorage
+    } catch {
+      return
+    }
     const handleStorageChange = (event: StorageEvent) => {
-      if (event.storageArea !== localStorage) {
+      if (event.storageArea !== storage) {
         return
       }
 

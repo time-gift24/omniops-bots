@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 
 import type { ThreadStore } from "@/chat/thread-store.ts";
 import type { ChatMessageView } from "@/chat/fold.ts";
@@ -75,6 +75,42 @@ function AssistantSlot({
   );
 }
 
+const ThreadMessage = memo(function ThreadMessage({
+  message,
+  streaming,
+  store,
+  onEdit,
+}: {
+  message: ChatMessageView;
+  streaming: boolean;
+  store: ThreadStore;
+  onEdit?: (text: string) => void;
+}) {
+  const onRetry = () => store.retry(message.id);
+  return (
+    <MessageScrollerItem
+      messageId={message.id}
+      scrollAnchor={message.role === "user"}
+    >
+      {message.role === "assistant" ? (
+        <AssistantSlot
+          message={message}
+          busy={streaming}
+          onRetry={onRetry}
+          onEdit={onEdit}
+        />
+      ) : (
+        <MessageView
+          message={message}
+          streaming={false}
+          onRetry={onRetry}
+          onEdit={onEdit}
+        />
+      )}
+    </MessageScrollerItem>
+  );
+});
+
 export function ChatThread({
   store,
   onEditMessage,
@@ -94,27 +130,13 @@ export function ChatThread({
             className="mx-auto w-full max-w-[736px] gap-8 px-4 py-6"
           >
             {state.messages.map((message) => (
-              <MessageScrollerItem
+              <ThreadMessage
                 key={message.id}
-                messageId={message.id}
-                scrollAnchor={message.role === "user"}
-              >
-                {message.role === "assistant" ? (
-                  <AssistantSlot
-                    message={message}
-                    busy={busy}
-                    onRetry={() => store.retry(message.id)}
-                    onEdit={onEditMessage}
-                  />
-                ) : (
-                  <MessageView
-                    message={message}
-                    streaming={false}
-                    onRetry={() => store.retry(message.id)}
-                    onEdit={onEditMessage}
-                  />
-                )}
-              </MessageScrollerItem>
+                message={message}
+                streaming={busy && message.state === "streaming"}
+                store={store}
+                onEdit={onEditMessage}
+              />
             ))}
           </MessageScrollerContent>
         </MessageScrollerViewport>

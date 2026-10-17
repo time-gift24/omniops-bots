@@ -1,13 +1,14 @@
 import type { ChatGateway } from "./gateway.ts";
+import type { ThreadId } from "./dto.ts";
 import { createMockGateway } from "./mock-gateway.ts";
 
-let bound: ChatGateway | undefined;
+let gatewayFor: (threadId: ThreadId) => ChatGateway = () => createMockGateway();
 
-export function bindChatGateway(gateway: ChatGateway): void {
-  bound = gateway;
+/** 工厂为每个线程创建独立网关，abort 只影响所属线程。 */
+export function bindChatGateway(factory: (threadId: ThreadId) => ChatGateway): void {
+  gatewayFor = factory;
 }
 
-export function getChatGateway(): ChatGateway {
-  bound ??= createMockGateway();
-  return bound;
+export function getChatGateway(threadId: ThreadId): ChatGateway {
+  return gatewayFor(threadId);
 }

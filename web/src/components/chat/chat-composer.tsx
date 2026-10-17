@@ -40,6 +40,7 @@ const MODELS = [
   { id: "opus-4.8", label: "Opus 4.8" },
   { id: "gpt-5.6", label: "GPT 5.6" },
 ] as const;
+export const DEFAULT_CHAT_MODEL = MODELS[0].id;
 
 /** 失败后仍可继续输入，error 仅作语义标记。 */
 function toComposerStatus(status: string): AgentChatInputStatus {
@@ -50,10 +51,14 @@ function toComposerStatus(status: string): AgentChatInputStatus {
 
 export function ChatComposer({
   store,
+  model,
+  onModelChange,
   initialText,
   className,
 }: {
   store: ThreadStore;
+  model: string;
+  onModelChange: (model: string) => void;
   /** 初始文本（用户消息「编辑」动作）；父级用 key 变化触发重挂载生效。 */
   initialText?: string;
   className?: string;
@@ -62,8 +67,6 @@ export function ChatComposer({
   const [attachments, setAttachments] = React.useState<AgentChatAttachment[]>(
     [],
   );
-  // 模型受控：选择随发送进入请求，retry 由 store 沿用。
-  const [model, setModel] = React.useState<string>(MODELS[0].id);
 
   return (
     <AgentChatCredits
@@ -77,7 +80,7 @@ export function ChatComposer({
       placeholder=""
       models={MODELS}
       model={model}
-      onModelChange={setModel}
+      onModelChange={onModelChange}
       attachments={attachments}
       onAttachmentsChange={setAttachments}
       onStop={() => store.stop()}
