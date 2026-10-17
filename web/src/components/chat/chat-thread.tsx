@@ -96,7 +96,7 @@ export function ChatThread({
         <MessageScrollerViewport>
           <MessageScrollerContent
             aria-busy={busy}
-            className="mx-auto w-full max-w-[720px] gap-8 px-6 py-8"
+            className="mx-auto w-full max-w-[720px] gap-8 px-4 py-6 sm:px-6 sm:py-8"
           >
             {state.messages.map((message) => (
               <MessageScrollerItem
