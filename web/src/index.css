@@ -54,8 +54,9 @@
     --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* Cognacta Clay — 暖中性底 + 陶土 accent，令牌值对齐 Claude Design System 逆向令牌
-   （open-claude-ui/code-examples/cds-theme.css）；组件结构保持 beui/shadcn 不变。 */
+/* Cognacta Pine — 暖中性底 + 松绿 accent：中性令牌与组件结构对齐 Claude Design System
+   逆向值（cds-theme.css），accent 取项目 Pine 传承（oklch 色相 ~165）并按对比度加深，
+   hover 保持「加深而非泛白」的 CDS 交互语义；组件结构保持 beui/shadcn 不变。 */
 :root {
     --background: oklch(0.991 0.001 106.4);
     --foreground: oklch(0.196 0.000 89.9);
@@ -63,9 +64,9 @@
     --card-foreground: oklch(0.196 0.000 89.9);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.196 0.000 89.9);
-    --primary: oklch(0.672 0.131 38.8);
-    --primary-hover: oklch(0.605 0.154 37.9);
-    --primary-foreground: oklch(0.991 0.001 106.4);
+    --primary: oklch(0.51 0.105 164);
+    --primary-hover: oklch(0.45 0.11 163);
+    --primary-foreground: oklch(0.98 0.004 168);
     --secondary: oklch(0.970 0.003 106.4);
     --secondary-foreground: oklch(0.196 0.000 89.9);
     --muted: oklch(0.970 0.003 106.4);
@@ -76,22 +77,22 @@
     --border: oklch(0.930 0.003 106.5);
     --border-strong: oklch(0.854 0.004 106.5);
     --input: oklch(0.930 0.003 106.5);
-    --ring: oklch(0.672 0.131 38.8);
-    --bubble-user: oklch(0.965 0.007 247.9);
-    --chart-1: oklch(0.672 0.131 38.8);
-    --chart-2: oklch(0.75 0.1 55);
-    --chart-3: oklch(0.8 0.07 70);
-    --chart-4: oklch(0.86 0.045 85);
-    --chart-5: oklch(0.92 0.02 95);
+    --ring: oklch(0.57 0.11 166);
+    --bubble-user: oklch(0.952 0.014 160);
+    --chart-1: oklch(0.51 0.105 164);
+    --chart-2: oklch(0.65 0.095 170);
+    --chart-3: oklch(0.72 0.08 160);
+    --chart-4: oklch(0.78 0.06 150);
+    --chart-5: oklch(0.84 0.045 140);
     --radius: 0.5rem;
     --sidebar: oklch(0.970 0.003 106.4);
     --sidebar-foreground: oklch(0.196 0.000 89.9);
-    --sidebar-primary: oklch(0.672 0.131 38.8);
-    --sidebar-primary-foreground: oklch(0.991 0.001 106.4);
+    --sidebar-primary: oklch(0.51 0.105 164);
+    --sidebar-primary-foreground: oklch(0.98 0.004 168);
     --sidebar-accent: oklch(0.962 0.002 106);
     --sidebar-accent-foreground: oklch(0.196 0.000 89.9);
     --sidebar-border: oklch(0.930 0.003 106.5);
-    --sidebar-ring: oklch(0.672 0.131 38.8);
+    --sidebar-ring: oklch(0.57 0.11 166);
 }
 
 .dark {
@@ -101,9 +102,9 @@
     --card-foreground: oklch(0.970 0.000 89.9);
     --popover: oklch(0.251 0.004 106.7);
     --popover-foreground: oklch(0.970 0.000 89.9);
-    --primary: oklch(0.672 0.131 38.8);
-    --primary-hover: oklch(0.605 0.154 37.9);
-    --primary-foreground: oklch(0.991 0.001 106.4);
+    --primary: oklch(0.72 0.115 170);
+    --primary-hover: oklch(0.65 0.115 168);
+    --primary-foreground: oklch(0.24 0.03 163);
     --secondary: oklch(0.243 0.004 106.7);
     --secondary-foreground: oklch(0.970 0.000 89.9);
     --muted: oklch(0.243 0.004 106.7);
@@ -114,21 +115,21 @@
     --border: oklch(1 0 0 / 9%);
     --border-strong: oklch(1 0 0 / 18%);
     --input: oklch(1 0 0 / 18%);
-    --ring: oklch(0.702 0.124 38.4);
+    --ring: oklch(0.72 0.115 170);
     --bubble-user: oklch(1 0 0 / 6%);
-    --chart-1: oklch(0.672 0.131 38.8);
-    --chart-2: oklch(0.702 0.1 50);
-    --chart-3: oklch(0.75 0.08 62);
-    --chart-4: oklch(0.8 0.06 75);
-    --chart-5: oklch(0.86 0.04 88);
+    --chart-1: oklch(0.72 0.115 170);
+    --chart-2: oklch(0.65 0.095 170);
+    --chart-3: oklch(0.72 0.08 160);
+    --chart-4: oklch(0.78 0.06 150);
+    --chart-5: oklch(0.84 0.045 140);
     --sidebar: oklch(0.149 0.002 106.7);
     --sidebar-foreground: oklch(0.970 0.000 89.9);
-    --sidebar-primary: oklch(0.672 0.131 38.8);
-    --sidebar-primary-foreground: oklch(0.991 0.001 106.4);
+    --sidebar-primary: oklch(0.72 0.115 170);
+    --sidebar-primary-foreground: oklch(0.24 0.03 163);
     --sidebar-accent: oklch(0.268 0.004 106);
     --sidebar-accent-foreground: oklch(0.970 0.000 89.9);
     --sidebar-border: oklch(1 0 0 / 9%);
-    --sidebar-ring: oklch(0.702 0.124 38.4);
+    --sidebar-ring: oklch(0.72 0.115 170);
 }
 
 @layer base {

@@ -248,7 +248,7 @@ export function AgentComposerAction({
         else void submit();
       }}
       data-composer-action=""
-      // CDS 发送按钮：陶土主色 + 按压弹簧（active:scale-95）。
+      // CDS 发送按钮：主色 + 按压弹簧（active:scale-95）。
       className={cn("size-10 rounded-full active:scale-95", className)}
     >
       {busy ? (
