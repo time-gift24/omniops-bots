@@ -112,7 +112,7 @@ export function CreditsToolbar({
       onClick={busy ? onStop : onSubmit}
       whileTap={reduce ? undefined : { scale: 0.94 }}
       transition={SPRING_PRESS}
-      className="grid size-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+      className="grid size-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
     >
       <AnimatePresence mode="wait" initial={false}>
         <motion.span
