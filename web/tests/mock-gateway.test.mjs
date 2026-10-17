@@ -43,9 +43,9 @@ test("burst 增量保留中文、emoji 和完整 Markdown，与最终回复一�
   assert.equal(events.at(-1).response.assistant.parts[0].text, text)
 })
 
-test("burst 在正文中途、最后一段或 usage 后 abort 均不再输出事件", async (t) => {
+test("burst 在思考结束、正文中途、最后一段或 usage 后 abort 均不再输出事件", async (t) => {
   const { createMockGateway } = await loadModules(t)
-  for (const boundary of ["first-delta", "last-delta", "usage"]) {
+  for (const boundary of ["last-reasoning-delta", "first-delta", "last-delta", "usage"]) {
     const gateway = createMockGateway({ delayMs: 0 })
     const stream = gateway.stream(request)
     while (true) {
@@ -53,6 +53,9 @@ test("burst 在正文中途、最后一段或 usage 后 abort 均不再输出事
       assert.equal(done, false, `missing abort boundary: ${boundary}`)
       const textDelta = event.type === "delta" && event.partId === 3
       if (
+        (boundary === "last-reasoning-delta" &&
+          event.type === "delta" && event.partId === 0 &&
+          event.text.endsWith("。")) ||
         (boundary === "first-delta" && textDelta) ||
         (boundary === "last-delta" &&
           textDelta &&

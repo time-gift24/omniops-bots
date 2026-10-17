@@ -30,7 +30,7 @@ function TraceLine({
       data-slot="trace-line"
       data-status={status}
       className={cn(
-        "flex w-fit max-w-full min-w-0 items-center gap-2 text-sm text-muted-foreground transition-colors in-[a,button]:cursor-pointer in-[a:hover,button:hover]:text-foreground data-[status=error]:text-destructive data-[status=error]:in-[a:hover,button:hover]:text-destructive data-[status=pending]:opacity-60 data-[status=running]:*:data-[slot=trace-title]:shimmer",
+        "flex w-fit max-w-full min-w-0 items-center gap-2 text-sm text-muted-foreground transition-colors motion-reduce:transition-none in-[a,button]:cursor-pointer in-[a:hover,button:hover]:text-foreground data-[status=error]:text-destructive data-[status=error]:in-[a:hover,button:hover]:text-destructive data-[status=pending]:opacity-60 motion-safe:data-[status=running]:*:data-[slot=trace-title]:shimmer",
         className
       )}
       {...props}
@@ -109,13 +109,13 @@ function TraceCollapsibleTrigger({
     <CollapsibleTrigger
       data-slot="trace-collapsible-trigger"
       className={cn(
-        "group/trace-collapsible-trigger flex w-fit max-w-full min-w-0 cursor-pointer items-center gap-1 rounded-md text-left text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 has-[[data-status=error]]:text-destructive",
+        "group/trace-collapsible-trigger flex w-fit max-w-full min-w-0 cursor-pointer items-center gap-1 rounded-md text-left text-muted-foreground transition-colors motion-reduce:transition-none outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 has-[[data-status=error]]:text-destructive",
         className
       )}
       {...props}
     >
       {children}
-      <TraceIcon className="transition-transform group-aria-expanded/trace-collapsible-trigger:rotate-90">
+      <TraceIcon className="transition-transform motion-reduce:transition-none group-aria-expanded/trace-collapsible-trigger:rotate-90">
         <HugeiconsIcon icon={ArrowRight01Icon} />
       </TraceIcon>
     </CollapsibleTrigger>
@@ -125,23 +125,35 @@ function TraceCollapsibleTrigger({
 function TraceCollapsibleContent({
   className,
   children,
+  forceMount,
   ...props
 }: Omit<React.ComponentProps<typeof CollapsibleContent>, "asChild">) {
+  const content = (
+    <div
+      data-slot="trace-collapsible-content-inner"
+      className={cn(
+        "mt-2 mb-1 ml-[calc(--spacing(2)-1px)] min-w-0 border-l pr-1 pl-4 leading-relaxed wrap-break-word text-muted-foreground",
+        className
+      )}
+    >
+      {children}
+    </div>
+  )
   return (
     <CollapsibleContent
       data-slot="trace-collapsible-content"
-      className="min-w-0 overflow-hidden duration-200 [--radix-accordion-content-height:var(--radix-collapsible-content-height)] data-open:animate-accordion-down data-closed:animate-accordion-up"
+      forceMount={forceMount}
+      className={forceMount
+        ? "group/trace-content min-w-0"
+        : "min-w-0 overflow-hidden duration-200 [--radix-accordion-content-height:var(--radix-collapsible-content-height)] motion-safe:data-open:animate-accordion-down motion-safe:data-closed:animate-accordion-up"}
       {...props}
     >
-      <div
-        data-slot="trace-collapsible-content-inner"
-        className={cn(
-          "mt-2 mb-1 ml-[calc(--spacing(2)-1px)] min-w-0 border-l pr-1 pl-4 leading-relaxed wrap-break-word text-muted-foreground",
-          className
-        )}
-      >
-        {children}
-      </div>
+      {forceMount ? (
+        // 在测量节点内部过渡，避免 Radix 测量尺寸时临时禁用 transition 造成骤然收起。
+        <div className="grid grid-rows-[0fr] opacity-0 transition-[grid-template-rows,opacity] duration-200 motion-reduce:transition-none group-data-[state=open]/trace-content:grid-rows-[1fr] group-data-[state=open]/trace-content:opacity-100">
+          <div className="min-h-0 overflow-hidden">{content}</div>
+        </div>
+      ) : content}
     </CollapsibleContent>
   )
 }

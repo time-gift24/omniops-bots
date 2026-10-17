@@ -177,7 +177,8 @@ export function ChainOfThought({
   const unfinished = parts.some(
     (part) => part.kind !== "text" && part.state === "running",
   );
-  const running = streaming && unfinished;
+  const settled = !streaming || (!unfinished && answering);
+  const running = !settled;
   const interrupted = !streaming && unfinished;
   const expanded = open ?? (streaming && !answering);
   const failed = parts.filter(
@@ -195,7 +196,6 @@ export function ChainOfThought({
   // 计时：本组步骤的实际耗时（正文输出不计入）。组内步骤间隙不停表；
   // 正文接管（answering）或整流结束时本组才定案，此时停表并入摘要行
   // （重挂载后丢失，可接受）。
-  const settled = !streaming || (!unfinished && answering);
   const startedAt = React.useRef<number | null>(null);
   const [elapsedMs, setElapsedMs] = React.useState<number | null>(null);
   React.useEffect(() => {
@@ -233,8 +233,13 @@ export function ChainOfThought({
             <TraceTitle>{summary}</TraceTitle>
           </TraceLine>
         </TraceCollapsibleTrigger>
-        {/* 保留子步骤展开状态；forceMount 时显式隐藏，避免关闭动画结束后回弹。 */}
-        <TraceCollapsibleContent forceMount hidden={!expanded}>
+        {/* 保留子步骤状态；读者进入详情后，由手动开合接管，避免正文到达时藏起焦点。 */}
+        <TraceCollapsibleContent
+          forceMount
+          inert={!expanded}
+          aria-hidden={!expanded}
+          onFocusCapture={() => setOpen(true)}
+        >
           <Trace>
             {parts.map((part, index) =>
               part.kind === "reasoning" ? (

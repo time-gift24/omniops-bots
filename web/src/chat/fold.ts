@@ -32,7 +32,7 @@ export type StepPart = Extract<PartView, { kind: "reasoning" | "tool" }>;
 
 /**
  * 助手消息的展示分段：连续的 reasoning/tool 聚为一个折叠段，
- * 非空正文把事件流切开，各自按原始顺序渲染。
+ * 有可见内容的正文把事件流切开，各自按原始顺序渲染。
  */
 export type AssistantSegment =
   | { kind: "steps"; parts: StepPart[] }
@@ -41,13 +41,13 @@ export type AssistantSegment =
 /**
  * 正文隔断分段（参照 deepseek-harness process-groups：正文出现即
  * flush 当前活动组并独立渲染，之后的思考/工具另起新组）。
- * 空正文段不切断分组——正文还没有内容时，视觉分组保持不变。
+ * 空白正文段不切断分组——正文还没有可见内容时，视觉分组保持不变。
  */
 export function segmentAssistantParts(parts: PartView[]): AssistantSegment[] {
   const segments: AssistantSegment[] = [];
   for (const part of parts) {
     if (part.kind === "text") {
-      if (part.text) segments.push({ kind: "text", text: part.text });
+      if (part.text.trim()) segments.push({ kind: "text", text: part.text });
       continue;
     }
     const last = segments.at(-1);

@@ -3,9 +3,10 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
 
 import { HugeiconsIcon } from "@hugeicons/react"
-import { CheckIcon, Copy01Icon } from "@hugeicons-pro/core-stroke-rounded"
+import { AlertCircleIcon, CheckIcon, Copy01Icon } from "@hugeicons-pro/core-stroke-rounded"
 
 import { Button } from "@/components/ui/button"
+import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard"
 
 const codeBlockVariants = cva(
   "group/code-block relative flex w-full min-w-0 flex-col overflow-hidden rounded-xl text-sm has-[>[data-slot=code-block-content]:focus-visible]:ring-3 has-[>[data-slot=code-block-content]:focus-visible]:ring-ring/50 data-[size=sm]:text-xs",
@@ -90,19 +91,12 @@ function CodeBlockCopyButton({
   size = "icon-xs",
   className,
   onClick,
+  disabled,
   ...props
 }: React.ComponentProps<typeof Button> & { value: string }) {
-  const [copied, setCopied] = React.useState(false)
-
-  React.useEffect(() => {
-    if (!copied) {
-      return
-    }
-
-    // 与 index.css 的 chat-check-decay 时长一致：勾选淡出后再换回复制图标。
-    const timeout = setTimeout(() => setCopied(false), 2500)
-    return () => clearTimeout(timeout)
-  }, [copied])
+  const { status, copy } = useCopyToClipboard()
+  const copied = status === "copied"
+  const failed = status === "error"
 
   return (
     <>
@@ -111,24 +105,23 @@ function CodeBlockCopyButton({
         data-copied={copied || undefined}
         variant={variant}
         size={size}
-        aria-label={copied ? "已复制" : "复制"}
+        aria-label={failed ? "复制失败，点击重试" : copied ? "已复制" : status === "pending" ? "复制中…" : "复制"}
+        disabled={disabled || status === "pending"}
         className={cn(className)}
         onClick={(event) => {
           onClick?.(event)
-          // 与消息复制一致：点击即给反馈，剪贴板写入异步进行。
-          void navigator.clipboard.writeText(value).catch(() => {})
-          setCopied(true)
+          if (!event.defaultPrevented) void copy(value)
         }}
         {...props}
       >
         <HugeiconsIcon
-          key={copied ? "check" : "copy"}
-          icon={copied ? CheckIcon : Copy01Icon}
+          key={status}
+          icon={failed ? AlertCircleIcon : copied ? CheckIcon : Copy01Icon}
           className={copied ? "chat-check-decay" : undefined}
         />
       </Button>
-      <span aria-live="polite" className="sr-only">
-        {copied ? "已复制" : ""}
+      <span role="status" className={failed ? "text-xs text-destructive" : "sr-only"}>
+        {failed ? "复制失败，请重试" : copied ? "已复制" : ""}
       </span>
     </>
   )

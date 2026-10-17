@@ -260,6 +260,7 @@ export function createMockGateway(
         if (!alive()) return;
         yield { type: "delta", partId, text: chunk };
       }
+      if (!alive()) return;
       yield {
         type: "part-completed",
         partId,

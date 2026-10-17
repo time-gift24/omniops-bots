@@ -211,23 +211,25 @@ test("正文隔断分段：连续思考/工具聚为一组，正文把事件流�
   assert.equal(segments[5].text, "第三段");
 });
 
-test("正文隔断分段：空正文不切断分组，末尾活动组保持独立", async (t) => {
+test("正文隔断分段：空白正文不切断分组，可见正文保留原始空白", async (t) => {
   const { segmentAssistantParts } = await loadFold(t);
 
-  // 流式中途：正文 part 已开始但还没有内容，后续步骤仍并入当前组。
-  const streaming = segmentAssistantParts([
-    { kind: "reasoning", text: "想", state: "done" },
-    { kind: "text", text: "" },
-    { kind: "tool", callId: "c", name: "searchCode", inputText: "", state: "running" },
-  ]);
-  assert.equal(streaming.length, 1);
-  assert.equal(streaming[0].kind, "steps");
-  assert.equal(streaming[0].parts.length, 2);
+  // 流式中途：正文只收到空白时，后续步骤仍并入当前组。
+  for (const text of ["", " ", "\n\n", " \t\r\n "]) {
+    const streaming = segmentAssistantParts([
+      { kind: "reasoning", text: "想", state: "done" },
+      { kind: "text", text },
+      { kind: "tool", callId: "c", name: "searchCode", inputText: "", state: "running" },
+    ]);
+    assert.equal(streaming.length, 1);
+    assert.equal(streaming[0].kind, "steps");
+    assert.equal(streaming[0].parts.length, 2);
+  }
 
   // 正文之后的活动另起新组，不与正文前的步骤合并。
   const segments = segmentAssistantParts([
     { kind: "reasoning", text: "先想", state: "done" },
-    { kind: "text", text: "正文" },
+    { kind: "text", text: "\n  正文  \n" },
     { kind: "reasoning", text: "再想", state: "running" },
   ]);
   assert.deepEqual(
@@ -235,5 +237,6 @@ test("正文隔断分段：空正文不切断分组，末尾活动组保持独�
     ["steps", "text", "steps"],
   );
   assert.equal(segments[0].parts.length, 1);
+  assert.equal(segments[1].text, "\n  正文  \n");
   assert.equal(segments[2].parts.length, 1);
 });

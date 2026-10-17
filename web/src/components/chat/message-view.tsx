@@ -14,6 +14,7 @@ import {
 
 import type { ChatMessageView } from "@/chat/fold.ts";
 import { segmentAssistantParts } from "@/chat/fold.ts";
+import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 import { Markdown } from "@/components/chat/markdown";
 import { ChainOfThought } from "@/components/chat/chain-of-thought";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
@@ -28,11 +29,15 @@ import {
 function MessageAction({
   label,
   pressed,
+  disabled,
+  copied,
   onClick,
   children,
 }: {
   label: string;
   pressed?: boolean;
+  disabled?: boolean;
+  copied?: boolean;
   onClick?: () => void;
   children: React.ReactNode;
 }) {
@@ -44,6 +49,8 @@ function MessageAction({
           size="icon-sm"
           aria-label={label}
           aria-pressed={pressed}
+          disabled={disabled}
+          data-copied={copied || undefined}
           onClick={onClick}
         >
           {children}
@@ -56,11 +63,36 @@ function MessageAction({
   );
 }
 
-function messageText(message: ChatMessageView): string {
+export function messageText(message: ChatMessageView): string {
   return message.parts
     .filter((part) => part.kind === "text")
     .map((part) => part.text)
-    .join("");
+    .join(message.role === "assistant" ? "\n\n" : "");
+}
+
+function CopyMessageAction({ text }: { text: string }) {
+  const { status, copy } = useCopyToClipboard();
+  const copied = status === "copied";
+  const failed = status === "error";
+  return (
+    <>
+      <MessageAction
+        label={failed ? "复制失败，点击重试" : copied ? "已复制" : status === "pending" ? "复制中…" : "复制"}
+        disabled={status === "pending"}
+        copied={copied}
+        onClick={() => void copy(text)}
+      >
+        <HugeiconsIcon
+          key={status}
+          icon={failed ? AlertCircleIcon : copied ? CheckIcon : Copy01Icon}
+          className={copied ? "chat-check-decay size-4" : "size-4"}
+        />
+      </MessageAction>
+      <span role="status" className={failed ? "text-xs text-destructive" : "sr-only"}>
+        {failed ? "复制失败，请重试" : copied ? "已复制" : ""}
+      </span>
+    </>
+  );
 }
 
 export function MessageView({
@@ -76,15 +108,7 @@ export function MessageView({
   /** 把用户消息文本放回输入框。 */
   onEdit?: (text: string) => void;
 }) {
-  const [copied, setCopied] = React.useState(false);
   const [feedback, setFeedback] = React.useState<"up" | "down" | null>(null);
-
-  React.useEffect(() => {
-    if (!copied) return;
-    // 与 index.css 的 chat-check-decay 时长一致：勾选淡出后再换回复制图标。
-    const timeout = setTimeout(() => setCopied(false), 2500);
-    return () => clearTimeout(timeout);
-  }, [copied]);
 
   if (message.role === "user") {
     const text = messageText(message);
@@ -110,12 +134,7 @@ export function MessageView({
             )}
           </Bubble>
           <MessageFooter>
-            <MessageAction
-              label="复制"
-              onClick={() => void navigator.clipboard.writeText(text)}
-            >
-              <HugeiconsIcon icon={Copy01Icon} className="size-4" />
-            </MessageAction>
+            <CopyMessageAction text={text} />
             {onEdit && (
               <MessageAction label="编辑" onClick={() => onEdit(text)}>
                 <HugeiconsIcon icon={PencilEdit01Icon} className="size-4" />
@@ -174,19 +193,7 @@ export function MessageView({
         )}
         {message.state === "done" && (
           <MessageFooter className="px-0">
-            <MessageAction
-              label={copied ? "已复制" : "复制"}
-              onClick={() => {
-                void navigator.clipboard.writeText(text);
-                setCopied(true);
-              }}
-            >
-              <HugeiconsIcon
-                key={copied ? "check" : "copy"}
-                icon={copied ? CheckIcon : Copy01Icon}
-                className={copied ? "chat-check-decay size-4" : "size-4"}
-              />
-            </MessageAction>
+            <CopyMessageAction text={text} />
             <MessageAction
               label="回答有帮助"
               pressed={feedback === "up"}

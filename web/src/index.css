@@ -302,6 +302,9 @@
   .chat-swap-out {
     animation: none;
   }
+  .chat-swap-out {
+    display: none;
+  }
   .chat-markdown [data-sd-animate],
   .chat-markdown [data-sd-animate-marker]::marker {
     animation: none;

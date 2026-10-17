@@ -1,0 +1,145 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Streaming interaction regression check</title>
+<!-- Run npm run dev, then open /tests/streaming.browser.html (also ?reduced=1). -->
+<style>body { padding: 24px; } #fixture { max-width: 720px; } #result { white-space: pre-wrap; margin-top: 24px; }</style>
+<div id="fixture"></div>
+<pre id="result">Running…</pre>
+<script type="module">
+  import React from "react";
+  import { createRoot } from "react-dom/client";
+  import { flushSync } from "react-dom";
+  import "/src/index.css";
+  import { ChainOfThought } from "/src/components/chat/chain-of-thought.tsx";
+  import { ChatThread } from "/src/components/chat/chat-thread.tsx";
+  import { MessageView } from "/src/components/chat/message-view.tsx";
+  import { CodeBlockCopyButton } from "/src/components/ui/code-block.tsx";
+  import { TooltipProvider } from "/src/components/ui/tooltip.tsx";
+  import { createMockGateway } from "/src/chat/mock-gateway.ts";
+  import { createThreadState, foldChatEvent } from "/src/chat/fold.ts";
+
+  const fixture = document.querySelector("#fixture");
+  const result = document.querySelector("#result");
+  const root = createRoot(fixture);
+  const h = React.createElement;
+  const wait = (ms = 0) => new Promise(resolve => setTimeout(resolve, ms));
+  const assert = (condition, message) => { if (!condition) throw new Error(message); };
+  const render = (component, props) => flushSync(() => root.render(h(TooltipProvider, null, h(component, props))));
+  const click = element => flushSync(() => element.click());
+  const passed = [];
+  const reduced = new URLSearchParams(location.search).has("reduced");
+  // Activate the actual emitted CSS branch on this fixture only; no OS settings change.
+  if (reduced) {
+    const activate = rules => {
+      for (const rule of rules) {
+        if (rule instanceof CSSMediaRule && rule.conditionText.includes("prefers-reduced-motion: reduce")) {
+          rule.media.mediaText = "all";
+        }
+        if (rule instanceof CSSMediaRule && rule.conditionText.includes("prefers-reduced-motion: no-preference")) {
+          rule.media.mediaText = "not all";
+        }
+        if (rule.cssRules) activate(rule.cssRules);
+      }
+    };
+    for (const sheet of document.styleSheets) activate(sheet.cssRules);
+  }
+  const clipboardDescriptor = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+  const clipboard = value => Object.defineProperty(navigator, "clipboard", { configurable: true, value });
+
+  try {
+    let state = { threadId: "loader", status: "streaming", messages: [
+      { id: "a", role: "assistant", state: "streaming", parts: [] },
+    ] };
+    const listeners = new Set();
+    const store = {
+      getState: () => state,
+      subscribe: listener => { listeners.add(listener); return () => listeners.delete(listener); },
+      retry() {}, send() {},
+    };
+    render(ChatThread, { store });
+    assert(fixture.querySelector(".beui-ai-loader"), "Waiting must show loader");
+    state = { ...state, messages: [{ ...state.messages[0], parts: [{ kind: "reasoning", text: "检查缓存", state: "running" }] }] };
+    flushSync(() => listeners.forEach(listener => listener()));
+    if (reduced) {
+      const exiting = fixture.querySelector(".chat-swap-out");
+      assert(!exiting || getComputedStyle(exiting).display === "none", "Reduced motion must immediately hide exiting loader");
+    }
+    await wait(260);
+    assert(!fixture.querySelector(".beui-ai-loader"), "Loader must leave after first content");
+    passed.push("Loader → content, including reduced-motion visibility");
+
+    const parts = [{ kind: "reasoning", text: "已完成第一步，等待工具", state: "done" }];
+    const props = { key: "disclosure", parts, streaming: true, answering: false };
+    render(ChainOfThought, props);
+    assert(fixture.textContent.includes("正在研究") && fixture.textContent.includes("已思考"), "Group stays running between completed steps");
+    let triggers = fixture.querySelectorAll('[data-slot="trace-collapsible-trigger"]');
+    triggers[1].focus();
+    click(triggers[1]);
+    render(ChainOfThought, { ...props, answering: true });
+    assert(triggers[0].getAttribute("aria-expanded") === "true", "Automatic collapse must protect focused child");
+    await wait(240);
+    const body = fixture.querySelector('[data-slot="trace-collapsible-content"]');
+    const expandedHeight = body.getBoundingClientRect().height;
+    triggers[0].focus();
+    click(triggers[0]);
+    assert(triggers[0].getAttribute("aria-expanded") === "false", "Manual close must still work");
+    await wait(50);
+    const closingHeight = body.getBoundingClientRect().height;
+    if (reduced || matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      assert(closingHeight < 1, "Reduced motion must collapse immediately");
+    } else {
+      assert(closingHeight > 0 && closingHeight < expandedHeight, "Closing must animate height, not snap");
+    }
+    await wait(220);
+    assert(body.getBoundingClientRect().height < 1, "Closed group must not occupy height");
+    assert(body.closest('[inert]') || body.querySelector('[inert]'), "Closed content must be inert");
+    click(triggers[0]);
+    triggers = fixture.querySelectorAll('[data-slot="trace-collapsible-trigger"]');
+    assert(triggers[1].getAttribute("aria-expanded") === "true", "Reopening must preserve child disclosure state");
+    render(ChainOfThought, { key: "stopped", parts: [{ ...parts[0], state: "running" }], streaming: false, messageState: "stopped", answering: false });
+    assert(fixture.textContent.includes("研究已停止") && !fixture.querySelector(".chat-quiet-dot"), "Stop must remove group activity");
+    passed.push("Group waiting, focus protection, animated close, nested state, stop");
+
+    let rejectWrite;
+    clipboard({ writeText: () => new Promise((_, reject) => { rejectWrite = reject; }) });
+    render(CodeBlockCopyButton, { value: "const value = 42;" });
+    click(fixture.querySelector("button"));
+    assert(fixture.querySelector("button").disabled && !fixture.textContent.includes("已复制"), "Pending copy must not announce success");
+    rejectWrite(new Error("denied"));
+    await wait(30);
+    assert(fixture.textContent.includes("复制失败") && !fixture.querySelector("button").disabled, "Copy rejection must offer retry");
+    let copiedText;
+    clipboard({ writeText: async text => { copiedText = text; } });
+    click(fixture.querySelector("button"));
+    await wait(30);
+    assert(copiedText === "const value = 42;" && fixture.textContent.includes("已复制"), "Retry must succeed before showing copied");
+    passed.push("Clipboard pending → failure → retry → success");
+
+    const gateway = createMockGateway({ delayMs: 0 });
+    let folded = createThreadState("copy");
+    let expected;
+    for await (const event of gateway.stream({ messages: [{ role: "user", text: "检查缓存" }] })) {
+      folded = foldChatEvent(folded, event);
+      if (event.type === "completed") expected = event.response.assistant.parts[0].text;
+    }
+    render(MessageView, { key: "assistant", message: folded.messages.at(-1), streaming: false, onRetry() {} });
+    click(fixture.querySelector('[data-slot="message-footer"] button'));
+    await wait(30);
+    assert(copiedText === expected, "Copied interleaved answer must retain Markdown boundaries");
+    clipboard(undefined);
+    render(MessageView, { key: "user", message: { id: "u", role: "user", state: "done", parts: [{ kind: "text", text: "用户原文" }] }, streaming: false, onRetry() {} });
+    click(fixture.querySelector('[data-slot="message-footer"] button'));
+    await wait(30);
+    assert(fixture.textContent.includes("复制失败"), "Missing clipboard API must fail visibly without throwing");
+    passed.push("Normal mock copy preserves Markdown; missing clipboard fails safely");
+    result.textContent = `PASS (${reduced ? "reduced-motion CSS" : "normal motion"})\n${passed.join("\n")}`;
+    result.dataset.passed = "true";
+  } catch (error) {
+    result.textContent = `FAIL: ${error.message}\nCompleted: ${passed.join("; ")}`;
+    result.dataset.passed = "false";
+    throw error;
+  } finally {
+    if (clipboardDescriptor) Object.defineProperty(navigator, "clipboard", clipboardDescriptor);
+    else delete navigator.clipboard;
+  }
+</script>
