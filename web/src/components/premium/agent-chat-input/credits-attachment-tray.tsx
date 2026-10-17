@@ -4,7 +4,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { Cancel01Icon, File01Icon } from "@hugeicons-pro/core-stroke-rounded";
 import { AnimatePresence, motion } from "motion/react";
 import { Button } from "@/components/motion/button";
-import { SPRING_PANEL, SPRING_PRESS, SPRING_SWAP } from "@/lib/ease";
+import { SPRING_PANEL, SPRING_PRESS } from "@/lib/ease";
 import { isImageAttachment } from "./attachment-utils";
 import {
   type AgentChatCreditsLabels,
@@ -47,11 +47,20 @@ export function CreditsAttachmentTray({
                 <motion.div
                   layout={!reduce}
                   key={attachment.id}
-                  initial={reduce ? false : { opacity: 0, scale: 0.96 }}
+                  // CDS file-thumbnail-grow-in：0.85 → 1 生长，250ms 缓出。
+                  initial={reduce ? false : { opacity: 0, scale: 0.85 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  exit={reduce ? undefined : { opacity: 0, scale: 0.96 }}
-                  transition={reduce ? { duration: 0 } : SPRING_SWAP}
-                  className="group flex h-9 min-w-0 shrink-0 items-center gap-1.5 rounded-lg border border-border/70 bg-background/90 p-1 pr-0.5"
+                  exit={
+                    reduce
+                      ? undefined
+                      : { opacity: 0, scale: 0.85, transition: { duration: 0.15 } }
+                  }
+                  transition={
+                    reduce
+                      ? { duration: 0 }
+                      : { duration: 0.25, ease: [0.165, 0.84, 0.44, 1] }
+                  }
+                  className="group flex h-9 min-w-0 shrink-0 items-center gap-1.5 rounded-[10px] border border-border/70 bg-background/90 p-1 pr-0.5"
                 >
                   {image && imageUrl ? (
                     <Button
