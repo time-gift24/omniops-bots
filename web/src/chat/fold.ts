@@ -27,6 +27,39 @@ export type PartView =
 
 export type MessageState = "streaming" | "done" | "failed" | "stopped";
 
+/** reasoning / tool 步骤（折叠段的成员）。 */
+export type StepPart = Extract<PartView, { kind: "reasoning" | "tool" }>;
+
+/**
+ * 助手消息的展示分段：连续的 reasoning/tool 聚为一个折叠段，
+ * 非空正文把事件流切开，各自按原始顺序渲染。
+ */
+export type AssistantSegment =
+  | { kind: "steps"; parts: StepPart[] }
+  | { kind: "text"; text: string };
+
+/**
+ * 正文隔断分段（参照 deepseek-harness process-groups：正文出现即
+ * flush 当前活动组并独立渲染，之后的思考/工具另起新组）。
+ * 空正文段不切断分组——正文还没有内容时，视觉分组保持不变。
+ */
+export function segmentAssistantParts(parts: PartView[]): AssistantSegment[] {
+  const segments: AssistantSegment[] = [];
+  for (const part of parts) {
+    if (part.kind === "text") {
+      if (part.text) segments.push({ kind: "text", text: part.text });
+      continue;
+    }
+    const last = segments.at(-1);
+    if (last?.kind === "steps") {
+      last.parts.push(part);
+    } else {
+      segments.push({ kind: "steps", parts: [part] });
+    }
+  }
+  return segments;
+}
+
 export interface ChatMessageView {
   id: string;
   role: "user" | "assistant";

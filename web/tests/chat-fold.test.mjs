@@ -182,3 +182,58 @@ test("重新生成历史回复时，开始、增量、失败和停止都只更�
   assert.equal(state.messages[0].state, "failed");
   assert.deepEqual(state.messages[1], original.messages[1]);
 });
+
+
+test("正文隔断分段：连续思考/工具聚为一组，正文把事件流切开", async (t) => {
+  const { segmentAssistantParts } = await loadFold(t);
+
+  const reasoning = (text) => ({ kind: "reasoning", text, state: "done" });
+  const tool = (name) => ({
+    kind: "tool", callId: name, name, inputText: "{}", state: "done",
+  });
+  const text = (value) => ({ kind: "text", text: value });
+
+  // mock 普通路径：思考 → 工具 → 正文，三轮交替。
+  const segments = segmentAssistantParts([
+    reasoning("r0"), tool("readBuildLog"), text("第一段"),
+    reasoning("r3"), tool("searchCode"), text("第二段"),
+    reasoning("r6"), tool("searchWeb"), text("第三段"),
+  ]);
+
+  assert.deepEqual(
+    segments.map((segment) => segment.kind),
+    ["steps", "text", "steps", "text", "steps", "text"],
+  );
+  assert.equal(segments[0].parts.length, 2);
+  assert.equal(segments[2].parts.length, 2);
+  assert.equal(segments[4].parts.length, 2);
+  assert.equal(segments[1].text, "第一段");
+  assert.equal(segments[5].text, "第三段");
+});
+
+test("正文隔断分段：空正文不切断分组，末尾活动组保持独立", async (t) => {
+  const { segmentAssistantParts } = await loadFold(t);
+
+  // 流式中途：正文 part 已开始但还没有内容，后续步骤仍并入当前组。
+  const streaming = segmentAssistantParts([
+    { kind: "reasoning", text: "想", state: "done" },
+    { kind: "text", text: "" },
+    { kind: "tool", callId: "c", name: "searchCode", inputText: "", state: "running" },
+  ]);
+  assert.equal(streaming.length, 1);
+  assert.equal(streaming[0].kind, "steps");
+  assert.equal(streaming[0].parts.length, 2);
+
+  // 正文之后的活动另起新组，不与正文前的步骤合并。
+  const segments = segmentAssistantParts([
+    { kind: "reasoning", text: "先想", state: "done" },
+    { kind: "text", text: "正文" },
+    { kind: "reasoning", text: "再想", state: "running" },
+  ]);
+  assert.deepEqual(
+    segments.map((segment) => segment.kind),
+    ["steps", "text", "steps"],
+  );
+  assert.equal(segments[0].parts.length, 1);
+  assert.equal(segments[2].parts.length, 1);
+});

@@ -13,6 +13,7 @@ import {
 } from "@hugeicons-pro/core-stroke-rounded";
 
 import type { ChatMessageView } from "@/chat/fold.ts";
+import { segmentAssistantParts } from "@/chat/fold.ts";
 import { Markdown } from "@/components/chat/markdown";
 import { ChainOfThought } from "@/components/chat/chain-of-thought";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
@@ -126,27 +127,31 @@ export function MessageView({
     );
   }
 
-  const steps = message.parts.filter(
-    (part) => part.kind === "reasoning" || part.kind === "tool",
-  );
-  const textParts = message.parts.filter((part) => part.kind === "text");
+  const segments = segmentAssistantParts(message.parts);
   const text = messageText(message);
-  const answering = text.length > 0;
+  // 某折叠段之后若已出现正文，该段视为「正文已开始」而自动收起；
+  // 最后一段活动组在流式期间保持展开，直到新的正文开始输出。
+  const textAfter = segments.map((_, index) =>
+    segments.slice(index + 1).some((segment) => segment.kind === "text"),
+  );
 
   return (
     <Message className="chat-message-enter">
       <MessageContent className="gap-4">
-        {steps.length > 0 && (
-          <ChainOfThought
-            parts={steps}
-            streaming={streaming && message.state === "streaming"}
-            answering={answering}
-          />
-        )}
-        {textParts.map((part, index) =>
-          part.kind === "text" && part.text ? (
-            <Markdown key={index}>{part.text}</Markdown>
-          ) : null,
+        {segments.map((segment, index) =>
+          segment.kind === "steps" ? (
+            <ChainOfThought
+              key={`steps-${index}`}
+              parts={segment.parts}
+              streaming={streaming && message.state === "streaming"}
+              messageState={message.state}
+              answering={textAfter[index]}
+            />
+          ) : (
+            <Markdown key={`text-${index}`} streaming={streaming}>
+              {segment.text}
+            </Markdown>
+          ),
         )}
         {message.state === "failed" && (
           <div className="flex items-center gap-2 text-sm text-destructive">

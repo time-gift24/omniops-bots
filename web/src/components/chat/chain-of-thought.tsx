@@ -192,11 +192,14 @@ export function ChainOfThought({
         ? "pending"
         : undefined;
 
-  // 计时：流式开始到结束的实际耗时，完成后并入摘要行（重挂载后丢失，可接受）。
+  // 计时：本组步骤的实际耗时（正文输出不计入）。组内步骤间隙不停表；
+  // 正文接管（answering）或整流结束时本组才定案，此时停表并入摘要行
+  // （重挂载后丢失，可接受）。
+  const settled = !streaming || (!unfinished && answering);
   const startedAt = React.useRef<number | null>(null);
   const [elapsedMs, setElapsedMs] = React.useState<number | null>(null);
   React.useEffect(() => {
-    if (streaming) {
+    if (!settled) {
       if (startedAt.current === null) {
         startedAt.current = Date.now();
         setElapsedMs(null);
@@ -205,7 +208,7 @@ export function ChainOfThought({
       setElapsedMs(Date.now() - startedAt.current);
       startedAt.current = null;
     }
-  }, [streaming]);
+  }, [settled]);
 
   let summary = `已研究 ${parts.length} 步${failed > 0 ? `，${failed} 步失败` : ""}`;
   if (running) {
