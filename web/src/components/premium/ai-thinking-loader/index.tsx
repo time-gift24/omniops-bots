@@ -67,7 +67,6 @@ const tiles = Array.from({ length: 9 }, (_, i) => [
   Math.floor(i / 3) + 1,
 ]);
 
-// CSS loops stay independent of React renders. Only opacity and transforms animate.
 const styles = `
 @keyframes beui-ai-pixel { 0%, 65%, 100% { opacity: .12; } 22%, 34% { opacity: 1; } }
 @keyframes beui-ai-tile { 0%, 100% { opacity: .18; transform: translateY(2px); } 35%, 65% { opacity: 1; transform: translateY(0); } }

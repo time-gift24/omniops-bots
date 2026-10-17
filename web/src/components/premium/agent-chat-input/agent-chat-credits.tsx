@@ -183,7 +183,6 @@ export function AgentChatCredits({
       previewAttachmentId &&
       !currentAttachments.some((item) => item.id === previewAttachmentId)
     ) {
-      // 上游写法：附件被移除后同步关闭其预览，属于「派生重置」场景。
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setPreviewAttachmentId(null);
     }

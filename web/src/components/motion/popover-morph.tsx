@@ -1,7 +1,6 @@
 "use client";
 // beui.dev/components/motion/popover
-// 注册表 vendored 组件：portal 就绪标记与 context ref/id 传递是上游的测量生命周期写法，
-// 保持与上游一致以便后续升级对照。
+// 保留上游 portal 就绪标记与 context ref/id 传递，便于升级对照。
 /* eslint-disable react-hooks/refs, react-hooks/set-state-in-effect */
 
 import {
@@ -67,12 +66,7 @@ export interface MorphPopoverProps {
   className?: string;
 }
 
-/**
- * A popover whose full-size panel reveals from the corner nearest the trigger
- * on one spring, then retraces the same clip on close. Content and surface
- * edges keep their size throughout. Closes on outside pointer / Escape.
- * Controlled or uncontrolled.
- */
+/** Reveals from the trigger's nearest corner; closes on outside pointer or Escape. */
 export function MorphPopover({
   children,
   open: controlledOpen,
@@ -97,25 +91,15 @@ export function MorphPopover({
   );
   const toggle = useCallback(() => setOpen(!open), [setOpen, open]);
 
-  // A trigger normally registers itself through MorphPopoverTrigger. It can't
-  // when something else already clones the element — a Tooltip wrapping the
-  // button, say — and an unregistered trigger leaves the panel with nothing to
-  // measure against, so it renders permanently invisible. The root boxes the
-  // trigger exactly (the content portals out of it), so it stands in until a
-  // real trigger registers, and stands in again if that one unmounts. Both are
-  // state, so a trigger arriving while the panel is open re-anchors it.
+  // Use the root for measurement when a wrapper prevents trigger registration.
+  // State lets the open panel re-anchor when the trigger mounts or unmounts.
   const anchorRef = useMemo<React.MutableRefObject<HTMLElement | null>>(
     () => ({ current: trigger ?? root }),
     [root, trigger],
   );
 
-  // The panel is a `role="dialog"` and goes inert the moment it closes, so
-  // focus cannot be left sitting inside it: a dismissal hands it back to the
-  // trigger, the way the ARIA dialog pattern asks. A pointer dismissal takes
-  // the focus onward itself when it lands on something focusable — this only
-  // catches the case where it would otherwise be stranded. When no trigger has
-  // registered, the root anchor stands in only if it can actually hold focus;
-  // there is nowhere better than where the keyboard already is, so leave it.
+  // Restore focus only if it would be stranded in the closing, inert panel.
+  // Without a trigger, only a focusable root can receive it.
   const close = useCallback(() => {
     setOpen(false);
     const focused = document.activeElement;
@@ -183,7 +167,6 @@ function mergeRefs<T>(...refs: Array<Ref<T> | undefined>) {
   };
 }
 
-/** Wraps a single element, toggling the popover on click. */
 export function MorphPopoverTrigger({ children }: MorphPopoverTriggerProps) {
   const ctx = useMorphContext("MorphPopoverTrigger");
   const child = children as ReactElement<Record<string, unknown>>;
@@ -212,16 +195,11 @@ export function MorphPopoverTrigger({ children }: MorphPopoverTriggerProps) {
   });
 }
 
-// Full-distance clip travel needs a shorter curve than SPRING_PANEL's slow
-// overdamped tail. A non-bouncing spring reaches its rest within 260 ms.
+// Full-distance clip travel needs a shorter tail than SPRING_PANEL.
 const MORPH_ENTER = { type: "spring", duration: 0.26, bounce: 0 } as const;
 const MORPH_EXIT = { duration: 0.2, ease: EASE_OUT } as const;
 
-// Keep the panel and content at their final size. An inset clip reveals the
-// nearest corner without scaling borders, shadows or keyboard-focus geometry.
-// A full-size clip keeps content at its final coordinates without box-to-box
-// scale correction. One progress value keeps clip and opacity synchronized;
-// clip-path and the shadow may paint, so this is not a compositor-only morph.
+// Clipping preserves content size and focus geometry; the clip and shadow may paint.
 function clipAt(side: Side, align: Align, radius: number, inset: number) {
   return `inset(${side === "top" ? inset : 0}% ${align === "start" ? inset : 0}% ${side === "bottom" ? inset : 0}% ${align === "end" ? inset : 0}% round ${radius}px)`;
 }
@@ -254,8 +232,7 @@ export function MorphPopoverContent(props: MorphPopoverContentProps) {
   );
 }
 
-// Measurement belongs to the mounted portal session: reopening must not start
-// an entrance at the previous session's coordinates before measuring this one.
+// Measure each portal mount so reopening cannot animate from stale coordinates.
 function MorphPopoverSurface({
   children,
   side = "bottom",
@@ -280,8 +257,7 @@ function MorphPopoverSurface({
       ? layout.trigger.left + layout.trigger.width - layout.content.width
       : layout.trigger.left
     : 0;
-  // Keep larger compositions, such as calendars, inside the viewport. Prefer
-  // the requested side, then use the roomier side when it cannot fit there.
+  // Use the roomier side only when the requested side cannot fit the content.
   const gutter = 12;
   const below = layout
     ? Math.max(
@@ -330,8 +306,6 @@ function MorphPopoverSurface({
     clipAt(resolvedSide, align, radius, 92 * (1 - p)),
   );
   const surfaceOpacity = useTransform(progress, [0, 0.15], [0, 1]);
-  // Reduced motion has no travel, so a short fade carries the whole entrance
-  // and exit on its own.
   const fade = useMotionValue(reduce ? 0 : 1);
   const ready = layout !== null;
   const focusedOnOpen = useRef(false);
@@ -346,12 +320,8 @@ function MorphPopoverSurface({
     focusedOnOpen.current = true;
     onOpenAutoFocus?.(ctx.contentRef.current);
   }, [ready, isPresent, ctx.contentRef, onOpenAutoFocus]);
-  // `safeToRemove` is a new function on every render: AnimatePresence
-  // rebuilds its context each time its parent renders. Read it through a ref
-  // so a render during the exit (a consumer's state change, a list streaming
-  // in) does not restart the exit from where it got to — restarted every
-  // render, it would close in ever smaller steps and never report completion,
-  // leaving an inert, invisible panel mounted for good.
+  // safeToRemove changes on each render; a ref prevents exit restarts that
+  // could leave the invisible panel mounted indefinitely.
   const safeToRemoveRef = useRef(safeToRemove);
   useLayoutEffect(() => {
     safeToRemoveRef.current = safeToRemove;
@@ -390,8 +360,7 @@ function MorphPopoverSurface({
         pointerEvents: isPresent ? "auto" : "none",
         visibility: layout ? "visible" : "hidden",
       }}
-      // A drop-shadow follows the clipped surface; box-shadow would be cut
-      // off by its own clip. Caller surface classes retain their old target.
+      // drop-shadow follows the clipped surface; box-shadow would be clipped off.
       className={cn(
         "fixed z-[9999]",
         shadow && "[filter:drop-shadow(0_10px_18px_rgba(0,0,0,0.14))]",

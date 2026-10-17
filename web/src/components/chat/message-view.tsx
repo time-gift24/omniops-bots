@@ -102,7 +102,6 @@ export function MessageView({
   onEdit,
 }: {
   message: ChatMessageView;
-  /** 是否为正在流式输出的最后一条 assistant 消息。 */
   streaming: boolean;
   onRetry: () => void;
   /** 把用户消息文本放回输入框。 */
@@ -148,8 +147,7 @@ export function MessageView({
 
   const segments = segmentAssistantParts(message.parts);
   const text = messageText(message);
-  // 某折叠段之后若已出现正文，该段视为「正文已开始」而自动收起；
-  // 最后一段活动组在流式期间保持展开，直到新的正文开始输出。
+  // 每组步骤在后续正文出现时自动收起；活动组保持展开。
   const textAfter = segments.map((_, index) =>
     segments.slice(index + 1).some((segment) => segment.kind === "text"),
   );

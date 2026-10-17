@@ -85,10 +85,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   const hasError = Boolean(error);
   const errorMessage = typeof error === "string" ? error : null;
 
-  // Right edge shows the success check, otherwise the caller's right icon.
   const rightSlot = success ? null : rightIcon;
 
-  // Shake the field when an error appears.
   useEffect(() => {
     if (!fieldRef.current || reduce || !hasError) return;
     animate(

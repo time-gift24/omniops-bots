@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SPRING_PANEL } from "@/lib/ease";
 
-/** 本轮单线程界面固定使用一个 threadId；切换线程 UI 落地时状态层不变。 */
 const MAIN_THREAD_ID = "main";
 
 const SUGGESTIONS = [
@@ -42,8 +41,6 @@ export function ChatScreen() {
       <LayoutGroup>
         <div className="flex h-full min-h-0 flex-col">
           {empty ? (
-            // CDS desktop 空态：问候 + 居中 composer + 建议；开聊后
-            // composer 以共享 layoutId 平滑落底。
             <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4 sm:px-8">
               <motion.div
                 initial={reduce ? false : { opacity: 0, y: 12 }}

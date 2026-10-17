@@ -16,14 +16,10 @@ import {
   MessageScrollerViewport,
 } from "@/components/ui/message-scroller";
 
-/** 过场退场时长（ms），与 index.css 的 chat-swap-out 一致。 */
+/** 卸载前为 index.css 的 chat-swap-out 动画预留的时间（ms）。 */
 const LOADER_EXIT_MS = 220;
 
-/**
- * assistant 消息位：等待首个内容时展示 diamond 过场；
- * 内容到达后过场淡出、MessageView 淡入（挂载即触发 chat-message-enter），
- * 两者同格叠放避免布局跳动。过场只出不回，parts 只增不减。
- */
+/** 过场与内容同格叠放，交叉淡入淡出时避免布局跳动。 */
 function AssistantSlot({
   message,
   busy,
@@ -38,8 +34,7 @@ function AssistantSlot({
   const waiting =
     busy && message.state === "streaming" && message.parts.length === 0;
 
-  // 退场窗口：waiting 翻 false 时在渲染期置 exiting（React 派生状态模式），
-  // effect 只负责到点卸载过场。
+  // 在渲染期派生退场状态，避免内容到达时先卸载过场再挂回。
   const [exiting, setExiting] = useState(false);
   const [prevWaiting, setPrevWaiting] = useState(waiting);
   if (prevWaiting !== waiting) {

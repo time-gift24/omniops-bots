@@ -243,7 +243,6 @@ test("帧流适配：NDJSON 行 → ChatEvent 流，终止事件后停止", asyn
         metadata,
       },
     });
-    // 终止事件之后的帧应被忽略
     yield JSON.stringify({ type: "delta", part: 0, delta: { type: "text", text: "多余" } });
   }
 

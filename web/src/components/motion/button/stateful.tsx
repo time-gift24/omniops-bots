@@ -54,8 +54,6 @@ const CASCADE_LETTER_VARIANTS: Variants = {
 };
 
 const ICON_VARIANTS: Variants = {
-  // Width collapses too, so the icon adds/removes its own space smoothly
-  // instead of popping the row width in a single frame.
   initial: { opacity: 0, width: 0, scale: 0.7, filter: ROLL_BLUR },
   animate: {
     opacity: 1,
@@ -103,9 +101,8 @@ function TextSlot({
   const label = typeof children === "string" ? children : null;
   const cascade = label !== null && !reduce;
 
-  // Measure strings with the same per-letter layout as the cascade. Measuring
-  // the whole string preserves kerning, which can make it narrower than the
-  // inline-block letters and clip the final glyph during the width animation.
+  // Match the cascade's per-letter layout; whole-string kerning can undermeasure
+  // its width and clip the final glyph during animation.
   useLayoutEffect(() => {
     const nextWidth = measureRef.current?.offsetWidth;
     if (!nextWidth) return;

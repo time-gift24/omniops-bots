@@ -86,7 +86,6 @@ async fn interact(
         write!(output, "> ")?;
         output.flush()?;
         line.clear();
-        // No generation is active while waiting for the next line.
         if input.read_line(&mut line)? == 0 {
             return Ok(());
         }

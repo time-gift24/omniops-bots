@@ -1,6 +1,5 @@
 //! Shared LLM boundaries and typed, Outcome-routed cluster execution.
 
-/// Returns the crate version of `cognacta-core`.
 pub fn version() -> &'static str {
     env!("CARGO_PKG_VERSION")
 }

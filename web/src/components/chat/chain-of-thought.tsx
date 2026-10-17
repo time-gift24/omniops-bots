@@ -21,7 +21,6 @@ import {
 import { CodeBlock, CodeBlockContent } from "@/components/ui/code-block";
 import { Markdown } from "@/components/chat/markdown";
 
-/** 工具名 → 中文动词。未知工具回退为「执行」。 */
 const TOOL_VERBS: Record<string, string> = {
   readBuildLog: "读取构建日志",
   searchCode: "搜索代码",
@@ -117,7 +116,6 @@ function StepTitle({ title, detail }: { title: string; detail?: string }) {
 
 function StatusIcon({ status }: { status?: "running" | "error" | "pending" }) {
   if (status === "running") {
-    // CDS 三点波浪代替通用旋转圈，贴合 Claude 的思考中指示。
     return (
       <span className="flex items-center gap-0.5">
         {[0, 1, 2].map((i) => (
@@ -293,9 +291,7 @@ export function ChainOfThought({
         ? "pending"
         : undefined;
 
-  // 计时：本组步骤的实际耗时（正文输出不计入）。组内步骤间隙不停表；
-  // 正文接管（answering）或整流结束时本组才定案，此时停表并入摘要行
-  // （重挂载后丢失，可接受）。
+  // 耗时包含步骤间隙，不计后续正文；重挂载后丢失。
   const startedAt = React.useRef<number | null>(null);
   const [elapsedMs, setElapsedMs] = React.useState<number | null>(null);
   React.useEffect(() => {

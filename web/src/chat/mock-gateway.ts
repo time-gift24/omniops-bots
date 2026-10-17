@@ -1,17 +1,11 @@
 /**
- * Mock 网关：脚本化事件流，驱动界面全部状态而无需后端。
- *
  * 触发词（写在消息文本里）：
  * - `[fail-send]`：提交即失败（网络错误），演示发送失败态。
  * - `[fail-step]`：检索代码步骤失败，演示思维链失败态。
  * - `[burst]`：停顿后成批输出长 Markdown；可在输出中点击停止。
  * - `[slow]`：逐段延迟放大 8 倍，演示停止按钮与长流。
  *
- * 普通路径为三轮「思考 → 工具 → 正文」交替；burst 路径保持
- * partId 0-2 步骤 + partId 3 整篇正文的结构（测试钉住）。
- *
- * 请求带 `model` 时按 MODEL_PROFILES 区分人格：开场白、回复节奏与
- * metadata 的 requested/resolved 模型随选择变化；缺省为 pine-1。
+ * burst 的 partId 0-2 为步骤、3 为整篇正文，测试依赖该结构。
  */
 
 import type { ChatGateway } from "./gateway.ts";
@@ -127,7 +121,6 @@ for (const result of results) {
 
 如果热缓存已经稳定命中，而总耗时仍没有明显下降，再检查编译阶段。先把最慢的一段改好，再决定下一步，避免同时修改多个环节后难以确认收益。`;
 
-/** 完整演示回复：三段正文按段落边界切分，普通路径交替流出，burst 路径拼接为整篇。 */
 const DEMO_REPLY = [REPLY_SEG_1, REPLY_SEG_2, REPLY_SEG_3].join("\n\n");
 
 const BURST_REPLY = [
@@ -200,7 +193,6 @@ const sleep = (ms: number, signal: { aborted: boolean }) =>
     setTimeout(resolve, ms);
   });
 
-/** 各模型的 mock 人格：开场白不同，回复节奏不同（相对倍率）。 */
 const MODEL_PROFILES: Record<
   string,
   { opener?: string; pace: number; resolved: string }
@@ -223,7 +215,6 @@ const MODEL_PROFILES: Record<
   },
 };
 
-/** 把文本切成若干片段，模拟 token 级流式增量。小片段 + 短间隔，吐字更连贯。 */
 function chunkText(text: string, size = 3): string[] {
   const characters = Array.from(text);
   const chunks: string[] = [];
@@ -278,15 +269,12 @@ export function createMockGateway(
     await tick();
     if (!alive()) return;
 
-    // 事件发射器：每个 yield 前后都检查 abort，保证中途停止干净落地。
     async function* emitReasoning(
       partId: number,
       reasoning: string,
     ): AsyncGenerator<ChatEvent> {
       yield { type: "part-started", partId, kind: "reasoning" };
-      // 思考阶段放慢：起步停顿 + 更密的增量间隔，贴近真实 agent 节奏。
-      // 用 baseDelay 而非 delay：[slow] 只放慢正文，不拖长步骤；测试注入
-      // 小 delayMs 时步骤同步快进。
+      // 使用 baseDelay 避免 [slow] 拉长思考阶段，测试仍可用 delayMs 加速。
       await sleep(baseDelay * 10, signal);
       for (const chunk of chunkText(reasoning, 4)) {
         await sleep(baseDelay * 6, signal);
@@ -314,7 +302,6 @@ export function createMockGateway(
         if (!alive()) return;
         yield { type: "delta", partId, text: chunk };
       }
-      // 工具执行停顿：等待结果返回的阶段是耗时主体。
       await sleep(baseDelay * 24, signal);
       if (!alive()) return;
       yield {
@@ -353,14 +340,13 @@ export function createMockGateway(
       ? { errorText: "索引服务 503：search backend unavailable" }
       : { output: { files: ["next.config.ts", "scripts/optimize-images.ts"] } };
 
-    // 模型人格的开场白只进普通路径首段；burst 是压测路径，内容保持钉住。
+    // burst 压测内容固定，不添加模型开场白。
     const seg1 = profile.opener
       ? `${profile.opener}\n\n${REPLY_SEG_1}`
       : REPLY_SEG_1;
     const demoReply = [seg1, REPLY_SEG_2, REPLY_SEG_3].join("\n\n");
 
     if (burst) {
-      // burst：思考与工具就绪后整篇倾泻，压测长流与中途停止。
       yield* emitReasoning(0, BUILD_REASONING);
       if (!alive()) return;
       yield* emitTool(1, "readBuildLog", { deployment: "dpl_8Kx2" }, {
@@ -372,7 +358,6 @@ export function createMockGateway(
       yield* emitText(3, BURST_REPLY, true);
       if (!alive()) return;
     } else {
-      // 普通路径：三轮「思考 → 工具 → 正文」交替，贴近真实 agent 节奏。
       yield* emitReasoning(0, BUILD_REASONING);
       if (!alive()) return;
       yield* emitTool(1, "readBuildLog", { deployment: "dpl_8Kx2" }, {

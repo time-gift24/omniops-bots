@@ -20,7 +20,6 @@ export function useCopyToClipboard() {
     clearTimeout(timeout.current);
     setStatus("pending");
     try {
-      // 缺少 Clipboard API、同步异常及异步拒绝都进入可重试的失败状态。
       await navigator.clipboard.writeText(value);
       if (mounted.current) {
         setStatus("copied");

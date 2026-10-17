@@ -193,7 +193,6 @@ test("正文隔断分段：连续思考/工具聚为一组，正文把事件流�
   });
   const text = (value) => ({ kind: "text", text: value });
 
-  // mock 普通路径：思考 → 工具 → 正文，三轮交替。
   const segments = segmentAssistantParts([
     reasoning("r0"), tool("readBuildLog"), text("第一段"),
     reasoning("r3"), tool("searchCode"), text("第二段"),
@@ -214,7 +213,6 @@ test("正文隔断分段：连续思考/工具聚为一组，正文把事件流�
 test("正文隔断分段：空白正文不切断分组，可见正文保留原始空白", async (t) => {
   const { segmentAssistantParts } = await loadFold(t);
 
-  // 流式中途：正文只收到空白时，后续步骤仍并入当前组。
   for (const text of ["", " ", "\n\n", " \t\r\n "]) {
     const streaming = segmentAssistantParts([
       { kind: "reasoning", text: "想", state: "done" },
@@ -226,7 +224,6 @@ test("正文隔断分段：空白正文不切断分组，可见正文保留原�
     assert.equal(streaming[0].parts.length, 2);
   }
 
-  // 正文之后的活动另起新组，不与正文前的步骤合并。
   const segments = segmentAssistantParts([
     { kind: "reasoning", text: "先想", state: "done" },
     { kind: "text", text: "\n  正文  \n" },

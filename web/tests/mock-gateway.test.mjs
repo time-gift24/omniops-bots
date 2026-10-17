@@ -142,8 +142,7 @@ test("模型选择贯通：metadata 反映请求模型，开场白与最终回�
   assert.equal(started.metadata.requestedModel, "sonnet-5")
   assert.equal(started.metadata.resolvedModel, "sonnet-5-2026-10")
 
-  // 开场白进首段正文（partId 2；0/1 是推理与工具），且 completed 的
-  // 完整回复以同一开场白开头。
+  // partId 0/1 是推理与工具，首段正文从 2 开始。
   const seg1 = events
     .filter((event) => event.type === "delta" && event.partId === 2)
     .map((event) => event.text)

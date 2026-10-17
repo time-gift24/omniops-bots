@@ -296,7 +296,6 @@ protocol = "openai.chat-completions"
     let model_requests: Vec<_> = model.requests.try_iter().collect();
     assert_eq!(model_requests.len(), 1);
 
-    // The same path is now missing: configuration fails before Model or Generation exists.
     let output = finish(cmd.spawn().unwrap());
     assert!(!output.status.success());
     assert!(String::from_utf8_lossy(&output.stderr).contains("configuration.failed"));

@@ -66,7 +66,6 @@ const Context = createContext<
   (AgentComposerState & { parts: AgentComposerParts }) | null
 >(null);
 
-/** Internal bridge: each variant owns its state and supplies its wired parts. */
 export function AgentComposerProvider({
   parts,
   state,
@@ -81,7 +80,6 @@ export function AgentComposerProvider({
   );
 }
 
-/** Read the nearest composer's state and invoke its guarded actions. */
 export function useAgentComposer(): AgentComposerState {
   const context = useContext(Context);
   if (!context)
@@ -104,7 +102,6 @@ function Part({
   if (node == null || node === false) return null;
   return className ? <div className={className}>{node}</div> : node;
 }
-/** The Credits card surface, shared by default and composed layouts. */
 export function AgentComposerSurface({
   className,
   ...props
@@ -254,7 +251,6 @@ export function AgentComposerAction({
         else void submit();
       }}
       data-composer-action=""
-      // CDS 发送按钮：主色 + 按压弹簧（active:scale-95）。
       className={cn("size-10 rounded-full active:scale-95", className)}
     >
       {busy ? (

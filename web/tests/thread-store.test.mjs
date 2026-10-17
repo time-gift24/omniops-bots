@@ -13,7 +13,6 @@ async function loadModules(t) {
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-/** 等到条件满足或超时。 */
 async function waitFor(check, timeoutMs = 3000) {
   const start = Date.now();
   while (!check()) {
@@ -44,16 +43,15 @@ test("卸载后流继续折叠，重挂载（再次订阅）即见最新状态",
   const seen = [];
   const unsubscribe = store.subscribe(() => seen.push(store.getState()));
   store.send("[slow] 慢一点");
-  unsubscribe(); // 界面卸载
+  unsubscribe();
   assert.equal(store.listenerCount, 0);
 
   await waitFor(() => store.getState().status === "idle", 15000);
-  const eventsDuringUnmounted = seen.length; // 卸载后不再通知，但状态已折叠
+  const eventsDuringUnmounted = seen.length;
   const reply = store.getState().messages.at(-1);
   assert.equal(reply.state, "done");
   assert.ok(eventsDuringUnmounted > 0);
 
-  // 重挂载：同步拿到包含全部内容的状态
   let latest = null;
   store.subscribe(() => { latest = store.getState(); });
   latest = store.getState();
@@ -71,7 +69,7 @@ test("stop 保留已输出内容；流式中的线程不被驱逐", async (t) =>
     store.getState().messages.at(-1).parts.some((p) => p.kind === "text" && p.text.length > 0));
 
   registry.release("t1");
-  registry.evictIdle(); // 流式中：不可驱逐
+  registry.evictIdle();
   assert.ok(registry.snapshot("t1"), "streaming store must survive eviction");
 
   store.stop();
@@ -79,7 +77,6 @@ test("stop 保留已输出内容；流式中的线程不被驱逐", async (t) =>
   assert.equal(reply.state, "stopped");
   assert.ok(reply.parts.some((p) => p.kind === "text" && p.text.length > 0));
 
-  // 结束后且无订阅：可被驱逐
   registry.evictIdle();
   assert.equal(registry.snapshot("t1"), undefined);
 });
@@ -95,7 +92,7 @@ test("发送失败：状态 failed 且 retry 重发同一输入", async (t) => {
 
   store.retry();
   await waitFor(() => store.getState().status === "failed");
-  // mock 对同一文本仍失败，但重试确实重新发起了一轮（消息数不变、状态再次流转）
+  // Mock 对同一文本仍然返回失败。
   assert.equal(store.getState().messages.filter((m) => m.role === "user").length, 1);
   await flush();
 });

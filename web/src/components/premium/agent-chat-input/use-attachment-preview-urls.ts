@@ -30,7 +30,6 @@ export function useAttachmentPreviewUrls(
       }
     }
 
-    // 上游写法：objectURL 随 attachments 重建是经典的派生资源同步，cleanup 负责回收。
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setPreviewUrls(nextPreviewUrls);
 

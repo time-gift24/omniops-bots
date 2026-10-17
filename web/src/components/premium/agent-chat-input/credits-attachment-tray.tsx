@@ -47,7 +47,7 @@ export function CreditsAttachmentTray({
                 <motion.div
                   layout={!reduce}
                   key={attachment.id}
-                  // CDS file-thumbnail-grow-in：0.85 → 1 生长，250ms 缓出。
+                  // CDS file-thumbnail-grow-in.
                   initial={reduce ? false : { opacity: 0, scale: 0.85 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={

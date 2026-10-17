@@ -33,7 +33,7 @@ const LABELS: Partial<AgentChatCreditsLabels> = {
   previewAttachment: (name) => `预览 ${name}`,
 };
 
-/** 研发助手可用的模型清单（mock；接入真实网关后由配置下发）。 */
+/** 仅用于 mock 网关。 */
 const MODELS = [
   { id: "pine-1", label: "Pine 1" },
   { id: "sonnet-5", label: "Sonnet 5" },
@@ -41,19 +41,13 @@ const MODELS = [
   { id: "gpt-5.6", label: "GPT 5.6" },
 ] as const;
 
-/** 线程状态 → 输入区状态：失败后可继续输入，error 仅作语义标记。 */
+/** 失败后仍可继续输入，error 仅作语义标记。 */
 function toComposerStatus(status: string): AgentChatInputStatus {
   if (status === "submitted" || status === "streaming") return status;
   if (status === "failed") return "error";
   return "ready";
 }
 
-/**
- * 对话输入区：直接使用 beui `AgentChatCredits` 的外壳与运动体系
- * （双层 shell、发送 ↔ 停止的 spring 变形、附件托盘与图片预览）。
- * 通过 children 组合只保留输入 / 附件 / 发送三个部分：
- * 积分横幅、语音、搜索与技能面板随对应能力上线后再启用。
- */
 export function ChatComposer({
   store,
   initialText,
@@ -65,7 +59,6 @@ export function ChatComposer({
   className?: string;
 }) {
   const state = useThreadState(store);
-  // 附件受控：发送成功后随消息入线程，托盘同时清空（chat 语义，而非生成式复用）。
   const [attachments, setAttachments] = React.useState<AgentChatAttachment[]>(
     [],
   );

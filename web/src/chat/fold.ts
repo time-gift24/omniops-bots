@@ -1,7 +1,3 @@
-/**
- * 事件流折叠：ChatEvent → 线程视图模型。纯函数，与渲染分离，可独立单测。
- */
-
 import type {
   ChatError,
   ChatEvent,
@@ -27,22 +23,13 @@ export type PartView =
 
 export type MessageState = "streaming" | "done" | "failed" | "stopped";
 
-/** reasoning / tool 步骤（折叠段的成员）。 */
 export type StepPart = Extract<PartView, { kind: "reasoning" | "tool" }>;
 
-/**
- * 助手消息的展示分段：连续的 reasoning/tool 聚为一个折叠段，
- * 有可见内容的正文把事件流切开，各自按原始顺序渲染。
- */
 export type AssistantSegment =
   | { kind: "steps"; parts: StepPart[] }
   | { kind: "text"; text: string };
 
-/**
- * 正文隔断分段（参照 deepseek-harness process-groups：正文出现即
- * flush 当前活动组并独立渲染，之后的思考/工具另起新组）。
- * 空白正文段不切断分组——正文还没有可见内容时，视觉分组保持不变。
- */
+/** 连续的 reasoning/tool 合为折叠段；只有可见正文会切断分组。 */
 export function segmentAssistantParts(parts: PartView[]): AssistantSegment[] {
   const segments: AssistantSegment[] = [];
   for (const part of parts) {
@@ -84,12 +71,10 @@ export function createThreadState(threadId: ThreadId): ThreadViewState {
   return { threadId, status: "idle", messages: [] };
 }
 
-/** 生成单调递增的消息 ID（同一线程内唯一即可）。 */
 function nextMessageId(state: ThreadViewState): string {
   return `m-${state.messages.length + 1}`;
 }
 
-/** 追加一条用户消息（send 的乐观更新）。 */
 export function appendUserMessage(
   state: ThreadViewState,
   text: string,

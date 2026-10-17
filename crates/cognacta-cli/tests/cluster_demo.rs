@@ -6,7 +6,6 @@ mod support;
 
 fn command() -> Command {
     let mut command = Command::new(env!("CARGO_BIN_EXE_cognacta-cli"));
-    // No inherited Provider, database, credential, or telemetry configuration.
     command
         .env_clear()
         .stdin(Stdio::null())

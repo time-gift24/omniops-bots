@@ -27,7 +27,6 @@ function MarkdownCodeBlock({
   code: string;
   language: string;
 }) {
-  // True while the closing fence has not arrived yet.
   const incomplete = useIsCodeFenceIncomplete();
   const lines = useHighlightedCode(code, language);
 
@@ -83,7 +82,6 @@ const streamingAnimation: AnimateOptions = {
   stagger: 0,
 };
 
-/** Agent 回复的 Markdown 渲染：排版样式在 index.css 的 .chat-markdown，fenced 代码路由到 CodeBlock。 */
 export function Markdown({
   children,
   className,

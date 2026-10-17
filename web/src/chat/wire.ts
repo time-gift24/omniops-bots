@@ -1,17 +1,6 @@
 /**
- * 线格式桥接：`cognacta-core` `GenerationEvent` 的 JSON 表示 ↔ 前端 `ChatEvent`。
- *
- * 线格式约定（与 Rust 侧将来的 serde 派生一一对应，`#[serde(tag = "type", rename_all =
- * "snake_case")]` 风格）：
- * - 事件与内容用 `type` 标签区分，字段一律 snake_case；
- * - 失败以 `{ "type": "failed", "error": { "kind", "message" } }` 一帧收尾，
- *   对应 Rust 流以 `Err` 终止；
- * - `Option<T>` 缺省时字段省略，不发 `null`。
- *
- * 编码载体（Tauri channel / NDJSON / SSE data 行）不影响本模块：每种载体只需要把
- * 载荷 JSON 解析成对象后交给 `chatEventFromWire`。
- *
- * 本模块是后端契约变更的唯一落点：界面与 store 只依赖 `dto.ts`。
+ * 线格式以 type 区分事件和内容，字段使用 snake_case；可选字段省略，不发 null。
+ * failed 帧对应 Rust 流的 Err 终止。界面与 store 只依赖转换后的 DTO。
  */
 
 import type {
@@ -25,7 +14,6 @@ import type {
   PartKind,
 } from "./dto.ts";
 
-/** 线格式不合法时抛出；消息指向具体字段，便于定位后端变更。 */
 export class WireFormatError extends Error {
   constructor(message: string) {
     super(message);
@@ -33,9 +21,6 @@ export class WireFormatError extends Error {
   }
 }
 
-/* ---------- 线格式类型（Rust 类型的 JSON 形状） ---------- */
-
-/** ↔ GenerationMetadata；字段缺省 = Rust `None`。 */
 export interface WireMetadata {
   provider_name: string;
   protocol_name: string;
@@ -45,7 +30,6 @@ export interface WireMetadata {
   response_id?: string;
 }
 
-/** ↔ Usage。 */
 export interface WireUsage {
   input_tokens?: number;
   output_tokens?: number;
@@ -55,13 +39,11 @@ export interface WireUsage {
   cache_write_tokens?: number;
 }
 
-/** ↔ Finish。 */
 export interface WireFinish {
   reason: string;
   provider_reason?: string;
 }
 
-/** ↔ OutputPart；`reasoning` / `tool-call` 为前瞻扩展位。 */
 export type WireOutputPart =
   | { type: "text"; text: string }
   | { type: "reasoning"; text: string }
@@ -74,12 +56,10 @@ export type WireOutputPart =
       error_text?: string;
     };
 
-/** ↔ AssistantMessage。 */
 export interface WireAssistantMessage {
   parts: WireOutputPart[];
 }
 
-/** ↔ GenerationResponse。 */
 export interface WireResponse {
   assistant: WireAssistantMessage;
   finish: WireFinish;
@@ -87,7 +67,6 @@ export interface WireResponse {
   metadata: WireMetadata;
 }
 
-/** ↔ ErrorKind（kebab-case）+ 客户端本地中止。 */
 export type WireErrorKind =
   | "invalid-request"
   | "unsupported"
@@ -107,7 +86,6 @@ export interface WireError {
   message: string;
 }
 
-/** ↔ GenerationEvent。 */
 export type WireGenerationEvent =
   | { type: "started"; metadata: WireMetadata }
   | { type: "part_started"; part: number; kind: string; name?: string }
@@ -117,13 +95,10 @@ export type WireGenerationEvent =
   | { type: "completed"; response: WireResponse }
   | { type: "failed"; error: WireError };
 
-/** ↔ GenerationRequest（invoke 方向：前端 → 后端）。 */
 export interface WireGenerationRequest {
   messages: { role: "user"; text: string }[];
   instructions?: string;
 }
-
-/* ---------- 校验辅助 ---------- */
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -155,8 +130,6 @@ function requirePartId(value: unknown, field: string): number {
   }
   return value;
 }
-
-/* ---------- 字段级转换 ---------- */
 
 function metadataFromWire(raw: unknown): ChatMetadata {
   if (!isRecord(raw)) throw new WireFormatError("metadata 必须是对象");
@@ -253,8 +226,6 @@ function errorFromWire(raw: unknown): ChatError {
   };
 }
 
-/* ---------- 事件级转换 ---------- */
-
 /** 把一帧线格式 JSON 转为 `ChatEvent`；载荷不合法时抛 `WireFormatError`。 */
 export function chatEventFromWire(raw: unknown): ChatEvent {
   if (!isRecord(raw)) throw new WireFormatError("事件帧必须是对象");
@@ -322,7 +293,7 @@ export function chatEventFromWire(raw: unknown): ChatEvent {
   }
 }
 
-/** invoke 方向：前端请求 → 线格式 JSON。附件在线格式中尚无承载，暂不序列化。 */
+/** 附件在线格式中尚无承载，暂不序列化。 */
 export function chatRequestToWire(request: ChatRequest): WireGenerationRequest {
   return {
     messages: request.messages.map((message) => ({
@@ -334,9 +305,8 @@ export function chatRequestToWire(request: ChatRequest): WireGenerationRequest {
 }
 
 /**
- * 把「JSON 文本帧」流（NDJSON 行 / SSE data / Tauri channel 载荷）适配为 `ChatEvent` 流。
- * JSON 解析错误与线格式错误统一转为 `failed` 事件收尾，而不是让迭代器抛出——
- * 与 Rust 侧「错误以 Err 终止流」的契约一致。
+ * JSON 解析或线格式错误转为 failed 事件，不从迭代器抛出。
+ * completed / failed 后忽略剩余帧。
  */
 export async function* chatEventsFromFrames(
   frames: AsyncIterable<string>,
@@ -371,7 +341,6 @@ export async function* chatEventsFromFrames(
       return;
     }
     yield event;
-    // completed / failed 均为流的终止事件，后续帧忽略。
     if (event.type === "completed" || event.type === "failed") return;
   }
 }

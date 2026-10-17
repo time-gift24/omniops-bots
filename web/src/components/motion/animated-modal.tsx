@@ -68,17 +68,14 @@ export function AnimatedModal({
 
           <div
             className={cn(
-              // Inset from every edge rather than padded: iOS 26 Safari samples a
-              // transparent fixed layer that touches the viewport edges to tint
-              // its toolbar, which blocks the main thread while the panel
-              // animates. Override the margin with inset-*, not p-*.
+              // iOS 26 Safari samples transparent fixed layers at viewport edges
+              // for toolbar tinting, blocking animation. Use inset-*, not p-*.
               "fixed inset-4 z-[101] overflow-x-hidden overflow-y-auto",
               viewportClassName,
             )}
           >
             <div className="flex min-h-full items-center justify-center">
               <MotionPanel
-                // CDS motionModalDialog：y 10 + scale 0.96 缩放入场，400/32 弹簧。
                 initial={reduce ? false : { opacity: 0, y: 10, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{

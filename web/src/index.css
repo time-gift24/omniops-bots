@@ -54,9 +54,6 @@
     --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* Cognacta Pine — 暖中性底 + 松绿 accent：中性令牌与组件结构对齐 Claude Design System
-   逆向值（cds-theme.css），accent 取项目 Pine 传承（oklch 色相 ~165）并按对比度加深，
-   hover 保持「加深而非泛白」的 CDS 交互语义；组件结构保持 beui/shadcn 不变。 */
 :root {
     --background: oklch(0.991 0.001 106.4);
     --foreground: oklch(0.196 0.000 89.9);
@@ -147,11 +144,7 @@
     }
 }
 
-/* ---- 暗色视网膜光渗字重逆补偿（CDS 逆向） ----
-   深色底上白字视觉上发胀，命名字重工具的 wght 轴主动减薄 30-40 刻度，
-   使感知粗细与亮色模式一致。只补偿 font-medium/semibold/bold 工具类；
-   正文 400 与直写 font-weight 的局部样式不动，避免抹平标题层级。
-   非可变字体回退（PingFang 等）忽略该设置，无回归。 */
+/* 减轻深色背景下白字的视觉膨胀；仅调整命名字重工具类，保留正文与局部字重。 */
 @layer base {
   .dark .font-medium {
     font-variation-settings: "wght" 465;
@@ -164,7 +157,6 @@
   }
 }
 
-/* Agent 回复的 Markdown 排版（客户端主阅读区：13px / 1.6，密集控制台取向）。代码块由 .chat-markdown 外的 CodeBlock 组件承载。 */
 @layer components {
   .chat-markdown {
     font-size: 0.8125rem;
@@ -231,7 +223,7 @@
   }
 }
 
-/* Streamdown 的表格工具类需要在 layer 外覆盖；保留原生滚动与操作逻辑。 */
+/* Streamdown 的表格工具类需要在 layer 外覆盖。 */
 .chat-markdown [data-streamdown="table-wrapper"] {
   gap: 0.25rem;
   border: 0;
@@ -309,7 +301,7 @@
   margin-top: 0;
 }
 
-/* Streamdown 自动为动画名加 sd- 前缀；新增文字由浅至实，字形始终清晰。 */
+/* Streamdown 自动为动画名加 sd- 前缀。 */
 @keyframes sd-chat-text-reveal {
   from {
     opacity: 0.35;
@@ -319,9 +311,7 @@
   }
 }
 
-/* ---- 对话流入场动效（CDS message-fade-up：0.45s 超调回弹曲线） ----
-   仅在挂载时播放一次；流式增量不触发。
-   reduced-motion 下降级为立即呈现。 */
+/* 仅在挂载时播放；流式增量不重新触发。 */
 @keyframes chat-bubble-in {
   from {
     opacity: 0;
@@ -352,7 +342,6 @@
   animation: chat-message-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* 过场 → 内容 交叉过渡：diamond 淡出微缩，内容走 chat-message-enter 淡入。 */
 @keyframes chat-swap-out {
   from {
     opacity: 1;
@@ -383,7 +372,6 @@
   }
 }
 
-/* ---- 复制勾选衰减（CDS saved-check-decay：保持 75% 后淡出微缩） ---- */
 @keyframes chat-check-decay {
   0%,
   75% {
@@ -406,7 +394,6 @@
   }
 }
 
-/* ---- 思考中三点波浪（CDS timeline-quiet-dot：1.9s 阶梯延迟 0/0.15/0.3s） ---- */
 @keyframes chat-quiet-dot {
   0%,
   8% {
@@ -447,8 +434,6 @@
   }
 }
 
-/* ---- Composer 外壳（CDS 逆向：柔影 + 发丝描边，无彩色光晕） ----
-   常态 inset 1px 发丝线；悬浮/聚焦仅加深描边，焦点彩色环由 --ring 体系负责。 */
 .chat-composer-shell {
   box-shadow:
     0 4px 20px rgb(0 0 0 / 0.035),
@@ -486,8 +471,6 @@
     inset 0 0 0 1px var(--border-strong);
 }
 
-/* ---- 模态弹窗面板（CDS 逆向：--cds-shadow-popover 双环弥散投影） ----
-   外环 8px/24px 弥散 + 内环 2px/6px 贴近；描边由 border-border 承担。 */
 .chat-modal-panel {
   box-shadow:
     0 8px 24px rgb(0 0 0 / 0.12),

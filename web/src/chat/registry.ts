@@ -1,8 +1,3 @@
-/**
- * ThreadStoreRegistry：线程 store 的缓存注册表。
- * 命中缓存或懒创建；驱逐遵循两条纪律——有活跃订阅者（界面挂载中）或流式进行中的线程不可驱逐。
- */
-
 import type { ChatGateway } from "./gateway.ts";
 import type { ThreadId } from "./dto.ts";
 import { ThreadStoreImpl, type ThreadSnapshot, type ThreadStore } from "./thread-store.ts";
@@ -12,7 +7,6 @@ export interface ThreadStoreRegistry {
   acquire(threadId: ThreadId): ThreadStore;
   /** 引用计数 -1，归零后进入可驱逐状态；不中止流。 */
   release(threadId: ThreadId): void;
-  /** 序列化视图状态，供日后持久化。 */
   snapshot(threadId: ThreadId): ThreadSnapshot | undefined;
   /** LRU 驱逐空闲线程；跳过有订阅者和流式中的线程。 */
   evictIdle(maxIdle?: number): void;

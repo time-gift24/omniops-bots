@@ -33,7 +33,7 @@ export const SPRING_PANEL = {
   mass: 0.5,
 } as const;
 
-/** CDS motionModalDialog 逆向原值：模态弹窗居中缩放进入。 */
+/** CDS motionModalDialog 原值。 */
 export const SPRING_MODAL = {
   type: "spring",
   stiffness: 400,

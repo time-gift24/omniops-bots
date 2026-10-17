@@ -28,8 +28,7 @@ export type StatefulButtonProps = Omit<BeUIStatefulButtonProps, "variant"> & {
   variant?: ButtonVariant;
 };
 
-// Keep the public beUI implementation as a dependency and apply Pro defaults
-// here so installed blocks and the product app share the same controls.
+// Shared product defaults for beUI controls.
 function controlClassName(
   size: ButtonSize = "md",
   className?: string,

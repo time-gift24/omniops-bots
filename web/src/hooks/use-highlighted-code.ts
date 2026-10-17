@@ -27,8 +27,7 @@ export function useHighlightedCode(value: string, language: string) {
     }
   }, [language])
 
-  // The complete lines, highlighted. While the code streams, only the new
-  // lines are tokenized, starting from the grammar state of the last one.
+  // Cache complete lines and their grammar state; only tokenize new lines.
   const [done, setDone] = React.useState<{
     highlighter: typeof highlighter
     text: string
@@ -62,7 +61,7 @@ export function useHighlightedCode(value: string, language: string) {
     setDone(next)
   }
 
-  // The last line is still being written, so it is tokenized on every render.
+  // The incomplete final line must be re-tokenized as it changes.
   const tail = code.slice(end)
 
   return React.useMemo(() => {
