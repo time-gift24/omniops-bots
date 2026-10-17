@@ -251,8 +251,12 @@ export function createMockGateway(
       reasoning: string,
     ): AsyncGenerator<ChatEvent> {
       yield { type: "part-started", partId, kind: "reasoning" };
+      // 思考阶段放慢：起步停顿 + 更密的增量间隔，贴近真实 agent 节奏。
+      // 用 baseDelay 而非 delay：[slow] 只放慢正文，不拖长步骤；测试注入
+      // 小 delayMs 时步骤同步快进。
+      await sleep(baseDelay * 10, signal);
       for (const chunk of chunkText(reasoning, 4)) {
-        await tick();
+        await sleep(baseDelay * 6, signal);
         if (!alive()) return;
         yield { type: "delta", partId, text: chunk };
       }
@@ -276,7 +280,8 @@ export function createMockGateway(
         if (!alive()) return;
         yield { type: "delta", partId, text: chunk };
       }
-      await tick();
+      // 工具执行停顿：等待结果返回的阶段是耗时主体。
+      await sleep(baseDelay * 24, signal);
       if (!alive()) return;
       yield {
         type: "part-completed",
