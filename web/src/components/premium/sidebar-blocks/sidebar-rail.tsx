@@ -10,9 +10,7 @@ import {
   HistoryIcon,
   Home01Icon,
   Layers02Icon,
-  PanelLeftCloseIcon,
   PanelLeftIcon,
-  PanelLeftOpenIcon,
   PlusSignIcon,
   Search01Icon,
   Settings02Icon,
@@ -433,39 +431,6 @@ function SidebarRailShell({
                     aria-hidden="true"
                     size={16}
                   />
-                </Button>
-              </MorphicTooltip>
-              <MorphicTooltip
-                content={
-                  expanded ? "收起导航" : "固定导航展开"
-                }
-                side="bottom"
-                className="hidden md:inline-flex"
-                disabled={context.isMobile}
-              >
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={
-                    expanded ? "收起导航" : "固定导航展开"
-                  }
-                  aria-pressed={expanded}
-                  onClick={toggleExpanded}
-                  className={iconButtonClass}
-                >
-                  {expanded ? (
-                    <HugeiconsIcon
-                      icon={PanelLeftCloseIcon}
-                      aria-hidden="true"
-                      size={16}
-                    />
-                  ) : (
-                    <HugeiconsIcon
-                      icon={PanelLeftOpenIcon}
-                      aria-hidden="true"
-                      size={16}
-                    />
-                  )}
                 </Button>
               </MorphicTooltip>
               <AnimatedSidebarClose className="size-9 rounded-full text-muted-foreground hover:bg-muted md:hidden">
