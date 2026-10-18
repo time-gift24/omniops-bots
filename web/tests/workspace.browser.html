@@ -249,7 +249,7 @@
       });
       await until(() => second.getDraft().attachments.length === 1 && labeled("移除附件 notes.txt"), "The support draft must retain its selected attachment");
       const supportFile = second.getDraft().attachments[0].file;
-      const suggestion = "为什么这次构建这么慢？";
+      const suggestion = "总结一下这个仓库本周的变更";
       const requestCount = requests.length;
       click(button(suggestion, fixture));
       await until(() => requests.length === requestCount + 1 && row("客户支持", suggestion), "A suggestion must create a titled conversation in its own workspace");
