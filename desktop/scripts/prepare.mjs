@@ -90,7 +90,7 @@ async function main() {
   await rm(staged, { recursive: true, force: true });
   await mkdir(staged, { recursive: true });
   // Explicit production files keep tests, local model configuration, and checkpoint data out of both platform bundles.
-  for (const file of ['main.mjs', 'runtime.mjs', 'agent.mjs', 'browser.mjs', 'browser-target.mjs', 'input.mjs', 'chat-events.mjs', 'errors.mjs', 'script-workspace.mjs', 'script-runner.mjs', 'resources.mjs', 'package.json', 'package-lock.json']) {
+  for (const file of ['main.mjs', 'runtime.mjs', 'agent.mjs', 'browser.mjs', 'browser-target.mjs', 'input.mjs', 'chat-events.mjs', 'errors.mjs', 'script-workspace.mjs', 'script-runner.mjs', 'resources.mjs', 'skill-library.mjs', 'package.json', 'package-lock.json']) {
     await cp(join(desktop, 'runtime', file), join(staged, file), { recursive: true, dereference: true });
   }
   const installArgs = ['ci', '--omit=dev', '--prefix', staged, '--ignore-scripts'];

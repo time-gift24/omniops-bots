@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "在客户端实验未上传的 Skill 草稿",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1100,
+      640
+    ]
+  },
+  "participants": [
+    {
+      "id": "user",
+      "type": "external",
+      "label": "用户"
+    },
+    {
+      "id": "client",
+      "type": "frontend",
+      "label": "桌面客户端"
+    },
+    {
+      "id": "local",
+      "type": "database",
+      "label": "本地记录"
+    },
+    {
+      "id": "agent",
+      "type": "backend",
+      "label": "本地实验执行器"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m1",
+      "from": "user",
+      "to": "client",
+      "y": 180,
+      "label": "选择模板 Agent，运行草稿",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m2",
+      "from": "client",
+      "to": "local",
+      "y": 245,
+      "label": "保存完整装配快照"
+    },
+    {
+      "id": "m3",
+      "from": "local",
+      "to": "client",
+      "y": 310,
+      "label": "返回固定的实验快照",
+      "variant": "return"
+    },
+    {
+      "id": "m4",
+      "from": "client",
+      "to": "agent",
+      "y": 375,
+      "label": "使用快照执行实验",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m5",
+      "from": "agent",
+      "to": "client",
+      "y": 440,
+      "label": "返回过程、结果与产物",
+      "variant": "return"
+    },
+    {
+      "id": "m6",
+      "from": "client",
+      "to": "local",
+      "y": 505,
+      "label": "保存执行记录与实验产物"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "条件：草稿可只在本地",
+      "items": [
+        "页面选择现有 Agent，临时替换所实验的 Skill",
+        "检查通过且 Chrome 空闲后开始执行"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "结果：原资源不变",
+      "items": [
+        "不上传、不发布，不修改模板 Agent",
+        "实验日志与截图另存，不混入 Skill 包"
+      ]
+    }
+  ]
+}

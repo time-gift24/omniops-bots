@@ -1,0 +1,44 @@
+{
+  "reviewer": "root image-capable agent",
+  "evidence_kind": "perceptual-review",
+  "diagrams": [
+    {
+      "diagram_type": "sequence",
+      "output": "diagrams/runtime/01-skill-file-upload.html",
+      "specification_sha256": "3cdef71692e37698498ffc5feb566b3f8624af5dfb0e6f94e1c0edb5ddc49a43",
+      "artifact_sha256": "fa9eac30172283963d3cdd73e861158d4af141d390c5df6a86c5d23ac31d05f5",
+      "artifact_bytes": 702763,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "reviewed_screenshots": [
+        "01-skill-file-upload.visual-check.1440x900.light.png",
+        "01-skill-file-upload.visual-check.2048x1320.dark.png"
+      ],
+      "correction_rounds": 0,
+      "observations": [
+        "已实际查看浅色 1440×900 和深色 2048×1320 截图；参与者、消息和结论卡无遮挡或裁切。",
+        "成功上传与同名替换失败分别绘制；客户端持久化及完整包边界清楚。"
+      ]
+    },
+    {
+      "diagram_type": "sequence",
+      "output": "diagrams/runtime/01-skill-file-conflict.html",
+      "specification_sha256": "e3f4f0251afd43f6d8801730ecb0b3f06b8245dd526d56f2d8fc9ab874b0f9e9",
+      "artifact_sha256": "f9de3125be809f05f47d187aeb6df2a8d4f1f56139a7a82b323d3aee60a5aede",
+      "artifact_bytes": 702696,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "reviewed_screenshots": [
+        "01-skill-file-conflict.visual-check.1440x900.light.png",
+        "01-skill-file-conflict.visual-check.2048x1320.dark.png"
+      ],
+      "correction_rounds": 0,
+      "observations": [
+        "已实际查看浅色 1440×900 和深色 2048×1320 截图；参与者、消息和结论卡无遮挡或裁切。",
+        "成功上传与同名替换失败分别绘制；客户端持久化及完整包边界清楚。"
+      ]
+    }
+  ]
+}

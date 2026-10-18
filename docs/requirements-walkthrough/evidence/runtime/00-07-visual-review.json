@@ -1,0 +1,176 @@
+{
+  "reviewer": "image-capable primary agent",
+  "diagrams": [
+    {
+      "diagram_type": "sequence",
+      "output": "diagrams/runtime/00-manual.html",
+      "artifact_sha256": "0c24e4a6f2342e189ff826a3b11b73bf18cf6ec3a960c547585f3b2be1a11e01",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "reviewed_screenshots": [
+        "diagrams/runtime/00-manual.visual-check.1440x900.light.png",
+        "diagrams/runtime/00-manual.visual-check.1440x900.dark.png",
+        "diagrams/runtime/00-manual.visual-check.2048x1320.light.png",
+        "diagrams/runtime/00-manual.visual-check.2048x1320.dark.png"
+      ],
+      "observations": [
+        "已读取真实浏览器截图或其联系表，浅深主题下参与者、消息次序、条件与结果可辨认，无遮挡或裁切。",
+        "顺序图和必要说明占据合理画布，4 个桌面视口包含性另由浏览器回执证明。"
+      ]
+    },
+    {
+      "diagram_type": "sequence",
+      "output": "diagrams/runtime/00-remote.html",
+      "artifact_sha256": "cfc6f345a65c7314f00b88ac2dfa4979f6cbdc65c00a6cadb935bdc129b55f4b",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "reviewed_screenshots": [
+        "diagrams/runtime/00-remote.visual-check.1440x900.light.png",
+        "diagrams/runtime/00-remote.visual-check.1440x900.dark.png",
+        "diagrams/runtime/00-remote.visual-check.2048x1320.light.png",
+        "diagrams/runtime/00-remote.visual-check.2048x1320.dark.png"
+      ],
+      "observations": [
+        "已读取真实浏览器截图或其联系表，浅深主题下参与者、消息次序、条件与结果可辨认，无遮挡或裁切。",
+        "顺序图和必要说明占据合理画布，4 个桌面视口包含性另由浏览器回执证明。"
+      ]
+    },
+    {
+      "diagram_type": "sequence",
+      "output": "diagrams/runtime/07-busy.html",
+      "artifact_sha256": "1bbdcbdc2cb1ad934338ad0dd76b4eda44f463963db5aee2783b57c09e92a174",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 1,
+      "reviewed_screenshots": [
+        "diagrams/runtime/07-busy.visual-check.1440x900.light.png",
+        "diagrams/runtime/07-busy.visual-check.1440x900.dark.png",
+        "diagrams/runtime/07-busy.visual-check.2048x1320.light.png",
+        "diagrams/runtime/07-busy.visual-check.2048x1320.dark.png"
+      ],
+      "observations": [
+        "已读取真实浏览器截图或其联系表，浅深主题下参与者、消息次序、条件与结果可辨认，无遮挡或裁切。",
+        "07-busy 与 07-timeout 已拉开消息纵向间距；07-login 改为远端任务、服务端另发新调用，修订后重新校验并查看实际浅深截图。"
+      ]
+    },
+    {
+      "diagram_type": "sequence",
+      "output": "diagrams/runtime/07-disconnect.html",
+      "artifact_sha256": "b0a002e0dbb7775886d8ed1627bd5fd226932b2683b30d807659c3d94e0185a9",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "reviewed_screenshots": [
+        "diagrams/runtime/07-disconnect.visual-check.1440x900.light.png",
+        "diagrams/runtime/07-disconnect.visual-check.1440x900.dark.png",
+        "diagrams/runtime/07-disconnect.visual-check.2048x1320.light.png",
+        "diagrams/runtime/07-disconnect.visual-check.2048x1320.dark.png"
+      ],
+      "observations": [
+        "已读取真实浏览器截图或其联系表，浅深主题下参与者、消息次序、条件与结果可辨认，无遮挡或裁切。",
+        "顺序图和必要说明占据合理画布，4 个桌面视口包含性另由浏览器回执证明。"
+      ]
+    },
+    {
+      "diagram_type": "sequence",
+      "output": "diagrams/runtime/07-restart-complete.html",
+      "artifact_sha256": "0b219dffa3cb84fe8c0aee3eb9ef7c76c79fcbfc4b99c18811128bca2aedcace",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "reviewed_screenshots": [
+        "diagrams/runtime/07-restart-complete.visual-check.1440x900.light.png",
+        "diagrams/runtime/07-restart-complete.visual-check.1440x900.dark.png",
+        "diagrams/runtime/07-restart-complete.visual-check.2048x1320.light.png",
+        "diagrams/runtime/07-restart-complete.visual-check.2048x1320.dark.png"
+      ],
+      "observations": [
+        "已读取真实浏览器截图或其联系表，浅深主题下参与者、消息次序、条件与结果可辨认，无遮挡或裁切。",
+        "顺序图和必要说明占据合理画布，4 个桌面视口包含性另由浏览器回执证明。"
+      ]
+    },
+    {
+      "diagram_type": "sequence",
+      "output": "diagrams/runtime/07-restart-incomplete.html",
+      "artifact_sha256": "11df73d9bf39c2b15e06d7939ac9ad81eccf060063075f8faee45d6f27e16387",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "reviewed_screenshots": [
+        "diagrams/runtime/07-restart-incomplete.visual-check.1440x900.light.png",
+        "diagrams/runtime/07-restart-incomplete.visual-check.1440x900.dark.png",
+        "diagrams/runtime/07-restart-incomplete.visual-check.2048x1320.light.png",
+        "diagrams/runtime/07-restart-incomplete.visual-check.2048x1320.dark.png"
+      ],
+      "observations": [
+        "已读取真实浏览器截图或其联系表，浅深主题下参与者、消息次序、条件与结果可辨认，无遮挡或裁切。",
+        "顺序图和必要说明占据合理画布，4 个桌面视口包含性另由浏览器回执证明。"
+      ]
+    },
+    {
+      "diagram_type": "sequence",
+      "output": "diagrams/runtime/07-cancel.html",
+      "artifact_sha256": "46ceb9df0d6a4d6f0315bb629b4cb8a0cf02bf450cb9f50bb97b314ee0819b39",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "reviewed_screenshots": [
+        "diagrams/runtime/07-cancel.visual-check.1440x900.light.png",
+        "diagrams/runtime/07-cancel.visual-check.1440x900.dark.png",
+        "diagrams/runtime/07-cancel.visual-check.2048x1320.light.png",
+        "diagrams/runtime/07-cancel.visual-check.2048x1320.dark.png"
+      ],
+      "observations": [
+        "已读取真实浏览器截图或其联系表，浅深主题下参与者、消息次序、条件与结果可辨认，无遮挡或裁切。",
+        "顺序图和必要说明占据合理画布，4 个桌面视口包含性另由浏览器回执证明。"
+      ]
+    },
+    {
+      "diagram_type": "sequence",
+      "output": "diagrams/runtime/07-timeout.html",
+      "artifact_sha256": "eab154e2b921093aee300203f06943f281a0d427960b2955db6c49f3ce38dca7",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 1,
+      "reviewed_screenshots": [
+        "diagrams/runtime/07-timeout.visual-check.1440x900.light.png",
+        "diagrams/runtime/07-timeout.visual-check.1440x900.dark.png",
+        "diagrams/runtime/07-timeout.visual-check.2048x1320.light.png",
+        "diagrams/runtime/07-timeout.visual-check.2048x1320.dark.png"
+      ],
+      "observations": [
+        "已读取真实浏览器截图或其联系表，浅深主题下参与者、消息次序、条件与结果可辨认，无遮挡或裁切。",
+        "07-busy 与 07-timeout 已拉开消息纵向间距；07-login 改为远端任务、服务端另发新调用，修订后重新校验并查看实际浅深截图。"
+      ]
+    },
+    {
+      "diagram_type": "sequence",
+      "output": "diagrams/runtime/07-login.html",
+      "artifact_sha256": "353658489451d2a2ff42622f92b53dea2a4b909ce9c59eaeda4b9b002c69ce7f",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 1,
+      "reviewed_screenshots": [
+        "diagrams/runtime/07-login.visual-check.1440x900.light.png",
+        "diagrams/runtime/07-login.visual-check.1440x900.dark.png",
+        "diagrams/runtime/07-login.visual-check.2048x1320.light.png",
+        "diagrams/runtime/07-login.visual-check.2048x1320.dark.png"
+      ],
+      "observations": [
+        "已读取真实浏览器截图或其联系表，浅深主题下参与者、消息次序、条件与结果可辨认，无遮挡或裁切。",
+        "07-busy 与 07-timeout 已拉开消息纵向间距；07-login 改为远端任务、服务端另发新调用，修订后重新校验并查看实际浅深截图。"
+      ]
+    }
+  ]
+}

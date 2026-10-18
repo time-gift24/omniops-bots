@@ -1,0 +1,51 @@
+[
+  {
+    "name": "01-skill-experiment",
+    "file": "assets/runtime/01-skill-experiment.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "48280",
+    "data-last-export-canonical": "true"
+  },
+  {
+    "name": "01-skill-draft-upload",
+    "file": "assets/runtime/01-skill-draft-upload.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "45530",
+    "data-last-export-canonical": "true"
+  },
+  {
+    "name": "01-skill-publish",
+    "file": "assets/runtime/01-skill-publish.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "48160",
+    "data-last-export-canonical": "true"
+  },
+  {
+    "name": "02-mcp-call",
+    "file": "assets/runtime/02-mcp-call.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "46801",
+    "data-last-export-canonical": "true"
+  },
+  {
+    "name": "02-mcp-failure",
+    "file": "assets/runtime/02-mcp-failure.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "45543",
+    "data-last-export-canonical": "true"
+  },
+  {
+    "name": "03-builtintool-ready",
+    "file": "assets/runtime/03-builtintool-ready.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "48220",
+    "data-last-export-canonical": "true"
+  },
+  {
+    "name": "03-builtintool-missing",
+    "file": "assets/runtime/03-builtintool-missing.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "45438",
+    "data-last-export-canonical": "true"
+  }
+]

@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "缺少 builtinTool 时直接失败",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1100,
+      640
+    ]
+  },
+  "participants": [
+    {
+      "id": "caller",
+      "type": "external",
+      "label": "调用方"
+    },
+    {
+      "id": "client",
+      "type": "frontend",
+      "label": "桌面客户端"
+    },
+    {
+      "id": "tools",
+      "type": "backend",
+      "label": "本地内置工具"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m1",
+      "from": "caller",
+      "to": "client",
+      "y": 180,
+      "label": "发起本轮任务",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m2",
+      "from": "client",
+      "to": "tools",
+      "y": 288,
+      "label": "核对装配所需工具"
+    },
+    {
+      "id": "m3",
+      "from": "tools",
+      "to": "client",
+      "y": 397,
+      "label": "返回缺失工具清单",
+      "variant": "return"
+    },
+    {
+      "id": "m4",
+      "from": "client",
+      "to": "caller",
+      "y": 505,
+      "label": "结束本轮，提示更新桌面端",
+      "variant": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "条件：缺少任一所需工具",
+      "items": [
+        "检查失败，不开始 Chrome 操作",
+        "记录缺失工具；远端调用回传失败"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "结果：等待新的调用",
+      "items": [
+        "更新由桌面更新流程处理",
+        "更新完成后不自动重跑该失败任务"
+      ]
+    }
+  ]
+}

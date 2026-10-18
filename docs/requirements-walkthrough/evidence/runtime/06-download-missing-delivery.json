@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/06-download-missing.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/06-download-missing.html",
+  "specification": {
+    "sha256": "34ec8ddc9d32940cf6c117ad8b5013b8b66ccb2b94642310d62e6fa295c3a21b",
+    "bytes": 2087
+  },
+  "artifact": {
+    "sha256": "fc19fd146ea050d3c42c87649c072ef918896ab5ef95a0e44f421a04f35e318b",
+    "bytes": 704874
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

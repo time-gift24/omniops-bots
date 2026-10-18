@@ -1,6 +1,7 @@
 import type { FrontendAdapters } from "@/app/dependencies"
 import { createBrowserHost } from "./browser-host"
 import { createBrowserStorage } from "./browser-storage"
+import { createBrowserSkillLibrary } from "./browser-skill-library"
 import { createDemoDesktopRuntime } from "./demo/desktop"
 import { createDemoAgentSource, createDemoModelSource } from "./demo/resources"
 import { createDemoSkillSource } from "./demo/skills"
@@ -17,16 +18,21 @@ export function createDemoAdapters(
     !overrides.skillDrafts || !overrides.preferences
       ? createBrowserStorage(backendId)
       : undefined
+  const skills = overrides.skills ?? createDemoSkillSource()
+  const skillDrafts = overrides.skillDrafts ?? storage!.skillDrafts
   return {
     backendId,
     gatewayFor: overrides.gatewayFor ?? runtime.gatewayFor,
     desktop: overrides.desktop ?? runtime.desktop,
     workbench: overrides.workbench ?? createMockWorkbenchBackend(),
     agents: overrides.agents ?? createDemoAgentSource(),
-    skills: overrides.skills ?? createDemoSkillSource(),
+    skills,
+    skillLibrary:
+      overrides.skillLibrary ??
+      createBrowserSkillLibrary(backendId, skills, skillDrafts),
     models: overrides.models ?? createDemoModelSource(),
     workspaceAccess: overrides.workspaceAccess ?? createDemoWorkspaceAccess(),
-    skillDrafts: overrides.skillDrafts ?? storage!.skillDrafts,
+    skillDrafts,
     preferences: overrides.preferences ?? storage!.themePreferences,
     host: overrides.host ?? createBrowserHost(),
   }

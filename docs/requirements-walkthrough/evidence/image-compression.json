@@ -1,0 +1,16 @@
+{
+  "source": "redesign-desktop-full.png",
+  "source_sha256": "00d11fe4396433b8635affad4b1ac1829ec003805525c2c3f396420680b10515",
+  "source_bytes": 1262402,
+  "output": "redesign-desktop-full.webp",
+  "output_sha256": "ff5c7c0bc2995d556be43749fcc301ba062b837e6a69b6ebb931dc3f55a58f25",
+  "output_bytes": 425910,
+  "encoding": "lossless WebP",
+  "dimensions": [
+    1440,
+    7840
+  ],
+  "decoded_rgb_sha256": "80c74a88be7859e1331c9c9160b7b056ed3f27da6492c03661b8c68ea65e58b4",
+  "pixels_unchanged": true,
+  "reason": "Repository pre-commit limits each file to 1 MiB."
+}

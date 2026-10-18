@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/00-manual.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/00-manual.html",
+  "specification": {
+    "sha256": "b027ded5da0ca65f3a46e8964401217f857d78737d91f72909fff9de4178773c",
+    "bytes": 2130
+  },
+  "artifact": {
+    "sha256": "0c24e4a6f2342e189ff826a3b11b73bf18cf6ec3a960c547585f3b2be1a11e01",
+    "bytes": 703971
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Chrome 正忙：本轮拒绝执行",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1100,
+      640
+    ]
+  },
+  "participants": [
+    {
+      "id": "caller",
+      "label": "本地或远端调用",
+      "type": "external"
+    },
+    {
+      "id": "client",
+      "label": "桌面客户端",
+      "type": "frontend"
+    },
+    {
+      "id": "control",
+      "label": "客户端执行控制",
+      "type": "backend"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m-07-busy-0",
+      "from": "caller",
+      "to": "client",
+      "y": 180,
+      "label": "提交本轮任务",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m-07-busy-1",
+      "from": "client",
+      "to": "control",
+      "y": 290,
+      "label": "申请 Chrome 执行名额",
+      "variant": "default"
+    },
+    {
+      "id": "m-07-busy-2",
+      "from": "control",
+      "to": "client",
+      "y": 400,
+      "label": "已有任务运行：返回忙",
+      "variant": "return"
+    },
+    {
+      "id": "m-07-busy-3",
+      "from": "client",
+      "to": "caller",
+      "y": 510,
+      "label": "提示忙或回传忙结果",
+      "variant": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": "没有进入执行",
+      "items": [
+        "不排队，不自动重试",
+        "不会向 Chrome 发起本轮操作"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "每轮重新检查",
+      "items": [
+        "手动会话等待输入时释放名额",
+        "下一轮仍使用原快照并重新检查"
+      ]
+    }
+  ]
+}

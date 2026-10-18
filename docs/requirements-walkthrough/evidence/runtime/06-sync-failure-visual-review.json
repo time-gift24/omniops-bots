@@ -1,0 +1,20 @@
+{
+  "diagram_type": "sequence",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/06-sync-failure.html",
+  "artifact_sha256": "20bf70d92e5957a90e3ecadf90ba211365819196b7d0e4be3e3a9e1f62fe5456",
+  "artifact_bytes": 702643,
+  "validation": "9/9 showcase, 0 errors, 0 warnings",
+  "browser_evidence": "passed",
+  "visual_review": "passed",
+  "reviewer": "image-capable agent /root/runtime_sessions",
+  "reviewed_screenshots": [
+    "diagrams/runtime/06-sync-failure.visual-check.2048x1320.light.png",
+    "diagrams/runtime/06-sync-failure.visual-check.1440x900.dark.png"
+  ],
+  "observations": [
+    "已读取真实浏览器截图；中文标签与消息顺序可读，参与者与箭头关系明确。",
+    "浅色大屏及深色桌面图无截断、重叠或标签遮挡，纵向布局平衡。",
+    "浏览器四视口包含性由独立 visual-check 回执记录；本视觉审查不替代自动检查。"
+  ],
+  "correction_rounds": 1
+}

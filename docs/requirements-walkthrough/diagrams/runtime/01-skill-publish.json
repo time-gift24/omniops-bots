@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "客户端发起 Skill 与 Agent 联动发布",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1100,
+      640
+    ]
+  },
+  "participants": [
+    {
+      "id": "ops",
+      "type": "external",
+      "label": "运维人员"
+    },
+    {
+      "id": "client",
+      "type": "frontend",
+      "label": "桌面客户端"
+    },
+    {
+      "id": "service",
+      "type": "backend",
+      "label": "物料服务"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m1",
+      "from": "ops",
+      "to": "client",
+      "y": 180,
+      "label": "选择要发布的完整 Skill 草稿",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m2",
+      "from": "client",
+      "to": "service",
+      "y": 226,
+      "label": "查询受影响的官方 Agent"
+    },
+    {
+      "id": "m3",
+      "from": "service",
+      "to": "client",
+      "y": 273,
+      "label": "返回受影响 Agent 清单",
+      "variant": "return"
+    },
+    {
+      "id": "m4",
+      "from": "client",
+      "to": "ops",
+      "y": 319,
+      "label": "展示 Skill 与 Agent 标签输入项",
+      "variant": "return"
+    },
+    {
+      "id": "m5",
+      "from": "ops",
+      "to": "client",
+      "y": 366,
+      "label": "手填所有新标签，确认发布",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m6",
+      "from": "client",
+      "to": "service",
+      "y": 412,
+      "label": "HTTPS：完整包与全部手填标签"
+    },
+    {
+      "id": "m7",
+      "from": "service",
+      "to": "client",
+      "y": 459,
+      "label": "校验并联动发布，返回新版本",
+      "variant": "return"
+    },
+    {
+      "id": "m8",
+      "from": "client",
+      "to": "ops",
+      "y": 505,
+      "label": "展示 Skill 与 Agent 发布结果",
+      "variant": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "提交即表示运维人员确认",
+      "items": [
+        "服务端校验权限及 v.1.0.0 形式的新标签",
+        "更新受影响 Agent 装配并生成新 Agent ID"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "结果：一次联动发布",
+      "items": [
+        "发布包不可变，标签不能改指向或重用",
+        "保存草稿不触发；拒绝时展示原因，不报成功"
+      ]
+    }
+  ]
+}

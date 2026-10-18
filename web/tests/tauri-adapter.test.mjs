@@ -24,6 +24,7 @@ function bridge(handler = () => null) {
     async invoke(command, args) {
       calls.push([command, args])
       if (command === "runtime_request" && args.method === "status") return empty()
+      if (command === "runtime_request" && args.method === "skill_library_info") return { kind: "desktop", root: "/home/test/.omnimind-ops/skills" }
       return handler(command, args)
     },
   }

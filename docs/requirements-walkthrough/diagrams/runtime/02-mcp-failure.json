@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "所需 MCP 连接失败",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1100,
+      640
+    ]
+  },
+  "participants": [
+    {
+      "id": "caller",
+      "type": "external",
+      "label": "调用方"
+    },
+    {
+      "id": "client",
+      "type": "frontend",
+      "label": "桌面客户端"
+    },
+    {
+      "id": "mcp",
+      "type": "external",
+      "label": "远端 MCP"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m1",
+      "from": "caller",
+      "to": "client",
+      "y": 180,
+      "label": "发起使用 MCP 的本轮任务",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m2",
+      "from": "client",
+      "to": "mcp",
+      "y": 288,
+      "label": "按固定装配建立连接"
+    },
+    {
+      "id": "m3",
+      "from": "mcp",
+      "to": "client",
+      "y": 397,
+      "label": "连接失败或鉴权失败",
+      "variant": "return"
+    },
+    {
+      "id": "m4",
+      "from": "client",
+      "to": "caller",
+      "y": 505,
+      "label": "结束本轮，反馈 MCP 失败原因",
+      "variant": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "条件：本轮所需 MCP 不可用",
+      "items": [
+        "本图说明连接失败，不进入工具调用",
+        "客户端展示失败原因并写入执行记录"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "结果：不替换配置或伪造成功",
+      "items": [
+        "工具调用阶段失败同样纳入本轮错误结果",
+        "MCP 服务实现不设本项目发布标签"
+      ]
+    }
+  ]
+}

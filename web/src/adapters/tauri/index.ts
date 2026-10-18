@@ -3,6 +3,7 @@ import type { WorkbenchScope } from "@/workbench/backend"
 import { createBrowserStorage } from "../browser-storage"
 import { RECOMMENDED_SITES } from "../recommendations"
 import { safeHttpUrl } from "./attachments"
+import { createTauriSkillLibrary } from "./skills"
 import { array, boolean, object, string } from "./protocol"
 import {
   readAgents,
@@ -78,6 +79,10 @@ export async function createTauriAdapters(providedBridge?: TauriBridge) {
       throw new Error("系统操作未能完成，请重试。")
     }
   }
+  const skillLibrary = await createTauriSkillLibrary(request).catch((error) => {
+    runtime.dispose()
+    throw error
+  })
   const adapters: FrontendAdapters = {
     backendId: "desktop",
     gatewayFor: runtime.gatewayFor,
@@ -98,6 +103,7 @@ export async function createTauriAdapters(providedBridge?: TauriBridge) {
       },
     },
     skills: { list: async () => readSkills(await request("skills_list")) },
+    skillLibrary,
     models: {
       list: async () =>
         array(await request("models_list"), (entry) => {

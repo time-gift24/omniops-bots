@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "用户在客户端发起会话",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1100,
+      640
+    ]
+  },
+  "participants": [
+    {
+      "id": "user",
+      "type": "external",
+      "label": "用户"
+    },
+    {
+      "id": "client",
+      "type": "frontend",
+      "label": "桌面客户端"
+    },
+    {
+      "id": "chrome",
+      "type": "external",
+      "label": "专用 Chrome"
+    },
+    {
+      "id": "service",
+      "type": "backend",
+      "label": "物料服务"
+    }
+  ],
+  "messages": [
+    {
+      "id": "start",
+      "from": "user",
+      "to": "client",
+      "y": 180,
+      "label": "选择官方 Agent，输入任务",
+      "variant": "emphasis"
+    },
+    {
+      "id": "materials",
+      "from": "client",
+      "to": "service",
+      "y": 245,
+      "label": "HTTPS：核对版本，补齐物料"
+    },
+    {
+      "id": "ready",
+      "from": "service",
+      "to": "client",
+      "y": 310,
+      "label": "返回指定版本物料",
+      "variant": "return"
+    },
+    {
+      "id": "execute",
+      "from": "client",
+      "to": "chrome",
+      "y": 375,
+      "label": "固定快照后执行本轮操作",
+      "variant": "emphasis"
+    },
+    {
+      "id": "result",
+      "from": "chrome",
+      "to": "client",
+      "y": 440,
+      "label": "返回操作结果",
+      "variant": "return"
+    },
+    {
+      "id": "show",
+      "from": "client",
+      "to": "user",
+      "y": 505,
+      "label": "保存结果并展示，等待下一轮",
+      "variant": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "本地开始、客户端执行",
+      "items": [
+        "准备与工具检查成功且 Chrome 空闲后才执行",
+        "等待用户输入时释放 Chrome 执行名额"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "同一会话固定装配",
+      "items": [
+        "后续轮次沿用开始时的快照",
+        "服务端提供物料，手动会话可继续输入"
+      ]
+    }
+  ]
+}

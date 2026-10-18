@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "官方发布新版后：旧会话与新会话",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1100,
+      568
+    ]
+  },
+  "participants": [
+    {
+      "id": "user",
+      "type": "external",
+      "label": "用户"
+    },
+    {
+      "id": "client",
+      "type": "frontend",
+      "label": "桌面客户端"
+    },
+    {
+      "id": "local",
+      "type": "database",
+      "label": "本地物料与快照"
+    },
+    {
+      "id": "service",
+      "type": "backend",
+      "label": "官方物料服务"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m1",
+      "from": "user",
+      "to": "client",
+      "y": 170,
+      "label": "在已有会话继续输入",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m2",
+      "from": "client",
+      "to": "local",
+      "y": 214,
+      "label": "读取该会话开始时的快照",
+      "variant": "default"
+    },
+    {
+      "id": "m3",
+      "from": "local",
+      "to": "client",
+      "y": 258,
+      "label": "返回原 Agent 与 Skill 版本",
+      "variant": "return"
+    },
+    {
+      "id": "m4",
+      "from": "client",
+      "to": "user",
+      "y": 302,
+      "label": "按原快照执行，展示本轮结果",
+      "variant": "return"
+    },
+    {
+      "id": "m5",
+      "from": "user",
+      "to": "client",
+      "y": 346,
+      "label": "另开一个官方 Agent 会话",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m6",
+      "from": "client",
+      "to": "service",
+      "y": 390,
+      "label": "同步所选新版与关联物料",
+      "variant": "default"
+    },
+    {
+      "id": "m7",
+      "from": "service",
+      "to": "client",
+      "y": 434,
+      "label": "返回新 ID、标签与固定装配",
+      "variant": "return"
+    },
+    {
+      "id": "m8",
+      "from": "client",
+      "to": "local",
+      "y": 478,
+      "label": "保存新会话快照",
+      "variant": "default"
+    }
+  ]
+}

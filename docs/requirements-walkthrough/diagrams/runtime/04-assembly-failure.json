@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "MCP 连接失败：结束装配，不开始执行",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1100,
+      524
+    ]
+  },
+  "participants": [
+    {
+      "id": "caller",
+      "label": "调用方",
+      "type": "external"
+    },
+    {
+      "id": "client",
+      "label": "客户端装配",
+      "type": "frontend"
+    },
+    {
+      "id": "local",
+      "label": "本地 Skill 缓存",
+      "type": "database"
+    },
+    {
+      "id": "mcp",
+      "label": "远端 MCP",
+      "type": "external"
+    }
+  ],
+  "messages": [
+    {
+      "id": "seq-04-assembly-failure-m1",
+      "from": "caller",
+      "to": "client",
+      "y": 170,
+      "label": "请求执行确定的 Agent",
+      "variant": "emphasis"
+    },
+    {
+      "id": "seq-04-assembly-failure-m2",
+      "from": "client",
+      "to": "local",
+      "y": 214,
+      "label": "补齐并检查所需 Skill 包",
+      "variant": "default"
+    },
+    {
+      "id": "seq-04-assembly-failure-m3",
+      "from": "local",
+      "to": "client",
+      "y": 258,
+      "label": "返回确定版本的完整包",
+      "variant": "return"
+    },
+    {
+      "id": "seq-04-assembly-failure-m4",
+      "from": "client",
+      "to": "mcp",
+      "y": 302,
+      "label": "按已同步服务配置连接",
+      "variant": "security"
+    },
+    {
+      "id": "seq-04-assembly-failure-m5",
+      "from": "mcp",
+      "to": "client",
+      "y": 346,
+      "label": "连接失败或凭据不可用",
+      "variant": "return"
+    },
+    {
+      "id": "seq-04-assembly-failure-m6",
+      "from": "client",
+      "to": "local",
+      "y": 390,
+      "label": "保留已下载完整包",
+      "variant": "default"
+    },
+    {
+      "id": "seq-04-assembly-failure-m7",
+      "from": "client",
+      "to": "caller",
+      "y": 434,
+      "label": "返回失败原因，结束本次调用",
+      "variant": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "不开始执行",
+      "items": [
+        "不构造 Agent 运行时、不申请 Chrome 名额，不静默跳过工具或替换版本。"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "后续处理",
+      "items": [
+        "已有 Skill 缓存保留；修复连接或凭据后，由调用方重新发起任务。"
+      ]
+    }
+  ]
+}

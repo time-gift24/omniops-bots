@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "运维人员上传 Skill 草稿修订",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1100,
+      640
+    ]
+  },
+  "participants": [
+    {
+      "id": "ops",
+      "type": "external",
+      "label": "运维人员"
+    },
+    {
+      "id": "client",
+      "type": "frontend",
+      "label": "桌面客户端"
+    },
+    {
+      "id": "service",
+      "type": "backend",
+      "label": "物料服务"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m1",
+      "from": "ops",
+      "to": "client",
+      "y": 180,
+      "label": "上传当前完整 Skill 草稿",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m2",
+      "from": "client",
+      "to": "service",
+      "y": 288,
+      "label": "HTTPS：草稿包与现有登录凭据"
+    },
+    {
+      "id": "m3",
+      "from": "service",
+      "to": "client",
+      "y": 397,
+      "label": "校验运维权限后返回修订标识",
+      "variant": "return"
+    },
+    {
+      "id": "m4",
+      "from": "client",
+      "to": "ops",
+      "y": 505,
+      "label": "展示上传成功与草稿修订",
+      "variant": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "条件：服务端确认运维权限",
+      "items": [
+        "普通用户没有上传入口，也不能绕过服务端校验",
+        "客户端保留未同步编辑与缓存"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "结果：只保存草稿",
+      "items": [
+        "草稿不产生正式标签，不联动 Agent",
+        "失败显示原因，本地草稿仍保留"
+      ]
+    }
+  ]
+}

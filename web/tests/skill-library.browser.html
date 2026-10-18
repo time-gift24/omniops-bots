@@ -1,0 +1,195 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Skill library interaction regression</title>
+<!-- Run npm run dev, then open /tests/skill-library.browser.html. No backend required. -->
+<div id="fixture" style="height: 900px; max-height: 95dvh"></div>
+<pre id="result">Running…</pre>
+<script type="module">
+  import React, { useState } from "react"
+  import { createRoot } from "react-dom/client"
+  import { flushSync } from "react-dom"
+  import "/src/index.css"
+  import { SkillLibraryScreen } from "/src/components/skills/skill-library-screen.tsx"
+  import { createSkillLibrary } from "/src/skills/library.ts"
+  import { createTestDependencies, withTestTheme } from "/tests/support.tsx"
+
+  const fixture = document.querySelector("#fixture")
+  const result = document.querySelector("#result")
+  const root = createRoot(fixture)
+  const checks = []
+  const packages = new Map()
+  const originals = [
+    { id: "local-a", name: "巡检技能", description: "本地文件管理", files: [{ path: "SKILL.md", content: "# 巡检技能\n\n运行前检查。" }] },
+    { id: "local-b", name: "排障技能", description: "另一个包", files: [{ path: "beta.txt", content: "第二个 Skill 的独立内容" }] },
+    { id: "official", name: "官方运维", description: "已发布的只读包", origin: "official", version: "v.1.0.0", files: [{ path: "SKILL.md", content: "# 官方运维\n\n这是固定的官方内容。" }] },
+  ]
+  const source = { async list() { return structuredClone(originals) } }
+  const drafts = { async load() { return {} }, async save() {}, async remove() {} }
+  let failWrites = false
+  let saveGate = null
+  let saveStarted = false
+  let nextReadGate = null
+  let readStarted = false
+  let nextId = 0
+  const persistence = {
+    async load() { return structuredClone([...packages.values()]) },
+    async save(skill) {
+      if (failWrites) throw new Error("本地存储暂不可写")
+      if (saveGate) {
+        const gate = saveGate
+        saveGate = null
+        saveStarted = true
+        await gate.promise
+      }
+      packages.set(skill.id, structuredClone(skill))
+    },
+    async remove(id) { packages.delete(id) },
+  }
+  const baseLibrary = createSkillLibrary({ source, legacyDrafts: drafts, persistence, storage: { kind: "browser", root: "UI regression fixture" }, createId: () => `copy-${++nextId}` })
+  const library = {
+    ...baseLibrary,
+    async readFile(id, path) {
+      const gate = nextReadGate?.id === id && nextReadGate.path === path ? nextReadGate : null
+      if (gate) nextReadGate = null
+      const blob = await baseLibrary.readFile(id, path)
+      if (gate) {
+        readStarted = true
+        await gate.promise
+      }
+      return blob
+    },
+  }
+  const dependencies = createTestDependencies({ skillLibrary: library, skills: source, skillDrafts: drafts })
+  let chooseSkill
+  let currentId = null
+  function Harness() {
+    const [skillId, setSkillId] = useState(null)
+    chooseSkill = setSkillId
+    currentId = skillId
+    return React.createElement(SkillLibraryScreen, { skillId, onOpenSkill: setSkillId })
+  }
+  const assert = (condition, message) => { if (!condition) throw new Error(message) }
+  const wait = (ms = 20) => new Promise(resolve => setTimeout(resolve, ms))
+  const until = async (condition, message, timeout = 6000) => {
+    const deadline = performance.now() + timeout
+    while (!condition() && performance.now() < deadline) await wait()
+    assert(condition(), message)
+  }
+  const visible = element => element && element.getClientRects().length > 0 && !element.closest('[inert], [aria-hidden="true"]')
+  const button = (name, scope = fixture) => [...scope.querySelectorAll("button")].find(element => visible(element) && (element.getAttribute("aria-label") ?? element.textContent).trim() === name)
+  const click = element => {
+    assert(visible(element) && !element.disabled, "Expected enabled visible control")
+    flushSync(() => { element.focus(); element.click() })
+  }
+  const textarea = () => fixture.querySelector("textarea")
+  const write = value => flushSync(() => {
+    const input = textarea()
+    assert(input && !input.disabled, "Expected editable text input")
+    Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value").set.call(input, value)
+    input.dispatchEvent(new Event("input", { bubbles: true }))
+  })
+  const choose = id => flushSync(() => chooseSkill(id))
+  const upload = files => flushSync(() => {
+    const input = fixture.querySelector('input[aria-label="选择上传文件"]')
+    assert(input && !input.disabled, "Expected enabled file upload input")
+    const transfer = new DataTransfer()
+    for (const file of files) transfer.items.add(file)
+    input.files = transfer.files
+    input.dispatchEvent(new Event("change", { bubbles: true }))
+  })
+  const deferred = () => {
+    let resolve
+    const promise = new Promise(done => { resolve = done })
+    return { promise, resolve }
+  }
+  const loadedText = () => fixture.querySelector(".skill-file-preview")?.textContent ?? ""
+  const editedText = async (id, path) => (await baseLibrary.readFile(id, path)).text()
+  try {
+    flushSync(() => root.render(withTestTheme(React.createElement(Harness), dependencies)))
+    await until(() => fixture.querySelector("h1")?.textContent === "Skill" && [...fixture.querySelectorAll("button")].some(element => element.textContent.includes("巡检技能")), "Skill list did not load")
+    click([...fixture.querySelectorAll("button")].find(element => element.textContent.includes("巡检技能") && !element.getAttribute("aria-label")))
+    await until(() => fixture.querySelector("h1")?.textContent === "巡检技能" && button("SKILL.md"), "Opening a Skill must show its package files")
+    upload([
+      new File([new Uint8Array([0, 255, 128, 13, 10])], "sample.bin", { type: "application/octet-stream" }),
+      new File(["最初的上传文本"], "note.txt", { type: "text/plain" }),
+    ])
+    await until(() => button("sample.bin") && button("note.txt") && !fixture.querySelector('input[aria-label="选择上传文件"]').disabled, "Uploaded files did not appear after persistence")
+    assert(new Uint8Array(await (await baseLibrary.readFile("local-a", "sample.bin")).arrayBuffer()).join(",") === "0,255,128,13,10", "Binary upload must preserve exact bytes")
+    assert(await editedText("local-a", "note.txt") === "最初的上传文本", "Text upload must preserve text")
+    checks.push("List → package navigation and file input uploads persist text and exact binary bytes")
+
+    upload([new File(["明确替换后的文本"], "note.txt", { type: "text/plain" })])
+    await until(() => button("替换") && !button("替换").disabled, "A same-name upload must offer explicit replacement")
+    assert(await editedText("local-a", "note.txt") === "最初的上传文本", "A conflict must not overwrite the original file")
+    click(button("替换"))
+    await until(() => fixture.textContent.includes("已替换并保存"), "Explicit replacement did not complete")
+    assert(await editedText("local-a", "note.txt") === "明确替换后的文本", "Explicit replacement must persist new bytes")
+    checks.push("Name conflicts preserve original bytes until explicit Replace")
+
+    click(button("note.txt"))
+    await until(() => button("编辑文件"), "Text file preview did not load")
+    click(button("编辑文件"))
+    write("失败时保留的编辑")
+    failWrites = true
+    click(button("保存文件"))
+    await until(() => fixture.querySelector('[role="alert"]') && button("保存文件") && !button("保存文件").disabled, "A failed save must show an error and allow retry")
+    assert(textarea().value === "失败时保留的编辑", "Save failure must retain the editor text")
+    assert(await editedText("local-a", "note.txt") === "明确替换后的文本", "Save failure must preserve persisted bytes")
+    failWrites = false
+    const saving = deferred()
+    saveGate = saving
+    write("保存开始时的快照")
+    click(button("保存文件"))
+    await until(() => saveStarted, "Delayed save did not start")
+    write("保存期间继续输入的内容")
+    saving.resolve()
+    await until(() => button("保存文件") && !button("保存文件").disabled && fixture.querySelector(".skill-file-preview")?.textContent.includes("未保存"), "Input typed during save must remain unsaved")
+    assert(textarea().value === "保存期间继续输入的内容", "Saved snapshot must not replace newer editor text")
+    assert(await editedText("local-a", "note.txt") === "保存开始时的快照", "Only the text captured when saving began should persist")
+    click(button("保存文件"))
+    await until(() => button("保存文件")?.disabled && !fixture.querySelector(".skill-file-preview")?.textContent.includes("未保存"), "Retry should save the current editor version")
+    checks.push("Failed saves retain text; delayed saves persist only their snapshot and leave newer typing unsaved")
+
+    click(button("关闭文件"))
+    const reading = deferred()
+    nextReadGate = { ...reading, id: "local-a", path: "note.txt" }
+    click(button("note.txt"))
+    await until(() => readStarted, "Delayed preview read did not start")
+    choose("local-b")
+    await until(() => fixture.querySelector("h1")?.textContent === "排障技能" && button("beta.txt"), "Switching Skill did not show the new package")
+    click(button("beta.txt"))
+    await until(() => loadedText().includes("第二个 Skill 的独立内容"), "The second Skill preview did not load independently")
+    reading.resolve()
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    assert(fixture.querySelector("h1").textContent === "排障技能" && loadedText().includes("第二个 Skill 的独立内容") && !loadedText().includes("保存期间继续输入的内容"), "A stale file response must not contaminate another Skill")
+    checks.push("Switching Skill ignores the previous package's delayed file response")
+
+    choose("official")
+    await until(() => fixture.querySelector("h1")?.textContent === "官方运维" && button("SKILL.md"), "Official package did not load")
+    assert(!button("上传文件") && fixture.querySelector('input[aria-label="选择上传文件"]').disabled, "Official package must not expose uploads")
+    assert(!button("管理 SKILL.md"), "Official file actions must be read-only")
+    click(button("SKILL.md"))
+    await until(() => loadedText().includes("这是固定的官方内容。"), "Official file content did not load")
+    assert(!button("编辑文件"), "Official file must not expose editing")
+    click(button("复制为本地 Skill"))
+    await until(() => currentId?.startsWith("copy-") && button("SKILL.md"), "Copy to local did not open the new package")
+    const copiedId = currentId
+    assert(!fixture.querySelector('input[aria-label="选择上传文件"]').disabled, "Local copy must enable uploads")
+    click(button("SKILL.md"))
+    await until(() => button("编辑文件"), "Local copy must be editable")
+    click(button("编辑文件"))
+    write("# 本地副本改动")
+    click(button("保存文件"))
+    await until(() => button("保存文件")?.disabled && !fixture.querySelector(".skill-file-preview")?.textContent.includes("未保存"), "Local copy did not save")
+    assert(await editedText(copiedId, "SKILL.md") === "# 本地副本改动", "Local copy changes must persist")
+    assert(await editedText("official", "SKILL.md") === originals[2].files[0].content, "Local copy must not modify the official release")
+    checks.push("Official packages stay read-only; a local copy permits changes without touching the release")
+
+    result.dataset.status = "passed"
+    result.textContent = `PASS (${checks.length})\n${checks.join("\n")}`
+  } catch (error) {
+    result.dataset.status = "failed"
+    result.textContent = `FAIL after ${checks.length} checks\n${checks.join("\n")}\n${error.stack}`
+    console.error(error)
+  }
+</script>

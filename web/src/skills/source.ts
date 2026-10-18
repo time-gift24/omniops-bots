@@ -4,6 +4,8 @@ export type Skill = {
   id: string
   name: string
   description: string
+  origin?: "local" | "official"
+  version?: string
   files: readonly SkillFile[]
 }
 

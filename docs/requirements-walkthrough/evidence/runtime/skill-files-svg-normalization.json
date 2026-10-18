@@ -1,0 +1,14 @@
+[
+  {
+    "file": "assets/runtime/01-skill-file-upload.svg",
+    "raw_sha256": "8167e4145feca2b828a9c4ce535d58a66795997d0c277b6f51fec215ca616291",
+    "normalized_sha256": "84ab158de65c65f9267be56de490a528894663d03299329cda1de4631d0a4afd",
+    "normalization": "trim trailing whitespace and one EOF newline only"
+  },
+  {
+    "file": "assets/runtime/01-skill-file-conflict.svg",
+    "raw_sha256": "e6adc05ea91ba283493e89b98de7982376fa7d97253d45dd25d8f7f7ff880f7b",
+    "normalized_sha256": "5cefaa4b2facbd37d9bbb602d0ea228757037e10f1d989166313135d46568040",
+    "normalization": "trim trailing whitespace and one EOF newline only"
+  }
+]

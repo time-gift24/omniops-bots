@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "检查、下载并在空闲时安装更新",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1100,
+      612
+    ]
+  },
+  "participants": [
+    {
+      "id": "user",
+      "type": "external",
+      "label": "用户"
+    },
+    {
+      "id": "client",
+      "type": "frontend",
+      "label": "桌面客户端"
+    },
+    {
+      "id": "site",
+      "type": "backend",
+      "label": "HTTPS 更新站点"
+    },
+    {
+      "id": "installer",
+      "type": "external",
+      "label": "平台安装器"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m1",
+      "from": "client",
+      "to": "site",
+      "y": 170,
+      "label": "检查当前平台可用新版",
+      "variant": "default"
+    },
+    {
+      "id": "m2",
+      "from": "site",
+      "to": "client",
+      "y": 214,
+      "label": "返回新版说明、地址与签名",
+      "variant": "return"
+    },
+    {
+      "id": "m3",
+      "from": "user",
+      "to": "client",
+      "y": 258,
+      "label": "选择下载",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m4",
+      "from": "client",
+      "to": "site",
+      "y": 302,
+      "label": "下载对应平台完整更新包",
+      "variant": "default"
+    },
+    {
+      "id": "m5",
+      "from": "site",
+      "to": "client",
+      "y": 346,
+      "label": "完成传输，客户端校验与验签",
+      "variant": "return"
+    },
+    {
+      "id": "m6",
+      "from": "client",
+      "to": "user",
+      "y": 390,
+      "label": "显示待安装，等待确认",
+      "variant": "return"
+    },
+    {
+      "id": "m7",
+      "from": "user",
+      "to": "client",
+      "y": 434,
+      "label": "确认安装",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m8",
+      "from": "client",
+      "to": "installer",
+      "y": 478,
+      "label": "核对空闲、阻止新任务后安装",
+      "variant": "default"
+    },
+    {
+      "id": "m9",
+      "from": "installer",
+      "to": "client",
+      "y": 522,
+      "label": "安装完成并重启新版",
+      "variant": "return"
+    }
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "重启后：补传已完成、未确认的结果",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1100,
+      640
+    ]
+  },
+  "participants": [
+    {
+      "id": "user",
+      "label": "用户",
+      "type": "external"
+    },
+    {
+      "id": "client",
+      "label": "桌面客户端",
+      "type": "frontend"
+    },
+    {
+      "id": "record",
+      "label": "本地记录",
+      "type": "database"
+    },
+    {
+      "id": "server",
+      "label": "服务端",
+      "type": "backend"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m-07-restart-complete-0",
+      "from": "user",
+      "to": "client",
+      "y": 180,
+      "label": "重新启动客户端",
+      "variant": "default"
+    },
+    {
+      "id": "m-07-restart-complete-1",
+      "from": "client",
+      "to": "record",
+      "y": 248,
+      "label": "读取已完成、未确认记录",
+      "variant": "default"
+    },
+    {
+      "id": "m-07-restart-complete-2",
+      "from": "record",
+      "to": "client",
+      "y": 316,
+      "label": "原调用 ID、结果与快照",
+      "variant": "return"
+    },
+    {
+      "id": "m-07-restart-complete-3",
+      "from": "client",
+      "to": "server",
+      "y": 384,
+      "label": "连接恢复后按原 ID 补传",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m-07-restart-complete-4",
+      "from": "server",
+      "to": "client",
+      "y": 452,
+      "label": "确认收到",
+      "variant": "return"
+    },
+    {
+      "id": "m-07-restart-complete-5",
+      "from": "client",
+      "to": "record",
+      "y": 520,
+      "label": "标记已交付，保留已有记录",
+      "variant": "default"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "任务已完成",
+      "items": [
+        "使用磁盘中已保存的结果",
+        "不重新装配或执行任务"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "恢复的是交付",
+      "items": [
+        "未确认时继续保留并等待补传",
+        "不要求用户重新发起已完成任务"
+      ]
+    }
+  ]
+}

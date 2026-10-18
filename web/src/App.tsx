@@ -56,9 +56,9 @@ const AgentBuilder = lazy(() =>
     default: module.AgentBuilder,
   }))
 )
-const SkillScreen = lazy(() =>
-  import("@/components/skills/skill-screen").then((module) => ({
-    default: module.SkillScreen,
+const SkillLibraryScreen = lazy(() =>
+  import("@/components/skills/skill-library-screen").then((module) => ({
+    default: module.SkillLibraryScreen,
   }))
 )
 
@@ -192,8 +192,8 @@ function WorkspaceApp({
   const [view, setView] = useState<View>({ kind: "chat" })
   const [agentToolbarTarget, setAgentToolbarTarget] =
     useState<HTMLDivElement | null>(null)
-  const [skillToolbarTarget, setSkillToolbarTarget] =
-    useState<HTMLDivElement | null>(null)
+  const [skillCatalog, setSkillCatalog] =
+    useState<readonly Pick<Skill, "id" | "name" | "description">[]>(skills)
   const [openedSkillId, setOpenedSkillId] = useState<string | null>(null)
   const [workbenchOpen, setWorkbenchOpen] = useState(true)
   const [navigationExpanded, setNavigationExpanded] = useState(true)
@@ -264,7 +264,7 @@ function WorkspaceApp({
     (workspace) => workspace.id === activeSession?.workspaceId
   )
   const activeAgent = agents.find((agent) => agent.id === openedAgentId)
-  const activeSkill = skills.find((skill) => skill.id === openedSkillId)
+  const activeSkill = skillCatalog.find((skill) => skill.id === openedSkillId)
   const activeSectionId =
     view.kind === "agent"
       ? "agents"
@@ -351,6 +351,7 @@ function WorkspaceApp({
       id: "skills",
       label: "技能",
       icon: PackageIcon,
+      selectFirstItem: false,
       groups: [
         {
           label: "我的技能",
@@ -372,7 +373,7 @@ function WorkspaceApp({
               </Button>
             </MorphicTooltip>
           ),
-          items: skills.map((skill) => ({
+          items: skillCatalog.map((skill) => ({
             id: `skill:${skill.id}`,
             label: skill.name,
             icon: PackageIcon,
@@ -476,6 +477,10 @@ function WorkspaceApp({
         onSectionSelect={(section) => {
           if (compactWindow) setWorkbenchOpen(false)
           if (section.id === "workspace") setView({ kind: "chat" })
+          if (section.id === "skills") {
+            setWorkbenchOpen(false)
+            openSection("skills")
+          }
         }}
         onParentSelect={(section) => openSection(section.id)}
         workspaceHeaderClassName={workbenchOpen ? undefined : "pr-10"}
@@ -493,7 +498,6 @@ function WorkspaceApp({
                   { label: activeSkill?.name ?? "技能" },
                 ]}
               />
-              <div ref={setSkillToolbarTarget} className="ml-auto shrink-0" />
             </div>
           ) : view.kind === "chat" ? (
             <Breadcrumbs
@@ -606,9 +610,15 @@ function WorkspaceApp({
             tabIndex={-1}
             className="min-h-0 flex-1 outline-none"
           >
-            {openedSkillId ? (
+            {openedSkillId ||
+            (view.kind === "section" && view.sectionId === "skills") ? (
               <div
-                className={view.kind === "skill" ? "h-full min-h-0" : "hidden"}
+                className={
+                  view.kind === "skill" ||
+                  (view.kind === "section" && view.sectionId === "skills")
+                    ? "h-full min-h-0"
+                    : "hidden"
+                }
               >
                 <PageLoadBoundary>
                   <Suspense
@@ -621,13 +631,20 @@ function WorkspaceApp({
                       </p>
                     }
                   >
-                    <SkillScreen
-                      skills={skills}
-                      skillId={openedSkillId}
-                      active={view.kind === "skill"}
-                      toolbarTarget={
-                        view.kind === "skill" ? skillToolbarTarget : null
+                    <SkillLibraryScreen
+                      skillId={
+                        view.kind === "section" && view.sectionId === "skills"
+                          ? null
+                          : openedSkillId
                       }
+                      onOpenSkill={(id) => {
+                        if (id === null) openSection("skills")
+                        else {
+                          setOpenedSkillId(id)
+                          setView({ kind: "skill" })
+                        }
+                      }}
+                      onCatalogChange={setSkillCatalog}
                     />
                   </Suspense>
                 </PageLoadBoundary>
@@ -653,7 +670,12 @@ function WorkspaceApp({
                       initialConfiguration={activeAgent.configuration}
                       mcpServers={resources.mcpServers}
                       tools={resources.tools}
-                      skills={resources.skills}
+                      skills={[
+                        ...resources.skills.filter(
+                          (entry) => !skills.some((skill) => skill.id === entry.id)
+                        ),
+                        ...skillCatalog,
+                      ]}
                       initialDraft={activeAgent.draft}
                       onDraftChange={(draft) =>
                         setAgents((current) =>
@@ -690,7 +712,8 @@ function WorkspaceApp({
                 </PageLoadBoundary>
               </div>
             ) : null}
-            {view.kind === "section" ? (
+            {view.kind === "section" &&
+            view.sectionId === "skills" ? null : view.kind === "section" ? (
               <section
                 data-slot="navigation-overview"
                 className="mx-auto w-full max-w-3xl px-6 py-8 sm:px-8"
@@ -793,7 +816,7 @@ function WorkspaceApp({
         <CommandList className="max-h-[min(24rem,60dvh)]">
           <CommandEmpty>没有找到技能。</CommandEmpty>
           <CommandGroup heading="我的技能">
-            {skills.map((skill) => (
+            {skillCatalog.map((skill) => (
               <CommandItem
                 key={skill.id}
                 value={`${skill.name} ${skill.description}`}

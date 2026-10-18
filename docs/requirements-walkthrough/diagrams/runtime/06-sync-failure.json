@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "核对或下载失败：结束本次准备",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1100,
+      570
+    ]
+  },
+  "participants": [
+    {
+      "id": "user",
+      "type": "external",
+      "label": "用户或服务端"
+    },
+    {
+      "id": "client",
+      "type": "frontend",
+      "label": "桌面客户端"
+    },
+    {
+      "id": "local",
+      "type": "database",
+      "label": "本地物料与快照"
+    },
+    {
+      "id": "service",
+      "type": "backend",
+      "label": "官方物料服务"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m1",
+      "from": "user",
+      "to": "client",
+      "y": 170,
+      "label": "请求开始本次调用",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m2",
+      "from": "client",
+      "to": "service",
+      "y": 245,
+      "label": "HTTPS：核对清单或补齐缺包",
+      "variant": "default"
+    },
+    {
+      "id": "m3",
+      "from": "service",
+      "to": "client",
+      "y": 320,
+      "label": "请求失败，或所需物料不可取得",
+      "variant": "return"
+    },
+    {
+      "id": "m4",
+      "from": "client",
+      "to": "local",
+      "y": 395,
+      "label": "保留已有缓存与未同步编辑",
+      "variant": "default"
+    },
+    {
+      "id": "m5",
+      "from": "client",
+      "to": "user",
+      "y": 470,
+      "label": "本次失败，展示明确原因",
+      "variant": "return"
+    }
+  ]
+}

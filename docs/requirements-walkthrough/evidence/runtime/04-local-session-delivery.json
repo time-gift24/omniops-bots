@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-local-session.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-local-session.html",
+  "specification": {
+    "sha256": "865b8450f5cbedce6ef432f2c0a2be7b30d7ecc42549f88632e6ccbb8b7f317f",
+    "bytes": 2010
+  },
+  "artifact": {
+    "sha256": "dec0a194b3c4ff97883d560c25df93e357bc523273f587b94d29224a597e1976",
+    "bytes": 704777
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

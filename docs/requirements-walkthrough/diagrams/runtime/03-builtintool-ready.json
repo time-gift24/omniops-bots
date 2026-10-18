@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "所需 builtinTool 齐全时执行",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1100,
+      640
+    ]
+  },
+  "participants": [
+    {
+      "id": "caller",
+      "type": "external",
+      "label": "调用方"
+    },
+    {
+      "id": "client",
+      "type": "frontend",
+      "label": "桌面客户端"
+    },
+    {
+      "id": "tools",
+      "type": "backend",
+      "label": "本地内置工具"
+    },
+    {
+      "id": "chrome",
+      "type": "external",
+      "label": "专用 Chrome"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m1",
+      "from": "caller",
+      "to": "client",
+      "y": 180,
+      "label": "发起本轮任务",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m2",
+      "from": "client",
+      "to": "tools",
+      "y": 245,
+      "label": "核对装配所需工具"
+    },
+    {
+      "id": "m3",
+      "from": "tools",
+      "to": "client",
+      "y": 310,
+      "label": "返回全部可用",
+      "variant": "return"
+    },
+    {
+      "id": "m4",
+      "from": "client",
+      "to": "chrome",
+      "y": 375,
+      "label": "固定运行快照后执行",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m5",
+      "from": "chrome",
+      "to": "client",
+      "y": 440,
+      "label": "返回操作结果",
+      "variant": "return"
+    },
+    {
+      "id": "m6",
+      "from": "client",
+      "to": "caller",
+      "y": 505,
+      "label": "保存并展示或回传结果",
+      "variant": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "条件：工具齐全且其他准备通过",
+      "items": [
+        "Skill 按同步规则准备，Chrome 需空闲",
+        "客户端展示模型与工具调用过程"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "结果：实现由桌面版本确定",
+      "items": [
+        "快照记录工具清单与桌面端版本",
+        "Agent 固定工具选择，不给工具另打标签"
+      ]
+    }
+  ]
+}

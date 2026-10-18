@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "下载或校验失败：保留当前应用",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1100,
+      580
+    ]
+  },
+  "participants": [
+    {
+      "id": "user",
+      "type": "external",
+      "label": "用户"
+    },
+    {
+      "id": "client",
+      "type": "frontend",
+      "label": "桌面客户端"
+    },
+    {
+      "id": "site",
+      "type": "backend",
+      "label": "HTTPS 更新站点"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m1",
+      "from": "user",
+      "to": "client",
+      "y": 180,
+      "label": "选择下载新版",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m2",
+      "from": "client",
+      "to": "site",
+      "y": 280,
+      "label": "请求当前平台完整更新包",
+      "variant": "default"
+    },
+    {
+      "id": "m3",
+      "from": "site",
+      "to": "client",
+      "y": 380,
+      "label": "下载报错，或返回不合格包",
+      "variant": "return"
+    },
+    {
+      "id": "m4",
+      "from": "client",
+      "to": "user",
+      "y": 480,
+      "label": "显示下载或校验失败原因",
+      "variant": "return"
+    }
+  ]
+}

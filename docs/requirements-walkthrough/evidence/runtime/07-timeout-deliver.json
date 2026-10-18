@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/07-timeout.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/07-timeout.html",
+  "specification": {
+    "sha256": "12403b97ec5e2ce78c431be9e1ecbebee4b881adb0bad2815ec3bcc9a107aca9",
+    "bytes": 1831
+  },
+  "artifact": {
+    "sha256": "eab154e2b921093aee300203f06943f281a0d427960b2955db6c49f3ce38dca7",
+    "bytes": 702533
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

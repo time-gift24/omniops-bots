@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "同名文件替换失败时保留原内容",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1100,
+      640
+    ]
+  },
+  "participants": [
+    {
+      "id": "user",
+      "type": "external",
+      "label": "用户 / 运维人员"
+    },
+    {
+      "id": "client",
+      "type": "frontend",
+      "label": "Skill 文件管理"
+    },
+    {
+      "id": "storage",
+      "type": "database",
+      "label": "客户端本地存储"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m1",
+      "from": "user",
+      "to": "client",
+      "y": 180,
+      "label": "向当前目录上传同名文件",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m2",
+      "from": "client",
+      "to": "user",
+      "y": 250,
+      "label": "显示目标路径：替换或跳过",
+      "variant": "return"
+    },
+    {
+      "id": "m3",
+      "from": "user",
+      "to": "client",
+      "y": 320,
+      "label": "选择替换"
+    },
+    {
+      "id": "m4",
+      "from": "client",
+      "to": "storage",
+      "y": 390,
+      "label": "尝试写入新内容，保留原文件"
+    },
+    {
+      "id": "m5",
+      "from": "storage",
+      "to": "client",
+      "y": 460,
+      "label": "写入失败，原文件仍可读取",
+      "variant": "return"
+    },
+    {
+      "id": "m6",
+      "from": "client",
+      "to": "user",
+      "y": 530,
+      "label": "显示失败原因，允许重试或跳过",
+      "variant": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": "条件：用户明确选择替换",
+      "items": [
+        "同名不自动改名；选择跳过则不写入该项",
+        "目录失效时停止写入，不改放到根目录"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "结果：失败不伪装为已保存",
+      "items": [
+        "保留原文件、当前编辑和批次中其他成功项",
+        "未处理失败项不进入实验或完整包上传"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "status": "pass",
+  "errors": [],
+  "mobileOverflow": false,
+  "checked": [
+    "Skill rail opens list",
+    "package navigation",
+    "file input upload",
+    "edit and save",
+    "actual browser reload retains content"
+  ],
+  "screenshots": [
+    "assets/screenshots/01-skill-list.png",
+    "assets/screenshots/01-skill-files.png",
+    "assets/screenshots/01-skill-file-upload.png",
+    "evidence/skill-list-mobile.png",
+    "evidence/skill-files-mobile.png",
+    "evidence/skill-files-dark.png"
+  ]
+}

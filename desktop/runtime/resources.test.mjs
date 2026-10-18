@@ -12,7 +12,7 @@ test('real workspace scopes, session baselines and source skills stay isolated',
   try {
     const workspace = path.join(root, 'project');
     const skillsDir = path.join(root, 'skills');
-    await Promise.all([mkdir(workspace), mkdir(path.join(skillsDir, 'example'), { recursive: true })]);
+    await Promise.all([mkdir(workspace), mkdir(path.join(skillsDir, 'local', 'example'), { recursive: true })]);
     await promisify(execFile)('git', ['init', '--quiet', workspace]);
     await writeFile(path.join(workspace, '.gitignore'), 'payload.bin\n');
     await writeFile(path.join(workspace, 'payload.bin'), Buffer.alloc(3 * 1024 * 1024));
@@ -21,7 +21,7 @@ test('real workspace scopes, session baselines and source skills stay isolated',
     await writeFile(path.join(root, 'outside.txt'), 'outside');
     await symlink(path.join(root, 'outside.txt'), path.join(workspace, 'link.txt'));
     const original = '---\nname: Example\ndescription: Test skill\n---\nUse this skill.';
-    await writeFile(path.join(skillsDir, 'example', 'SKILL.md'), original);
+    await writeFile(path.join(skillsDir, 'local', 'example', 'SKILL.md'), original);
     const resources = createResources({ homeDir: root, skillsDir });
     const scope = { workspaceId: 'w', sessionId: 's1', workspacePath: workspace };
     await assert.rejects(resources.handle('workspace_files', { scope }), /请先选择有效/u);
@@ -43,9 +43,9 @@ test('real workspace scopes, session baselines and source skills stay isolated',
     const { agents, resources: catalog } = await resources.handle('agents_load');
     assert.equal(catalog.mcpServers.length, 0);
     const agent = agents[0];
-    await resources.handle('agent_save', { id: agent.id, configuration: { ...agent.configuration, skillIds: ['example'] } });
+    await resources.handle('agent_save', { id: agent.id, configuration: { ...agent.configuration, skillIds: ['local/example'] } });
     assert.match(await resources.handle('agent_instructions', { id: agent.id }), /Use this skill/u);
-    assert.equal(await readFile(path.join(skillsDir, 'example', 'SKILL.md'), 'utf8'), original);
+    assert.equal(await readFile(path.join(skillsDir, 'local', 'example', 'SKILL.md'), 'utf8'), original);
     const copied = resources.getAgent(agent.id);
     copied.instructions = 'mutated';
     assert.notEqual(resources.getAgent(agent.id).instructions, copied.instructions);

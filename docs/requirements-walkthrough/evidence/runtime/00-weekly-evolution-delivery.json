@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/00-weekly-evolution.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/00-weekly-evolution.html",
+  "specification": {
+    "sha256": "7ce589e42e8129d0b9dfe2d6313d02ac172e468110afa21eda59033016b9f516",
+    "bytes": 3218
+  },
+  "artifact": {
+    "sha256": "b16babe747bdcd0f04a6109b2e0d12a7c11960a0e889b15a160cba9fa338907a",
+    "bytes": 707887
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/06-cache-ready.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/06-cache-ready.html",
+  "specification": {
+    "sha256": "3f56ede751ae9d2fe0130855ac11891477144a38e669250f56d17adda4b9d34f",
+    "bytes": 1893
+  },
+  "artifact": {
+    "sha256": "857b61747b3068fd1cfe57343ac53566d7f390ebd24a8b70c1355ef49b3c9c2b",
+    "bytes": 704125
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

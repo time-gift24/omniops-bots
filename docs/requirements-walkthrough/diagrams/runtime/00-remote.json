@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "客户端接收远端独立任务",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1100,
+      640
+    ]
+  },
+  "participants": [
+    {
+      "id": "server",
+      "label": "服务端",
+      "type": "backend"
+    },
+    {
+      "id": "client",
+      "label": "桌面客户端",
+      "type": "frontend"
+    },
+    {
+      "id": "chrome",
+      "label": "专用 Chrome",
+      "type": "external"
+    },
+    {
+      "id": "record",
+      "label": "本地记录",
+      "type": "database"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m-00-remote-0",
+      "from": "server",
+      "to": "client",
+      "y": 180,
+      "label": "WS：调用 ID、版本、上下文",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m-00-remote-1",
+      "from": "client",
+      "to": "record",
+      "y": 247,
+      "label": "固定装配，创建独立会话",
+      "variant": "default"
+    },
+    {
+      "id": "m-00-remote-2",
+      "from": "client",
+      "to": "chrome",
+      "y": 313,
+      "label": "准备完成且空闲，执行任务",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m-00-remote-3",
+      "from": "chrome",
+      "to": "client",
+      "y": 380,
+      "label": "返回操作结果",
+      "variant": "return"
+    },
+    {
+      "id": "m-00-remote-4",
+      "from": "client",
+      "to": "record",
+      "y": 447,
+      "label": "保存最终结果与运行快照",
+      "variant": "default"
+    },
+    {
+      "id": "m-00-remote-5",
+      "from": "client",
+      "to": "server",
+      "y": 513,
+      "label": "WS：状态、结果、快照",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m-00-remote-6",
+      "from": "server",
+      "to": "client",
+      "y": 550,
+      "label": "确认收到该调用结果",
+      "variant": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "客户端独立执行",
+      "items": [
+        "调用前核对版本、补齐物料并检查工具",
+        "远端会话只读，逐条过程在客户端展示"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "交付有确认",
+      "items": [
+        "结果持久化后再回传",
+        "确认前保留记录，重连或重启后补传"
+      ]
+    }
+  ]
+}

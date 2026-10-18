@@ -1,0 +1,139 @@
+{
+  "reviewer": "image-capable runtime_resources agent",
+  "evidence_kind": "perceptual-review",
+  "diagrams": [
+    {
+      "diagram_type": "sequence",
+      "output": "diagrams/runtime/01-skill-experiment.html",
+      "specification_sha256": "02bac6d846d589a6336bfaca54b3ad32812b90a77254366c9bf5e43f83469c48",
+      "artifact_sha256": "c736d23b57a7d5d33865b6cce5cf654a9146dee7caae9a85217d6ae6f23fe3e9",
+      "artifact_bytes": 703959,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "reviewed_screenshots": [
+        "01-skill-experiment.visual-check.1440x900.light.png",
+        "01-skill-experiment.visual-check.2048x1320.dark.png"
+      ],
+      "correction_rounds": 0,
+      "observations": [
+        "实际读取浅色及深色截图，参与者、消息顺序和文字清晰，无交叉、遮挡或裁切。",
+        "桌面画布与结论卡布局完整；4 步图拉开纵向间距，8 步发布图收紧纵向间距后复核。"
+      ]
+    },
+    {
+      "diagram_type": "sequence",
+      "output": "diagrams/runtime/01-skill-draft-upload.html",
+      "specification_sha256": "f8e20bff40fbfe8f936e0cea33fec28708b150f7110a28ec0e39e8f6577fdaf8",
+      "artifact_sha256": "53dc25a2feb6bfad0c9a85ce66452a22a2c57044edf7b64578fcad4cf88e0019",
+      "artifact_bytes": 701153,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "reviewed_screenshots": [
+        "01-skill-draft-upload.visual-check.2048x1320.light.png",
+        "01-skill-draft-upload.visual-check.1440x900.dark.png"
+      ],
+      "correction_rounds": 1,
+      "observations": [
+        "实际读取浅色及深色截图，参与者、消息顺序和文字清晰，无交叉、遮挡或裁切。",
+        "桌面画布与结论卡布局完整；4 步图拉开纵向间距，8 步发布图收紧纵向间距后复核。"
+      ]
+    },
+    {
+      "diagram_type": "sequence",
+      "output": "diagrams/runtime/01-skill-publish.html",
+      "specification_sha256": "3e4551277b7f08bdc9f3cf654cd19c25c9e878365474750e42534a3c8c7b7b2f",
+      "artifact_sha256": "8e0e081c409a916dad89c2a617fb5088ee332961973579a001ffdfd97b9e665f",
+      "artifact_bytes": 703907,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "reviewed_screenshots": [
+        "01-skill-publish.visual-check.2048x1320.light.png",
+        "01-skill-publish.visual-check.1440x900.dark.png"
+      ],
+      "correction_rounds": 1,
+      "observations": [
+        "实际读取浅色及深色截图，参与者、消息顺序和文字清晰，无交叉、遮挡或裁切。",
+        "桌面画布与结论卡布局完整；4 步图拉开纵向间距，8 步发布图收紧纵向间距后复核。"
+      ]
+    },
+    {
+      "diagram_type": "sequence",
+      "output": "diagrams/runtime/02-mcp-call.html",
+      "specification_sha256": "8ca20fdd0fd76bdf35566acc50760d01bc6b125b21ed8371732e4dbb54b81ed6",
+      "artifact_sha256": "cba529cbab89970ba6efd3ac193204f8b009be97865c7baed641b3943f49dd08",
+      "artifact_bytes": 702424,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "reviewed_screenshots": [
+        "02-mcp-call.visual-check.2048x1320.light.png",
+        "02-mcp-call.visual-check.1440x900.dark.png"
+      ],
+      "correction_rounds": 0,
+      "observations": [
+        "实际读取浅色及深色截图，参与者、消息顺序和文字清晰，无交叉、遮挡或裁切。",
+        "桌面画布与结论卡布局完整；4 步图拉开纵向间距，8 步发布图收紧纵向间距后复核。"
+      ]
+    },
+    {
+      "diagram_type": "sequence",
+      "output": "diagrams/runtime/02-mcp-failure.html",
+      "specification_sha256": "68eb53d0eea8f8a95803a9e52b1f5c16a4d24fd5fca75d8dbe84187a7b6cd08f",
+      "artifact_sha256": "71a9cf1e29d6cae552564060ca3854f8631894d751aac5d80336dc6d58d8a1b6",
+      "artifact_bytes": 701153,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "reviewed_screenshots": [
+        "02-mcp-failure.visual-check.2048x1320.light.png",
+        "02-mcp-failure.visual-check.1440x900.dark.png"
+      ],
+      "correction_rounds": 1,
+      "observations": [
+        "实际读取浅色及深色截图，参与者、消息顺序和文字清晰，无交叉、遮挡或裁切。",
+        "桌面画布与结论卡布局完整；4 步图拉开纵向间距，8 步发布图收紧纵向间距后复核。"
+      ]
+    },
+    {
+      "diagram_type": "sequence",
+      "output": "diagrams/runtime/03-builtintool-ready.html",
+      "specification_sha256": "ff1d9b26441512028b49d79260cf7ec7fa8de2d03f868a7308825912611f7c54",
+      "artifact_sha256": "a7c1034696a7cf9324a3f89031003241f7312fe6462b629d80df85b84732a2e9",
+      "artifact_bytes": 703891,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "reviewed_screenshots": [
+        "03-builtintool-ready.visual-check.2048x1320.light.png",
+        "03-builtintool-ready.visual-check.1440x900.dark.png"
+      ],
+      "correction_rounds": 0,
+      "observations": [
+        "实际读取浅色及深色截图，参与者、消息顺序和文字清晰，无交叉、遮挡或裁切。",
+        "桌面画布与结论卡布局完整；4 步图拉开纵向间距，8 步发布图收紧纵向间距后复核。"
+      ]
+    },
+    {
+      "diagram_type": "sequence",
+      "output": "diagrams/runtime/03-builtintool-missing.html",
+      "specification_sha256": "abd655af4d320556d6c3d247c4969f074b5209373fb6f117b42b0a9b06a85b10",
+      "artifact_sha256": "704c8bd6d80b27b5ee3fac162752cf11f8ef2d88aa1bc0e69954a8ccdbca9f99",
+      "artifact_bytes": 701024,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "reviewed_screenshots": [
+        "03-builtintool-missing.visual-check.2048x1320.light.png",
+        "03-builtintool-missing.visual-check.1440x900.dark.png"
+      ],
+      "correction_rounds": 1,
+      "observations": [
+        "实际读取浅色及深色截图，参与者、消息顺序和文字清晰，无交叉、遮挡或裁切。",
+        "桌面画布与结论卡布局完整；4 步图拉开纵向间距，8 步发布图收紧纵向间距后复核。"
+      ]
+    }
+  ]
+}

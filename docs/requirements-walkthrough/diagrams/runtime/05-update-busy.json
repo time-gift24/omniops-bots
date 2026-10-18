@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "安装时有任务：等待用户再次确认",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1100,
+      524
+    ]
+  },
+  "participants": [
+    {
+      "id": "user",
+      "type": "external",
+      "label": "用户"
+    },
+    {
+      "id": "client",
+      "type": "frontend",
+      "label": "桌面客户端"
+    },
+    {
+      "id": "activity",
+      "type": "backend",
+      "label": "客户端执行活动"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m1",
+      "from": "user",
+      "to": "client",
+      "y": 170,
+      "label": "对已校验的更新包确认安装",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m2",
+      "from": "client",
+      "to": "activity",
+      "y": 214,
+      "label": "检查是否仍有执行活动",
+      "variant": "default"
+    },
+    {
+      "id": "m3",
+      "from": "activity",
+      "to": "client",
+      "y": 258,
+      "label": "返回有任务运行",
+      "variant": "return"
+    },
+    {
+      "id": "m4",
+      "from": "client",
+      "to": "user",
+      "y": 302,
+      "label": "提示等待，不安装、不退出",
+      "variant": "return"
+    },
+    {
+      "id": "m5",
+      "from": "activity",
+      "to": "client",
+      "y": 346,
+      "label": "任务执行结束",
+      "variant": "return"
+    },
+    {
+      "id": "m6",
+      "from": "client",
+      "to": "user",
+      "y": 390,
+      "label": "更新仍待安装，需要再次确认",
+      "variant": "return"
+    },
+    {
+      "id": "m7",
+      "from": "user",
+      "to": "client",
+      "y": 434,
+      "label": "再次确认，重新进入空闲检查",
+      "variant": "emphasis"
+    }
+  ]
+}

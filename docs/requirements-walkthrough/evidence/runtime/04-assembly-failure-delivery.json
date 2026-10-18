@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-assembly-failure.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-assembly-failure.html",
+  "specification": {
+    "sha256": "d51f9bc047dab0d0f8b07f6bda0d789aa660e4df653c7b40f7bdd8f0493d2222",
+    "bytes": 2425
+  },
+  "artifact": {
+    "sha256": "846042b572940dd9701cfff2826e6d116cc44defc32a36cf15b4e869b845392b",
+    "bytes": 705399
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

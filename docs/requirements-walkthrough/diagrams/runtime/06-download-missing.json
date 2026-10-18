@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "物料缺失：只下载本次缺少的版本",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1100,
+      568
+    ]
+  },
+  "participants": [
+    {
+      "id": "user",
+      "type": "external",
+      "label": "用户或服务端"
+    },
+    {
+      "id": "client",
+      "type": "frontend",
+      "label": "桌面客户端"
+    },
+    {
+      "id": "local",
+      "type": "database",
+      "label": "本地物料与快照"
+    },
+    {
+      "id": "service",
+      "type": "backend",
+      "label": "官方物料服务"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m1",
+      "from": "user",
+      "to": "client",
+      "y": 170,
+      "label": "发起新会话或接收远端调用",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m2",
+      "from": "client",
+      "to": "service",
+      "y": 214,
+      "label": "HTTPS：获取所需版本清单",
+      "variant": "default"
+    },
+    {
+      "id": "m3",
+      "from": "service",
+      "to": "client",
+      "y": 258,
+      "label": "返回确定的 Agent 装配清单",
+      "variant": "return"
+    },
+    {
+      "id": "m4",
+      "from": "client",
+      "to": "local",
+      "y": 302,
+      "label": "核对已有版本，得到缺失项",
+      "variant": "default"
+    },
+    {
+      "id": "m5",
+      "from": "client",
+      "to": "service",
+      "y": 346,
+      "label": "仅请求本次缺失的完整物料",
+      "variant": "default"
+    },
+    {
+      "id": "m6",
+      "from": "service",
+      "to": "client",
+      "y": 390,
+      "label": "返回所请求的完整版本包",
+      "variant": "return"
+    },
+    {
+      "id": "m7",
+      "from": "client",
+      "to": "local",
+      "y": 434,
+      "label": "按版本保存，保留已有旧包",
+      "variant": "default"
+    },
+    {
+      "id": "m8",
+      "from": "client",
+      "to": "local",
+      "y": 478,
+      "label": "工具检查通过，固定运行快照",
+      "variant": "default"
+    }
+  ]
+}

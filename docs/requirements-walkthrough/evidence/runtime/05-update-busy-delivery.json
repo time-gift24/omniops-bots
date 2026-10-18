@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/05-update-busy.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/05-update-busy.html",
+  "specification": {
+    "sha256": "0c917a6adab74e2ebaf8f5e7bab798939ca0826f433b127cc66ceeb65b4c57d1",
+    "bytes": 1776
+  },
+  "artifact": {
+    "sha256": "30d8cd9d2519e5193ec8e6814dbf106c08adfb0716452c53d7adfd8495f78d9b",
+    "bytes": 702486
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

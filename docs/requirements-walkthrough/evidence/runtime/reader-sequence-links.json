@@ -1,0 +1,184 @@
+{
+  "status": "pass",
+  "sha256": "8c1096f1f25150321fe6e83066d7ac2b9187c46bdb95400982cb9c623a7f4f2a",
+  "checks": [
+    {
+      "id": "00-overview",
+      "links": [
+        {
+          "src": "./assets/runtime/00-manual.svg",
+          "href": "diagrams/runtime/00-manual.html"
+        },
+        {
+          "src": "./assets/runtime/00-remote.svg",
+          "href": "diagrams/runtime/00-remote.html"
+        },
+        {
+          "src": "./assets/runtime/00-weekly-evolution.svg",
+          "href": "diagrams/runtime/00-weekly-evolution.html"
+        }
+      ],
+      "header": "diagrams/runtime/00-manual.html"
+    },
+    {
+      "id": "01-skill",
+      "links": [
+        {
+          "src": "./assets/runtime/01-skill-file-upload.svg",
+          "href": "diagrams/runtime/01-skill-file-upload.html"
+        },
+        {
+          "src": "./assets/runtime/01-skill-file-conflict.svg",
+          "href": "diagrams/runtime/01-skill-file-conflict.html"
+        },
+        {
+          "src": "./assets/runtime/01-skill-experiment.svg",
+          "href": "diagrams/runtime/01-skill-experiment.html"
+        },
+        {
+          "src": "./assets/runtime/01-skill-draft-upload.svg",
+          "href": "diagrams/runtime/01-skill-draft-upload.html"
+        },
+        {
+          "src": "./assets/runtime/01-skill-publish.svg",
+          "href": "diagrams/runtime/01-skill-publish.html"
+        }
+      ],
+      "header": "diagrams/runtime/01-skill-file-upload.html"
+    },
+    {
+      "id": "02-mcp",
+      "links": [
+        {
+          "src": "./assets/runtime/02-mcp-call.svg",
+          "href": "diagrams/runtime/02-mcp-call.html"
+        },
+        {
+          "src": "./assets/runtime/02-mcp-failure.svg",
+          "href": "diagrams/runtime/02-mcp-failure.html"
+        }
+      ],
+      "header": "diagrams/runtime/02-mcp-call.html"
+    },
+    {
+      "id": "03-builtintool",
+      "links": [
+        {
+          "src": "./assets/runtime/03-builtintool-ready.svg",
+          "href": "diagrams/runtime/03-builtintool-ready.html"
+        },
+        {
+          "src": "./assets/runtime/03-builtintool-missing.svg",
+          "href": "diagrams/runtime/03-builtintool-missing.html"
+        }
+      ],
+      "header": "diagrams/runtime/03-builtintool-ready.html"
+    },
+    {
+      "id": "04-agent",
+      "links": [
+        {
+          "src": "./assets/runtime/04-assembly-ready.svg",
+          "href": "diagrams/runtime/04-assembly-ready.html"
+        },
+        {
+          "src": "./assets/runtime/04-assembly-failure.svg",
+          "href": "diagrams/runtime/04-assembly-failure.html"
+        },
+        {
+          "src": "./assets/runtime/04-local-session.svg",
+          "href": "diagrams/runtime/04-local-session.html"
+        },
+        {
+          "src": "./assets/runtime/04-official-new-version.svg",
+          "href": "diagrams/runtime/04-official-new-version.html"
+        }
+      ],
+      "header": "diagrams/runtime/04-assembly-ready.html"
+    },
+    {
+      "id": "05-updater",
+      "links": [
+        {
+          "src": "./assets/runtime/05-update-success.svg",
+          "href": "diagrams/runtime/05-update-success.html"
+        },
+        {
+          "src": "./assets/runtime/05-update-busy.svg",
+          "href": "diagrams/runtime/05-update-busy.html"
+        },
+        {
+          "src": "./assets/runtime/05-update-rejected.svg",
+          "href": "diagrams/runtime/05-update-rejected.html"
+        }
+      ],
+      "header": "diagrams/runtime/05-update-success.html"
+    },
+    {
+      "id": "06-sync",
+      "links": [
+        {
+          "src": "./assets/runtime/06-cache-ready.svg",
+          "href": "diagrams/runtime/06-cache-ready.html"
+        },
+        {
+          "src": "./assets/runtime/06-download-missing.svg",
+          "href": "diagrams/runtime/06-download-missing.html"
+        },
+        {
+          "src": "./assets/runtime/06-sync-failure.svg",
+          "href": "diagrams/runtime/06-sync-failure.html"
+        }
+      ],
+      "header": "diagrams/runtime/06-cache-ready.html"
+    },
+    {
+      "id": "07-execution",
+      "links": [
+        {
+          "src": "./assets/runtime/07-busy.svg",
+          "href": "diagrams/runtime/07-busy.html"
+        },
+        {
+          "src": "./assets/runtime/07-disconnect.svg",
+          "href": "diagrams/runtime/07-disconnect.html"
+        },
+        {
+          "src": "./assets/runtime/07-restart-complete.svg",
+          "href": "diagrams/runtime/07-restart-complete.html"
+        },
+        {
+          "src": "./assets/runtime/07-restart-incomplete.svg",
+          "href": "diagrams/runtime/07-restart-incomplete.html"
+        },
+        {
+          "src": "./assets/runtime/07-cancel.svg",
+          "href": "diagrams/runtime/07-cancel.html"
+        },
+        {
+          "src": "./assets/runtime/07-timeout.svg",
+          "href": "diagrams/runtime/07-timeout.html"
+        },
+        {
+          "src": "./assets/runtime/07-login.svg",
+          "href": "diagrams/runtime/07-login.html"
+        }
+      ],
+      "header": "diagrams/runtime/07-busy.html"
+    },
+    {
+      "id": "08-frontend",
+      "links": [
+        {
+          "src": "./assets/runtime/00-manual.svg",
+          "href": "diagrams/runtime/00-manual.html"
+        },
+        {
+          "src": "./assets/runtime/07-disconnect.svg",
+          "href": "diagrams/runtime/07-disconnect.html"
+        }
+      ],
+      "header": "diagrams/runtime/00-manual.html"
+    }
+  ]
+}

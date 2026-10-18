@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/01-skill-publish.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/01-skill-publish.html",
+  "specification": {
+    "sha256": "3e4551277b7f08bdc9f3cf654cd19c25c9e878365474750e42534a3c8c7b7b2f",
+    "bytes": 2402
+  },
+  "artifact": {
+    "sha256": "8e0e081c409a916dad89c2a617fb5088ee332961973579a001ffdfd97b9e665f",
+    "bytes": 703907
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

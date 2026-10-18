@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "向 Skill 当前目录上传文件并保存",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1100,
+      640
+    ]
+  },
+  "participants": [
+    {
+      "id": "user",
+      "type": "external",
+      "label": "用户 / 运维人员"
+    },
+    {
+      "id": "client",
+      "type": "frontend",
+      "label": "Skill 文件管理"
+    },
+    {
+      "id": "storage",
+      "type": "database",
+      "label": "客户端本地存储"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m1",
+      "from": "user",
+      "to": "client",
+      "y": 180,
+      "label": "选择 Skill、目标目录并上传文件",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m2",
+      "from": "client",
+      "to": "storage",
+      "y": 250,
+      "label": "写入文件内容与相对路径"
+    },
+    {
+      "id": "m3",
+      "from": "storage",
+      "to": "client",
+      "y": 320,
+      "label": "返回各文件保存结果",
+      "variant": "return"
+    },
+    {
+      "id": "m4",
+      "from": "client",
+      "to": "user",
+      "y": 390,
+      "label": "更新文件列表与本地保存状态",
+      "variant": "return"
+    },
+    {
+      "id": "m5",
+      "from": "user",
+      "to": "client",
+      "y": 460,
+      "label": "选择实验或上传完整草稿"
+    },
+    {
+      "id": "m6",
+      "from": "client",
+      "to": "storage",
+      "y": 530,
+      "label": "固定已保存草稿的完整包快照",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "条件：目标内容可编辑",
+      "items": [
+        "本地 Skill 可自由编辑；官方草稿仅运维维护",
+        "先选定 Skill 与目录，再进行文件级上传"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "结果：先保存本机",
+      "items": [
+        "文件级上传不创建发布标签，也不直接写服务端",
+        "实验或上传使用固定快照，后续编辑不改变该次内容"
+      ]
+    }
+  ]
+}

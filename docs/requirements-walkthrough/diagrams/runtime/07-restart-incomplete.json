@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "重启后：未完成任务报告中断未知",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1100,
+      640
+    ]
+  },
+  "participants": [
+    {
+      "id": "user",
+      "label": "用户",
+      "type": "external"
+    },
+    {
+      "id": "client",
+      "label": "桌面客户端",
+      "type": "frontend"
+    },
+    {
+      "id": "record",
+      "label": "本地记录",
+      "type": "database"
+    },
+    {
+      "id": "server",
+      "label": "服务端",
+      "type": "backend"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m-07-restart-incomplete-0",
+      "from": "user",
+      "to": "client",
+      "y": 180,
+      "label": "强退或崩溃后重新启动",
+      "variant": "default"
+    },
+    {
+      "id": "m-07-restart-incomplete-1",
+      "from": "client",
+      "to": "record",
+      "y": 248,
+      "label": "读取上次未完成任务",
+      "variant": "default"
+    },
+    {
+      "id": "m-07-restart-incomplete-2",
+      "from": "record",
+      "to": "client",
+      "y": 316,
+      "label": "原调用 ID 与已有执行记录",
+      "variant": "return"
+    },
+    {
+      "id": "m-07-restart-incomplete-3",
+      "from": "client",
+      "to": "record",
+      "y": 384,
+      "label": "标记执行中断、结果未知",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m-07-restart-incomplete-4",
+      "from": "client",
+      "to": "server",
+      "y": 452,
+      "label": "恢复连接后按原 ID 回报",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m-07-restart-incomplete-5",
+      "from": "server",
+      "to": "client",
+      "y": 520,
+      "label": "确认收到中断结果",
+      "variant": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": "不会续跑",
+      "items": [
+        "不重试已执行或未知的 Chrome 操作",
+        "已有记录与快照保留"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "后续由服务端决定",
+      "items": [
+        "回报明确保留“结果未知”含义",
+        "不把进程重启判定为业务成功或失败"
+      ]
+    }
+  ]
+}

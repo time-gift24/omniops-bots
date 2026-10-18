@@ -1,0 +1,21 @@
+{
+  "diagram_type": "sequence",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-assembly-ready.html",
+  "specification_sha256": "1c41889e61573fdce50f5708c1111cb70cf5e9de7dfc91e90c086d6a349e3f43",
+  "artifact_sha256": "6dfb4c0ea841003ab7498123d9d1273c72d5f83bb2173de5389f132e75db6539",
+  "artifact_bytes": 714222,
+  "validation": "9/9 showcase, 0 errors, 0 warnings",
+  "browser_evidence": "passed",
+  "visual_review": "passed",
+  "reviewer": "image-capable agent /root/agent_assembly_diagrams",
+  "reviewed_screenshots": [
+    "evidence/runtime/04-assembly-ready-review-2048x1320.light.png",
+    "evidence/runtime/04-assembly-ready-review-1440x900.dark.png"
+  ],
+  "observations": [
+    "语义修正后重新交付并查看最终 HTML 的 2048×1320 浅色及 1440×900 深色真实浏览器截图。",
+    "参与者、箭头与中文消息顺序可读，无截断、重叠或标签遮挡；大屏主图与必要结论卡保持均衡。",
+    "四个桌面视口的包含性及浅深色端点截图由 visual-check 独立回执记录，本视觉审查不替代自动检查。"
+  ],
+  "correction_rounds": 1
+}

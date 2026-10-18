@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "按周改进并发布 Agent 提示词与 Skill",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1300,
+      656
+    ]
+  },
+  "participants": [
+    {
+      "id": "ops",
+      "label": "运维人员",
+      "type": "external"
+    },
+    {
+      "id": "client",
+      "label": "客户端编辑 / 实验",
+      "type": "frontend"
+    },
+    {
+      "id": "release",
+      "label": "服务端草稿 / 发布",
+      "type": "cloud"
+    },
+    {
+      "id": "new",
+      "label": "客户端新会话",
+      "type": "frontend"
+    },
+    {
+      "id": "existing",
+      "label": "已有会话",
+      "type": "backend"
+    }
+  ],
+  "messages": [
+    {
+      "id": "seq-00-weekly-evolution-m1",
+      "from": "ops",
+      "to": "client",
+      "y": 170,
+      "label": "从任务反馈修改提示词或 Skill",
+      "variant": "emphasis"
+    },
+    {
+      "id": "seq-00-weekly-evolution-m2",
+      "from": "client",
+      "to": "release",
+      "y": 214,
+      "label": "按需保存完整草稿修订",
+      "variant": "default"
+    },
+    {
+      "id": "seq-00-weekly-evolution-m3",
+      "from": "ops",
+      "to": "client",
+      "y": 258,
+      "label": "选择 Agent 做本地实验",
+      "variant": "default"
+    },
+    {
+      "id": "seq-00-weekly-evolution-m4",
+      "from": "client",
+      "to": "ops",
+      "y": 302,
+      "label": "返回实验结果与运行快照",
+      "variant": "return"
+    },
+    {
+      "id": "seq-00-weekly-evolution-m5",
+      "from": "ops",
+      "to": "client",
+      "y": 346,
+      "label": "周发布：手填 Skill / Agent 标签",
+      "variant": "emphasis"
+    },
+    {
+      "id": "seq-00-weekly-evolution-m6",
+      "from": "client",
+      "to": "release",
+      "y": 390,
+      "label": "提交已确认内容及受影响 Agent",
+      "variant": "default"
+    },
+    {
+      "id": "seq-00-weekly-evolution-m7",
+      "from": "release",
+      "to": "client",
+      "y": 434,
+      "label": "一次发布不可变包与新 Agent ID",
+      "variant": "return"
+    },
+    {
+      "id": "seq-00-weekly-evolution-m8",
+      "from": "new",
+      "to": "release",
+      "y": 478,
+      "label": "新会话核对所选新版清单",
+      "variant": "default"
+    },
+    {
+      "id": "seq-00-weekly-evolution-m9",
+      "from": "release",
+      "to": "new",
+      "y": 522,
+      "label": "返回确定版本，按需下载装配",
+      "variant": "return"
+    },
+    {
+      "id": "seq-00-weekly-evolution-m10",
+      "from": "ops",
+      "to": "existing",
+      "y": 566,
+      "label": "继续旧会话，使用原快照",
+      "variant": "default"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "每周形成新版本",
+      "items": [
+        "反馈进入下一周改进；发布由运维手动完成，不增加审核、强制实验门槛或定时自动发布。"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "版本边界",
+      "items": [
+        "标签统一 v.1.0.0 且发布后不可重用；MCP 服务不单独发版，builtinTool 随桌面端更新。"
+      ]
+    }
+  ]
+}

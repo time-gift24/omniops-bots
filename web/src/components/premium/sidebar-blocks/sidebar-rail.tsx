@@ -75,6 +75,8 @@ export type SidebarRailSection = {
   renderContent?: (closeNavigation: () => void) => ReactNode;
   /** Full-page tools provide their own local navigation. */
   collapseOnSelect?: boolean;
+  /** Sections with a management list open that list before an individual item. */
+  selectFirstItem?: boolean;
 };
 
 export const defaultSections: readonly SidebarRailSection[] = [
@@ -448,7 +450,7 @@ function SidebarRailShell({
                   onClick={(event) => {
                     setSectionId(entry.id);
                     onSectionSelect?.(entry);
-                    if (entry.id !== section?.id && !entry.renderContent) {
+                    if (entry.id !== section?.id && !entry.renderContent && entry.selectFirstItem !== false) {
                       const firstItem = entry.groups[0]?.items[0];
                       if (firstItem) {
                         setItemId(firstItem.id);

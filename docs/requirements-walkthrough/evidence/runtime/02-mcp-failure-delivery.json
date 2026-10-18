@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/02-mcp-failure.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/02-mcp-failure.html",
+  "specification": {
+    "sha256": "68eb53d0eea8f8a95803a9e52b1f5c16a4d24fd5fca75d8dbe84187a7b6cd08f",
+    "bytes": 1687
+  },
+  "artifact": {
+    "sha256": "71a9cf1e29d6cae552564060ca3854f8631894d751aac5d80336dc6d58d8a1b6",
+    "bytes": 701153
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

@@ -1,0 +1,181 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "按确定清单装配 Agent，再执行任务",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1580,
+      806
+    ]
+  },
+  "participants": [
+    {
+      "id": "release",
+      "label": "服务端物料",
+      "type": "cloud"
+    },
+    {
+      "id": "client",
+      "label": "客户端装配",
+      "type": "frontend"
+    },
+    {
+      "id": "local",
+      "label": "本地物料 / 快照",
+      "type": "database"
+    },
+    {
+      "id": "builtin",
+      "label": "桌面工具注册表",
+      "type": "backend"
+    },
+    {
+      "id": "mcp",
+      "label": "远端 MCP",
+      "type": "external"
+    },
+    {
+      "id": "chrome",
+      "label": "Chrome 名额",
+      "type": "external"
+    },
+    {
+      "id": "runtime",
+      "label": "Agent 运行时",
+      "type": "backend"
+    }
+  ],
+  "messages": [
+    {
+      "id": "seq-04-assembly-ready-m1",
+      "from": "client",
+      "to": "release",
+      "y": 170,
+      "label": "核对本次 Agent ID",
+      "variant": "emphasis"
+    },
+    {
+      "id": "seq-04-assembly-ready-m2",
+      "from": "release",
+      "to": "client",
+      "y": 212,
+      "label": "清单、提示词、MCP 配置",
+      "variant": "return"
+    },
+    {
+      "id": "seq-04-assembly-ready-m3",
+      "from": "client",
+      "to": "local",
+      "y": 254,
+      "label": "按 contentId 检查 Skill 包",
+      "variant": "default"
+    },
+    {
+      "id": "seq-04-assembly-ready-m4",
+      "from": "client",
+      "to": "release",
+      "y": 296,
+      "label": "下载缺失的完整 Skill 包",
+      "variant": "default"
+    },
+    {
+      "id": "seq-04-assembly-ready-m5",
+      "from": "release",
+      "to": "client",
+      "y": 338,
+      "label": "返回所需完整 Skill 包",
+      "variant": "return"
+    },
+    {
+      "id": "seq-04-assembly-ready-m6",
+      "from": "client",
+      "to": "local",
+      "y": 380,
+      "label": "摘要校验通过，存包并固定快照",
+      "variant": "default"
+    },
+    {
+      "id": "seq-04-assembly-ready-m7",
+      "from": "client",
+      "to": "builtin",
+      "y": 422,
+      "label": "按已选 builtinTool ID 解析",
+      "variant": "default"
+    },
+    {
+      "id": "seq-04-assembly-ready-m8",
+      "from": "builtin",
+      "to": "client",
+      "y": 464,
+      "label": "全部可用，返回工具实现",
+      "variant": "return"
+    },
+    {
+      "id": "seq-04-assembly-ready-m9",
+      "from": "client",
+      "to": "mcp",
+      "y": 506,
+      "label": "按服务配置与凭据引用连接",
+      "variant": "security"
+    },
+    {
+      "id": "seq-04-assembly-ready-m10",
+      "from": "mcp",
+      "to": "client",
+      "y": 548,
+      "label": "返回已选服务的工具清单",
+      "variant": "return"
+    },
+    {
+      "id": "seq-04-assembly-ready-m11",
+      "from": "client",
+      "to": "local",
+      "y": 590,
+      "label": "名称检查通过，保存运行快照",
+      "variant": "default"
+    },
+    {
+      "id": "seq-04-assembly-ready-m12",
+      "from": "client",
+      "to": "chrome",
+      "y": 632,
+      "label": "取得本轮执行名额",
+      "variant": "emphasis"
+    },
+    {
+      "id": "seq-04-assembly-ready-m13",
+      "from": "chrome",
+      "to": "client",
+      "y": 674,
+      "label": "允许执行",
+      "variant": "return"
+    },
+    {
+      "id": "seq-04-assembly-ready-m14",
+      "from": "client",
+      "to": "runtime",
+      "y": 716,
+      "label": "注入提示词、只读 Skill backend、skills 与统一工具集",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "确定后再执行",
+      "items": [
+        "先完成物料与工具检查，再构造运行时；工具名称歧义必须消除，否则失败。"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "快照边界",
+      "items": [
+        "记录 Agent / Skill 和工具装配清单，不保存密钥；MCP 服务本身不纳入版本控制。"
+      ]
+    }
+  ]
+}

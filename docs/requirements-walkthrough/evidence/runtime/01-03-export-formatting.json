@@ -1,0 +1,58 @@
+[
+  {
+    "file": "assets/runtime/01-skill-experiment.svg",
+    "raw_sha256": "a2ced2e15a00ff4aa7715190bf97a6bdbcad058cbe67e38863a18f2b8e7c3f4e",
+    "raw_bytes": 48280,
+    "checked_in_sha256": "d865e70a94824f40841ee561b9ea588a0c98b327d80ea6e3f4eecbb48343026a",
+    "checked_in_bytes": 48260,
+    "normalization": "Only trailing whitespace and final newline normalized after native SVG export."
+  },
+  {
+    "file": "assets/runtime/01-skill-draft-upload.svg",
+    "raw_sha256": "6d2becae247973f7e8e534755f6bd613a2e0580921b1054ad9b324ded020dfbe",
+    "raw_bytes": 45530,
+    "checked_in_sha256": "4fbe3c0515cf35b6c0e54097a1c80f30faa4d3f5639da2401348ade8c3f32806",
+    "checked_in_bytes": 45510,
+    "normalization": "Only trailing whitespace and final newline normalized after native SVG export."
+  },
+  {
+    "file": "assets/runtime/01-skill-publish.svg",
+    "raw_sha256": "7b3f2b50d0e919bbe5a9a99e167a709c44fb9cb3f8d91432f93c86ecfeabba24",
+    "raw_bytes": 48160,
+    "checked_in_sha256": "8f9da889cfec879f4cce4653907107fe75df6d1cbad91197d75a12d028bf5c9d",
+    "checked_in_bytes": 48140,
+    "normalization": "Only trailing whitespace and final newline normalized after native SVG export."
+  },
+  {
+    "file": "assets/runtime/02-mcp-call.svg",
+    "raw_sha256": "62f727ce31ff959a5efaff8c948d01ab13596950dd5a38dddd1d9f056f95776f",
+    "raw_bytes": 46801,
+    "checked_in_sha256": "55d2c6e34b94fb6db3a3b2f4e008b870bbebf4d88f88706f5f02dd4fd6b5287c",
+    "checked_in_bytes": 46781,
+    "normalization": "Only trailing whitespace and final newline normalized after native SVG export."
+  },
+  {
+    "file": "assets/runtime/02-mcp-failure.svg",
+    "raw_sha256": "9f6ecf6a0d30118bdfb24731512d452c8318f52c854dba4b3cc585e46d48fa0e",
+    "raw_bytes": 45543,
+    "checked_in_sha256": "61760efd11e89559c01b8a5c10643d7a1768d02d8025ac446ee318d13877072e",
+    "checked_in_bytes": 45523,
+    "normalization": "Only trailing whitespace and final newline normalized after native SVG export."
+  },
+  {
+    "file": "assets/runtime/03-builtintool-ready.svg",
+    "raw_sha256": "5e1c7085bb7d885c35edfb4cbc687eedab99bd2515e117613fa0f0b9ec6c0a53",
+    "raw_bytes": 48220,
+    "checked_in_sha256": "b4d1a9d9fc3c38385adb7fab5050d47c91452f422496d310f223a211d9871467",
+    "checked_in_bytes": 48200,
+    "normalization": "Only trailing whitespace and final newline normalized after native SVG export."
+  },
+  {
+    "file": "assets/runtime/03-builtintool-missing.svg",
+    "raw_sha256": "49dd7981744b240afd83f88dec57148782fbf13d0bd2a3265eba64aa00eff82a",
+    "raw_bytes": 45438,
+    "checked_in_sha256": "5506ac929b2ac724c222bd42009aa446ca7bbe02791807f2cb54674188653b80",
+    "checked_in_bytes": 45418,
+    "normalization": "Only trailing whitespace and final newline normalized after native SVG export."
+  }
+]

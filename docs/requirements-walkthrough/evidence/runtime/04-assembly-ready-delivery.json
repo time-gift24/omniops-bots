@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-assembly-ready.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-assembly-ready.html",
+  "specification": {
+    "sha256": "1c41889e61573fdce50f5708c1111cb70cf5e9de7dfc91e90c086d6a349e3f43",
+    "bytes": 4114
+  },
+  "artifact": {
+    "sha256": "6dfb4c0ea841003ab7498123d9d1273c72d5f83bb2173de5389f132e75db6539",
+    "bytes": 714222
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

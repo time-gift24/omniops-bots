@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/01-skill-experiment.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/01-skill-experiment.html",
+  "specification": {
+    "sha256": "02bac6d846d589a6336bfaca54b3ad32812b90a77254366c9bf5e43f83469c48",
+    "bytes": 2086
+  },
+  "artifact": {
+    "sha256": "c736d23b57a7d5d33865b6cce5cf654a9146dee7caae9a85217d6ae6f23fe3e9",
+    "bytes": 703959
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

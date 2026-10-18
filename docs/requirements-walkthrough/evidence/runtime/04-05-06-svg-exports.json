@@ -1,0 +1,90 @@
+[
+  {
+    "name": "04-local-session",
+    "file": "assets/runtime/04-local-session.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "49788",
+    "data-last-export-canonical": "true",
+    "formatNormalization": "trim trailing whitespace and add final newline only",
+    "source_sha256": "05595386b2d4f44b093588ab1d36c4276fccda1f45b79bdf265d429bfb76d0bd",
+    "checked_in_sha256": "6074e886223b5f1e3cd78436ca8ad05ecd3a46e04dd891954217c7f2ce9f9285",
+    "checked_in_bytes": 49768
+  },
+  {
+    "name": "04-official-new-version",
+    "file": "assets/runtime/04-official-new-version.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "49802",
+    "data-last-export-canonical": "true",
+    "formatNormalization": "trim trailing whitespace and add final newline only",
+    "source_sha256": "05c0cfe3d6ac08ca4978a23e7e10ec6e05ef939a0dea36707e7e9689301fa4fc",
+    "checked_in_sha256": "8e63e0026cf8ce221f3e37bdf7259ab7dace0395807822aeb391bf54ca932adb",
+    "checked_in_bytes": 49782
+  },
+  {
+    "name": "05-update-success",
+    "file": "assets/runtime/05-update-success.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "50406",
+    "data-last-export-canonical": "true",
+    "formatNormalization": "trim trailing whitespace and add final newline only",
+    "source_sha256": "7d9db3c089ba2064370189d7fef149a252423884f7788dd6d83bb69b5402a77a",
+    "checked_in_sha256": "ed4747c20c298357bcfc897b871b281ba38c41bfcfd5518cda2dba6bf8c81df3",
+    "checked_in_bytes": 50386
+  },
+  {
+    "name": "05-update-busy",
+    "file": "assets/runtime/05-update-busy.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "47497",
+    "data-last-export-canonical": "true",
+    "formatNormalization": "trim trailing whitespace and add final newline only",
+    "source_sha256": "bf41d5f7df888dab4c88eecf94c442ad44ba814a9c6f66d42a940f1ed98e761d",
+    "checked_in_sha256": "0be6afc3633aca58a7fc1d9fa52d81cfa550d38922416f5734233db5045a3a9e",
+    "checked_in_bytes": 47477
+  },
+  {
+    "name": "05-update-rejected",
+    "file": "assets/runtime/05-update-rejected.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "45454",
+    "data-last-export-canonical": "true",
+    "formatNormalization": "trim trailing whitespace and add final newline only",
+    "source_sha256": "e0064ebaf72788603e8f9139f1850f921b9ac9c009e88d51b1f9d51c637e334c",
+    "checked_in_sha256": "eaeebc4481af7434e822d15416913e380760dacda0034bb69ae032526aaa494d",
+    "checked_in_bytes": 45434
+  },
+  {
+    "name": "06-cache-ready",
+    "file": "assets/runtime/06-cache-ready.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "49142",
+    "data-last-export-canonical": "true",
+    "formatNormalization": "trim trailing whitespace and add final newline only",
+    "source_sha256": "ac0e253a2d2225231a221448d40e9a5bc76eb35ecc7c0db78849d7d3c96f31a1",
+    "checked_in_sha256": "2d9ecfec0ab8b0d5dd593fdb63c10624f8baa9b6e5188e5302ff28a45e7e45d1",
+    "checked_in_bytes": 49122
+  },
+  {
+    "name": "06-download-missing",
+    "file": "assets/runtime/06-download-missing.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "49863",
+    "data-last-export-canonical": "true",
+    "formatNormalization": "trim trailing whitespace and add final newline only",
+    "source_sha256": "725a5d0e16623c04a33e6e10a0158171a6ba5a72d357ec40d66ec9820c1a1931",
+    "checked_in_sha256": "3803572b4b5a06fbaaa17ebe8ec0d12579666a57f5aa60641cb5cd709d854f81",
+    "checked_in_bytes": 49843
+  },
+  {
+    "name": "06-sync-failure",
+    "file": "assets/runtime/06-sync-failure.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "47704",
+    "data-last-export-canonical": "true",
+    "formatNormalization": "trim trailing whitespace and add final newline only",
+    "source_sha256": "87a42129b9c9afa98d3976b36e2a58bd3ab59821ebdecacc8be7cc30f4366920",
+    "checked_in_sha256": "ed81468f03a81ec75a21374671f39c23c9e32598da8c081c3e81304d47fdf873",
+    "checked_in_bytes": 47684
+  }
+]

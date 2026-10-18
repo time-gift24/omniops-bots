@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/03-builtintool-missing.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/03-builtintool-missing.html",
+  "specification": {
+    "sha256": "abd655af4d320556d6c3d247c4969f074b5209373fb6f117b42b0a9b06a85b10",
+    "bytes": 1643
+  },
+  "artifact": {
+    "sha256": "704c8bd6d80b27b5ee3fac162752cf11f8ef2d88aa1bc0e69954a8ccdbca9f99",
+    "bytes": 701024
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

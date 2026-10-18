@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/01-skill-draft-upload.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/01-skill-draft-upload.html",
+  "specification": {
+    "sha256": "f8e20bff40fbfe8f936e0cea33fec28708b150f7110a28ec0e39e8f6577fdaf8",
+    "bytes": 1710
+  },
+  "artifact": {
+    "sha256": "53dc25a2feb6bfad0c9a85ce66452a22a2c57044edf7b64578fcad4cf88e0019",
+    "bytes": 701153
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

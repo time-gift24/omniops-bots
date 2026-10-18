@@ -1,13 +1,13 @@
 {
   "status": "pass",
-  "scope": "8章需求设计 + 1章前端现状；文档阅读器沿用现有 Web 风格；未开发产品功能",
+  "scope": "客户端 MVP 设计与既有 Skill 文件管理实现；本次文档补充 Agent 完整装配、核心资产版本演进与按周发布；服务端草稿发布同步与完整快照装配未接入",
   "date": "2026-10-18",
   "source_issue": "https://github.com/time-gift24/omniops-bots/issues/3",
   "checks": {
     "chapters": 9,
     "required_sections_per_chapter": 5,
-    "svg_assets": 16,
-    "main_diagrams": 8,
+    "svg_assets": 45,
+    "main_diagrams": 29,
     "diagram_checks_passed_each": 9,
     "errors": 0,
     "warnings": 0,
@@ -16,174 +16,516 @@
     "body_screenshots": 7,
     "svg_xml_valid": true,
     "artifact_hashes_match": true,
-    "links_valid": true
+    "links_valid": true,
+    "section_order": [
+      "US",
+      "简要设计",
+      "客户端",
+      "详细设计",
+      "服务端配合"
+    ],
+    "runtime_sequences": 29,
+    "runtime_references": 31,
+    "main_diagram_type": "sequence"
   },
   "diagrams": [
     {
-      "chapter": "00-总体架构.md",
-      "diagram_type": "architecture",
-      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/00-overview.html",
-      "specification_sha256": "930edb58d86488d6d69e4afbc01ca9a375c6c7fd2eea293fa9efaf557573d639",
-      "artifact_sha256": "c97c6149d4e2f8fbe276274106a5f3d3cd8611f31feaa230bffb339953175134",
-      "validation": "9/9 showcase, 0 errors, 0 warnings",
-      "browser_evidence": "passed",
-      "visual_review": "passed",
-      "visual_review_basis": "图像审查：1440×900 与 2048×1320 的浅色/深色证据；独立于自动浏览器回执。",
-      "delivery_receipt": "evidence/00-overview-delivery.json",
-      "browser_receipt": "diagrams/00-overview.visual-check.json"
-    },
-    {
-      "chapter": "01-SKILL.md",
-      "diagram_type": "workflow",
-      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/01-skill.html",
-      "specification_sha256": "a3a4f9e26c0f6e479f44801fb414c2a33b8aae79125b080115ae4f9e4a9c64f3",
-      "artifact_sha256": "a7bfc475983b024b2a229992371602d88b418e8b4b0a1dc3c96589a4e92537fe",
-      "validation": "9/9 showcase, 0 errors, 0 warnings",
-      "browser_evidence": "passed",
-      "visual_review": "passed",
-      "visual_review_basis": "图像审查：1440×900 与 2048×1320 的浅色/深色证据；独立于自动浏览器回执。",
-      "delivery_receipt": "evidence/01-skill-delivery.json",
-      "browser_receipt": "diagrams/01-skill.visual-check.json"
-    },
-    {
-      "chapter": "02-MCP.md",
+      "name": "00-manual",
+      "title": "用户在客户端发起会话",
       "diagram_type": "sequence",
-      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/02-mcp.html",
-      "specification_sha256": "f018ec3e246feed835cdae94be1770edf086b924289d445dd202b047e9ca0823",
-      "artifact_sha256": "be3d32050a46d1d935e11c93a42d18a63c31030e432db4702b9bdc27d1697827",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/00-manual.html",
+      "specification_sha256": "b027ded5da0ca65f3a46e8964401217f857d78737d91f72909fff9de4178773c",
+      "artifact_sha256": "0c24e4a6f2342e189ff826a3b11b73bf18cf6ec3a960c547585f3b2be1a11e01",
       "validation": "9/9 showcase, 0 errors, 0 warnings",
       "browser_evidence": "passed",
       "visual_review": "passed",
-      "visual_review_basis": "图像审查：1440×900 与 2048×1320 的浅色/深色证据；独立于自动浏览器回执。",
-      "delivery_receipt": "evidence/02-mcp-delivery.json",
-      "browser_receipt": "diagrams/02-mcp.visual-check.json"
+      "correction_rounds": 0,
+      "delivery_receipt": "evidence/runtime/00-manual-deliver.json",
+      "browser_receipt": "diagrams/runtime/00-manual.visual-check.json",
+      "visual_review_receipt": "evidence/runtime/00-07-visual-review.json"
     },
     {
-      "chapter": "03-buildintool.md",
-      "diagram_type": "workflow",
-      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/03-builtintool.html",
-      "specification_sha256": "5e961fd72ee1545e136956a2728611f9adfe5b47f37a14148f17664f3399cff0",
-      "artifact_sha256": "be15b9a6f53969e49df28f1bd31d4cc44b62655e6f84f3240808be66f016bbc0",
-      "validation": "9/9 showcase, 0 errors, 0 warnings",
-      "browser_evidence": "passed",
-      "visual_review": "passed",
-      "visual_review_basis": "图像审查：1440×900 与 2048×1320 的浅色/深色证据；独立于自动浏览器回执。",
-      "delivery_receipt": "evidence/03-builtintool-delivery.json",
-      "browser_receipt": "diagrams/03-builtintool.visual-check.json"
-    },
-    {
-      "chapter": "04-agent.md",
-      "diagram_type": "architecture",
-      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/04-agent.html",
-      "specification_sha256": "d8a6172f9d5c7e55ae96963fd7cd56cde43f72efc4d4fd5dcf61289414b608eb",
-      "artifact_sha256": "a1c3cbd7ea2c746cc5ea42df6064c7c47a49c62314ec46b5dcb9d8219ff43030",
-      "validation": "9/9 showcase, 0 errors, 0 warnings",
-      "browser_evidence": "passed",
-      "visual_review": "passed",
-      "visual_review_basis": "图像审查：1440×900 与 2048×1320 的浅色/深色证据；独立于自动浏览器回执。",
-      "delivery_receipt": "evidence/04-agent-delivery.json",
-      "browser_receipt": "diagrams/04-agent.visual-check.json"
-    },
-    {
-      "chapter": "05-桌面端更新.md",
-      "diagram_type": "workflow",
-      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/05-updater.html",
-      "specification_sha256": "17e785edf0c396476446472556c13bcae423e9aee6254532d8f94eb6de0de524",
-      "artifact_sha256": "b8f14fb4530351fe1e0f736de8f81a62164c26112a612f1ba1f936e3d34e9d57",
-      "validation": "9/9 showcase, 0 errors, 0 warnings",
-      "browser_evidence": "passed",
-      "visual_review": "passed",
-      "visual_review_basis": "图像审查：1440×900 与 2048×1320 的浅色/深色证据；独立于自动浏览器回执。",
-      "delivery_receipt": "evidence/05-updater-delivery.json",
-      "browser_receipt": "diagrams/05-updater.visual-check.json"
-    },
-    {
-      "chapter": "06-同步与装配.md",
+      "name": "00-remote",
+      "title": "客户端接收远端独立任务",
       "diagram_type": "sequence",
-      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/06-sync.html",
-      "specification_sha256": "36675adf42cc61d415b17aafdd168fd3ddcb4e82c4917a71e6188148a8274859",
-      "artifact_sha256": "d841e82ad4f0dbb36a0ee5d9eab06ebac33a7ae03dca57962cf38fa15e84e36a",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/00-remote.html",
+      "specification_sha256": "3d271c1cbe32cbc7869f0cef0f8bead77187324ca4774c9a3a8ce53b4eb314ef",
+      "artifact_sha256": "cfc6f345a65c7314f00b88ac2dfa4979f6cbdc65c00a6cadb935bdc129b55f4b",
       "validation": "9/9 showcase, 0 errors, 0 warnings",
       "browser_evidence": "passed",
       "visual_review": "passed",
-      "visual_review_basis": "图像审查：1440×900 与 2048×1320 的浅色/深色证据；独立于自动浏览器回执。",
-      "delivery_receipt": "evidence/06-sync-delivery.json",
-      "browser_receipt": "diagrams/06-sync.visual-check.json"
+      "correction_rounds": 0,
+      "delivery_receipt": "evidence/runtime/00-remote-deliver.json",
+      "browser_receipt": "diagrams/runtime/00-remote.visual-check.json",
+      "visual_review_receipt": "evidence/runtime/00-07-visual-review.json"
     },
     {
-      "chapter": "07-任务执行与恢复.md",
-      "diagram_type": "lifecycle",
-      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/07-execution.html",
-      "specification_sha256": "f15e07c455599535767f1c448fe5b8024ad74d21279b591c671d2d9e0904704c",
-      "artifact_sha256": "ef947b5c2f3b2f685ddbc25336386356a760fdf7f30506bfe0ac9e27f2c0ac57",
+      "name": "00-weekly-evolution",
+      "title": "按周改进并发布 Agent 提示词与 Skill",
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/00-weekly-evolution.html",
+      "specification_sha256": "7ce589e42e8129d0b9dfe2d6313d02ac172e468110afa21eda59033016b9f516",
+      "artifact_sha256": "b16babe747bdcd0f04a6109b2e0d12a7c11960a0e889b15a160cba9fa338907a",
       "validation": "9/9 showcase, 0 errors, 0 warnings",
       "browser_evidence": "passed",
       "visual_review": "passed",
-      "visual_review_basis": "图像审查：1440×900 与 2048×1320 的浅色/深色证据；独立于自动浏览器回执。",
-      "delivery_receipt": "evidence/07-execution-delivery.json",
-      "browser_receipt": "diagrams/07-execution.visual-check.json"
+      "correction_rounds": 1,
+      "delivery_receipt": "evidence/runtime/00-weekly-evolution-delivery.json",
+      "browser_receipt": "diagrams/runtime/00-weekly-evolution.visual-check.json",
+      "visual_review_receipt": "evidence/runtime/00-weekly-evolution-visual-review.json"
+    },
+    {
+      "name": "01-skill-draft-upload",
+      "title": "运维人员上传 Skill 草稿修订",
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/01-skill-draft-upload.html",
+      "specification_sha256": "f8e20bff40fbfe8f936e0cea33fec28708b150f7110a28ec0e39e8f6577fdaf8",
+      "artifact_sha256": "53dc25a2feb6bfad0c9a85ce66452a22a2c57044edf7b64578fcad4cf88e0019",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 1,
+      "delivery_receipt": "evidence/runtime/01-skill-draft-upload-delivery.json",
+      "browser_receipt": "diagrams/runtime/01-skill-draft-upload.visual-check.json",
+      "visual_review_receipt": "evidence/runtime/01-03-visual-review.json"
+    },
+    {
+      "name": "01-skill-experiment",
+      "title": "在客户端实验未上传的 Skill 草稿",
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/01-skill-experiment.html",
+      "specification_sha256": "02bac6d846d589a6336bfaca54b3ad32812b90a77254366c9bf5e43f83469c48",
+      "artifact_sha256": "c736d23b57a7d5d33865b6cce5cf654a9146dee7caae9a85217d6ae6f23fe3e9",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "delivery_receipt": "evidence/runtime/01-skill-experiment-delivery.json",
+      "browser_receipt": "diagrams/runtime/01-skill-experiment.visual-check.json",
+      "visual_review_receipt": "evidence/runtime/01-03-visual-review.json"
+    },
+    {
+      "name": "01-skill-file-conflict",
+      "title": "同名文件替换失败时保留原内容",
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/01-skill-file-conflict.html",
+      "specification_sha256": "e3f4f0251afd43f6d8801730ecb0b3f06b8245dd526d56f2d8fc9ab874b0f9e9",
+      "artifact_sha256": "f9de3125be809f05f47d187aeb6df2a8d4f1f56139a7a82b323d3aee60a5aede",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "delivery_receipt": "evidence/runtime/01-skill-file-conflict-delivery.json",
+      "browser_receipt": "diagrams/runtime/01-skill-file-conflict.visual-check.json",
+      "visual_review_receipt": "evidence/runtime/01-skill-files-visual-review.json"
+    },
+    {
+      "name": "01-skill-file-upload",
+      "title": "向 Skill 当前目录上传文件并保存",
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/01-skill-file-upload.html",
+      "specification_sha256": "3cdef71692e37698498ffc5feb566b3f8624af5dfb0e6f94e1c0edb5ddc49a43",
+      "artifact_sha256": "fa9eac30172283963d3cdd73e861158d4af141d390c5df6a86c5d23ac31d05f5",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "delivery_receipt": "evidence/runtime/01-skill-file-upload-delivery.json",
+      "browser_receipt": "diagrams/runtime/01-skill-file-upload.visual-check.json",
+      "visual_review_receipt": "evidence/runtime/01-skill-files-visual-review.json"
+    },
+    {
+      "name": "01-skill-publish",
+      "title": "客户端发起 Skill 与 Agent 联动发布",
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/01-skill-publish.html",
+      "specification_sha256": "3e4551277b7f08bdc9f3cf654cd19c25c9e878365474750e42534a3c8c7b7b2f",
+      "artifact_sha256": "8e0e081c409a916dad89c2a617fb5088ee332961973579a001ffdfd97b9e665f",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 1,
+      "delivery_receipt": "evidence/runtime/01-skill-publish-delivery.json",
+      "browser_receipt": "diagrams/runtime/01-skill-publish.visual-check.json",
+      "visual_review_receipt": "evidence/runtime/01-03-visual-review.json"
+    },
+    {
+      "name": "02-mcp-call",
+      "title": "客户端连接 MCP 并调用工具",
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/02-mcp-call.html",
+      "specification_sha256": "8ca20fdd0fd76bdf35566acc50760d01bc6b125b21ed8371732e4dbb54b81ed6",
+      "artifact_sha256": "cba529cbab89970ba6efd3ac193204f8b009be97865c7baed641b3943f49dd08",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "delivery_receipt": "evidence/runtime/02-mcp-call-delivery.json",
+      "browser_receipt": "diagrams/runtime/02-mcp-call.visual-check.json",
+      "visual_review_receipt": "evidence/runtime/01-03-visual-review.json"
+    },
+    {
+      "name": "02-mcp-failure",
+      "title": "所需 MCP 连接失败",
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/02-mcp-failure.html",
+      "specification_sha256": "68eb53d0eea8f8a95803a9e52b1f5c16a4d24fd5fca75d8dbe84187a7b6cd08f",
+      "artifact_sha256": "71a9cf1e29d6cae552564060ca3854f8631894d751aac5d80336dc6d58d8a1b6",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 1,
+      "delivery_receipt": "evidence/runtime/02-mcp-failure-delivery.json",
+      "browser_receipt": "diagrams/runtime/02-mcp-failure.visual-check.json",
+      "visual_review_receipt": "evidence/runtime/01-03-visual-review.json"
+    },
+    {
+      "name": "03-builtintool-missing",
+      "title": "缺少 builtinTool 时直接失败",
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/03-builtintool-missing.html",
+      "specification_sha256": "abd655af4d320556d6c3d247c4969f074b5209373fb6f117b42b0a9b06a85b10",
+      "artifact_sha256": "704c8bd6d80b27b5ee3fac162752cf11f8ef2d88aa1bc0e69954a8ccdbca9f99",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 1,
+      "delivery_receipt": "evidence/runtime/03-builtintool-missing-delivery.json",
+      "browser_receipt": "diagrams/runtime/03-builtintool-missing.visual-check.json",
+      "visual_review_receipt": "evidence/runtime/01-03-visual-review.json"
+    },
+    {
+      "name": "03-builtintool-ready",
+      "title": "所需 builtinTool 齐全时执行",
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/03-builtintool-ready.html",
+      "specification_sha256": "ff1d9b26441512028b49d79260cf7ec7fa8de2d03f868a7308825912611f7c54",
+      "artifact_sha256": "a7c1034696a7cf9324a3f89031003241f7312fe6462b629d80df85b84732a2e9",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "delivery_receipt": "evidence/runtime/03-builtintool-ready-delivery.json",
+      "browser_receipt": "diagrams/runtime/03-builtintool-ready.visual-check.json",
+      "visual_review_receipt": "evidence/runtime/01-03-visual-review.json"
+    },
+    {
+      "name": "04-assembly-failure",
+      "title": "MCP 连接失败：结束装配，不开始执行",
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-assembly-failure.html",
+      "specification_sha256": "d51f9bc047dab0d0f8b07f6bda0d789aa660e4df653c7b40f7bdd8f0493d2222",
+      "artifact_sha256": "846042b572940dd9701cfff2826e6d116cc44defc32a36cf15b4e869b845392b",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 1,
+      "delivery_receipt": "evidence/runtime/04-assembly-failure-delivery.json",
+      "browser_receipt": "diagrams/runtime/04-assembly-failure.visual-check.json",
+      "visual_review_receipt": "evidence/runtime/04-assembly-failure-visual-review.json"
+    },
+    {
+      "name": "04-assembly-ready",
+      "title": "按确定清单装配 Agent，再执行任务",
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-assembly-ready.html",
+      "specification_sha256": "1c41889e61573fdce50f5708c1111cb70cf5e9de7dfc91e90c086d6a349e3f43",
+      "artifact_sha256": "6dfb4c0ea841003ab7498123d9d1273c72d5f83bb2173de5389f132e75db6539",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 1,
+      "delivery_receipt": "evidence/runtime/04-assembly-ready-delivery.json",
+      "browser_receipt": "diagrams/runtime/04-assembly-ready.visual-check.json",
+      "visual_review_receipt": "evidence/runtime/04-assembly-ready-visual-review.json"
+    },
+    {
+      "name": "04-local-session",
+      "title": "编辑本地 Agent 后开始会话",
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-local-session.html",
+      "specification_sha256": "865b8450f5cbedce6ef432f2c0a2be7b30d7ecc42549f88632e6ccbb8b7f317f",
+      "artifact_sha256": "dec0a194b3c4ff97883d560c25df93e357bc523273f587b94d29224a597e1976",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 1,
+      "delivery_receipt": "evidence/runtime/04-local-session-delivery.json",
+      "browser_receipt": "diagrams/runtime/04-local-session.visual-check.json",
+      "visual_review_receipt": "evidence/runtime/04-local-session-visual-review.json"
+    },
+    {
+      "name": "04-official-new-version",
+      "title": "官方发布新版后：旧会话与新会话",
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-official-new-version.html",
+      "specification_sha256": "70a58e318524d0f7398f2528357ab82e35dcc4ea43f514c77c3050df518c66d4",
+      "artifact_sha256": "1231a1ce5d68d2a20a3a2cd1cba3bc16e6ad422a9710f2fd381767db33287226",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "delivery_receipt": "evidence/runtime/04-official-new-version-delivery.json",
+      "browser_receipt": "diagrams/runtime/04-official-new-version.visual-check.json",
+      "visual_review_receipt": "evidence/runtime/04-official-new-version-visual-review.json"
+    },
+    {
+      "name": "05-update-busy",
+      "title": "安装时有任务：等待用户再次确认",
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/05-update-busy.html",
+      "specification_sha256": "0c917a6adab74e2ebaf8f5e7bab798939ca0826f433b127cc66ceeb65b4c57d1",
+      "artifact_sha256": "30d8cd9d2519e5193ec8e6814dbf106c08adfb0716452c53d7adfd8495f78d9b",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "delivery_receipt": "evidence/runtime/05-update-busy-delivery.json",
+      "browser_receipt": "diagrams/runtime/05-update-busy.visual-check.json",
+      "visual_review_receipt": "evidence/runtime/05-update-busy-visual-review.json"
+    },
+    {
+      "name": "05-update-rejected",
+      "title": "下载或校验失败：保留当前应用",
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/05-update-rejected.html",
+      "specification_sha256": "19bbdc70c6da485865adf1b35cd58457ff70363ea35341e4ed5e61fba3ca84f1",
+      "artifact_sha256": "4a3980fe0da465d341531b0f8719ce6b14d0a4326ad0b7747cebe56acf16236a",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 1,
+      "delivery_receipt": "evidence/runtime/05-update-rejected-delivery.json",
+      "browser_receipt": "diagrams/runtime/05-update-rejected.visual-check.json",
+      "visual_review_receipt": "evidence/runtime/05-update-rejected-visual-review.json"
+    },
+    {
+      "name": "05-update-success",
+      "title": "检查、下载并在空闲时安装更新",
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/05-update-success.html",
+      "specification_sha256": "41eca5b98b62b75185907edc9c279ee9c736d08ac7d56abd9983880c7e793fbf",
+      "artifact_sha256": "559114466bc9db2d7670811bc338b9657f3f20cdb7ebb53f37aa382ae574afd6",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "delivery_receipt": "evidence/runtime/05-update-success-delivery.json",
+      "browser_receipt": "diagrams/runtime/05-update-success.visual-check.json",
+      "visual_review_receipt": "evidence/runtime/05-update-success-visual-review.json"
+    },
+    {
+      "name": "06-cache-ready",
+      "title": "所需版本已在本地：核对后装配",
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/06-cache-ready.html",
+      "specification_sha256": "3f56ede751ae9d2fe0130855ac11891477144a38e669250f56d17adda4b9d34f",
+      "artifact_sha256": "857b61747b3068fd1cfe57343ac53566d7f390ebd24a8b70c1355ef49b3c9c2b",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 1,
+      "delivery_receipt": "evidence/runtime/06-cache-ready-delivery.json",
+      "browser_receipt": "diagrams/runtime/06-cache-ready.visual-check.json",
+      "visual_review_receipt": "evidence/runtime/06-cache-ready-visual-review.json"
+    },
+    {
+      "name": "06-download-missing",
+      "title": "物料缺失：只下载本次缺少的版本",
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/06-download-missing.html",
+      "specification_sha256": "34ec8ddc9d32940cf6c117ad8b5013b8b66ccb2b94642310d62e6fa295c3a21b",
+      "artifact_sha256": "fc19fd146ea050d3c42c87649c072ef918896ab5ef95a0e44f421a04f35e318b",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "delivery_receipt": "evidence/runtime/06-download-missing-delivery.json",
+      "browser_receipt": "diagrams/runtime/06-download-missing.visual-check.json",
+      "visual_review_receipt": "evidence/runtime/06-download-missing-visual-review.json"
+    },
+    {
+      "name": "06-sync-failure",
+      "title": "核对或下载失败：结束本次准备",
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/06-sync-failure.html",
+      "specification_sha256": "e75bf9fc994cc62d7b79e4e4f8453a3cf9bb96046b03f8c4ce19ce90a7df2a2c",
+      "artifact_sha256": "20bf70d92e5957a90e3ecadf90ba211365819196b7d0e4be3e3a9e1f62fe5456",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 1,
+      "delivery_receipt": "evidence/runtime/06-sync-failure-delivery.json",
+      "browser_receipt": "diagrams/runtime/06-sync-failure.visual-check.json",
+      "visual_review_receipt": "evidence/runtime/06-sync-failure-visual-review.json"
+    },
+    {
+      "name": "07-busy",
+      "title": "Chrome 正忙：本轮拒绝执行",
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/07-busy.html",
+      "specification_sha256": "608058e67102321f22bf648e3671481d7de2f6cfe5f7d6a593dcc89cf9a251aa",
+      "artifact_sha256": "1bbdcbdc2cb1ad934338ad0dd76b4eda44f463963db5aee2783b57c09e92a174",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 1,
+      "delivery_receipt": "evidence/runtime/07-busy-deliver.json",
+      "browser_receipt": "diagrams/runtime/07-busy.visual-check.json",
+      "visual_review_receipt": "evidence/runtime/00-07-visual-review.json"
+    },
+    {
+      "name": "07-cancel",
+      "title": "远端取消：停止后续步骤并交付结果",
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/07-cancel.html",
+      "specification_sha256": "f87990ba417b45ad7e2972ecc290c32182dbff431c08a422438c32e74b0b4c77",
+      "artifact_sha256": "46ceb9df0d6a4d6f0315bb629b4cb8a0cf02bf450cb9f50bb97b314ee0819b39",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "delivery_receipt": "evidence/runtime/07-cancel-deliver.json",
+      "browser_receipt": "diagrams/runtime/07-cancel.visual-check.json",
+      "visual_review_receipt": "evidence/runtime/00-07-visual-review.json"
+    },
+    {
+      "name": "07-disconnect",
+      "title": "执行中断线：继续执行、重连补传",
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/07-disconnect.html",
+      "specification_sha256": "ac340c4ba80074c08597536f767d0095524d129f51c20702a537db411637a8a1",
+      "artifact_sha256": "b0a002e0dbb7775886d8ed1627bd5fd226932b2683b30d807659c3d94e0185a9",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "delivery_receipt": "evidence/runtime/07-disconnect-deliver.json",
+      "browser_receipt": "diagrams/runtime/07-disconnect.visual-check.json",
+      "visual_review_receipt": "evidence/runtime/00-07-visual-review.json"
+    },
+    {
+      "name": "07-login",
+      "title": "远端任务需要人工登录：失败后另发调用",
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/07-login.html",
+      "specification_sha256": "aaaf56a4bbff8e7aeec65b71cb207187fa53c0d96a65ab2f6b3e04fdd9e4b3f4",
+      "artifact_sha256": "353658489451d2a2ff42622f92b53dea2a4b909ce9c59eaeda4b9b002c69ce7f",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 1,
+      "delivery_receipt": "evidence/runtime/07-login-deliver.json",
+      "browser_receipt": "diagrams/runtime/07-login.visual-check.json",
+      "visual_review_receipt": "evidence/runtime/00-07-visual-review.json"
+    },
+    {
+      "name": "07-restart-complete",
+      "title": "重启后：补传已完成、未确认的结果",
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/07-restart-complete.html",
+      "specification_sha256": "7559356bbe9e9bb16798c1b631ecb606748967964ea8601b29bf0dc0c6921def",
+      "artifact_sha256": "0b219dffa3cb84fe8c0aee3eb9ef7c76c79fcbfc4b99c18811128bca2aedcace",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "delivery_receipt": "evidence/runtime/07-restart-complete-deliver.json",
+      "browser_receipt": "diagrams/runtime/07-restart-complete.visual-check.json",
+      "visual_review_receipt": "evidence/runtime/00-07-visual-review.json"
+    },
+    {
+      "name": "07-restart-incomplete",
+      "title": "重启后：未完成任务报告中断未知",
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/07-restart-incomplete.html",
+      "specification_sha256": "df005105a0b9533309f2872af8a3c6587fd331624fb34fdb57b2137511e2a0e6",
+      "artifact_sha256": "11df73d9bf39c2b15e06d7939ac9ad81eccf060063075f8faee45d6f27e16387",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "delivery_receipt": "evidence/runtime/07-restart-incomplete-deliver.json",
+      "browser_receipt": "diagrams/runtime/07-restart-incomplete.visual-check.json",
+      "visual_review_receipt": "evidence/runtime/00-07-visual-review.json"
+    },
+    {
+      "name": "07-timeout",
+      "title": "本轮兜底超时：终止并回报执行超时",
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/07-timeout.html",
+      "specification_sha256": "12403b97ec5e2ce78c431be9e1ecbebee4b881adb0bad2815ec3bcc9a107aca9",
+      "artifact_sha256": "eab154e2b921093aee300203f06943f281a0d427960b2955db6c49f3ce38dca7",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 1,
+      "delivery_receipt": "evidence/runtime/07-timeout-deliver.json",
+      "browser_receipt": "diagrams/runtime/07-timeout.visual-check.json",
+      "visual_review_receipt": "evidence/runtime/00-07-visual-review.json"
     }
   ],
   "reader": {
     "path": "index.html",
-    "sha256": "1e559cfd55bd06cd8c0ec70c96f7d13fb03fc952e86b3b7f541dac4e080eced0",
-    "bytes": 65064,
+    "sha256": "8c1096f1f25150321fe6e83066d7ac2b9187c46bdb95400982cb9c623a7f4f2a",
+    "bytes": 112359,
     "browser_evidence": "passed",
     "visual_review": "passed",
-    "independent_review": "ship — 两项限定修复均已解决",
+    "independent_review": "新增 3 个装配与周发布模型语义复核通过，累计 29 个模型；阅读页跳转与章节检查通过",
     "receipt": "evidence/reader-redesign-browser.json",
-    "format_normalization": "evidence/format-normalization.json"
+    "format_normalization": "evidence/format-normalization.json",
+    "sequence_link_receipt": "evidence/runtime/reader-sequence-links.json"
   },
   "files": [
     {
       "path": "00-总体架构.md",
-      "sha256": "f168eeeb5b144ff4d4817bd0a9842dda865ff801b7c6d7387972911a13622093",
-      "bytes": 3559
+      "sha256": "98de7ac31c4171d108576d627d6e688ae56375d98eb69ca67d5d0d544fcff9e2",
+      "bytes": 10280
     },
     {
       "path": "01-SKILL.md",
-      "sha256": "cc6af8bde954e4500fbcfbb73d09e7d43dbe266636bafe3ee21812e9fc111e62",
-      "bytes": 3584
+      "sha256": "ec766d5de5900e7fd742db782da059827fed7890f2537fe087c0b5721a0d6659",
+      "bytes": 12919
     },
     {
       "path": "02-MCP.md",
-      "sha256": "b47522fe20f0a2c0f4a5b002925d63dbd9807606fbb024556dc9d399feb82816",
-      "bytes": 3012
+      "sha256": "fb3f135d81c7d23571ac94cae48bbca4bc8a7be301685e8b0f55af83c01e5fa4",
+      "bytes": 4154
     },
     {
       "path": "03-buildintool.md",
-      "sha256": "e8d8ddb2c5f80db644ae950c082473e8f02a10e492a16d10f34d1f984076e321",
-      "bytes": 3140
+      "sha256": "d0c9dcae6943766cb19d90ea823d639d88688a490b0059bfd5ccce99e6a90dea",
+      "bytes": 3984
     },
     {
       "path": "04-agent.md",
-      "sha256": "b4e31799001df4ca609470cf1bd9b78d83194dc4de8b57119a64d9883d5bb7ef",
-      "bytes": 3516
+      "sha256": "71f87eeaf56241faf42713e2fe3c2c03c25f879a171ea282214852ebd50f7209",
+      "bytes": 14122
     },
     {
       "path": "05-桌面端更新.md",
-      "sha256": "aa3d3e42a749909a4b419196e14ef8033a3f98ed9abf6bd7d325b41aea08046c",
-      "bytes": 3706
+      "sha256": "6eaf6e4093db3a162bef58434aa1fee5cbc74ba6c8c9ccd137b29463eab7d25e",
+      "bytes": 5064
     },
     {
       "path": "06-同步与装配.md",
-      "sha256": "de9dcbc88f7a5210af3d7b3eab27968466beadbbb776e0ac892870f1a38a1c6b",
-      "bytes": 3469
+      "sha256": "ee5d5270b0f2357dd3efafa281948c3ceb8af0ee6ee87e8e513e858f2696db6f",
+      "bytes": 5617
     },
     {
       "path": "07-任务执行与恢复.md",
-      "sha256": "37c687d6a790cbde8a2b3f03ac0d09cca8ced9d276d8c49d54c9d61f24b1d0cf",
-      "bytes": 3733
+      "sha256": "291a88f37f6a2c7c3f57695463fcdd057d1e29bd0a26ab62c09e91f62a752d42",
+      "bytes": 6354
     },
     {
       "path": "08-前端现状与缺口.md",
-      "sha256": "bcaafa0e8a99f2e2dac5d2f933129ec8cb5a3ae0dc1d1286fd8c6c8ce0c62ea6",
-      "bytes": 7487
+      "sha256": "92c462c36fedbe84945140e74f7db919472674ee279351845fcf7d1afa14d442",
+      "bytes": 9267
     },
     {
       "path": "README.md",
-      "sha256": "b38f9a90c98593633b1cb9143edd7618252c2f5714d383cf789d0822569dcf77",
-      "bytes": 3361
+      "sha256": "56f16c7c345b87ce7b442427407cc2dd1729cc5afbe1077d345beb40fea0b022",
+      "bytes": 4868
     },
     {
       "path": "assets/00-overview-usecase.svg",
@@ -371,14 +713,179 @@
       "bytes": 29400
     },
     {
+      "path": "assets/runtime/00-manual.svg",
+      "sha256": "fe46277467a4c75bb899857780f4773bca036b168b9c36722230ed5d62d5f2ba",
+      "bytes": 48303
+    },
+    {
+      "path": "assets/runtime/00-remote.svg",
+      "sha256": "451ef373a37ddcb9a0fe9f75dcc1057bb43911fbf6751870d6979659532c7078",
+      "bytes": 49130
+    },
+    {
+      "path": "assets/runtime/00-weekly-evolution.svg",
+      "sha256": "b8ebf157538446094351c934da7b9324919f5e1a38d10a0022b39cf75647b48e",
+      "bytes": 52134
+    },
+    {
+      "path": "assets/runtime/01-skill-draft-upload.svg",
+      "sha256": "4fbe3c0515cf35b6c0e54097a1c80f30faa4d3f5639da2401348ade8c3f32806",
+      "bytes": 45510
+    },
+    {
+      "path": "assets/runtime/01-skill-experiment.svg",
+      "sha256": "d865e70a94824f40841ee561b9ea588a0c98b327d80ea6e3f4eecbb48343026a",
+      "bytes": 48260
+    },
+    {
+      "path": "assets/runtime/01-skill-file-conflict.svg",
+      "sha256": "5cefaa4b2facbd37d9bbb602d0ea228757037e10f1d989166313135d46568040",
+      "bytes": 46968
+    },
+    {
+      "path": "assets/runtime/01-skill-file-upload.svg",
+      "sha256": "84ab158de65c65f9267be56de490a528894663d03299329cda1de4631d0a4afd",
+      "bytes": 47017
+    },
+    {
+      "path": "assets/runtime/01-skill-publish.svg",
+      "sha256": "8f9da889cfec879f4cce4653907107fe75df6d1cbad91197d75a12d028bf5c9d",
+      "bytes": 48140
+    },
+    {
+      "path": "assets/runtime/02-mcp-call.svg",
+      "sha256": "55d2c6e34b94fb6db3a3b2f4e008b870bbebf4d88f88706f5f02dd4fd6b5287c",
+      "bytes": 46781
+    },
+    {
+      "path": "assets/runtime/02-mcp-failure.svg",
+      "sha256": "61760efd11e89559c01b8a5c10643d7a1768d02d8025ac446ee318d13877072e",
+      "bytes": 45523
+    },
+    {
+      "path": "assets/runtime/03-builtintool-missing.svg",
+      "sha256": "5506ac929b2ac724c222bd42009aa446ca7bbe02791807f2cb54674188653b80",
+      "bytes": 45418
+    },
+    {
+      "path": "assets/runtime/03-builtintool-ready.svg",
+      "sha256": "b4d1a9d9fc3c38385adb7fab5050d47c91452f422496d310f223a211d9871467",
+      "bytes": 48200
+    },
+    {
+      "path": "assets/runtime/04-assembly-failure.svg",
+      "sha256": "9d9d0a2d88f9a223a26bfc68c7f43772132bd497c90fe04bfc08c23219f43116",
+      "bytes": 49763
+    },
+    {
+      "path": "assets/runtime/04-assembly-ready.svg",
+      "sha256": "6c1dc7cd28c4a0fe8af110d2d1fa030ceb14ea98ccbf67cb7e27323a9ccdc919",
+      "bytes": 58410
+    },
+    {
+      "path": "assets/runtime/04-local-session.svg",
+      "sha256": "6074e886223b5f1e3cd78436ca8ad05ecd3a46e04dd891954217c7f2ce9f9285",
+      "bytes": 49768
+    },
+    {
+      "path": "assets/runtime/04-official-new-version.svg",
+      "sha256": "8e63e0026cf8ce221f3e37bdf7259ab7dace0395807822aeb391bf54ca932adb",
+      "bytes": 49782
+    },
+    {
+      "path": "assets/runtime/05-update-busy.svg",
+      "sha256": "0be6afc3633aca58a7fc1d9fa52d81cfa550d38922416f5734233db5045a3a9e",
+      "bytes": 47477
+    },
+    {
+      "path": "assets/runtime/05-update-rejected.svg",
+      "sha256": "eaeebc4481af7434e822d15416913e380760dacda0034bb69ae032526aaa494d",
+      "bytes": 45434
+    },
+    {
+      "path": "assets/runtime/05-update-success.svg",
+      "sha256": "ed4747c20c298357bcfc897b871b281ba38c41bfcfd5518cda2dba6bf8c81df3",
+      "bytes": 50386
+    },
+    {
+      "path": "assets/runtime/06-cache-ready.svg",
+      "sha256": "2d9ecfec0ab8b0d5dd593fdb63c10624f8baa9b6e5188e5302ff28a45e7e45d1",
+      "bytes": 49122
+    },
+    {
+      "path": "assets/runtime/06-download-missing.svg",
+      "sha256": "3803572b4b5a06fbaaa17ebe8ec0d12579666a57f5aa60641cb5cd709d854f81",
+      "bytes": 49843
+    },
+    {
+      "path": "assets/runtime/06-sync-failure.svg",
+      "sha256": "ed81468f03a81ec75a21374671f39c23c9e32598da8c081c3e81304d47fdf873",
+      "bytes": 47684
+    },
+    {
+      "path": "assets/runtime/07-busy.svg",
+      "sha256": "16454e6007ed4ff2f85d8a5dee4f301d950a1d54309f7f7b2d9a03bdd076b2b2",
+      "bytes": 45567
+    },
+    {
+      "path": "assets/runtime/07-cancel.svg",
+      "sha256": "9a186a45f9dc36b68a64e732c2b13552b003029ae73a722bb17e1dab84352102",
+      "bytes": 48367
+    },
+    {
+      "path": "assets/runtime/07-disconnect.svg",
+      "sha256": "8b2c85c7ebcdc8010fbd73cda4092939bb30d89bc773bde354ab8617c4a0f5c2",
+      "bytes": 48949
+    },
+    {
+      "path": "assets/runtime/07-login.svg",
+      "sha256": "bd69b0cfe369e1f470295580fa1cc93b798b8d9abca243957cd4a89565e81889",
+      "bytes": 48398
+    },
+    {
+      "path": "assets/runtime/07-restart-complete.svg",
+      "sha256": "c815e48040e6158b6f650587fe153b4acffe6c9126d2dd60a57ac509983b7d48",
+      "bytes": 48446
+    },
+    {
+      "path": "assets/runtime/07-restart-incomplete.svg",
+      "sha256": "bfb1b6a9b17acb28dd2e9316de2941f2fab85f729d9fd952d0e2a24f67467804",
+      "bytes": 48521
+    },
+    {
+      "path": "assets/runtime/07-timeout.svg",
+      "sha256": "a561c66306833771dd110f07152cd6c52c0093110bbc54222729276b97ec658b",
+      "bytes": 46909
+    },
+    {
       "path": "assets/screenshots/00-workspace.png",
       "sha256": "6fd8b26687dfa9529b75284938e9ab6b25ab631bd759eba5a46139c4227b583e",
       "bytes": 68632
     },
     {
+      "path": "assets/screenshots/01-file-manager-reference.png",
+      "sha256": "5fe7834d6f63e9fb1fa507f4645b71565362567379788430c3e57364abd4d7bd",
+      "bytes": 57152
+    },
+    {
       "path": "assets/screenshots/01-skill-edit.png",
       "sha256": "87802129cddb59b07bdb21d619cded0572f515d49fe35b343fd2150494698287",
       "bytes": 159143
+    },
+    {
+      "path": "assets/screenshots/01-skill-file-upload.png",
+      "sha256": "967a521edacc5fd047ec3c752499b2d7413974d30d96b8b5433eba9571d28dc7",
+      "bytes": 69161
+    },
+    {
+      "path": "assets/screenshots/01-skill-files.png",
+      "sha256": "34f3a652a6b296ed3926277dfc468b17af44fe4ec15a5c2c41a447f421612c3c",
+      "bytes": 59610
+    },
+    {
+      "path": "assets/screenshots/01-skill-list.png",
+      "sha256": "1d47787faec6490a9076a3b3b3cf81e3b9a2923662e8ef8d060a1e4911546821",
+      "bytes": 64636
     },
     {
       "path": "assets/screenshots/01-skill.png",
@@ -731,6 +1238,1166 @@
       "bytes": 17157
     },
     {
+      "path": "diagrams/runtime/00-manual.html",
+      "sha256": "0c24e4a6f2342e189ff826a3b11b73bf18cf6ec3a960c547585f3b2be1a11e01",
+      "bytes": 703971
+    },
+    {
+      "path": "diagrams/runtime/00-manual.json",
+      "sha256": "b027ded5da0ca65f3a46e8964401217f857d78737d91f72909fff9de4178773c",
+      "bytes": 2130
+    },
+    {
+      "path": "diagrams/runtime/00-manual.visual-check.1440x900.dark.png",
+      "sha256": "9738c4e54321598085b28550b3a4405e76aaca249d5cb33a940b773e08c1e0d4",
+      "bytes": 90862
+    },
+    {
+      "path": "diagrams/runtime/00-manual.visual-check.1440x900.light.png",
+      "sha256": "12a71c9c9daae0d839ca43798284f0c57876cfe9a8a7d1d5c6a337364567c463",
+      "bytes": 90363
+    },
+    {
+      "path": "diagrams/runtime/00-manual.visual-check.2048x1320.dark.png",
+      "sha256": "694aaed2742a9682c16c99e65b52843f9ba57c0cfb28180c833afeb67e7c92f9",
+      "bytes": 113280
+    },
+    {
+      "path": "diagrams/runtime/00-manual.visual-check.2048x1320.light.png",
+      "sha256": "fbe995536e390eeaa70e66bf806edf5d2bda5e5c86808776ff4470686303e1c3",
+      "bytes": 113356
+    },
+    {
+      "path": "diagrams/runtime/00-manual.visual-check.html",
+      "sha256": "9b0cb55a0cac4fd6fe963ffebb31dee68d13b8d08f1de8cbfb9cb2385fb6182e",
+      "bytes": 1898
+    },
+    {
+      "path": "diagrams/runtime/00-manual.visual-check.json",
+      "sha256": "8adb4be342da9d6468bd0cd735bc94bb945da3ad75d1727d7ba01544ca609785",
+      "bytes": 16821
+    },
+    {
+      "path": "diagrams/runtime/00-remote.html",
+      "sha256": "cfc6f345a65c7314f00b88ac2dfa4979f6cbdc65c00a6cadb935bdc129b55f4b",
+      "bytes": 704795
+    },
+    {
+      "path": "diagrams/runtime/00-remote.json",
+      "sha256": "3d271c1cbe32cbc7869f0cef0f8bead77187324ca4774c9a3a8ce53b4eb314ef",
+      "bytes": 2359
+    },
+    {
+      "path": "diagrams/runtime/00-remote.visual-check.1440x900.dark.png",
+      "sha256": "88ec5fe7db43f80f03d08eb99495cec92aeb6ba17a6576e58789d01311e5f7d5",
+      "bytes": 90852
+    },
+    {
+      "path": "diagrams/runtime/00-remote.visual-check.1440x900.light.png",
+      "sha256": "ec7f75e1822dba31190fe966292d5cb7e5e1e3b0a0b8e44e0f974c12e808dacf",
+      "bytes": 90047
+    },
+    {
+      "path": "diagrams/runtime/00-remote.visual-check.2048x1320.dark.png",
+      "sha256": "3d37bffcec6de77685eca225ad614e2a69353af3178b2f4d58b309d58c829a61",
+      "bytes": 113531
+    },
+    {
+      "path": "diagrams/runtime/00-remote.visual-check.2048x1320.light.png",
+      "sha256": "79deb44fc1c5e50ba4e6f034dc488d99b2854e8ea0d7b1f076905d47809eba1d",
+      "bytes": 114363
+    },
+    {
+      "path": "diagrams/runtime/00-remote.visual-check.html",
+      "sha256": "80c7e61e351b40cd45d36945450486ec186c5162f54c522ee71a60eb79c5a725",
+      "bytes": 1898
+    },
+    {
+      "path": "diagrams/runtime/00-remote.visual-check.json",
+      "sha256": "ba92a17c6826f74bda778d9163dbacdc7e86b02bedfcc7278fd6fdc1347b1c53",
+      "bytes": 16869
+    },
+    {
+      "path": "diagrams/runtime/00-weekly-evolution.html",
+      "sha256": "b16babe747bdcd0f04a6109b2e0d12a7c11960a0e889b15a160cba9fa338907a",
+      "bytes": 707887
+    },
+    {
+      "path": "diagrams/runtime/00-weekly-evolution.json",
+      "sha256": "7ce589e42e8129d0b9dfe2d6313d02ac172e468110afa21eda59033016b9f516",
+      "bytes": 3218
+    },
+    {
+      "path": "diagrams/runtime/00-weekly-evolution.visual-check.1440x900.dark.png",
+      "sha256": "d9a79c10d8242f7be1636acf50133b5f05673de42ca5874d5bc60a3701f31837",
+      "bytes": 112138
+    },
+    {
+      "path": "diagrams/runtime/00-weekly-evolution.visual-check.1440x900.light.png",
+      "sha256": "acbf5f207d1d2260b4710363848be1891cb98cf36f0ac1dd1064b0efd306273e",
+      "bytes": 111099
+    },
+    {
+      "path": "diagrams/runtime/00-weekly-evolution.visual-check.2048x1320.dark.png",
+      "sha256": "2320a3d78752dc971673aa5af776db2021a587558b5b65e185cc1c90ce6b5f6a",
+      "bytes": 147841
+    },
+    {
+      "path": "diagrams/runtime/00-weekly-evolution.visual-check.2048x1320.light.png",
+      "sha256": "6dff3111496dbe2f202c7b54882f5891e9eaf10fede71977bfd93621cb84c75d",
+      "bytes": 146369
+    },
+    {
+      "path": "diagrams/runtime/00-weekly-evolution.visual-check.html",
+      "sha256": "524f4fa371daceda82e2a669b5af9277d48855eaaac05faeb159b08034bc8234",
+      "bytes": 1958
+    },
+    {
+      "path": "diagrams/runtime/00-weekly-evolution.visual-check.json",
+      "sha256": "bbced1f45ede5b87a0ee31df9b50d0d9b1f66fd6602566c9e03599802d9d5e29",
+      "bytes": 16997
+    },
+    {
+      "path": "diagrams/runtime/01-skill-draft-upload.html",
+      "sha256": "53dc25a2feb6bfad0c9a85ce66452a22a2c57044edf7b64578fcad4cf88e0019",
+      "bytes": 701153
+    },
+    {
+      "path": "diagrams/runtime/01-skill-draft-upload.json",
+      "sha256": "f8e20bff40fbfe8f936e0cea33fec28708b150f7110a28ec0e39e8f6577fdaf8",
+      "bytes": 1710
+    },
+    {
+      "path": "diagrams/runtime/01-skill-draft-upload.visual-check.1440x900.dark.png",
+      "sha256": "2b2153cf7983c25d8b759c79a920cae2d6fe3a29ad2eac461b57206754db523b",
+      "bytes": 85963
+    },
+    {
+      "path": "diagrams/runtime/01-skill-draft-upload.visual-check.1440x900.light.png",
+      "sha256": "12f3d555fd3b61d47dde2b9633ea91c99d33e163cbbee74122735ce07dd83dab",
+      "bytes": 85515
+    },
+    {
+      "path": "diagrams/runtime/01-skill-draft-upload.visual-check.2048x1320.dark.png",
+      "sha256": "db91540a370d85c9a4661cc60da506b8124e21b267a04664ba46e06cc35f291f",
+      "bytes": 104925
+    },
+    {
+      "path": "diagrams/runtime/01-skill-draft-upload.visual-check.2048x1320.light.png",
+      "sha256": "a229a89602c696eb1bc729d7dd8183b1b6f107c7c6e0c390897b60ee1b583db1",
+      "bytes": 105068
+    },
+    {
+      "path": "diagrams/runtime/01-skill-draft-upload.visual-check.html",
+      "sha256": "0bbb7cc551321ee0e6a9c7f1707401d289f8ae161025799ee5c971dd679424f5",
+      "bytes": 1970
+    },
+    {
+      "path": "diagrams/runtime/01-skill-draft-upload.visual-check.json",
+      "sha256": "407cd30eb04e7e0044755155109356149180d459a06558e41dedf125cd0087a3",
+      "bytes": 17013
+    },
+    {
+      "path": "diagrams/runtime/01-skill-experiment.html",
+      "sha256": "c736d23b57a7d5d33865b6cce5cf654a9146dee7caae9a85217d6ae6f23fe3e9",
+      "bytes": 703959
+    },
+    {
+      "path": "diagrams/runtime/01-skill-experiment.json",
+      "sha256": "02bac6d846d589a6336bfaca54b3ad32812b90a77254366c9bf5e43f83469c48",
+      "bytes": 2086
+    },
+    {
+      "path": "diagrams/runtime/01-skill-experiment.visual-check.1440x900.dark.png",
+      "sha256": "4d9dca3651f825257a4e01b266e5af02424696dbe95f9e4f850a6c23c56e9408",
+      "bytes": 93515
+    },
+    {
+      "path": "diagrams/runtime/01-skill-experiment.visual-check.1440x900.light.png",
+      "sha256": "f7126a7a53a8b7be3bb094de155aa50a71f1fcc4a1d3998aab996ed1d35b2b1a",
+      "bytes": 92842
+    },
+    {
+      "path": "diagrams/runtime/01-skill-experiment.visual-check.2048x1320.dark.png",
+      "sha256": "f17fd23e0a35a015e37a794f3351ec8f57b9c1b701c9ec655788f0ba63940c74",
+      "bytes": 115977
+    },
+    {
+      "path": "diagrams/runtime/01-skill-experiment.visual-check.2048x1320.light.png",
+      "sha256": "8619c8a6fc39c32001a4a66ab9cf0bd61ca3c6b9cb4f8e5132fd233962604d17",
+      "bytes": 116123
+    },
+    {
+      "path": "diagrams/runtime/01-skill-experiment.visual-check.html",
+      "sha256": "ad953ba9db06a02612656f2eff717f0df6ca70f92c3061b2581f2fd8ff3cc6cc",
+      "bytes": 1958
+    },
+    {
+      "path": "diagrams/runtime/01-skill-experiment.visual-check.json",
+      "sha256": "7141a84f61c8b6913363d83cc47e7f79f3f3ce088f2ad1b7c917d4f1e2f9d009",
+      "bytes": 16901
+    },
+    {
+      "path": "diagrams/runtime/01-skill-file-conflict.html",
+      "sha256": "f9de3125be809f05f47d187aeb6df2a8d4f1f56139a7a82b323d3aee60a5aede",
+      "bytes": 702696
+    },
+    {
+      "path": "diagrams/runtime/01-skill-file-conflict.json",
+      "sha256": "e3f4f0251afd43f6d8801730ecb0b3f06b8245dd526d56f2d8fc9ab874b0f9e9",
+      "bytes": 2073
+    },
+    {
+      "path": "diagrams/runtime/01-skill-file-conflict.visual-check.1440x900.dark.png",
+      "sha256": "f4b3ae833337af8151ef74707366db43bacc8cc354c34eb3123c605ecbefda27",
+      "bytes": 97591
+    },
+    {
+      "path": "diagrams/runtime/01-skill-file-conflict.visual-check.1440x900.light.png",
+      "sha256": "12bdb6db6ca0a68b31c19a53375a6e045fecac7f2d03d8c56d40acce60cc81f8",
+      "bytes": 96954
+    },
+    {
+      "path": "diagrams/runtime/01-skill-file-conflict.visual-check.2048x1320.dark.png",
+      "sha256": "8956b568eeb66bb7c532104ed431254b9ef9cd1a0a17051c32c65eb5a1221149",
+      "bytes": 118913
+    },
+    {
+      "path": "diagrams/runtime/01-skill-file-conflict.visual-check.2048x1320.light.png",
+      "sha256": "43cac3eea19b0793c86e3a7864051a9e5811b20812bd73321882cc3c04491294",
+      "bytes": 118833
+    },
+    {
+      "path": "diagrams/runtime/01-skill-file-conflict.visual-check.html",
+      "sha256": "5bd5d4a1eac3f9706005fa32665241a6fd63ead86b11cedccb60b25a1a5639d9",
+      "bytes": 1976
+    },
+    {
+      "path": "diagrams/runtime/01-skill-file-conflict.visual-check.json",
+      "sha256": "22fe191ddfa6c1b17284517d6de45e2a5833932d39244fb953f9ee7ead777699",
+      "bytes": 17165
+    },
+    {
+      "path": "diagrams/runtime/01-skill-file-upload.html",
+      "sha256": "fa9eac30172283963d3cdd73e861158d4af141d390c5df6a86c5d23ac31d05f5",
+      "bytes": 702763
+    },
+    {
+      "path": "diagrams/runtime/01-skill-file-upload.json",
+      "sha256": "3cdef71692e37698498ffc5feb566b3f8624af5dfb0e6f94e1c0edb5ddc49a43",
+      "bytes": 2110
+    },
+    {
+      "path": "diagrams/runtime/01-skill-file-upload.visual-check.1440x900.dark.png",
+      "sha256": "c8e02a008726715d22fea36989afb11b32b6b57334ed281771bdc023e2553066",
+      "bytes": 96781
+    },
+    {
+      "path": "diagrams/runtime/01-skill-file-upload.visual-check.1440x900.light.png",
+      "sha256": "b5567ea5330b06372a5d5b8738b65be13eea5b1b7e06a96ce868f45191cd93a7",
+      "bytes": 95979
+    },
+    {
+      "path": "diagrams/runtime/01-skill-file-upload.visual-check.2048x1320.dark.png",
+      "sha256": "445a75b1907d5867b316c856c397d3d9d0a7f17ba678b4e2b20e244a208ed3a0",
+      "bytes": 120428
+    },
+    {
+      "path": "diagrams/runtime/01-skill-file-upload.visual-check.2048x1320.light.png",
+      "sha256": "b06c08e330b20a01137d44cc37d961ab653eb8e289e94288b65deffa72642b81",
+      "bytes": 119854
+    },
+    {
+      "path": "diagrams/runtime/01-skill-file-upload.visual-check.html",
+      "sha256": "af88abb586264a0fb265c1dd7f7b8aec357b55cd852f981e64de7363134f23d8",
+      "bytes": 1964
+    },
+    {
+      "path": "diagrams/runtime/01-skill-file-upload.visual-check.json",
+      "sha256": "07d257e8f2fa58e74f72d2a063a734889624e9956d40b2f33552d5ca2f0745dd",
+      "bytes": 17149
+    },
+    {
+      "path": "diagrams/runtime/01-skill-publish.html",
+      "sha256": "8e0e081c409a916dad89c2a617fb5088ee332961973579a001ffdfd97b9e665f",
+      "bytes": 703907
+    },
+    {
+      "path": "diagrams/runtime/01-skill-publish.json",
+      "sha256": "3e4551277b7f08bdc9f3cf654cd19c25c9e878365474750e42534a3c8c7b7b2f",
+      "bytes": 2402
+    },
+    {
+      "path": "diagrams/runtime/01-skill-publish.visual-check.1440x900.dark.png",
+      "sha256": "0efc81c418e9ca9561aacf4d2faf108a3f21fbb8d1876a42734ff521ef50c862",
+      "bytes": 105338
+    },
+    {
+      "path": "diagrams/runtime/01-skill-publish.visual-check.1440x900.light.png",
+      "sha256": "ad0537715bbc8daa5b161a3e1ca34a96965e6d3a8bb32f89c22623a0a56709f6",
+      "bytes": 104213
+    },
+    {
+      "path": "diagrams/runtime/01-skill-publish.visual-check.2048x1320.dark.png",
+      "sha256": "3cce4e5532a99e338af8c7a060d7f2776215e350b299aabaf5ea76ea2ba6b480",
+      "bytes": 133327
+    },
+    {
+      "path": "diagrams/runtime/01-skill-publish.visual-check.2048x1320.light.png",
+      "sha256": "6adb60b2e53ce89ec53a329aca97e0e99d2adcd6606785d06a511d94a64859b3",
+      "bytes": 132338
+    },
+    {
+      "path": "diagrams/runtime/01-skill-publish.visual-check.html",
+      "sha256": "20f6ea4ce00ea5f0c9f9bb4903a1e92c7b34a06182dc988fdc5a466bf8159fcf",
+      "bytes": 1940
+    },
+    {
+      "path": "diagrams/runtime/01-skill-publish.visual-check.json",
+      "sha256": "6a4be74af28b972d7036e853307260b8c722b2d130ed018a6b7f9dc1e366c49d",
+      "bytes": 16973
+    },
+    {
+      "path": "diagrams/runtime/02-mcp-call.html",
+      "sha256": "cba529cbab89970ba6efd3ac193204f8b009be97865c7baed641b3943f49dd08",
+      "bytes": 702424
+    },
+    {
+      "path": "diagrams/runtime/02-mcp-call.json",
+      "sha256": "8ca20fdd0fd76bdf35566acc50760d01bc6b125b21ed8371732e4dbb54b81ed6",
+      "bytes": 1986
+    },
+    {
+      "path": "diagrams/runtime/02-mcp-call.visual-check.1440x900.dark.png",
+      "sha256": "36cc9464032372c3fb0480bfe037d6ad45150b5a741ccd2c354f53b1fa5b9fa6",
+      "bytes": 86029
+    },
+    {
+      "path": "diagrams/runtime/02-mcp-call.visual-check.1440x900.light.png",
+      "sha256": "b828d24e70086cd1363b44f6e05f09d07b9d47b736981f7059a1adbd421b89b7",
+      "bytes": 85630
+    },
+    {
+      "path": "diagrams/runtime/02-mcp-call.visual-check.2048x1320.dark.png",
+      "sha256": "bdc505dc6d343a275201a96ed7d486c1a6d8c14e96f108ceb76c474ef47c311f",
+      "bytes": 107243
+    },
+    {
+      "path": "diagrams/runtime/02-mcp-call.visual-check.2048x1320.light.png",
+      "sha256": "220372611f5ab154a02fe0400fa4773a79b36a0afc1be00295b2d10ce9260888",
+      "bytes": 107469
+    },
+    {
+      "path": "diagrams/runtime/02-mcp-call.visual-check.html",
+      "sha256": "18362fc2f79aa10e1eb1fb63a6638c874cef416feafc58394a59ae576268644e",
+      "bytes": 1910
+    },
+    {
+      "path": "diagrams/runtime/02-mcp-call.visual-check.json",
+      "sha256": "46ebc747c616522ced37d5a1c80c168299ca05a5f5b2803e428056f69ed79294",
+      "bytes": 16933
+    },
+    {
+      "path": "diagrams/runtime/02-mcp-failure.html",
+      "sha256": "71a9cf1e29d6cae552564060ca3854f8631894d751aac5d80336dc6d58d8a1b6",
+      "bytes": 701153
+    },
+    {
+      "path": "diagrams/runtime/02-mcp-failure.json",
+      "sha256": "68eb53d0eea8f8a95803a9e52b1f5c16a4d24fd5fca75d8dbe84187a7b6cd08f",
+      "bytes": 1687
+    },
+    {
+      "path": "diagrams/runtime/02-mcp-failure.visual-check.1440x900.dark.png",
+      "sha256": "2689baca10e8c3f5fe63597e4526bc8995e7a32de7a0df6eefd262080c1ce971",
+      "bytes": 84687
+    },
+    {
+      "path": "diagrams/runtime/02-mcp-failure.visual-check.1440x900.light.png",
+      "sha256": "166f80cc89ac7c83fc5d7ee086e75b4394fed1d4d7beb53de4d27bf0bd02663e",
+      "bytes": 83907
+    },
+    {
+      "path": "diagrams/runtime/02-mcp-failure.visual-check.2048x1320.dark.png",
+      "sha256": "627dd83746fb7ca7b0d9cf9de171580129988d8a07af69787e62781445e8b019",
+      "bytes": 103480
+    },
+    {
+      "path": "diagrams/runtime/02-mcp-failure.visual-check.2048x1320.light.png",
+      "sha256": "65ab61a83cf672cc2d7eb86c16b3440e07ccd77dda7ccb51b2fe1ab395911e79",
+      "bytes": 103036
+    },
+    {
+      "path": "diagrams/runtime/02-mcp-failure.visual-check.html",
+      "sha256": "c6592a6231eba5a5457215a5a30e9d55d8998132cefc980ac852354aa095ca4a",
+      "bytes": 1928
+    },
+    {
+      "path": "diagrams/runtime/02-mcp-failure.visual-check.json",
+      "sha256": "a3b2f8e794cb1df287675c447fc3653f5331fb85440add82b5933aa6e53da75c",
+      "bytes": 16909
+    },
+    {
+      "path": "diagrams/runtime/03-builtintool-missing.html",
+      "sha256": "704c8bd6d80b27b5ee3fac162752cf11f8ef2d88aa1bc0e69954a8ccdbca9f99",
+      "bytes": 701024
+    },
+    {
+      "path": "diagrams/runtime/03-builtintool-missing.json",
+      "sha256": "abd655af4d320556d6c3d247c4969f074b5209373fb6f117b42b0a9b06a85b10",
+      "bytes": 1643
+    },
+    {
+      "path": "diagrams/runtime/03-builtintool-missing.visual-check.1440x900.dark.png",
+      "sha256": "2a1e7932c0dcf982f727b5c0c3da26738c9b2303ca84bdd0f952193cbfa39ba4",
+      "bytes": 79052
+    },
+    {
+      "path": "diagrams/runtime/03-builtintool-missing.visual-check.1440x900.light.png",
+      "sha256": "8e6943200eb140a8d5b4034e9e1ee776b3837255fe14b8bb698e90d9fca5b358",
+      "bytes": 79020
+    },
+    {
+      "path": "diagrams/runtime/03-builtintool-missing.visual-check.2048x1320.dark.png",
+      "sha256": "e23db41b2ab24ba38ac2d135d850f38988ec2c8c6959319181b26f8eb12e07ea",
+      "bytes": 96344
+    },
+    {
+      "path": "diagrams/runtime/03-builtintool-missing.visual-check.2048x1320.light.png",
+      "sha256": "43cd5a7544b7286d11df03f96277b9e1c483448e49d64b8bcb65f0d97be42873",
+      "bytes": 96673
+    },
+    {
+      "path": "diagrams/runtime/03-builtintool-missing.visual-check.html",
+      "sha256": "148377e7831677d732d47dc8c9287a85fa7bd6eefa312251d460451d9f65f50e",
+      "bytes": 1976
+    },
+    {
+      "path": "diagrams/runtime/03-builtintool-missing.visual-check.json",
+      "sha256": "09f6e131080f87a022c04af72c3627e3f9d04af3fa470e93e08f6a745907e87e",
+      "bytes": 16973
+    },
+    {
+      "path": "diagrams/runtime/03-builtintool-ready.html",
+      "sha256": "a7c1034696a7cf9324a3f89031003241f7312fe6462b629d80df85b84732a2e9",
+      "bytes": 703891
+    },
+    {
+      "path": "diagrams/runtime/03-builtintool-ready.json",
+      "sha256": "ff1d9b26441512028b49d79260cf7ec7fa8de2d03f868a7308825912611f7c54",
+      "bytes": 2087
+    },
+    {
+      "path": "diagrams/runtime/03-builtintool-ready.visual-check.1440x900.dark.png",
+      "sha256": "64b254b6a25d12466742de8c5fcd7bc19dc8d8046c390c33de4d36e68ffd5b79",
+      "bytes": 89969
+    },
+    {
+      "path": "diagrams/runtime/03-builtintool-ready.visual-check.1440x900.light.png",
+      "sha256": "758f246b04656e72f5de698f48586db31cbe51fb5c6e11a2e606b2e1c493ee42",
+      "bytes": 89357
+    },
+    {
+      "path": "diagrams/runtime/03-builtintool-ready.visual-check.2048x1320.dark.png",
+      "sha256": "2bac467315a089973443e3516b3211886d6a2ce835d8fca6e27cac375dc0b06e",
+      "bytes": 110316
+    },
+    {
+      "path": "diagrams/runtime/03-builtintool-ready.visual-check.2048x1320.light.png",
+      "sha256": "a9532e5a9051ede904e692e2bcf4406018568fa1fce61b79c48753a5024cdc1b",
+      "bytes": 110174
+    },
+    {
+      "path": "diagrams/runtime/03-builtintool-ready.visual-check.html",
+      "sha256": "17953994dc8529cbb3eda09b7b98bf3b2f40d153e8c9e34017853ba3c02fbf68",
+      "bytes": 1964
+    },
+    {
+      "path": "diagrams/runtime/03-builtintool-ready.visual-check.json",
+      "sha256": "0ecb82671d1de394eafa5265d4713169172d6af5f00814b31942561ab98d4fc8",
+      "bytes": 16957
+    },
+    {
+      "path": "diagrams/runtime/04-assembly-failure.html",
+      "sha256": "846042b572940dd9701cfff2826e6d116cc44defc32a36cf15b4e869b845392b",
+      "bytes": 705399
+    },
+    {
+      "path": "diagrams/runtime/04-assembly-failure.json",
+      "sha256": "d51f9bc047dab0d0f8b07f6bda0d789aa660e4df653c7b40f7bdd8f0493d2222",
+      "bytes": 2425
+    },
+    {
+      "path": "diagrams/runtime/04-assembly-failure.visual-check.1440x900.dark.png",
+      "sha256": "9032e17eeb2068100d11ccd14ba87c0a2203817a74d3d6293e77bd2c85ddedaf",
+      "bytes": 103571
+    },
+    {
+      "path": "diagrams/runtime/04-assembly-failure.visual-check.1440x900.light.png",
+      "sha256": "6e2b6cdbf6fe30a8a9ed4cf61d96a4c5328ce1900ae49309765fc87f1c8c99c2",
+      "bytes": 102466
+    },
+    {
+      "path": "diagrams/runtime/04-assembly-failure.visual-check.2048x1320.dark.png",
+      "sha256": "ace1c0e8c8c511600eee0027f780005ddfe5ff3d7b1ae307be7ff9dc523d5783",
+      "bytes": 116701
+    },
+    {
+      "path": "diagrams/runtime/04-assembly-failure.visual-check.2048x1320.light.png",
+      "sha256": "2df24c1c11759aafcc1899eabbb5c108e22ca14017a63d49d8e36f0f4bec2c44",
+      "bytes": 115763
+    },
+    {
+      "path": "diagrams/runtime/04-assembly-failure.visual-check.html",
+      "sha256": "7ce636c28a3c9efba532468d3fa87c9e48604f5bc1a260e68990f084a97af695",
+      "bytes": 1958
+    },
+    {
+      "path": "diagrams/runtime/04-assembly-failure.visual-check.json",
+      "sha256": "b438fb92efb20c02750ecdbc084bf76af737c11eced58a8b53fe1774b7e82409",
+      "bytes": 16949
+    },
+    {
+      "path": "diagrams/runtime/04-assembly-ready.html",
+      "sha256": "6dfb4c0ea841003ab7498123d9d1273c72d5f83bb2173de5389f132e75db6539",
+      "bytes": 714222
+    },
+    {
+      "path": "diagrams/runtime/04-assembly-ready.json",
+      "sha256": "1c41889e61573fdce50f5708c1111cb70cf5e9de7dfc91e90c086d6a349e3f43",
+      "bytes": 4114
+    },
+    {
+      "path": "diagrams/runtime/04-assembly-ready.visual-check.1440x900.dark.png",
+      "sha256": "73069c520de4ee600b3291892e24a34c495543696383cd291dec02834c9d9b38",
+      "bytes": 115764
+    },
+    {
+      "path": "diagrams/runtime/04-assembly-ready.visual-check.1440x900.light.png",
+      "sha256": "c4f15dd1c558b010b3ed00c770d00759f2a921e9888ba8946a1c3f3216fe8457",
+      "bytes": 113348
+    },
+    {
+      "path": "diagrams/runtime/04-assembly-ready.visual-check.2048x1320.dark.png",
+      "sha256": "4df5e21ea140b93fe3b759d5d16a5139cb02fae63adf30847830a97ca4c8ddbc",
+      "bytes": 163467
+    },
+    {
+      "path": "diagrams/runtime/04-assembly-ready.visual-check.2048x1320.light.png",
+      "sha256": "aaa9110b82c37442430f8748d50bf2ea42378ea1a6fed104cb605622cb0c50b8",
+      "bytes": 161446
+    },
+    {
+      "path": "diagrams/runtime/04-assembly-ready.visual-check.html",
+      "sha256": "dc7e05886a2cc53e964efb9c75414bd0841d4bc51766303ec3232dcc382a9624",
+      "bytes": 1946
+    },
+    {
+      "path": "diagrams/runtime/04-assembly-ready.visual-check.json",
+      "sha256": "7e49ec77d1e6d042145cc39401bf34adeceb94fd28a01df9d1f6916927fde0af",
+      "bytes": 17197
+    },
+    {
+      "path": "diagrams/runtime/04-local-session.html",
+      "sha256": "dec0a194b3c4ff97883d560c25df93e357bc523273f587b94d29224a597e1976",
+      "bytes": 704777
+    },
+    {
+      "path": "diagrams/runtime/04-local-session.json",
+      "sha256": "865b8450f5cbedce6ef432f2c0a2be7b30d7ecc42549f88632e6ccbb8b7f317f",
+      "bytes": 2010
+    },
+    {
+      "path": "diagrams/runtime/04-local-session.visual-check.1440x900.dark.png",
+      "sha256": "79b5e4baaab72004fe4b772a81ca0babcf749b157dd53928cbba75ec155e62dd",
+      "bytes": 81579
+    },
+    {
+      "path": "diagrams/runtime/04-local-session.visual-check.1440x900.light.png",
+      "sha256": "85aba958ec9bdc2d18dd1262651fefdc322de0ae2a6767db9fe81fae68a66b77",
+      "bytes": 81646
+    },
+    {
+      "path": "diagrams/runtime/04-local-session.visual-check.2048x1320.dark.png",
+      "sha256": "6ac70ce8733c077f717642956cb7ce25aa2cebb0b20ef89c664952a0dfe8bf91",
+      "bytes": 98558
+    },
+    {
+      "path": "diagrams/runtime/04-local-session.visual-check.2048x1320.light.png",
+      "sha256": "c7c05f9d000a3b4ad61b0849f6a37799e308ccdb464e9a31b3302ba0778616ad",
+      "bytes": 98240
+    },
+    {
+      "path": "diagrams/runtime/04-local-session.visual-check.html",
+      "sha256": "fd35477c343a2aae4e8b1ca284b6b1cd4936266a13c2c0dfff83905a4a6068c5",
+      "bytes": 1940
+    },
+    {
+      "path": "diagrams/runtime/04-local-session.visual-check.json",
+      "sha256": "392720c2b12d0bd4acc6b93e3fe8c9e8bfed59bba81ebc7a2c8c2c878f9e3ba2",
+      "bytes": 16877
+    },
+    {
+      "path": "diagrams/runtime/04-official-new-version.html",
+      "sha256": "1231a1ce5d68d2a20a3a2cd1cba3bc16e6ad422a9710f2fd381767db33287226",
+      "bytes": 704813
+    },
+    {
+      "path": "diagrams/runtime/04-official-new-version.json",
+      "sha256": "70a58e318524d0f7398f2528357ab82e35dcc4ea43f514c77c3050df518c66d4",
+      "bytes": 2039
+    },
+    {
+      "path": "diagrams/runtime/04-official-new-version.visual-check.1440x900.dark.png",
+      "sha256": "4cf04d0619ef03915fb3bcb60ce02599c97fb976853772725a00c8826b31e130",
+      "bytes": 85586
+    },
+    {
+      "path": "diagrams/runtime/04-official-new-version.visual-check.1440x900.light.png",
+      "sha256": "645aa0f5ce1f2e86b68deda4df2623b6763c3121a13f474efb3096262f5b18d0",
+      "bytes": 85256
+    },
+    {
+      "path": "diagrams/runtime/04-official-new-version.visual-check.2048x1320.dark.png",
+      "sha256": "e993039848d3e2d5abd6729fdaeae1da34a63cbfcdeeabf455cbf048ab79a008",
+      "bytes": 102375
+    },
+    {
+      "path": "diagrams/runtime/04-official-new-version.visual-check.2048x1320.light.png",
+      "sha256": "6364b3f27c1b43075b13be69d55634ce040a4f06b52aac95d032988738ef9ac9",
+      "bytes": 101876
+    },
+    {
+      "path": "diagrams/runtime/04-official-new-version.visual-check.html",
+      "sha256": "907a9bf7c9bb9c7ed6403b0a55d3c95de8135b0b3c24d67737ab3251e98c3623",
+      "bytes": 1982
+    },
+    {
+      "path": "diagrams/runtime/04-official-new-version.visual-check.json",
+      "sha256": "4d1c8da0607469574064fd6188417116a31776bf37caceede89a6f49cf22e6bf",
+      "bytes": 16933
+    },
+    {
+      "path": "diagrams/runtime/05-update-busy.html",
+      "sha256": "30d8cd9d2519e5193ec8e6814dbf106c08adfb0716452c53d7adfd8495f78d9b",
+      "bytes": 702486
+    },
+    {
+      "path": "diagrams/runtime/05-update-busy.json",
+      "sha256": "0c917a6adab74e2ebaf8f5e7bab798939ca0826f433b127cc66ceeb65b4c57d1",
+      "bytes": 1776
+    },
+    {
+      "path": "diagrams/runtime/05-update-busy.visual-check.1440x900.dark.png",
+      "sha256": "1221e693ad5c5f49e4b59ead80654daf2ae8f40180758c79126cc3e2f5c3542a",
+      "bytes": 79049
+    },
+    {
+      "path": "diagrams/runtime/05-update-busy.visual-check.1440x900.light.png",
+      "sha256": "a1a288f56944f2b443bc5925f83b551fd9a1ccee397830d4a36da70b01b296bf",
+      "bytes": 78992
+    },
+    {
+      "path": "diagrams/runtime/05-update-busy.visual-check.2048x1320.dark.png",
+      "sha256": "8a91fde0e8df77e57aec2be00431ce5c98e74199b3feff83260b2e6211a33fee",
+      "bytes": 89742
+    },
+    {
+      "path": "diagrams/runtime/05-update-busy.visual-check.2048x1320.light.png",
+      "sha256": "3bee0045db3391fd3a7d0cdd49b6f3441817bd2970451eaea4b154a2e46d3153",
+      "bytes": 89636
+    },
+    {
+      "path": "diagrams/runtime/05-update-busy.visual-check.html",
+      "sha256": "5962356a8d5d89e7a11cabb44e188ce93432dc6892240afefd7612ff16bff92b",
+      "bytes": 1928
+    },
+    {
+      "path": "diagrams/runtime/05-update-busy.visual-check.json",
+      "sha256": "de5b334f38683b6cb3bcfe99af2b575123abd016b7aaded75f9be63e458dc748",
+      "bytes": 16861
+    },
+    {
+      "path": "diagrams/runtime/05-update-rejected.html",
+      "sha256": "4a3980fe0da465d341531b0f8719ce6b14d0a4326ad0b7747cebe56acf16236a",
+      "bytes": 700371
+    },
+    {
+      "path": "diagrams/runtime/05-update-rejected.json",
+      "sha256": "19bbdc70c6da485865adf1b35cd58457ff70363ea35341e4ed5e61fba3ca84f1",
+      "bytes": 1245
+    },
+    {
+      "path": "diagrams/runtime/05-update-rejected.visual-check.1440x900.dark.png",
+      "sha256": "d7449d874cc44502bc278d13bf90be6cd0a06f28e0daf348a132a7fbed5b9902",
+      "bytes": 66252
+    },
+    {
+      "path": "diagrams/runtime/05-update-rejected.visual-check.1440x900.light.png",
+      "sha256": "935fadcf337f0b38be85e5ee011248eba92a709e68dfe1abfa1ee79aa8564ea7",
+      "bytes": 66467
+    },
+    {
+      "path": "diagrams/runtime/05-update-rejected.visual-check.2048x1320.dark.png",
+      "sha256": "4229d28d0462e754eab6c8de5cc9e006fe27736381ea4bb48391e6610da9f2eb",
+      "bytes": 74561
+    },
+    {
+      "path": "diagrams/runtime/05-update-rejected.visual-check.2048x1320.light.png",
+      "sha256": "f12509e1778f72f4609df2a0b7cd50ab73475dcedb8b27f9a3c157b61fcdbda7",
+      "bytes": 74559
+    },
+    {
+      "path": "diagrams/runtime/05-update-rejected.visual-check.html",
+      "sha256": "cbf076de086a11b894297c347178eeff17f50ffdc50fd08792484a2b3c6ec9cf",
+      "bytes": 1952
+    },
+    {
+      "path": "diagrams/runtime/05-update-rejected.visual-check.json",
+      "sha256": "f77c1b0318429deffc8921235fe523e091a39fcb6619fb1076a4f4d2f435e3f1",
+      "bytes": 16893
+    },
+    {
+      "path": "diagrams/runtime/05-update-success.html",
+      "sha256": "559114466bc9db2d7670811bc338b9657f3f20cdb7ebb53f37aa382ae574afd6",
+      "bytes": 705433
+    },
+    {
+      "path": "diagrams/runtime/05-update-success.json",
+      "sha256": "41eca5b98b62b75185907edc9c279ee9c736d08ac7d56abd9983880c7e793fbf",
+      "bytes": 2174
+    },
+    {
+      "path": "diagrams/runtime/05-update-success.visual-check.1440x900.dark.png",
+      "sha256": "1059b16404eb6ffbe013f0e3c2a4555257eb5ce88b1ad209393ca5f4742234db",
+      "bytes": 86751
+    },
+    {
+      "path": "diagrams/runtime/05-update-success.visual-check.1440x900.light.png",
+      "sha256": "c105f7787807d3d6d2783fe474b80db5b94375f363609139623a243a60123880",
+      "bytes": 86453
+    },
+    {
+      "path": "diagrams/runtime/05-update-success.visual-check.2048x1320.dark.png",
+      "sha256": "d111c5c5a47afdfdca56cd3111507fb6b38b83994992279ff755509828218f3b",
+      "bytes": 103175
+    },
+    {
+      "path": "diagrams/runtime/05-update-success.visual-check.2048x1320.light.png",
+      "sha256": "188e1f38fbe49f27b625b7d096c055327e8fe15bf50a62231d55a24d0113bbda",
+      "bytes": 102116
+    },
+    {
+      "path": "diagrams/runtime/05-update-success.visual-check.html",
+      "sha256": "cda2f057b7bff6ed07977f26303cfec00d8d28ed044389395ee8a21d23225806",
+      "bytes": 1946
+    },
+    {
+      "path": "diagrams/runtime/05-update-success.visual-check.json",
+      "sha256": "dc02f0e34f49ba5a73f4f56fe53f86848f68e71c0407819003ed6bcd4e7a23b8",
+      "bytes": 16885
+    },
+    {
+      "path": "diagrams/runtime/06-cache-ready.html",
+      "sha256": "857b61747b3068fd1cfe57343ac53566d7f390ebd24a8b70c1355ef49b3c9c2b",
+      "bytes": 704125
+    },
+    {
+      "path": "diagrams/runtime/06-cache-ready.json",
+      "sha256": "3f56ede751ae9d2fe0130855ac11891477144a38e669250f56d17adda4b9d34f",
+      "bytes": 1893
+    },
+    {
+      "path": "diagrams/runtime/06-cache-ready.visual-check.1440x900.dark.png",
+      "sha256": "cb79689d02f3f8c4211f9a9dd1cb42cdaad682e8b9145037c77b9e8f25f1a14b",
+      "bytes": 83976
+    },
+    {
+      "path": "diagrams/runtime/06-cache-ready.visual-check.1440x900.light.png",
+      "sha256": "4024c64a7f4097caf7c383e6932f9a6a5a5e9f780ec0b886fdd66dab7d3a9ec2",
+      "bytes": 83833
+    },
+    {
+      "path": "diagrams/runtime/06-cache-ready.visual-check.2048x1320.dark.png",
+      "sha256": "33487e158361bec20b2adc82317f7d718cc5daee52f3a7b6a8d0a3a2b0da8262",
+      "bytes": 99942
+    },
+    {
+      "path": "diagrams/runtime/06-cache-ready.visual-check.2048x1320.light.png",
+      "sha256": "bfc571104b6850ee2dea9633916abaef5ca9027917fdfe3832a536cb37087193",
+      "bytes": 99765
+    },
+    {
+      "path": "diagrams/runtime/06-cache-ready.visual-check.html",
+      "sha256": "2ff9040ed81d33034bf745eda5287b47a38776efbd6323e5d0466a12b9850700",
+      "bytes": 1928
+    },
+    {
+      "path": "diagrams/runtime/06-cache-ready.visual-check.json",
+      "sha256": "80e7d308786952e1ba595a77017cd597d9ec3c883340a0de9cdcf1f7ebeedd6e",
+      "bytes": 17053
+    },
+    {
+      "path": "diagrams/runtime/06-download-missing.html",
+      "sha256": "fc19fd146ea050d3c42c87649c072ef918896ab5ef95a0e44f421a04f35e318b",
+      "bytes": 704874
+    },
+    {
+      "path": "diagrams/runtime/06-download-missing.json",
+      "sha256": "34ec8ddc9d32940cf6c117ad8b5013b8b66ccb2b94642310d62e6fa295c3a21b",
+      "bytes": 2087
+    },
+    {
+      "path": "diagrams/runtime/06-download-missing.visual-check.1440x900.dark.png",
+      "sha256": "a8b9cfe49f74adbd87a44621e0f0a423bfb8046305366f9683bdd2544841124c",
+      "bytes": 90294
+    },
+    {
+      "path": "diagrams/runtime/06-download-missing.visual-check.1440x900.light.png",
+      "sha256": "b259d9472f82fea84fbeebb0129204316920e2f97b62349d883d79203333bef5",
+      "bytes": 90376
+    },
+    {
+      "path": "diagrams/runtime/06-download-missing.visual-check.2048x1320.dark.png",
+      "sha256": "0cc4cf63a799c577ed0b7b03e3ddcc4715c5a50a699078f91f703ed7efcffa55",
+      "bytes": 109137
+    },
+    {
+      "path": "diagrams/runtime/06-download-missing.visual-check.2048x1320.light.png",
+      "sha256": "9a51b52b805e087a526d27af07539fcb24c7a3b0c690bf4d933f80487b1c5229",
+      "bytes": 109105
+    },
+    {
+      "path": "diagrams/runtime/06-download-missing.visual-check.html",
+      "sha256": "cdbbaaaebce0cf0ca154c5c11b1f43be38a7bf57e1f4a99305ee225bc28eafc3",
+      "bytes": 1958
+    },
+    {
+      "path": "diagrams/runtime/06-download-missing.visual-check.json",
+      "sha256": "625276bd07f92b0ae56911ac37bf620dc50e6ea1ed9d4bb04f26e268ff37204e",
+      "bytes": 17093
+    },
+    {
+      "path": "diagrams/runtime/06-sync-failure.html",
+      "sha256": "20bf70d92e5957a90e3ecadf90ba211365819196b7d0e4be3e3a9e1f62fe5456",
+      "bytes": 702643
+    },
+    {
+      "path": "diagrams/runtime/06-sync-failure.json",
+      "sha256": "e75bf9fc994cc62d7b79e4e4f8453a3cf9bb96046b03f8c4ce19ce90a7df2a2c",
+      "bytes": 1553
+    },
+    {
+      "path": "diagrams/runtime/06-sync-failure.visual-check.1440x900.dark.png",
+      "sha256": "e1801ad74a70a7790c2cd5d3fdcd05f3e2c20b4b945b761d74991f266d70439a",
+      "bytes": 77580
+    },
+    {
+      "path": "diagrams/runtime/06-sync-failure.visual-check.1440x900.light.png",
+      "sha256": "6297c322fbe9ca7cd15e8abd39b24126a8320cb9ee122a648d49b45022fc2362",
+      "bytes": 77831
+    },
+    {
+      "path": "diagrams/runtime/06-sync-failure.visual-check.2048x1320.dark.png",
+      "sha256": "0cd22b695f077df70effe58930c83affc4aac8337a261f4f95445140430db9c0",
+      "bytes": 91553
+    },
+    {
+      "path": "diagrams/runtime/06-sync-failure.visual-check.2048x1320.light.png",
+      "sha256": "314ed77c2a4346ee61ca44f1588839ad199cccc9a28fe451ef66e7dd156922fe",
+      "bytes": 91732
+    },
+    {
+      "path": "diagrams/runtime/06-sync-failure.visual-check.html",
+      "sha256": "8e2e9a535888029723439eb5c2be67060999927cba4e4c54e5f7bc4fd8ccc63f",
+      "bytes": 1934
+    },
+    {
+      "path": "diagrams/runtime/06-sync-failure.visual-check.json",
+      "sha256": "cf58c112ec3b602a452e9c23e1c083a0f0d929e14cde2fa341423aa2a8021c80",
+      "bytes": 17061
+    },
+    {
+      "path": "diagrams/runtime/07-busy.html",
+      "sha256": "1bbdcbdc2cb1ad934338ad0dd76b4eda44f463963db5aee2783b57c09e92a174",
+      "bytes": 701132
+    },
+    {
+      "path": "diagrams/runtime/07-busy.json",
+      "sha256": "608058e67102321f22bf648e3671481d7de2f6cfe5f7d6a593dcc89cf9a251aa",
+      "bytes": 1686
+    },
+    {
+      "path": "diagrams/runtime/07-busy.visual-check.1440x900.dark.png",
+      "sha256": "2657d11d321d1b16712489dc63efdbdd40c15da984cc0133ffb35b1cdb9a9ca4",
+      "bytes": 77977
+    },
+    {
+      "path": "diagrams/runtime/07-busy.visual-check.1440x900.light.png",
+      "sha256": "3015c829c1cfd42985ad388b81f21a2d948562eccedb6156ae8383c76bbd2b33",
+      "bytes": 78167
+    },
+    {
+      "path": "diagrams/runtime/07-busy.visual-check.2048x1320.dark.png",
+      "sha256": "249ff3bbf83c9794e62a7a6d57e89eb382aaadd0787cb19ce51e231ca3b7290b",
+      "bytes": 95453
+    },
+    {
+      "path": "diagrams/runtime/07-busy.visual-check.2048x1320.light.png",
+      "sha256": "dd615d3c163e81f995914babddb21127ba67f31db67e160b3bb26f7ad15a9cff",
+      "bytes": 95978
+    },
+    {
+      "path": "diagrams/runtime/07-busy.visual-check.html",
+      "sha256": "da688034f470d6188598b4c40cf4365c8c08837525472902d7c35f50f558f635",
+      "bytes": 1886
+    },
+    {
+      "path": "diagrams/runtime/07-busy.visual-check.json",
+      "sha256": "aaa19bf7750985327c03c05f90b7687e8852325c3c53fe191a9cb57d8ee4a04d",
+      "bytes": 17045
+    },
+    {
+      "path": "diagrams/runtime/07-cancel.html",
+      "sha256": "46ceb9df0d6a4d6f0315bb629b4cb8a0cf02bf450cb9f50bb97b314ee0819b39",
+      "bytes": 704005
+    },
+    {
+      "path": "diagrams/runtime/07-cancel.json",
+      "sha256": "f87990ba417b45ad7e2972ecc290c32182dbff431c08a422438c32e74b0b4c77",
+      "bytes": 2146
+    },
+    {
+      "path": "diagrams/runtime/07-cancel.visual-check.1440x900.dark.png",
+      "sha256": "442f660301264be08b7322bac85f97fca04de501fffbd5d3133fb4d0e672279d",
+      "bytes": 89465
+    },
+    {
+      "path": "diagrams/runtime/07-cancel.visual-check.1440x900.light.png",
+      "sha256": "c370019d7cab126cba252e56bf9edf93fe653ae2d7008f85a8e433898397fdc3",
+      "bytes": 88808
+    },
+    {
+      "path": "diagrams/runtime/07-cancel.visual-check.2048x1320.dark.png",
+      "sha256": "70250afc72420fa0692445f5277150eb0a09786bec21412d1c94f6fabc59b75e",
+      "bytes": 111249
+    },
+    {
+      "path": "diagrams/runtime/07-cancel.visual-check.2048x1320.light.png",
+      "sha256": "b90999e5df1f942db925463719a13824da5b6b38385b3769e57ef588bc0b9bdf",
+      "bytes": 111518
+    },
+    {
+      "path": "diagrams/runtime/07-cancel.visual-check.html",
+      "sha256": "219442a8b2f659566d24a34b858efc1e3573217a1e1a6dc4358a4eee46e84e9a",
+      "bytes": 1898
+    },
+    {
+      "path": "diagrams/runtime/07-cancel.visual-check.json",
+      "sha256": "975845450819af826d23f8bca18630e4b49714e8e61593c21f5acf31ef3b2a8c",
+      "bytes": 16869
+    },
+    {
+      "path": "diagrams/runtime/07-disconnect.html",
+      "sha256": "b0a002e0dbb7775886d8ed1627bd5fd226932b2683b30d807659c3d94e0185a9",
+      "bytes": 704637
+    },
+    {
+      "path": "diagrams/runtime/07-disconnect.json",
+      "sha256": "ac340c4ba80074c08597536f767d0095524d129f51c20702a537db411637a8a1",
+      "bytes": 2362
+    },
+    {
+      "path": "diagrams/runtime/07-disconnect.visual-check.1440x900.dark.png",
+      "sha256": "b763baf2b8654a7bd97232a3cf45fba1e9d0bbe46fc8796a3ae69885e2edb201",
+      "bytes": 91996
+    },
+    {
+      "path": "diagrams/runtime/07-disconnect.visual-check.1440x900.light.png",
+      "sha256": "30cebc3f836b9281f2ce7ba2b079ecd8ffa14c0703cea49a2f9e0b17bc1ba746",
+      "bytes": 91341
+    },
+    {
+      "path": "diagrams/runtime/07-disconnect.visual-check.2048x1320.dark.png",
+      "sha256": "46235c2ab1b8cdd6f42a02c34d04fbdb3f8a9a1e83d9efa60ffeb8785dccdb4a",
+      "bytes": 113856
+    },
+    {
+      "path": "diagrams/runtime/07-disconnect.visual-check.2048x1320.light.png",
+      "sha256": "fbad89fe8bd1282c9e00fec0a7c3bb16ec53107a59c0e9f07e8095267e6571e9",
+      "bytes": 114103
+    },
+    {
+      "path": "diagrams/runtime/07-disconnect.visual-check.html",
+      "sha256": "10dcbc2fa47844883460277f68e6381b45d3283578f6fe5e9f633580f36ddbab",
+      "bytes": 1922
+    },
+    {
+      "path": "diagrams/runtime/07-disconnect.visual-check.json",
+      "sha256": "9ac97248e7c4da926c425b5c4e5cf170192bfe7da0ae1239a64bb92d4d06cb96",
+      "bytes": 16997
+    },
+    {
+      "path": "diagrams/runtime/07-login.html",
+      "sha256": "353658489451d2a2ff42622f92b53dea2a4b909ce9c59eaeda4b9b002c69ce7f",
+      "bytes": 704086
+    },
+    {
+      "path": "diagrams/runtime/07-login.json",
+      "sha256": "aaaf56a4bbff8e7aeec65b71cb207187fa53c0d96a65ab2f6b3e04fdd9e4b3f4",
+      "bytes": 2208
+    },
+    {
+      "path": "diagrams/runtime/07-login.visual-check.1440x900.dark.png",
+      "sha256": "1c5841fe6bfb19b19f37cc8cce94723bf793f971230989c65b02e89de020c647",
+      "bytes": 91855
+    },
+    {
+      "path": "diagrams/runtime/07-login.visual-check.1440x900.light.png",
+      "sha256": "cd294820fec2cdbe07c1ff6eb74e2496eee4c02d921e2db3cc7d2b9747fc81eb",
+      "bytes": 91640
+    },
+    {
+      "path": "diagrams/runtime/07-login.visual-check.2048x1320.dark.png",
+      "sha256": "80dfeeb6874b372f88dab9bbb122acd20f1ec9aa75515fbdf739ca063a26a6c8",
+      "bytes": 112810
+    },
+    {
+      "path": "diagrams/runtime/07-login.visual-check.2048x1320.light.png",
+      "sha256": "9eb5ae70fed799db5fc25326a6efdd45ec497edb46023fbf9425e029075e0d3d",
+      "bytes": 113245
+    },
+    {
+      "path": "diagrams/runtime/07-login.visual-check.html",
+      "sha256": "b42a219d57bc06e960581dd2a98b2a723597508790be2f975440b057e668d144",
+      "bytes": 1892
+    },
+    {
+      "path": "diagrams/runtime/07-login.visual-check.json",
+      "sha256": "68de4563d805c67b5e4670e7c3bf6316cab37552df69e5f2158fce1c844d455d",
+      "bytes": 16813
+    },
+    {
+      "path": "diagrams/runtime/07-restart-complete.html",
+      "sha256": "0b219dffa3cb84fe8c0aee3eb9ef7c76c79fcbfc4b99c18811128bca2aedcace",
+      "bytes": 704083
+    },
+    {
+      "path": "diagrams/runtime/07-restart-complete.json",
+      "sha256": "7559356bbe9e9bb16798c1b631ecb606748967964ea8601b29bf0dc0c6921def",
+      "bytes": 2187
+    },
+    {
+      "path": "diagrams/runtime/07-restart-complete.visual-check.1440x900.dark.png",
+      "sha256": "b663b2633e51149ebb741fba6b71d55154d0d7f164e7cfd507880177c105c39f",
+      "bytes": 86044
+    },
+    {
+      "path": "diagrams/runtime/07-restart-complete.visual-check.1440x900.light.png",
+      "sha256": "769ca1c9009c82da1551a2fb2bd9c2762f9b67f2ed2fe5bbf6807d6463426fc9",
+      "bytes": 85444
+    },
+    {
+      "path": "diagrams/runtime/07-restart-complete.visual-check.2048x1320.dark.png",
+      "sha256": "39fd3ed842e34f55dca6acc4050af535a6609553d56cfe5fec37c8b38eec4567",
+      "bytes": 105858
+    },
+    {
+      "path": "diagrams/runtime/07-restart-complete.visual-check.2048x1320.light.png",
+      "sha256": "f9f55f2a937b47e1905ea78672c07ece6a370bc2c92f7f3f5f2a0d247351c2c5",
+      "bytes": 106286
+    },
+    {
+      "path": "diagrams/runtime/07-restart-complete.visual-check.html",
+      "sha256": "7e3e2161d3afdf1db7c5bc5f1fe7f75096fa5495b81ce74fd10826f9ca785444",
+      "bytes": 1958
+    },
+    {
+      "path": "diagrams/runtime/07-restart-complete.visual-check.json",
+      "sha256": "e39167c34c4d97548bc8c3a3d60996280c04565f4dabd29d4ace946ce5edbca9",
+      "bytes": 16901
+    },
+    {
+      "path": "diagrams/runtime/07-restart-incomplete.html",
+      "sha256": "11df73d9bf39c2b15e06d7939ac9ad81eccf060063075f8faee45d6f27e16387",
+      "bytes": 704170
+    },
+    {
+      "path": "diagrams/runtime/07-restart-incomplete.json",
+      "sha256": "df005105a0b9533309f2872af8a3c6587fd331624fb34fdb57b2137511e2a0e6",
+      "bytes": 2231
+    },
+    {
+      "path": "diagrams/runtime/07-restart-incomplete.visual-check.1440x900.dark.png",
+      "sha256": "3d1dbf4b3c8f0277d25009bde45458a4d9deef4d62810bc9e30e953e9b3bd6bc",
+      "bytes": 88227
+    },
+    {
+      "path": "diagrams/runtime/07-restart-incomplete.visual-check.1440x900.light.png",
+      "sha256": "cefd74c98e8fa845165e042664ede06632d998cc673ad152190a3478cd81fe87",
+      "bytes": 87799
+    },
+    {
+      "path": "diagrams/runtime/07-restart-incomplete.visual-check.2048x1320.dark.png",
+      "sha256": "af983715893f360f9dbe2909a16d9bac03996fc135b370331fff0c3aa5e34ade",
+      "bytes": 109749
+    },
+    {
+      "path": "diagrams/runtime/07-restart-incomplete.visual-check.2048x1320.light.png",
+      "sha256": "18a43bb45c07dcc4636340b876e2ac5b4ba849f8e359e12489df5ff9fe94c449",
+      "bytes": 110034
+    },
+    {
+      "path": "diagrams/runtime/07-restart-incomplete.visual-check.html",
+      "sha256": "ff025d1ea1e3e0ee06bcb58bc6cdcdbb86df4b98dcae3e68d90e5972de1d86b8",
+      "bytes": 1970
+    },
+    {
+      "path": "diagrams/runtime/07-restart-incomplete.visual-check.json",
+      "sha256": "f06b78e818cb0ee6a0ae390883fe4572cf03a12596916304958b4e638a3c9d34",
+      "bytes": 16917
+    },
+    {
+      "path": "diagrams/runtime/07-timeout.html",
+      "sha256": "eab154e2b921093aee300203f06943f281a0d427960b2955db6c49f3ce38dca7",
+      "bytes": 702533
+    },
+    {
+      "path": "diagrams/runtime/07-timeout.json",
+      "sha256": "12403b97ec5e2ce78c431be9e1ecbebee4b881adb0bad2815ec3bcc9a107aca9",
+      "bytes": 1831
+    },
+    {
+      "path": "diagrams/runtime/07-timeout.visual-check.1440x900.dark.png",
+      "sha256": "e8492c56a6df3c46d8fc274a637f4373ff34a29ec3cec65b9ac430d9d20fea07",
+      "bytes": 84854
+    },
+    {
+      "path": "diagrams/runtime/07-timeout.visual-check.1440x900.light.png",
+      "sha256": "63dc84b6ea75a5c5fb7fa041f34d46c21a9528193beb350be8ea07b031718920",
+      "bytes": 84602
+    },
+    {
+      "path": "diagrams/runtime/07-timeout.visual-check.2048x1320.dark.png",
+      "sha256": "51e808cffac2b2e50df56f22e1fa61280ab4bc6e5d4eacf75fe3cfa3db5697bc",
+      "bytes": 103361
+    },
+    {
+      "path": "diagrams/runtime/07-timeout.visual-check.2048x1320.light.png",
+      "sha256": "05998794de3acf40826e5db614b2b16074f7eb84d42e67879c11e6f2f96bb7a9",
+      "bytes": 103803
+    },
+    {
+      "path": "diagrams/runtime/07-timeout.visual-check.html",
+      "sha256": "b8ba7777c1bf994a2abedbb2685ca4531dc56cc87ab9624350f84fdfec524751",
+      "bytes": 1904
+    },
+    {
+      "path": "diagrams/runtime/07-timeout.visual-check.json",
+      "sha256": "65dfcc8b814bb0cf45ac036a2e0152b1766a1137c98304b21f7f335cee63cec7",
+      "bytes": 17021
+    },
+    {
       "path": "evidence/00-overview-browser-command.json",
       "sha256": "055ce5b9c08452166f763c828b3ae9741660535974153e02aa33c751371b2bd5",
       "bytes": 17181
@@ -866,6 +2533,11 @@
       "bytes": 3038
     },
     {
+      "path": "evidence/image-compression.json",
+      "sha256": "7471cd67c7119c674438b8f85423743c3f98082a25e3fce01abb98a9590ade2b",
+      "bytes": 570
+    },
+    {
       "path": "evidence/impeccable-detector.json",
       "sha256": "17a3d66e787d8ee305b1ab95ea209e532b9ba51979a0747686493c0de4e51310",
       "bytes": 2302
@@ -892,33 +2564,33 @@
     },
     {
       "path": "evidence/reader-redesign-browser.json",
-      "sha256": "8e9b269eacf03006f6d1bfd6775178daa68b312ad058276536734ad85358b4e5",
-      "bytes": 7261
+      "sha256": "2447cbc687cfc3eaeda20274dfb0d540fb1c03b94e967d5b5a6559491ce0dffd",
+      "bytes": 7424
     },
     {
       "path": "evidence/redesign-dark.png",
-      "sha256": "7623480a196caadb433fc22238ce912d3ffc404b2891fe13899c11a8254115eb",
-      "bytes": 118719
+      "sha256": "3eec8e18e1f2d478026b36bef4f3deb8e99d23df61306634e8002a6fe96b9760",
+      "bytes": 183869
     },
     {
       "path": "evidence/redesign-decisions.json",
-      "sha256": "4f4d36bfcd5ff7070829c336c4621f997ba8444af1b7ac80266d1c71d9cc3d5e",
-      "bytes": 1071
+      "sha256": "72b3f4cd3d9b36505feb5f0faab873c6b496797b3fe8956399c36ea74c0d57e7",
+      "bytes": 1313
     },
     {
-      "path": "evidence/redesign-desktop-full.png",
-      "sha256": "edd507871d6747fe140dea5b2483259e331fd19b1467f6ef2e47aafa44064902",
-      "bytes": 553578
+      "path": "evidence/redesign-desktop-full.webp",
+      "sha256": "ff5c7c0bc2995d556be43749fcc301ba062b837e6a69b6ebb931dc3f55a58f25",
+      "bytes": 425910
     },
     {
       "path": "evidence/redesign-desktop.png",
-      "sha256": "5a153192e7b27770c80436565eca99999c8a6ff831c34f6d7e73a6f101047e8d",
-      "bytes": 121460
+      "sha256": "a9487edc6e1b997516b49db586a5de3a85fd3f7c5c5a72cb60a59762572e4a07",
+      "bytes": 195055
     },
     {
       "path": "evidence/redesign-gap-table.png",
-      "sha256": "5fbadaa780e29618055db8ebe5a55eebfc74d0fa1f9841fb47b4cbc4fb4daac2",
-      "bytes": 199877
+      "sha256": "c87535d1cc4c54098b24443f3ea4288c3e7fe927ac19ffbd96b46a3215f3b749",
+      "bytes": 229623
     },
     {
       "path": "evidence/redesign-mcp-detail.png",
@@ -927,13 +2599,13 @@
     },
     {
       "path": "evidence/redesign-mobile-full.png",
-      "sha256": "3625e5f3ccf89dbffd62f787f3023c8c590feedadb3eb672cd02e86dc7e8693c",
-      "bytes": 492495
+      "sha256": "86f6a0b61a3b798c6b3c04ce16993a8deb98161e9027afb1d9ad4b3eba972bc2",
+      "bytes": 644291
     },
     {
       "path": "evidence/redesign-mobile.png",
-      "sha256": "ed71dd104d0d5bf676e2b0befc1f388369ff71d7136a528519782f0aee88b4f3",
-      "bytes": 100592
+      "sha256": "726c61d77b740c8815c552a71322d6f0c40e3a78d7da02b450b4b2a6f3c4532c",
+      "bytes": 97281
     },
     {
       "path": "evidence/redesign-review.json",
@@ -944,6 +2616,656 @@
       "path": "evidence/redesign-tool-detail.png",
       "sha256": "d39854c7f17b2f0b869f2c7df50d08995e6b8769c58e387b61ffffd8c9fe9ba4",
       "bytes": 170936
+    },
+    {
+      "path": "evidence/runtime/00-07-visual-review.json",
+      "sha256": "be7e6d7600a050b831b7d4aef265db57a0b0a24e31fc7b280d7958cd3cd1efd5",
+      "bytes": 9026
+    },
+    {
+      "path": "evidence/runtime/00-manual-deliver.json",
+      "sha256": "34049b2f828274321d760cfd41bd911b31ac80ce173395209e2e5219684c148e",
+      "bytes": 742
+    },
+    {
+      "path": "evidence/runtime/00-manual-review.png",
+      "sha256": "b65d07e6ff018c51978e51d223e60845ffb12e08021845374465f366275f1688",
+      "bytes": 335740
+    },
+    {
+      "path": "evidence/runtime/00-manual-validate.json",
+      "sha256": "c761e405ee9a8e0cdfaeaf8ad45d290185a5afdde54c345d9deea7c1f33ad73b",
+      "bytes": 1931
+    },
+    {
+      "path": "evidence/runtime/00-manual-visual-check.json",
+      "sha256": "8adb4be342da9d6468bd0cd735bc94bb945da3ad75d1727d7ba01544ca609785",
+      "bytes": 16821
+    },
+    {
+      "path": "evidence/runtime/00-remote-deliver.json",
+      "sha256": "cfbbe0a19e6fd654e0f65b6dc0dcc4396c3c922cb5bc860722f3c93a6b63dd18",
+      "bytes": 742
+    },
+    {
+      "path": "evidence/runtime/00-remote-review.png",
+      "sha256": "5814968f4f5a70c85ab87c9a18f5c50bb3baa16852a468fc176cea3b1a43fd90",
+      "bytes": 333230
+    },
+    {
+      "path": "evidence/runtime/00-remote-validate.json",
+      "sha256": "b3ef1090346e4f13936ab233d63aef9d6bd1991a29c6ee3c77471781948f5b7c",
+      "bytes": 1931
+    },
+    {
+      "path": "evidence/runtime/00-remote-visual-check.json",
+      "sha256": "ba92a17c6826f74bda778d9163dbacdc7e86b02bedfcc7278fd6fdc1347b1c53",
+      "bytes": 16869
+    },
+    {
+      "path": "evidence/runtime/00-weekly-evolution-delivery.json",
+      "sha256": "0c55053adbf68e18b7bc815cb1b0eefa9e98c9cc7932c550acfc040f2f6f9647",
+      "bytes": 762
+    },
+    {
+      "path": "evidence/runtime/00-weekly-evolution-review-1440x900.dark.png",
+      "sha256": "d9a79c10d8242f7be1636acf50133b5f05673de42ca5874d5bc60a3701f31837",
+      "bytes": 112138
+    },
+    {
+      "path": "evidence/runtime/00-weekly-evolution-review-2048x1320.light.png",
+      "sha256": "6dff3111496dbe2f202c7b54882f5891e9eaf10fede71977bfd93621cb84c75d",
+      "bytes": 146369
+    },
+    {
+      "path": "evidence/runtime/00-weekly-evolution-validation.json",
+      "sha256": "a8482c3a9e6e218289e4fb44e57b770ba54d5b29c3c8b7dcf10aa6d5b74b9aeb",
+      "bytes": 1939
+    },
+    {
+      "path": "evidence/runtime/00-weekly-evolution-visual-check.json",
+      "sha256": "bbced1f45ede5b87a0ee31df9b50d0d9b1f66fd6602566c9e03599802d9d5e29",
+      "bytes": 16997
+    },
+    {
+      "path": "evidence/runtime/00-weekly-evolution-visual-review.json",
+      "sha256": "23915b2cdddeb58ad66e9ac37dae61ab9dcb569f234653fe3e8ec472b737b44c",
+      "bytes": 1173
+    },
+    {
+      "path": "evidence/runtime/01-03-export-formatting.json",
+      "sha256": "4754210eab9b030b9399f44a453c7a45e1cf6ddacd851ad788d540c0e43e26a1",
+      "bytes": 2786
+    },
+    {
+      "path": "evidence/runtime/01-03-svg-exports.json",
+      "sha256": "ec1048f5878bf6159961a6a68dc40629c9c05852ede63f98c320240cc3977e4f",
+      "bytes": 1495
+    },
+    {
+      "path": "evidence/runtime/01-03-visual-review.json",
+      "sha256": "76eaa45d088d0980b0dbd3b13e8114d84860c47c560ce72ef404e04dcbb01297",
+      "bytes": 6591
+    },
+    {
+      "path": "evidence/runtime/01-skill-draft-upload-delivery.json",
+      "sha256": "33ee9a0f453bb48763c59cbf39e280d03bc54d984c08b8e62cb4d3bedafebf89",
+      "bytes": 766
+    },
+    {
+      "path": "evidence/runtime/01-skill-draft-upload-validation.json",
+      "sha256": "0c5c42c72d7002d30dae8331272f2890356bb15c8b23e4e93bc4b80cc04b8197",
+      "bytes": 1941
+    },
+    {
+      "path": "evidence/runtime/01-skill-draft-upload-visual-check.json",
+      "sha256": "407cd30eb04e7e0044755155109356149180d459a06558e41dedf125cd0087a3",
+      "bytes": 17013
+    },
+    {
+      "path": "evidence/runtime/01-skill-experiment-delivery.json",
+      "sha256": "38df0129bc11802113174cf7f38c9708f6446938aa8a9b79a83d870996ab6fd1",
+      "bytes": 762
+    },
+    {
+      "path": "evidence/runtime/01-skill-experiment-validation.json",
+      "sha256": "9a0c390d0186734d636ec048a88cf5a503d120fe63c057ca9f636bc5ed2c229b",
+      "bytes": 1941
+    },
+    {
+      "path": "evidence/runtime/01-skill-experiment-visual-check.json",
+      "sha256": "7141a84f61c8b6913363d83cc47e7f79f3f3ce088f2ad1b7c917d4f1e2f9d009",
+      "bytes": 16901
+    },
+    {
+      "path": "evidence/runtime/01-skill-file-conflict-delivery.json",
+      "sha256": "4e479b6b5229f3f3f9c6df7fe6aa93244d79b7194a4dae4d7cc255202f44b8dd",
+      "bytes": 768
+    },
+    {
+      "path": "evidence/runtime/01-skill-file-conflict-validation.json",
+      "sha256": "2bcfa7b3ce93a3e6ac3ebd8c14ddc88d163bffe2c799887b7299c8e260bdbc84",
+      "bytes": 1942
+    },
+    {
+      "path": "evidence/runtime/01-skill-file-conflict-visual-check.json",
+      "sha256": "22fe191ddfa6c1b17284517d6de45e2a5833932d39244fb953f9ee7ead777699",
+      "bytes": 17165
+    },
+    {
+      "path": "evidence/runtime/01-skill-file-upload-delivery.json",
+      "sha256": "b828b78926697830fe268f5649abd4500e1f16952c0451e24b69037d9d6e384c",
+      "bytes": 764
+    },
+    {
+      "path": "evidence/runtime/01-skill-file-upload-visual-check.json",
+      "sha256": "07d257e8f2fa58e74f72d2a063a734889624e9956d40b2f33552d5ca2f0745dd",
+      "bytes": 17149
+    },
+    {
+      "path": "evidence/runtime/01-skill-files-visual-review.json",
+      "sha256": "384de75c3a6e7fe7f3b83dcc00c5a19e3c6579fd008b1da5bd188cf61ed47be7",
+      "bytes": 1947
+    },
+    {
+      "path": "evidence/runtime/01-skill-publish-delivery.json",
+      "sha256": "958f7bec3cd287a3c3874a3f40d32c9f912218726a7e7bb9069c7036e550d37e",
+      "bytes": 756
+    },
+    {
+      "path": "evidence/runtime/01-skill-publish-validation.json",
+      "sha256": "5b1901292ab6b716631c645b23586e79626f458f0c4a5bfbf06692370da8aaaa",
+      "bytes": 1936
+    },
+    {
+      "path": "evidence/runtime/01-skill-publish-visual-check.json",
+      "sha256": "6a4be74af28b972d7036e853307260b8c722b2d130ed018a6b7f9dc1e366c49d",
+      "bytes": 16973
+    },
+    {
+      "path": "evidence/runtime/02-mcp-call-delivery.json",
+      "sha256": "4f2511e2bc36acc451ab3dd90c4d471cfdfb2187ba9c9733575a6c6044eea34f",
+      "bytes": 746
+    },
+    {
+      "path": "evidence/runtime/02-mcp-call-validation.json",
+      "sha256": "6a3184552fdc72596a7374f8f9e4c09893d7f04d35b834010d04a5feda40b18d",
+      "bytes": 1931
+    },
+    {
+      "path": "evidence/runtime/02-mcp-call-visual-check.json",
+      "sha256": "46ebc747c616522ced37d5a1c80c168299ca05a5f5b2803e428056f69ed79294",
+      "bytes": 16933
+    },
+    {
+      "path": "evidence/runtime/02-mcp-failure-delivery.json",
+      "sha256": "f75e2f4501a58088182d6b03cebbbc5014cc5a7be6a8c0874ed678253840fb9c",
+      "bytes": 752
+    },
+    {
+      "path": "evidence/runtime/02-mcp-failure-validation.json",
+      "sha256": "05adfb6d57be76ce528a0035eaa7193da65e62c2b08b6747ff05c4ee406e44bf",
+      "bytes": 1934
+    },
+    {
+      "path": "evidence/runtime/02-mcp-failure-visual-check.json",
+      "sha256": "a3b2f8e794cb1df287675c447fc3653f5331fb85440add82b5933aa6e53da75c",
+      "bytes": 16909
+    },
+    {
+      "path": "evidence/runtime/03-builtintool-missing-delivery.json",
+      "sha256": "bcb2243328e967896607ae7ffe29bc6b83814d66c5a01bcb5ed939a1bdbdd35a",
+      "bytes": 768
+    },
+    {
+      "path": "evidence/runtime/03-builtintool-missing-validation.json",
+      "sha256": "1500cadd8e1cccd3d171e13db9d4c717ba00989a52205f84cfd1b7828adbaaa7",
+      "bytes": 1942
+    },
+    {
+      "path": "evidence/runtime/03-builtintool-missing-visual-check.json",
+      "sha256": "09f6e131080f87a022c04af72c3627e3f9d04af3fa470e93e08f6a745907e87e",
+      "bytes": 16973
+    },
+    {
+      "path": "evidence/runtime/03-builtintool-ready-delivery.json",
+      "sha256": "588b9e4e23d0198640a97a449f1f5a4f9915c87faef37c7cc494efc0253ab3e8",
+      "bytes": 764
+    },
+    {
+      "path": "evidence/runtime/03-builtintool-ready-validation.json",
+      "sha256": "b0a02a21180388970015f0f71e44d44e0498dcd337860b517d02f82ea1f60b6c",
+      "bytes": 1942
+    },
+    {
+      "path": "evidence/runtime/03-builtintool-ready-visual-check.json",
+      "sha256": "0ecb82671d1de394eafa5265d4713169172d6af5f00814b31942561ab98d4fc8",
+      "bytes": 16957
+    },
+    {
+      "path": "evidence/runtime/04-05-06-svg-exports.json",
+      "sha256": "d4e0cf9fa504466532c5a6d27bcd01d783671de3bd607f260762fe8f5d469190",
+      "bytes": 4059
+    },
+    {
+      "path": "evidence/runtime/04-assembly-failure-delivery.json",
+      "sha256": "941faf79f1f8acb225191a884ae5de0a40343dbb1a25663b1907390d3be02b8d",
+      "bytes": 762
+    },
+    {
+      "path": "evidence/runtime/04-assembly-failure-review-1440x900.dark.png",
+      "sha256": "9032e17eeb2068100d11ccd14ba87c0a2203817a74d3d6293e77bd2c85ddedaf",
+      "bytes": 103571
+    },
+    {
+      "path": "evidence/runtime/04-assembly-failure-review-2048x1320.light.png",
+      "sha256": "2df24c1c11759aafcc1899eabbb5c108e22ca14017a63d49d8e36f0f4bec2c44",
+      "bytes": 115763
+    },
+    {
+      "path": "evidence/runtime/04-assembly-failure-validation.json",
+      "sha256": "3543ba496e4dec256cec4d39e1253308e953bc6e514bb3e15ce4341b65bea6d3",
+      "bytes": 1941
+    },
+    {
+      "path": "evidence/runtime/04-assembly-failure-visual-check.json",
+      "sha256": "b438fb92efb20c02750ecdbc084bf76af737c11eced58a8b53fe1774b7e82409",
+      "bytes": 16949
+    },
+    {
+      "path": "evidence/runtime/04-assembly-failure-visual-review.json",
+      "sha256": "740b5366432d69ea56d8bee803fec0677895aa59957c94d479a20a5c5131f1b2",
+      "bytes": 1173
+    },
+    {
+      "path": "evidence/runtime/04-assembly-ready-delivery.json",
+      "sha256": "1c76368587e233d3dfd29682878a1b99de0c3f8de6f115742e4c0ae8ed1cb15e",
+      "bytes": 758
+    },
+    {
+      "path": "evidence/runtime/04-assembly-ready-review-1440x900.dark.png",
+      "sha256": "73069c520de4ee600b3291892e24a34c495543696383cd291dec02834c9d9b38",
+      "bytes": 115764
+    },
+    {
+      "path": "evidence/runtime/04-assembly-ready-review-2048x1320.light.png",
+      "sha256": "aaa9110b82c37442430f8748d50bf2ea42378ea1a6fed104cb605622cb0c50b8",
+      "bytes": 161446
+    },
+    {
+      "path": "evidence/runtime/04-assembly-ready-validation.json",
+      "sha256": "bca5e53dedd55d7574815c0b16b98b581914726111bd26561c86090ea32477ac",
+      "bytes": 1939
+    },
+    {
+      "path": "evidence/runtime/04-assembly-ready-visual-check.json",
+      "sha256": "7e49ec77d1e6d042145cc39401bf34adeceb94fd28a01df9d1f6916927fde0af",
+      "bytes": 17197
+    },
+    {
+      "path": "evidence/runtime/04-assembly-ready-visual-review.json",
+      "sha256": "1f9e44c39b787fb636650a9a70f31ff891a457770a55c223d6f4f8f47334dc1e",
+      "bytes": 1167
+    },
+    {
+      "path": "evidence/runtime/04-local-session-browser-command.json",
+      "sha256": "392720c2b12d0bd4acc6b93e3fe8c9e8bfed59bba81ebc7a2c8c2c878f9e3ba2",
+      "bytes": 16877
+    },
+    {
+      "path": "evidence/runtime/04-local-session-delivery.json",
+      "sha256": "99ec7ef0fc0fd34a247dd20dc89bd34096877cad17db756f167ac94d294955a6",
+      "bytes": 756
+    },
+    {
+      "path": "evidence/runtime/04-local-session-validation.json",
+      "sha256": "51fdf03ca38b2b805fbc7fb018b5eacd45f9993698347237b02e3b334e789a6a",
+      "bytes": 1938
+    },
+    {
+      "path": "evidence/runtime/04-local-session-visual-review.json",
+      "sha256": "c653a1a1ebeb6de351f2873210a5e13a4d07c615846b422ea0574461ef59758b",
+      "bytes": 995
+    },
+    {
+      "path": "evidence/runtime/04-official-new-version-browser-command.json",
+      "sha256": "4d1c8da0607469574064fd6188417116a31776bf37caceede89a6f49cf22e6bf",
+      "bytes": 16933
+    },
+    {
+      "path": "evidence/runtime/04-official-new-version-delivery.json",
+      "sha256": "0061e0d077f4fbec54f5f5793af7bdf19fbab5b5cf478e79aea813cf112bdd73",
+      "bytes": 770
+    },
+    {
+      "path": "evidence/runtime/04-official-new-version-validation.json",
+      "sha256": "0154790778b75338cc95f70777a9222a04f3e811ba106d3bcca632aeac5d06ce",
+      "bytes": 1945
+    },
+    {
+      "path": "evidence/runtime/04-official-new-version-visual-review.json",
+      "sha256": "789bbb8392fe79c662c733c45d7fadb4082439adef7dfda15235f07db325a3ce",
+      "bytes": 1016
+    },
+    {
+      "path": "evidence/runtime/05-update-busy-browser-command.json",
+      "sha256": "de5b334f38683b6cb3bcfe99af2b575123abd016b7aaded75f9be63e458dc748",
+      "bytes": 16861
+    },
+    {
+      "path": "evidence/runtime/05-update-busy-delivery.json",
+      "sha256": "13acd1c80125cd529963aa42c88c5539ddee597d17606aa1015227f883b69305",
+      "bytes": 752
+    },
+    {
+      "path": "evidence/runtime/05-update-busy-validation.json",
+      "sha256": "e38a2111724fadf913f1f74940cde271feef2d7d11f26f951157de0cafb20f5c",
+      "bytes": 1934
+    },
+    {
+      "path": "evidence/runtime/05-update-busy-visual-review.json",
+      "sha256": "ad2a4cca25ead9c7c943e641be79172e06c30e65aa581bff17c0b4c7cda869c0",
+      "bytes": 989
+    },
+    {
+      "path": "evidence/runtime/05-update-rejected-browser-command.json",
+      "sha256": "f77c1b0318429deffc8921235fe523e091a39fcb6619fb1076a4f4d2f435e3f1",
+      "bytes": 16893
+    },
+    {
+      "path": "evidence/runtime/05-update-rejected-delivery.json",
+      "sha256": "507f70f0ff866b2f6e37930984ac606c3ac2583a3ca8353fc125286b7ffdcc48",
+      "bytes": 760
+    },
+    {
+      "path": "evidence/runtime/05-update-rejected-validation.json",
+      "sha256": "9f38fa79b9eb1881278f606c3bccf1d31afc20e5978318ebc3b0a224d8cf9483",
+      "bytes": 1938
+    },
+    {
+      "path": "evidence/runtime/05-update-rejected-visual-review.json",
+      "sha256": "100a4fa34dab9f21079695a7748ef67814a2a765196fbb831f2386a6c834ca83",
+      "bytes": 1001
+    },
+    {
+      "path": "evidence/runtime/05-update-success-browser-command.json",
+      "sha256": "dc02f0e34f49ba5a73f4f56fe53f86848f68e71c0407819003ed6bcd4e7a23b8",
+      "bytes": 16885
+    },
+    {
+      "path": "evidence/runtime/05-update-success-delivery.json",
+      "sha256": "83bd62de156a7eb15f2fa27bc77543c6b65cd0a12f6138d88ac83367813636e3",
+      "bytes": 758
+    },
+    {
+      "path": "evidence/runtime/05-update-success-validation.json",
+      "sha256": "5ecc65594033b193e31c2467babc15bf86e963abb95ef18ee885fb3ff863a55b",
+      "bytes": 1939
+    },
+    {
+      "path": "evidence/runtime/05-update-success-visual-review.json",
+      "sha256": "752f34e973ccda6ecf21cfa786a0e814a1ed68a72786f79ab69059d53be90e6d",
+      "bytes": 998
+    },
+    {
+      "path": "evidence/runtime/06-cache-ready-browser-command.json",
+      "sha256": "80e7d308786952e1ba595a77017cd597d9ec3c883340a0de9cdcf1f7ebeedd6e",
+      "bytes": 17053
+    },
+    {
+      "path": "evidence/runtime/06-cache-ready-delivery.json",
+      "sha256": "4754bc63c351f8bf78e4a1725e203a0af84ead679ff7449cfa134dfc29bfaba1",
+      "bytes": 752
+    },
+    {
+      "path": "evidence/runtime/06-cache-ready-validation.json",
+      "sha256": "ee7fbcd7aeef09dc5ad0843683c8f4e7dfa9ceb65a7cce0830079e835c6a0e89",
+      "bytes": 1936
+    },
+    {
+      "path": "evidence/runtime/06-cache-ready-visual-review.json",
+      "sha256": "4f4220fa9c1528c45759249f62897cfe76c95c68d5b7663a83ba317216821ebc",
+      "bytes": 989
+    },
+    {
+      "path": "evidence/runtime/06-download-missing-browser-command.json",
+      "sha256": "625276bd07f92b0ae56911ac37bf620dc50e6ea1ed9d4bb04f26e268ff37204e",
+      "bytes": 17093
+    },
+    {
+      "path": "evidence/runtime/06-download-missing-delivery.json",
+      "sha256": "7670458dea2b86f640ccbb445a05833f400022de8292404966772c803160f289",
+      "bytes": 762
+    },
+    {
+      "path": "evidence/runtime/06-download-missing-validation.json",
+      "sha256": "e07a2858d54f474eef4758804036f174dc3ef5be0783cc8e9dfbff7e01be6988",
+      "bytes": 1941
+    },
+    {
+      "path": "evidence/runtime/06-download-missing-visual-review.json",
+      "sha256": "1d096074dbc5d8de9e7949805db4b7edaffe5632fbceee5b30371ba65fa093ac",
+      "bytes": 1004
+    },
+    {
+      "path": "evidence/runtime/06-sync-failure-browser-command.json",
+      "sha256": "cf58c112ec3b602a452e9c23e1c083a0f0d929e14cde2fa341423aa2a8021c80",
+      "bytes": 17061
+    },
+    {
+      "path": "evidence/runtime/06-sync-failure-delivery.json",
+      "sha256": "7221619276b254091c495192f0fd051cf6d386f638ffd234defe3c20cdd85b05",
+      "bytes": 754
+    },
+    {
+      "path": "evidence/runtime/06-sync-failure-validation.json",
+      "sha256": "895559cdfcfd978af0e76d7ecf1ff12e0e0fc6089c7a73f915e18de58a267c57",
+      "bytes": 1937
+    },
+    {
+      "path": "evidence/runtime/06-sync-failure-visual-review.json",
+      "sha256": "18b02493794d4f48054778d14d6d202782ec8ed5308e685bdfbed3958df33246",
+      "bytes": 992
+    },
+    {
+      "path": "evidence/runtime/07-busy-deliver.json",
+      "sha256": "ce1d79db853c5b455b653c1e0518a5569ca48c833573574b0776afc6d67a12a4",
+      "bytes": 738
+    },
+    {
+      "path": "evidence/runtime/07-busy-review.png",
+      "sha256": "7ff7083d43393d26c0ab1eeeba9d9a2f68ca36d3896a6e39c216a6417ad6b95f",
+      "bytes": 289627
+    },
+    {
+      "path": "evidence/runtime/07-busy-validate.json",
+      "sha256": "6d9c8036b0f52ac992b06a48311ce321891a627221b398f5eefec576ee0b7c22",
+      "bytes": 1927
+    },
+    {
+      "path": "evidence/runtime/07-busy-visual-check.json",
+      "sha256": "aaa19bf7750985327c03c05f90b7687e8852325c3c53fe191a9cb57d8ee4a04d",
+      "bytes": 17045
+    },
+    {
+      "path": "evidence/runtime/07-cancel-deliver.json",
+      "sha256": "424a25e80ad02c5abb50c76da3f1c2dd4e58000d9f77c5a42ef70474af655cee",
+      "bytes": 742
+    },
+    {
+      "path": "evidence/runtime/07-cancel-review.png",
+      "sha256": "7590e888acafee52688c46ce8947508d99d860d9ff78d016815595c96be4ffc4",
+      "bytes": 325396
+    },
+    {
+      "path": "evidence/runtime/07-cancel-validate.json",
+      "sha256": "2c0ca443c0a89e1837ef0f37b917ac18e63b92c86099cfd39b8600eec6f3ac92",
+      "bytes": 1931
+    },
+    {
+      "path": "evidence/runtime/07-cancel-visual-check.json",
+      "sha256": "975845450819af826d23f8bca18630e4b49714e8e61593c21f5acf31ef3b2a8c",
+      "bytes": 16869
+    },
+    {
+      "path": "evidence/runtime/07-disconnect-deliver.json",
+      "sha256": "5e44b8542d83487db86b241aa3ebc2fb3d4733bc25f485caebb2a6cbc546d4ca",
+      "bytes": 750
+    },
+    {
+      "path": "evidence/runtime/07-disconnect-review.png",
+      "sha256": "6b42e950cc51a2406196b1bfea065a90d286b1119db971ecdb692f6a02e1769d",
+      "bytes": 340292
+    },
+    {
+      "path": "evidence/runtime/07-disconnect-validate.json",
+      "sha256": "b72656021fe992e3215f04fab802c14d28477e53396baea2be809680576d119f",
+      "bytes": 1935
+    },
+    {
+      "path": "evidence/runtime/07-disconnect-visual-check.json",
+      "sha256": "9ac97248e7c4da926c425b5c4e5cf170192bfe7da0ae1239a64bb92d4d06cb96",
+      "bytes": 16997
+    },
+    {
+      "path": "evidence/runtime/07-login-deliver.json",
+      "sha256": "75a3d3ea77b616bf5e8a87b8f1c5611aeb2a70689be7fe79c4eea944c12528d3",
+      "bytes": 740
+    },
+    {
+      "path": "evidence/runtime/07-login-review.png",
+      "sha256": "d9d068f7162604704f623f0b863523d07c0f1648072e7b5ccabb5526f15c2278",
+      "bytes": 337757
+    },
+    {
+      "path": "evidence/runtime/07-login-validate.json",
+      "sha256": "50689d619bab24d51a63a4249e4a4c4b32532ccc7cc11467fe609d9bc6ae1315",
+      "bytes": 1930
+    },
+    {
+      "path": "evidence/runtime/07-login-visual-check.json",
+      "sha256": "68de4563d805c67b5e4670e7c3bf6316cab37552df69e5f2158fce1c844d455d",
+      "bytes": 16813
+    },
+    {
+      "path": "evidence/runtime/07-restart-complete-deliver.json",
+      "sha256": "74a1be8b0777927f6c6171dc85c0b33fec7a706bf4d8173a0772b4cd4c0507f0",
+      "bytes": 762
+    },
+    {
+      "path": "evidence/runtime/07-restart-complete-review.png",
+      "sha256": "173498e04972e5bdd852d41d2f156eaf1a5abb2129fcc2d013021d0482d1ca0b",
+      "bytes": 317660
+    },
+    {
+      "path": "evidence/runtime/07-restart-complete-validate.json",
+      "sha256": "650160df52df039842d6c2ca2f05a7d642fd6a0736571d95dbfbe3d9e24df212",
+      "bytes": 1941
+    },
+    {
+      "path": "evidence/runtime/07-restart-complete-visual-check.json",
+      "sha256": "e39167c34c4d97548bc8c3a3d60996280c04565f4dabd29d4ace946ce5edbca9",
+      "bytes": 16901
+    },
+    {
+      "path": "evidence/runtime/07-restart-incomplete-deliver.json",
+      "sha256": "551ff141d8a90009f5625335e955c23cec8f2355c154c39ebec77175b80c5b91",
+      "bytes": 766
+    },
+    {
+      "path": "evidence/runtime/07-restart-incomplete-review.png",
+      "sha256": "a95b9dfbaf203fe8a4798b692b83ac8ac86b40f52fc0049b8013197dabb7d6b6",
+      "bytes": 326762
+    },
+    {
+      "path": "evidence/runtime/07-restart-incomplete-validate.json",
+      "sha256": "06a56266a77b550b6ead2a8db367238b2ba94310a1dbe19c42fd31c5d488f4ac",
+      "bytes": 1943
+    },
+    {
+      "path": "evidence/runtime/07-restart-incomplete-visual-check.json",
+      "sha256": "f06b78e818cb0ee6a0ae390883fe4572cf03a12596916304958b4e638a3c9d34",
+      "bytes": 16917
+    },
+    {
+      "path": "evidence/runtime/07-timeout-deliver.json",
+      "sha256": "ac9e138031d3a73dfd3444f036b32b869251b9400a09a59a3d0ef09aa76e5f56",
+      "bytes": 744
+    },
+    {
+      "path": "evidence/runtime/07-timeout-review.png",
+      "sha256": "120f8d021a4cfc347148fb3a79818412acd4446d0de0dab426d4224b9ab4e624",
+      "bytes": 315198
+    },
+    {
+      "path": "evidence/runtime/07-timeout-validate.json",
+      "sha256": "f1ec9f292ad9359df39c17abf5b2ba25cceb20299b6fd47158c0c49cc1cd831e",
+      "bytes": 1932
+    },
+    {
+      "path": "evidence/runtime/07-timeout-visual-check.json",
+      "sha256": "65dfcc8b814bb0cf45ac036a2e0152b1766a1137c98304b21f7f335cee63cec7",
+      "bytes": 17021
+    },
+    {
+      "path": "evidence/runtime/agent-assembly-svg-exports.json",
+      "sha256": "903a3716f93eafb8852020034430e69ccfdaff0f94c2b807470602ed4cd21410",
+      "bytes": 1532
+    },
+    {
+      "path": "evidence/runtime/reader-sequence-desktop.png",
+      "sha256": "0edb96f5931dba990358c449a7c2e06bd745b8ea4ab0ea7dfce31fc06a088efb",
+      "bytes": 123480
+    },
+    {
+      "path": "evidence/runtime/reader-sequence-links.json",
+      "sha256": "9e7a4f2318f50a0171afda5c4ff0ab9383af9bb020f9db7d8086b9a3f63f61c0",
+      "bytes": 5439
+    },
+    {
+      "path": "evidence/runtime/reader-sequence-mobile.png",
+      "sha256": "1246521290a6166042c45c65dd03ec42189b07ec0d88ce2c8d8c6e73709bdb1b",
+      "bytes": 76390
+    },
+    {
+      "path": "evidence/runtime/root-login-svg-export.json",
+      "sha256": "79f26e389635be428503cfa7cecfdcc7c469cb3dd2ce1d288e8816a94be626a9",
+      "bytes": 197
+    },
+    {
+      "path": "evidence/runtime/root-svg-exports.json",
+      "sha256": "8d76c1bb6c8722b19f7bc86a2012f4618751e294b13fb255c1624b723f222272",
+      "bytes": 4695
+    },
+    {
+      "path": "evidence/runtime/skill-files-svg-exports.json",
+      "sha256": "7d2d51447a0283949f8f79a1d9c488c841fb4885b294b90a2dd18a1b14e12cbc",
+      "bytes": 443
+    },
+    {
+      "path": "evidence/runtime/skill-files-svg-normalization.json",
+      "sha256": "0a45f446d7005ff0deba5d3bc1476be58cb57d5f53d732e06bb8b02b97a0ca65",
+      "bytes": 637
+    },
+    {
+      "path": "evidence/skill-files-dark.png",
+      "sha256": "6cb30a8c3ec92a5ba5c3ad15d5d31439be637dbc4929415acc98310e1327d001",
+      "bytes": 68447
+    },
+    {
+      "path": "evidence/skill-files-mobile.png",
+      "sha256": "a14f22702f5a2ab872c1c7fbf09e9b7dfdcccc8bd48237f12a889d3c972cc5ef",
+      "bytes": 48360
+    },
+    {
+      "path": "evidence/skill-frontend-browser.json",
+      "sha256": "6f0e52b9cc1ff8b7e4edd5fae18765d626732b3b266b431b52c558a51806173b",
+      "bytes": 508
+    },
+    {
+      "path": "evidence/skill-list-mobile.png",
+      "sha256": "7b2d74f985d33114b6cf5d06eb630fd4890aedd2b768ad694d96a581ff41fcde",
+      "bytes": 40206
     },
     {
       "path": "evidence/svg-exports.json",
@@ -972,13 +3294,143 @@
     },
     {
       "path": "evidence/验收记录.md",
-      "sha256": "5cee6a21e5d1135f8fe261ee6529bbf4010d301a62dcc36a95ef38740cbb0d41",
-      "bytes": 5170
+      "sha256": "ddf971edbeeff3963fbc5043e15a1137fbe6532f100d769e1e729ed85b48fb08",
+      "bytes": 4617
     },
     {
       "path": "index.html",
-      "sha256": "1e559cfd55bd06cd8c0ec70c96f7d13fb03fc952e86b3b7f541dac4e080eced0",
-      "bytes": 65064
+      "sha256": "8c1096f1f25150321fe6e83066d7ac2b9187c46bdb95400982cb9c623a7f4f2a",
+      "bytes": 112359
     }
-  ]
+  ],
+  "previous_diagrams": [
+    {
+      "chapter": "00-总体架构.md",
+      "diagram_type": "architecture",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/00-overview.html",
+      "specification_sha256": "930edb58d86488d6d69e4afbc01ca9a375c6c7fd2eea293fa9efaf557573d639",
+      "artifact_sha256": "c97c6149d4e2f8fbe276274106a5f3d3cd8611f31feaa230bffb339953175134",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "visual_review_basis": "图像审查：1440×900 与 2048×1320 的浅色/深色证据；独立于自动浏览器回执。",
+      "delivery_receipt": "evidence/00-overview-delivery.json",
+      "browser_receipt": "diagrams/00-overview.visual-check.json"
+    },
+    {
+      "chapter": "01-SKILL.md",
+      "diagram_type": "workflow",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/01-skill.html",
+      "specification_sha256": "a3a4f9e26c0f6e479f44801fb414c2a33b8aae79125b080115ae4f9e4a9c64f3",
+      "artifact_sha256": "a7bfc475983b024b2a229992371602d88b418e8b4b0a1dc3c96589a4e92537fe",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "visual_review_basis": "图像审查：1440×900 与 2048×1320 的浅色/深色证据；独立于自动浏览器回执。",
+      "delivery_receipt": "evidence/01-skill-delivery.json",
+      "browser_receipt": "diagrams/01-skill.visual-check.json"
+    },
+    {
+      "chapter": "02-MCP.md",
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/02-mcp.html",
+      "specification_sha256": "f018ec3e246feed835cdae94be1770edf086b924289d445dd202b047e9ca0823",
+      "artifact_sha256": "be3d32050a46d1d935e11c93a42d18a63c31030e432db4702b9bdc27d1697827",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "visual_review_basis": "图像审查：1440×900 与 2048×1320 的浅色/深色证据；独立于自动浏览器回执。",
+      "delivery_receipt": "evidence/02-mcp-delivery.json",
+      "browser_receipt": "diagrams/02-mcp.visual-check.json"
+    },
+    {
+      "chapter": "03-buildintool.md",
+      "diagram_type": "workflow",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/03-builtintool.html",
+      "specification_sha256": "5e961fd72ee1545e136956a2728611f9adfe5b47f37a14148f17664f3399cff0",
+      "artifact_sha256": "be15b9a6f53969e49df28f1bd31d4cc44b62655e6f84f3240808be66f016bbc0",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "visual_review_basis": "图像审查：1440×900 与 2048×1320 的浅色/深色证据；独立于自动浏览器回执。",
+      "delivery_receipt": "evidence/03-builtintool-delivery.json",
+      "browser_receipt": "diagrams/03-builtintool.visual-check.json"
+    },
+    {
+      "chapter": "04-agent.md",
+      "diagram_type": "architecture",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/04-agent.html",
+      "specification_sha256": "d8a6172f9d5c7e55ae96963fd7cd56cde43f72efc4d4fd5dcf61289414b608eb",
+      "artifact_sha256": "a1c3cbd7ea2c746cc5ea42df6064c7c47a49c62314ec46b5dcb9d8219ff43030",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "visual_review_basis": "图像审查：1440×900 与 2048×1320 的浅色/深色证据；独立于自动浏览器回执。",
+      "delivery_receipt": "evidence/04-agent-delivery.json",
+      "browser_receipt": "diagrams/04-agent.visual-check.json"
+    },
+    {
+      "chapter": "05-桌面端更新.md",
+      "diagram_type": "workflow",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/05-updater.html",
+      "specification_sha256": "17e785edf0c396476446472556c13bcae423e9aee6254532d8f94eb6de0de524",
+      "artifact_sha256": "b8f14fb4530351fe1e0f736de8f81a62164c26112a612f1ba1f936e3d34e9d57",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "visual_review_basis": "图像审查：1440×900 与 2048×1320 的浅色/深色证据；独立于自动浏览器回执。",
+      "delivery_receipt": "evidence/05-updater-delivery.json",
+      "browser_receipt": "diagrams/05-updater.visual-check.json"
+    },
+    {
+      "chapter": "06-同步与装配.md",
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/06-sync.html",
+      "specification_sha256": "36675adf42cc61d415b17aafdd168fd3ddcb4e82c4917a71e6188148a8274859",
+      "artifact_sha256": "d841e82ad4f0dbb36a0ee5d9eab06ebac33a7ae03dca57962cf38fa15e84e36a",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "visual_review_basis": "图像审查：1440×900 与 2048×1320 的浅色/深色证据；独立于自动浏览器回执。",
+      "delivery_receipt": "evidence/06-sync-delivery.json",
+      "browser_receipt": "diagrams/06-sync.visual-check.json"
+    },
+    {
+      "chapter": "07-任务执行与恢复.md",
+      "diagram_type": "lifecycle",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/07-execution.html",
+      "specification_sha256": "f15e07c455599535767f1c448fe5b8024ad74d21279b591c671d2d9e0904704c",
+      "artifact_sha256": "ef947b5c2f3b2f685ddbc25336386356a760fdf7f30506bfe0ac9e27f2c0ac57",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "visual_review_basis": "图像审查：1440×900 与 2048×1320 的浅色/深色证据；独立于自动浏览器回执。",
+      "delivery_receipt": "evidence/07-execution-delivery.json",
+      "browser_receipt": "diagrams/07-execution.visual-check.json"
+    }
+  ],
+  "frontend_implementation": {
+    "component": "@beui-pro/file-manager-workspace",
+    "desktop_skill_root": "~/.omnimind-ops/skills",
+    "browser_storage": "IndexedDB",
+    "typecheck": "pass",
+    "lint": "pass",
+    "build": "pass with existing chunk-size warning",
+    "web_tests": 109,
+    "runtime_tests": 15,
+    "prepare_tests": 2,
+    "skill_browser_scenarios": 5,
+    "navigation_browser_checks": {
+      "desktop": 14,
+      "mobile": 14
+    },
+    "tauri_startup_browser": "pass",
+    "app_browser_receipt": "evidence/skill-frontend-browser.json",
+    "visual_review": "6 actual screenshots reviewed independently; no blocking issues",
+    "limitations": [
+      "Official draft and publication APIs not connected",
+      "Official download and checksum validation not connected",
+      "Runtime currently loads SKILL.md per round; full package backend and fixed session snapshot pending"
+    ]
+  }
 }

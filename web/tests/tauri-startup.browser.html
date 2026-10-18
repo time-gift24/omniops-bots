@@ -19,7 +19,8 @@
         if (starts++ === 0) throw { kind: "unavailable", message: "Service failed to start" }
         return state
       case "agents_load": return { agents: [], resources: { mcpServers: [], tools: [], skills: [] } }
-      case "skills_list": case "models_list": return []
+      case "skill_library_info": return { kind: "desktop", root: "/home/test/.omnimind-ops/skills" }
+      case "skill_library_list": case "skills_list": case "models_list": return []
       case "workspace_directories": return [{ name: "Fixture", path: "/fixture" }]
       case "workspace_resolve": return { name: "Fixture", path: args.params.path }
       case "workspace_bind": return null

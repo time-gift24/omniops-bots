@@ -1,3 +1,4 @@
+import type { Skill } from "@/skills/source"
 import type { AgentConfiguration, AgentResources } from "@/agents/source"
 import { array, boolean, number, object, string } from "./protocol"
 
@@ -93,13 +94,15 @@ export function readChanges(value: unknown) {
     }),
   }
 }
-export function readSkills(value: unknown) {
-  return array(value, (entry) => {
+export function readSkills(value: unknown): Skill[] {
+  return array(value, (entry): Skill => {
     const raw = object(entry)
     return {
       id: string(raw.id),
       name: string(raw.name),
       description: string(raw.description),
+      ...(raw.origin === "official" || raw.origin === "local" ? { origin: raw.origin } : {}),
+      ...(raw.version === undefined ? {} : { version: string(raw.version) }),
       files: array(raw.files, (entry) => {
         const file = object(entry)
         return { path: string(file.path), content: string(file.content) }

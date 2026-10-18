@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "远端任务需要人工登录：失败后另发调用",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1100,
+      640
+    ]
+  },
+  "participants": [
+    {
+      "id": "user",
+      "label": "用户",
+      "type": "external"
+    },
+    {
+      "id": "client",
+      "label": "桌面客户端",
+      "type": "frontend"
+    },
+    {
+      "id": "chrome",
+      "label": "专用 Chrome",
+      "type": "external"
+    },
+    {
+      "id": "server",
+      "label": "服务端",
+      "type": "backend"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m-07-login-0",
+      "from": "client",
+      "to": "chrome",
+      "y": 180,
+      "label": "执行当前任务的浏览器操作",
+      "variant": "default"
+    },
+    {
+      "id": "m-07-login-1",
+      "from": "chrome",
+      "to": "client",
+      "y": 248,
+      "label": "出现人工登录或验证要求",
+      "variant": "return"
+    },
+    {
+      "id": "m-07-login-2",
+      "from": "client",
+      "to": "user",
+      "y": 316,
+      "label": "结束本次任务，说明失败原因",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m-07-login-3",
+      "from": "client",
+      "to": "server",
+      "y": 384,
+      "label": "远端任务：保存后回传失败",
+      "variant": "default"
+    },
+    {
+      "id": "m-07-login-4",
+      "from": "user",
+      "to": "chrome",
+      "y": 452,
+      "label": "手动完成登录或验证",
+      "variant": "default"
+    },
+    {
+      "id": "m-07-login-5",
+      "from": "server",
+      "to": "client",
+      "y": 520,
+      "label": "人工处理后，另发新调用",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": "原任务已经结束",
+      "items": [
+        "不暂停等待、不自动恢复原调用",
+        "远端新调用由服务端重新安排"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "保留专用 Chrome 登录态",
+      "items": [
+        "用户处理后可重新使用登录态",
+        "新任务仍需重新检查版本与执行名额"
+      ]
+    }
+  ]
+}

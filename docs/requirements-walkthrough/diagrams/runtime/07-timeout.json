@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "本轮兜底超时：终止并回报执行超时",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1100,
+      640
+    ]
+  },
+  "participants": [
+    {
+      "id": "timer",
+      "label": "客户端计时器",
+      "type": "backend"
+    },
+    {
+      "id": "client",
+      "label": "桌面客户端",
+      "type": "frontend"
+    },
+    {
+      "id": "record",
+      "label": "本地记录",
+      "type": "database"
+    },
+    {
+      "id": "server",
+      "label": "服务端",
+      "type": "backend"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m-07-timeout-0",
+      "from": "timer",
+      "to": "client",
+      "y": 180,
+      "label": "本轮达到配置的兜底超时",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m-07-timeout-1",
+      "from": "client",
+      "to": "record",
+      "y": 290,
+      "label": "停止后续步骤后保存超时结果",
+      "variant": "default"
+    },
+    {
+      "id": "m-07-timeout-2",
+      "from": "client",
+      "to": "server",
+      "y": 400,
+      "label": "远端任务：回报执行超时",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m-07-timeout-3",
+      "from": "server",
+      "to": "client",
+      "y": 510,
+      "label": "确认收到",
+      "variant": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": "统一、可配置的每轮超时",
+      "items": [
+        "超时停止后续步骤，不自动重试",
+        "已完成操作不回滚"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "本地和远端分别呈现",
+      "items": [
+        "本地轮次在客户端展示超时",
+        "图中远端任务还需要结果回传与确认"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/01-skill-file-conflict.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/01-skill-file-conflict.html",
+  "specification": {
+    "sha256": "e3f4f0251afd43f6d8801730ecb0b3f06b8245dd526d56f2d8fc9ab874b0f9e9",
+    "bytes": 2073
+  },
+  "artifact": {
+    "sha256": "f9de3125be809f05f47d187aeb6df2a8d4f1f56139a7a82b323d3aee60a5aede",
+    "bytes": 702696
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

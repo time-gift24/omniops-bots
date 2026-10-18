@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "远端取消：停止后续步骤并交付结果",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1100,
+      640
+    ]
+  },
+  "participants": [
+    {
+      "id": "server",
+      "label": "服务端",
+      "type": "backend"
+    },
+    {
+      "id": "client",
+      "label": "客户端执行控制",
+      "type": "frontend"
+    },
+    {
+      "id": "agent",
+      "label": "Agent 执行器",
+      "type": "backend"
+    },
+    {
+      "id": "record",
+      "label": "本地记录",
+      "type": "database"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m-07-cancel-0",
+      "from": "server",
+      "to": "client",
+      "y": 180,
+      "label": "WS：按调用 ID 取消",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m-07-cancel-1",
+      "from": "client",
+      "to": "agent",
+      "y": 248,
+      "label": "停止后续模型与工具步骤",
+      "variant": "default"
+    },
+    {
+      "id": "m-07-cancel-2",
+      "from": "agent",
+      "to": "client",
+      "y": 316,
+      "label": "停止后续步骤，返回取消状态",
+      "variant": "return"
+    },
+    {
+      "id": "m-07-cancel-3",
+      "from": "client",
+      "to": "record",
+      "y": 384,
+      "label": "保存取消结果与快照",
+      "variant": "default"
+    },
+    {
+      "id": "m-07-cancel-4",
+      "from": "client",
+      "to": "server",
+      "y": 452,
+      "label": "回传该调用的取消结果",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m-07-cancel-5",
+      "from": "server",
+      "to": "client",
+      "y": 520,
+      "label": "确认收到",
+      "variant": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": "取消不回滚",
+      "items": [
+        "已经完成的 Chrome 操作保留",
+        "不承诺撤销已发出的外部操作"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "界面只读",
+      "items": [
+        "服务端按调用 ID 取消",
+        "客户端展示取消结果，不追加远端指令"
+      ]
+    }
+  ]
+}

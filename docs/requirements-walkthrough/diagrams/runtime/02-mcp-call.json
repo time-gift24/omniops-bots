@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "客户端连接 MCP 并调用工具",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1100,
+      640
+    ]
+  },
+  "participants": [
+    {
+      "id": "materials",
+      "type": "backend",
+      "label": "Agent 物料"
+    },
+    {
+      "id": "client",
+      "type": "frontend",
+      "label": "桌面客户端"
+    },
+    {
+      "id": "mcp",
+      "type": "external",
+      "label": "远端 MCP"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m1",
+      "from": "client",
+      "to": "materials",
+      "y": 180,
+      "label": "读取固定 Agent 的 MCP 配置"
+    },
+    {
+      "id": "m2",
+      "from": "materials",
+      "to": "client",
+      "y": 245,
+      "label": "返回连接配置或引用",
+      "variant": "return"
+    },
+    {
+      "id": "m3",
+      "from": "client",
+      "to": "mcp",
+      "y": 310,
+      "label": "按装配连接并获取能力清单",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m4",
+      "from": "mcp",
+      "to": "client",
+      "y": 375,
+      "label": "返回可用能力",
+      "variant": "return"
+    },
+    {
+      "id": "m5",
+      "from": "client",
+      "to": "mcp",
+      "y": 440,
+      "label": "执行本轮所需工具调用",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m6",
+      "from": "mcp",
+      "to": "client",
+      "y": 505,
+      "label": "返回工具结果，纳入本轮结果",
+      "variant": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "条件：所需 MCP 可连接",
+      "items": [
+        "官方配置随 Agent 同步且只读",
+        "本地 Agent 使用自己的配置"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "结果：调用可观察",
+      "items": [
+        "客户端展示调用过程，快照记录启用清单",
+        "密钥和 Token 不写入快照"
+      ]
+    }
+  ]
+}

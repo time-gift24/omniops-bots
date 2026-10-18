@@ -1,0 +1,119 @@
+[
+  {
+    "name": "00-manual",
+    "file": "assets/runtime/00-manual.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "48323",
+    "data-last-export-canonical": "true",
+    "format_normalization": {
+      "raw_sha256": "62a0631d9a44bd16aee694423f856e3da2a1c0362972dd417f46bb49a71753ed",
+      "checked_in_sha256": "fe46277467a4c75bb899857780f4773bca036b168b9c36722230ed5d62d5f2ba",
+      "checked_in_bytes": 48303,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
+  },
+  {
+    "name": "00-remote",
+    "file": "assets/runtime/00-remote.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "49150",
+    "data-last-export-canonical": "true",
+    "format_normalization": {
+      "raw_sha256": "2924f7d36d465b9019b2fd3ed01b310427b2ca5bded37617dfed6e21090d0c4f",
+      "checked_in_sha256": "451ef373a37ddcb9a0fe9f75dcc1057bb43911fbf6751870d6979659532c7078",
+      "checked_in_bytes": 49130,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
+  },
+  {
+    "name": "07-busy",
+    "file": "assets/runtime/07-busy.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "45587",
+    "data-last-export-canonical": "true",
+    "format_normalization": {
+      "raw_sha256": "3b2a013629be2f73bcfa8760ecea752d4e4ad8f7d10d18151eccbe3f84875e1f",
+      "checked_in_sha256": "16454e6007ed4ff2f85d8a5dee4f301d950a1d54309f7f7b2d9a03bdd076b2b2",
+      "checked_in_bytes": 45567,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
+  },
+  {
+    "name": "07-disconnect",
+    "file": "assets/runtime/07-disconnect.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "48969",
+    "data-last-export-canonical": "true",
+    "format_normalization": {
+      "raw_sha256": "c1183629a9e4ea276b63be8ae4854ca9e6813cc589f3693c549869846c1458c6",
+      "checked_in_sha256": "8b2c85c7ebcdc8010fbd73cda4092939bb30d89bc773bde354ab8617c4a0f5c2",
+      "checked_in_bytes": 48949,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
+  },
+  {
+    "name": "07-restart-complete",
+    "file": "assets/runtime/07-restart-complete.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "48466",
+    "data-last-export-canonical": "true",
+    "format_normalization": {
+      "raw_sha256": "38df07f4c758094c0eb577b8a270f282c5f447e87211d7ea6067f74bff74e01e",
+      "checked_in_sha256": "c815e48040e6158b6f650587fe153b4acffe6c9126d2dd60a57ac509983b7d48",
+      "checked_in_bytes": 48446,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
+  },
+  {
+    "name": "07-restart-incomplete",
+    "file": "assets/runtime/07-restart-incomplete.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "48541",
+    "data-last-export-canonical": "true",
+    "format_normalization": {
+      "raw_sha256": "56d92663bd34f964664202f50ac6755b8f5a083edf3669afe6ccbc907db0092a",
+      "checked_in_sha256": "bfb1b6a9b17acb28dd2e9316de2941f2fab85f729d9fd952d0e2a24f67467804",
+      "checked_in_bytes": 48521,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
+  },
+  {
+    "name": "07-cancel",
+    "file": "assets/runtime/07-cancel.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "48387",
+    "data-last-export-canonical": "true",
+    "format_normalization": {
+      "raw_sha256": "fece1adba64ed33c5e4a023292922a468db74766eeb9e267892ab9975173afe2",
+      "checked_in_sha256": "9a186a45f9dc36b68a64e732c2b13552b003029ae73a722bb17e1dab84352102",
+      "checked_in_bytes": 48367,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
+  },
+  {
+    "name": "07-timeout",
+    "file": "assets/runtime/07-timeout.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "46929",
+    "data-last-export-canonical": "true",
+    "format_normalization": {
+      "raw_sha256": "7af5c2b87ef54f55fe3d0f860fd3d08e253a18a76b2609faa38b9b4de85cc206",
+      "checked_in_sha256": "a561c66306833771dd110f07152cd6c52c0093110bbc54222729276b97ec658b",
+      "checked_in_bytes": 46909,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
+  },
+  {
+    "name": "07-login",
+    "file": "assets/runtime/07-login.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "48418",
+    "data-last-export-canonical": "true",
+    "format_normalization": {
+      "raw_sha256": "4c178a7cc5697cd492c0c5d9a5228e2139cc8ddddd1a5feb90f9e90749338ecc",
+      "checked_in_sha256": "bd69b0cfe369e1f470295580fa1cc93b798b8d9abca243957cd4a89565e81889",
+      "checked_in_bytes": 48398,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
+  }
+]

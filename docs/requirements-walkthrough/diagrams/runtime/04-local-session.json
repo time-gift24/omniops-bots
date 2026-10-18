@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "编辑本地 Agent 后开始会话",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1100,
+      568
+    ]
+  },
+  "participants": [
+    {
+      "id": "user",
+      "type": "external",
+      "label": "用户"
+    },
+    {
+      "id": "client",
+      "type": "frontend",
+      "label": "桌面客户端"
+    },
+    {
+      "id": "local",
+      "type": "database",
+      "label": "本地物料与快照"
+    },
+    {
+      "id": "chrome",
+      "type": "external",
+      "label": "专用 Chrome"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m1",
+      "from": "user",
+      "to": "client",
+      "y": 170,
+      "label": "编辑并保存本地 Agent",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m2",
+      "from": "client",
+      "to": "local",
+      "y": 214,
+      "label": "保存装配，不设发布标签",
+      "variant": "default"
+    },
+    {
+      "id": "m3",
+      "from": "user",
+      "to": "client",
+      "y": 258,
+      "label": "发起新会话并输入任务",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m4",
+      "from": "client",
+      "to": "local",
+      "y": 302,
+      "label": "读取本次 Agent 与 Skill",
+      "variant": "default"
+    },
+    {
+      "id": "m5",
+      "from": "local",
+      "to": "client",
+      "y": 346,
+      "label": "返回确定的装配内容",
+      "variant": "return"
+    },
+    {
+      "id": "m6",
+      "from": "client",
+      "to": "local",
+      "y": 390,
+      "label": "工具检查通过，保存运行快照",
+      "variant": "default"
+    },
+    {
+      "id": "m7",
+      "from": "client",
+      "to": "chrome",
+      "y": 434,
+      "label": "取得执行名额，按快照执行",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m8",
+      "from": "chrome",
+      "to": "client",
+      "y": 478,
+      "label": "返回本轮结果",
+      "variant": "return"
+    }
+  ]
+}

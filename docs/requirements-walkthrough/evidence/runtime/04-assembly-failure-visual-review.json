@@ -1,0 +1,21 @@
+{
+  "diagram_type": "sequence",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-assembly-failure.html",
+  "specification_sha256": "d51f9bc047dab0d0f8b07f6bda0d789aa660e4df653c7b40f7bdd8f0493d2222",
+  "artifact_sha256": "846042b572940dd9701cfff2826e6d116cc44defc32a36cf15b4e869b845392b",
+  "artifact_bytes": 705399,
+  "validation": "9/9 showcase, 0 errors, 0 warnings",
+  "browser_evidence": "passed",
+  "visual_review": "passed",
+  "reviewer": "image-capable agent /root/agent_assembly_diagrams",
+  "reviewed_screenshots": [
+    "evidence/runtime/04-assembly-failure-review-2048x1320.light.png",
+    "evidence/runtime/04-assembly-failure-review-1440x900.dark.png"
+  ],
+  "observations": [
+    "语义修正后重新交付并查看最终 HTML 的 2048×1320 浅色及 1440×900 深色真实浏览器截图。",
+    "参与者、箭头与中文消息顺序可读，无截断、重叠或标签遮挡；大屏主图与必要结论卡保持均衡。",
+    "四个桌面视口的包含性及浅深色端点截图由 visual-check 独立回执记录，本视觉审查不替代自动检查。"
+  ],
+  "correction_rounds": 1
+}

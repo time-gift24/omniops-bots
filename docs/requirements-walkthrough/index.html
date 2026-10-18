@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OmniOps 需求串讲</title><style>@import url('./assets/fonts/fonts.css');
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OmniOps 客户端需求串讲</title><style>@import url('./assets/fonts/fonts.css');
 :root{color-scheme:light;--background:oklch(.991 .001 106.4);--surface:#fff;--foreground:oklch(.196 0 89.9);--muted:oklch(.970 .003 106.4);--muted-foreground:oklch(.439 0 89.9);--primary:oklch(.51 .105 164);--primary-hover:oklch(.45 .11 163);--accent:oklch(.952 .014 160);--border:oklch(.930 .003 106.5);--border-strong:oklch(.854 .004 106.5);--ring:oklch(.57 .11 166);--rail:56px;--sidebar:248px;--header:64px;--radius:8px;--sticky:20}
 :root.dark{color-scheme:dark;--background:oklch(.196 0 89.9);--surface:oklch(.217 .002 106.6);--foreground:oklch(.970 0 89.9);--muted:oklch(.243 .004 106.7);--muted-foreground:oklch(.715 0 89.9);--primary:oklch(.72 .115 170);--primary-hover:oklch(.65 .115 168);--accent:oklch(.28 .025 164);--border:oklch(1 0 0 / 9%);--border-strong:oklch(1 0 0 / 18%);--ring:oklch(.72 .115 170)}
 *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:16px}body{margin:0;background:var(--background);color:var(--foreground);font-family:'Geist Variable','MiSans VF','PingFang SC','Microsoft YaHei',sans-serif;font-size:16px;line-height:1.8;-webkit-font-smoothing:antialiased}::selection{color:var(--foreground);background:var(--accent)}a{color:var(--primary);text-underline-offset:4px;text-decoration-thickness:1px}a:hover{color:var(--primary-hover)}button,select{font:inherit;caret-color:var(--primary)}a,button,select{-webkit-tap-highlight-color:transparent}button:focus-visible,a:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--ring);outline-offset:4px}button{cursor:pointer}button:disabled{color:var(--muted-foreground);opacity:.5;cursor:default}svg.icon{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}a.skip{position:fixed;top:8px;left:12px;z-index:100;background:var(--surface);padding:8px 16px;transform:translateY(-150%)}a.skip:focus{transform:none}.rail{position:fixed;inset:0 auto 0 0;width:var(--rail);background:var(--muted);border-right:1px solid var(--border);display:flex;align-items:center;flex-direction:column;gap:16px;padding:24px 0;z-index:var(--sticky)}.icon-control{width:36px;height:36px;border:0;border-radius:50%;background:transparent;color:var(--muted-foreground);display:inline-flex;align-items:center;justify-content:center;text-decoration:none}.icon-control:hover{background:var(--accent);color:var(--foreground)}.rail a:first-child{color:var(--foreground)}.rail .theme-toggle{margin-top:auto}.sidebar{position:fixed;inset:0 auto 0 var(--rail);width:var(--sidebar);padding:24px 16px;display:flex;flex-direction:column;background:var(--muted);border-right:1px solid var(--border);overflow-y:auto}.wordmark{font-size:18px;line-height:1.4;font-weight:600;margin:0 12px 26px}.wordmark small{display:block;font-size:13px;font-weight:400;color:var(--muted-foreground);margin-top:8px}.chapter-nav{display:grid;gap:5px}.chapter-nav a{display:flex;gap:12px;align-items:baseline;color:var(--muted-foreground);text-decoration:none;font-size:14px;padding:9px 12px;border-radius:var(--radius);line-height:1.65}.chapter-nav a:hover{background:var(--surface);color:var(--foreground)}.chapter-nav a[aria-current=page]{background:var(--accent);color:var(--foreground);font-weight:600}.chapter-nav .num{font-size:12px;font-variant-numeric:tabular-nums;min-width:18px;font-weight:400}.chapter-nav a:last-child{margin-top:20px}.sidebar-foot{margin-top:auto;padding:32px 12px 0;font-size:12px;line-height:1.8;color:var(--muted-foreground)}.sidebar-foot a{display:inline-block;margin-top:8px}.main{margin-left:calc(var(--rail) + var(--sidebar));min-width:0}.header{min-height:var(--header);position:sticky;top:0;z-index:var(--sticky);background:var(--background);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:20px;padding:12px 32px}.breadcrumbs{display:flex;align-items:center;gap:10px;font-size:13px;min-width:0;line-height:1.5}.breadcrumbs a{color:var(--muted-foreground);text-decoration:none;white-space:nowrap}.breadcrumbs span[aria-hidden]{color:var(--muted-foreground)}#current-title{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.actions{display:flex;align-items:center;gap:8px;flex:none}.text-control{height:32px;display:inline-flex;align-items:center;gap:6px;padding:0 12px;border:1px solid var(--border-strong);border-radius:100px;background:transparent;color:var(--foreground);font-size:12px;text-decoration:none;white-space:nowrap}.text-control:hover{background:var(--muted);color:var(--foreground);text-decoration:none}.actions .pagination{display:flex;gap:2px;align-items:center;margin-left:8px}.progress{font-size:12px;color:var(--muted-foreground);font-variant-numeric:tabular-nums;min-width:42px;text-align:center}.reading{max-width:1184px;margin:0 auto;padding:0 48px 64px}.section-links{display:flex;flex-wrap:wrap;gap:24px;padding:22px 0 16px;font-size:12px}.section-links a{color:var(--muted-foreground);text-decoration:none}.section-links a:hover{color:var(--foreground)}article{padding-top:16px}article[hidden]{display:none}h1,h2,h3{font-weight:600;line-height:1.4;letter-spacing:-.015em;text-wrap:balance}article h1{font-size:30px;margin:0 0 18px}article h2{font-size:20px;margin:48px 0 18px;scroll-margin-top:88px}article h3{font-size:16px;margin:26px 0 14px}article>p,article>ul,article>ol,article>blockquote,article>h1,article>h2,article>h3{max-width:44rem}p{margin:14px 0}li{margin:8px 0}ul,ol{padding-left:24px}strong{font-weight:600}blockquote{margin:0 0 20px;padding:0;color:var(--muted-foreground);font-size:14px}blockquote p{margin:0}figure{margin:22px 0 26px}figure img{display:block;width:100%;height:auto;border:1px solid var(--border-strong);border-radius:var(--radius);background:#fff}.screenshot-link{display:block;border-radius:var(--radius)}.screenshot-link:hover{outline:2px solid var(--border-strong);outline-offset:3px}figcaption{font-size:12px;line-height:1.7;color:var(--muted-foreground);margin-top:10px}.diagram img{padding:10px}.diagram figcaption{text-align:right}table{border-collapse:collapse;width:100%;margin:24px 0;font-size:13px;line-height:1.8}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--border);padding:14px 16px 14px 0}th{font-weight:500;color:var(--muted-foreground);border-bottom-color:var(--border-strong)}td:first-child,th:first-child{min-width:85px}tr td:last-child,tr th:last-child{padding-right:0}code{font-family:'Geist Mono Variable',ui-monospace,monospace;font-size:.86em;padding:2px 4px;border-radius:4px;background:var(--muted);overflow-wrap:anywhere}details{margin:24px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:14px 0;font-size:14px}summary{cursor:pointer;color:var(--primary);font-size:13px}details>ul{padding-left:22px}article footer{display:flex;align-items:center;justify-content:space-between;gap:20px;border-top:1px solid var(--border);margin-top:48px;padding-top:20px;font-size:13px;color:var(--muted-foreground)}.footer-label{font-size:12px}.mobile-nav{display:none}.empty-diagram{display:none!important}.sr-only{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
@@ -7,129 +7,301 @@
 @media(max-width:760px){.rail,.sidebar{display:none}.main{margin-left:0}.header{position:relative;padding:18px 20px 12px;flex-wrap:wrap;gap:12px}.breadcrumbs{width:100%}.actions{width:100%;justify-content:space-between}.text-control{height:36px}.actions .pagination{margin:0}.mobile-nav{display:flex;gap:12px;align-items:center;padding:16px 20px 0}.mobile-nav label{font-size:13px;color:var(--muted-foreground)}.mobile-nav select{min-width:0;flex:1;border:1px solid var(--border-strong);border-radius:var(--radius);background:var(--surface);color:var(--foreground);padding:8px 10px;font-size:14px}.mobile-nav .theme-toggle{flex:none}.reading{padding:0 20px 40px}.section-links{gap:16px;padding:20px 0 10px}article{padding-top:18px}article h1{font-size:24px}article h2{font-size:18px;margin-top:36px}article h3{font-size:14px}body{font-size:14px;line-height:1.85}blockquote{font-size:14px}figure{margin:20px -4px 22px}figure img{border-radius:6px}.diagram img{padding:4px}table{font-size:13px}thead{display:none}tbody,tr,td{display:block}tr{border-bottom:1px solid var(--border);padding:12px 0}td{display:grid;grid-template-columns:86px minmax(0,1fr);gap:12px;padding:6px 0;border:0;min-width:0;overflow-wrap:anywhere}td:before{content:attr(data-label);color:var(--muted-foreground);font-size:12px}article footer{align-items:flex-start}.footer-label{max-width:55%}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{scroll-behavior:auto!important}}
 @media print{.rail,.sidebar,.header,.section-links,.mobile-nav,article footer{display:none}.main,.reading{margin:0;padding:0}body{background:white;color:black}article,article[hidden]{display:block;break-before:page;padding:20px}article:first-of-type{break-before:auto}h2,h3,figure{break-inside:avoid}}
-</style></head><body><a class="skip" href="#content">跳到正文</a><div class="rail" aria-label="文档工具"><a class="icon-control" href="#00-overview" aria-label="总体架构" title="总体架构"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6a2 2 0 0 1 2 2v14a3 3 0 0 0-3-2H4zM20 4h-6a2 2 0 0 0-2 2v14a3 3 0 0 1 3-2h5z"/></svg></a><a class="icon-control" href="#08-frontend" aria-label="前端现状与缺口" title="前端现状与缺口"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg></a><button type="button" class="icon-control theme-toggle" aria-label="切换为深色"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.7A8.4 8.4 0 0 1 8.3 4 8.5 8.5 0 1 0 20 15.7Z"/></svg></button></div><aside class="sidebar"><p class="wordmark">omniops-bots<small>需求串讲</small></p><nav class="chapter-nav" aria-label="串讲章节"><a href="#00-overview"><span class="num">00</span><span>总体架构</span></a><a href="#01-skill"><span class="num">01</span><span>SKILL</span></a><a href="#02-mcp"><span class="num">02</span><span>MCP</span></a><a href="#03-builtintool"><span class="num">03</span><span>builtinTool</span></a><a href="#04-agent"><span class="num">04</span><span>Agent</span></a><a href="#05-updater"><span class="num">05</span><span>桌面端更新</span></a><a href="#06-sync"><span class="num">06</span><span>同步与装配</span></a><a href="#07-execution"><span class="num">07</span><span>任务执行与恢复</span></a><a href="#08-frontend"><span class="num">08</span><span>前端现状与缺口</span></a></nav><div class="sidebar-foot">8 章需求设计 · 1 章前端盘点<br>截图来自现有 Web 演示界面<br><a href="README.md">Markdown 目录</a><br><a href="https://github.com/time-gift24/omniops-bots/issues/3" target="_blank" rel="noopener">已确认规格</a></div></aside><main class="main" id="content" tabindex="-1"><header class="header"><nav class="breadcrumbs" aria-label="面包屑"><a href="#00-overview">需求串讲</a><span aria-hidden="true">/</span><span id="current-title" aria-current="page"></span></nav><div class="actions"><a class="text-control source-control" id="source" href="00-总体架构.md">Markdown</a><a class="text-control" id="diagram" href="diagrams/00-overview.html" target="_blank" rel="noopener">打开设计图<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-8 8M10 20H4v-6M4 20l8-8"/></svg></a><div class="pagination"><button type="button" id="prev" class="icon-control" aria-label="上一章"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button><span class="progress" id="progress"></span><button type="button" id="next" class="icon-control" aria-label="下一章"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button></div></div></header><div class="mobile-nav"><label for="chapter-select">章节</label><select id="chapter-select"><option value="00-overview">00 总体架构</option><option value="01-skill">01 SKILL</option><option value="02-mcp">02 MCP</option><option value="03-builtintool">03 builtinTool</option><option value="04-agent">04 Agent</option><option value="05-updater">05 桌面端更新</option><option value="06-sync">06 同步与装配</option><option value="07-execution">07 任务执行与恢复</option><option value="08-frontend">08 前端现状与缺口</option></select><button type="button" class="icon-control theme-toggle" aria-label="切换为深色"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.7A8.4 8.4 0 0 1 8.3 4 8.5 8.5 0 1 0 20 15.7Z"/></svg></button></div><div class="reading"><nav class="section-links" id="sections" aria-label="本章目录"></nav><article id="00-overview" data-file="00-总体架构.md" hidden><h1>00 总体架构</h1>
-<p>串讲重点：<strong>服务端编排流程、管理官方物料；客户端编辑实验、装配执行。</strong> 本组文档描述已确认的 MVP 目标，不表示能力已经实现。</p>
+</style></head><body><a class="skip" href="#content">跳到正文</a><div class="rail" aria-label="文档工具"><a class="icon-control" href="#00-overview" aria-label="客户端总体设计" title="客户端总体设计"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6a2 2 0 0 1 2 2v14a3 3 0 0 0-3-2H4zM20 4h-6a2 2 0 0 0-2 2v14a3 3 0 0 1 3-2h5z"/></svg></a><a class="icon-control" href="#08-frontend" aria-label="前端现状与缺口" title="前端现状与缺口"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg></a><button type="button" class="icon-control theme-toggle" aria-label="切换为深色"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.7A8.4 8.4 0 0 1 8.3 4 8.5 8.5 0 1 0 20 15.7Z"/></svg></button></div><aside class="sidebar"><p class="wordmark">omniops-bots<small>客户端需求串讲</small></p><nav class="chapter-nav" aria-label="串讲章节"><a href="#00-overview"><span class="num">00</span><span>客户端总体设计</span></a><a href="#01-skill"><span class="num">01</span><span>SKILL</span></a><a href="#02-mcp"><span class="num">02</span><span>MCP</span></a><a href="#03-builtintool"><span class="num">03</span><span>builtinTool</span></a><a href="#04-agent"><span class="num">04</span><span>Agent</span></a><a href="#05-updater"><span class="num">05</span><span>桌面端更新</span></a><a href="#06-sync"><span class="num">06</span><span>同步与装配</span></a><a href="#07-execution"><span class="num">07</span><span>任务执行与恢复</span></a><a href="#08-frontend"><span class="num">08</span><span>前端现状与缺口</span></a></nav><div class="sidebar-foot">8 章需求设计 · 1 章完成情况<br>界面设计实拍 · 图中为演示数据<br><a href="README.md">Markdown 目录</a><br><a href="https://github.com/time-gift24/omniops-bots/issues/3" target="_blank" rel="noopener">已确认规格</a></div></aside><main class="main" id="content" tabindex="-1"><header class="header"><nav class="breadcrumbs" aria-label="面包屑"><a href="#00-overview">客户端设计</a><span aria-hidden="true">/</span><span id="current-title" aria-current="page"></span></nav><div class="actions"><a class="text-control source-control" id="source" href="00-总体架构.md">Markdown</a><a class="text-control" id="diagram" href="diagrams/00-overview.html" target="_blank" rel="noopener">打开运行模型<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-8 8M10 20H4v-6M4 20l8-8"/></svg></a><div class="pagination"><button type="button" id="prev" class="icon-control" aria-label="上一章"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button><span class="progress" id="progress"></span><button type="button" id="next" class="icon-control" aria-label="下一章"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button></div></div></header><div class="mobile-nav"><label for="chapter-select">章节</label><select id="chapter-select"><option value="00-overview">00 客户端总体设计</option><option value="01-skill">01 SKILL</option><option value="02-mcp">02 MCP</option><option value="03-builtintool">03 builtinTool</option><option value="04-agent">04 Agent</option><option value="05-updater">05 桌面端更新</option><option value="06-sync">06 同步与装配</option><option value="07-execution">07 任务执行与恢复</option><option value="08-frontend">08 前端现状与缺口</option></select><button type="button" class="icon-control theme-toggle" aria-label="切换为深色"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.7A8.4 8.4 0 0 1 8.3 4 8.5 8.5 0 1 0 20 15.7Z"/></svg></button></div><div class="reading"><nav class="section-links" id="sections" aria-label="本章目录"></nav><article id="00-overview" data-file="00-总体架构.md" hidden><h1>00 客户端总体设计</h1>
+<p><strong>我们要构建一个面向运维场景的桌面客户端。</strong> 用户在客户端管理 Agent 与 Skill、进行本地编辑和实验，并由 Agent 在本机专用 Chrome 中执行运维操作。</p>
+<p><strong>我们的核心资产是受版本控制、可持续演进的 Agent 提示词与 Skill。</strong> 提示词沉淀任务目标、操作边界和结果要求，Skill 完整文件包沉淀可复用的运维方法、操作步骤和参考资料。团队按周将实际任务中的反馈转化为改进，经本地编辑、按需实验后发布新的确定版本，逐步提高 Agent 的任务完成能力。</p>
+<p>客户端支持用户主动发起会话，也能连接已有内部服务，接收远端 Agent 调用并回传结果。本设计围绕客户端的界面、资源管理、运行与恢复展开；各章最后列出服务端需要配合提供的能力。</p>
 <h2 id="00-overview-US">US</h2>
-<h3>现有页面与缺口</h3>
-<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/00-workspace.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/00-workspace.png" alt="现有工作区、中央会话与右侧工作台"></a><figcaption>实拍现有 Web 演示界面；资源与执行数据来自演示适配器。</figcaption></figure>
-<p>沿用导航与工作台结构。待补：现有账号身份与运维权限、服务端连接和重连状态。</p>
+<h3>界面设计</h3>
+<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/00-workspace.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/00-workspace.png" alt="现有工作区、中央会话与右侧工作台"></a><figcaption>界面实拍，图中使用演示数据。</figcaption></figure>
+<p>客户端由左侧导航、中央内容区和右侧工作台组成。导航组织会话、Agent 与 Skill；中央区域承载编辑和对话；工作台展示浏览器与执行过程。账号区域展示用户身份与运维权限，连接状态区分已连接、重连中和离线。</p>
 <ol>
 <li>作为运维人员，我希望在客户端编辑、实验并发布 Skill 和 Agent，让团队使用确定的版本。</li>
 <li>作为普通用户，我希望同步并使用官方能力，也能自由编辑自己的本地资源。</li>
-<li>作为流程编排方，我希望把客户端 Agent 当作工具调用，由它在 Chrome 完成实际操作。</li>
+<li>作为用户，我希望客户端能接收服务端任务，在 Chrome 完成操作，并让我查看执行过程与结果。</li>
 <li>作为用户，我希望知道运行了什么、结果是什么，并在断线后仍能交付已有结果。</li>
 </ol>
 <figure class="usecase"><a class="screenshot-link" href="./assets/00-overview-usecase.svg" target="_blank" rel="noopener" aria-label="放大用例图"><img src="./assets/00-overview-usecase.svg" alt="总体用例图：运维人员、普通用户与服务端编排方"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure><h2 id="00-overview-简要设计">简要设计</h2>
-<p>现有内部 LangGraph 服务继续管理流程上下文，将客户端 Agent 调用封装成工具。桌面端连接服务，在客户端管理的专用 Chrome 中执行运维操作。Tauri 承担桌面包装，本次不引入其他 Rust 业务模块作为前置条件。</p>
+<p>客户端把资源管理和任务执行放在同一个工作空间中：用户编辑、实验和选择 Agent，客户端准备所需物料，在专用 Chrome 中执行，并保存可查看、可补传的结果。Tauri 承担桌面包装，本次不引入其他 Rust 业务模块作为前置条件。</p>
 <table>
 <thead>
 <tr>
-<th>边界</th>
-<th>承载内容</th>
+<th>客户端能力</th>
+<th>主要行为</th>
+<th>服务端需配合</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>HTTPS</td>
-<td>草稿上传、正式发布、版本清单、物料下载</td>
+<td>资源管理</td>
+<td>编辑本地 Agent、Skill；实验草稿；运维人员上传和发布</td>
+<td>校验身份权限，保存官方草稿与发布版本</td>
 </tr>
 <tr>
-<td>WebSocket</td>
-<td>调用、取消、任务状态、最终结果、快照与接收确认</td>
+<td>同步装配</td>
+<td>核对版本、按需下载、保留历史包、固定运行快照</td>
+<td>通过 HTTPS 提供版本清单与物料</td>
 </tr>
 <tr>
-<td>客户端本地</td>
-<td>未同步编辑、已下载历史版本、会话快照和执行记录</td>
+<td>任务执行</td>
+<td>接收手动输入或远端调用，在专用 Chrome 中执行</td>
+<td>通过 WebSocket 发送调用、上下文与取消请求</td>
+</tr>
+<tr>
+<td>结果交付</td>
+<td>展示过程，本地保存状态、结果与快照，断线后补传</td>
+<td>接收状态、最终结果与快照，确认收到</td>
+</tr>
+<tr>
+<td>桌面更新</td>
+<td>检查、下载、验签，在空闲时由用户确认安装</td>
+<td>提供更新清单和已签名整包下载</td>
 </tr>
 </tbody></table>
-<p>官方 Agent、Skill 由服务端管理；本地资源自由编辑，服务端不调用本地 Agent。</p>
-<h2 id="00-overview-服务端">服务端</h2>
-<ul>
-<li>复用已有账号与 Token，识别并校验运维权限；普通用户不能写入官方资源。</li>
-<li>保存官方草稿修订和不可变发布版本，提供清单与文件包。</li>
-<li>Skill 正式发布时联动生成受影响 Agent 的新版本，标签全部由运维人员手填，不增加审核。</li>
-<li>编排调用、传入上下文、按调用 ID 取消，接收结果并确认；忙时如何再调度由服务端决定。</li>
-</ul>
+<p>客户端保留未同步编辑、已下载历史版本、会话快照与执行记录。本地资源可自由编辑；官方已发布资源同步后只读，服务端只调用官方 Agent。</p>
+<h3>核心资产如何积累与演进</h3>
+<table>
+<thead>
+<tr>
+<th>对象</th>
+<th>沉淀内容</th>
+<th>版本与演进方式</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Agent 提示词</td>
+<td>角色、目标、操作边界、决策要求与输出要求</td>
+<td>作为 Agent 装配的一部分保存；正式修改生成新的 Agent 内容 ID 和人工发布标签，不另建一套提示词发布体系</td>
+</tr>
+<tr>
+<td>Skill 完整包</td>
+<td><code>SKILL.md</code>、操作说明、引用资料、脚本及随包资源</td>
+<td>完整包生成内容 ID；已发布包不可变，新版本保留旧包，Agent 明确引用所需版本</td>
+</tr>
+<tr>
+<td>Agent 装配清单</td>
+<td>提示词、固定 Skill 版本、builtinTool 选择和 MCP 配置</td>
+<td>将核心资产组合为可运行的 Agent；装配变化生成新 ID，并手填 <code>v.1.0.0</code> 形式的标签</td>
+</tr>
+<tr>
+<td>运行快照与执行记录</td>
+<td>本次使用的装配、运行条件、过程与结果</td>
+<td>为问题定位和下一轮改进提供依据；快照不建立发布版本，实验产物不混入 Skill 包</td>
+</tr>
+</tbody></table>
+<p>客户端提供核心资产的编辑、实验与使用入口；服务端统一保存官方草稿修订和不可变发布历史。提示词只改目标或行为要求时，可以复用原有 Skill 版本；Skill 正式发布时，一并更新受影响 Agent 的引用与内容 ID，并由运维手填各自的新标签。保存草稿不触发联动发布。</p>
+<p>MCP 提供远端执行能力，配置随 Agent 同步；MCP 服务本身不进入本项目版本体系。builtinTool 提供桌面执行能力，实现随桌面应用更新。每周改进提示词和 Skill 不要求同时发布桌面端；只有确需新的内置能力时才安排桌面更新。</p>
+<h3>按周迭代发布</h3>
+<table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>运维在客户端完成的工作</th>
+<th>形成的结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>周内迭代</td>
+<td>结合实际任务结果定位不足，修改 Agent 提示词或 Skill 草稿，按需选 Agent 实验</td>
+<td>可继续修改的草稿、独立保存的实验记录；未完成内容留在草稿中</td>
+</tr>
+<tr>
+<td>每周发布</td>
+<td>选择本周已确认的改进，手填本次 Skill 与受影响 Agent 的新标签，提交正式发布</td>
+<td>一次确定的资产更新；只改提示词则发布 Agent，Skill 改动则联动发布受影响 Agent；无变化的物料继续复用</td>
+</tr>
+<tr>
+<td>发布后使用与反馈</td>
+<td>新会话核对并装配所选新版，观察执行结果，把新问题纳入下一周</td>
+<td>旧会话保持原快照，发布历史可追溯，改进持续积累</td>
+</tr>
+</tbody></table>
+<p>按周发布是团队的迭代节奏，不增加审核人、审批流或强制实验门槛；运维提交即表示本人已确认。标签始终人工输入，周次和日期不替代发布标签，也不自动覆盖历史版本。没有已确认变更时不创建空版本。</p>
+<details>
+<summary>客户端与外部服务的结构关系</summary>
+
+<figure class="diagram"><a class="screenshot-link" href="diagrams/00-overview.html" target="_blank" rel="noopener" aria-label="打开可缩放设计图"><img src="./assets/00-overview.svg" alt="客户端与外部服务的结构关系"></a><figcaption>结构或状态概览 · 点击缩放查看</figcaption></figure><p><a href="./diagrams/00-overview.html">打开结构关系图</a></p>
+</details>
+
 <h2 id="00-overview-客户端">客户端</h2>
 <ul>
+<li>展示登录身份、运维权限和连接状态，复用已有 Token 连接服务端；WebSocket 断线后退避重连。</li>
 <li>提供本地编辑、草稿实验和运维上传入口；官方已发布配置只读。</li>
+<li>围绕提示词和 Skill 的每周改进保存草稿、实验记录及发布引用，展示本次 Agent 实际装配；发布过程不增加审批。</li>
 <li>新会话同步清单，按需下载缺失物料；调用前核对版本，失败不拿旧版代替。</li>
 <li>运行前固定装配快照，检查所需内置工具；同一 Chrome 每轮只执行一个任务，忙时直接返回。</li>
 <li>展示过程、保存结果并补传；只向服务端发送状态、最终结果和运行快照。</li>
 </ul>
 <h2 id="00-overview-详细设计">详细设计</h2>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/00-overview.html" target="_blank" rel="noopener" aria-label="打开可缩放设计图"><img src="./assets/00-overview.svg" alt="总体架构：物料通道、任务通道与客户端执行边界"></a><figcaption>设计图 · 点击缩放查看</figcaption></figure><p><a href="./diagrams/00-overview.html">打开可交互架构图</a></p>
-<p>按图串讲一次远端调用：服务端发起 → 客户端核对版本、补齐物料 → 固定快照并执行 → 本地保存结果 → 回传并等待确认。每次调用新建独立会话，服务端传入上下文；客户端任务会话只读，但可按任务要求操作 Chrome。</p>
-<p>断线期间执行继续，重连只补传、不重跑。进程重启后未完成任务报告“执行中断、结果未知”。服务端高可用、业务输入输出协议与内部调度不在本次范围。</p>
-<p>串讲验收围绕“编辑发布 → 同步装配 → 调用执行 → 结果恢复”四条完整业务流程，观察结果而非展开内部实现。<a href="https://github.com/time-gift24/omniops-bots/issues/3">规格依据：Issue #3</a>。</p>
-<footer><span class="footer-label">需求设计与前端现状 · 2026-10-18</span><a href="#01-skill">下一章：SKILL</a></footer></article><article id="01-skill" data-file="01-SKILL.md" hidden><h1>01 · SKILL</h1>
+<p>以下运行模型按消息发生顺序描述客户端行为；各图是独立场景。准备失败、忙或执行中断的路径分别见同步与执行章节。</p>
+<h3>场景一：用户主动发起会话</h3>
+<p>前提：用户选择官方 Agent，准备检查成功，Chrome 执行名额空闲。本地 Agent 使用本地装配；引用官方 Skill 时仍需补齐对应版本。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/00-manual.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/00-manual.svg" alt="用户主动发起会话"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/00-manual.html">打开顺序图：用户主动发起会话</a></p>
+<p>结果：客户端保存并展示本轮结果，等待用户继续输入时释放 Chrome 名额；同一会话继续使用开始时的快照。</p>
+<h3>场景二：客户端接收远端调用</h3>
+<p>前提：客户端收到对官方 Agent 的调用，指定版本准备成功且 Chrome 空闲。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/00-remote.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/00-remote.svg" alt="远端独立任务与结果确认"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/00-remote.html">打开顺序图：远端独立任务与结果确认</a></p>
+<p>结果：每次调用新建独立、只读会话，逐条过程在客户端展示。结果与快照先落本地，再向服务端回传，确认前保留。断线继续执行，重连只补传；重启后未完成任务报告“执行中断、结果未知”。</p>
+<p>验收从客户端操作或远端调用进入，覆盖“编辑发布 → 同步装配 → 调用执行 → 结果恢复”的完整结果。<a href="https://github.com/time-gift24/omniops-bots/issues/3">规格依据：Issue #3</a>。</p>
+<h3>场景三：核心资产按周迭代发布</h3>
+<p>前提：运维已根据本周实际任务反馈确认需要改进的提示词或 Skill，客户端完成本地编辑。图中展示本周修改 Skill、选择本地实验并联动发布受影响 Agent 的情况；实验按需进行，正式发布由运维直接提交。只改提示词时，发布新的 Agent 并复用原 Skill 包。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/00-weekly-evolution.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/00-weekly-evolution.svg" alt="按周迭代：任务反馈、草稿改进、发布与新版使用"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/00-weekly-evolution.html">打开顺序图：核心资产按周迭代发布</a></p>
+<p>结果：本周的改进形成新的不可变 Agent／Skill 发布版本，新会话使用所选新版，旧会话保持原快照。执行中发现的问题继续进入下一周迭代。图示为目标业务流程；当前草稿实验、官方发布同步和完整会话快照仍待接入。</p>
+<h2 id="00-overview-服务端配合">服务端配合</h2>
+<p>为支持上述客户端能力，已有内部服务需要提供：</p>
+<ul>
+<li><strong>身份与权限</strong>：复用已有账号与 Token，返回用户身份与运维权限，并校验官方资源写入；普通用户不能写入官方资源。</li>
+<li><strong>草稿、发布与同步</strong>：保存官方草稿修订和不可变发布版本，提供 HTTPS 清单与文件包；Skill 正式发布时联动受影响 Agent，所有标签由运维人员手填，不增加审核。</li>
+<li><strong>资产持续演进</strong>：保留每周发布涉及的提示词、Skill 和 Agent 装配关系，让客户端能够查看新旧版本及本次改进；不为周发布新增定时自动发版、MCP 发布或独立提示词版本系统。</li>
+<li><strong>调用与结果确认</strong>：LangGraph 将客户端 Agent 作为工具调用，通过 WebSocket 传入上下文、按调用 ID 取消，接收状态、结果、快照并确认；客户端返回忙时由服务端安排后续调用。</li>
+<li><strong>桌面更新来源</strong>：提供更新清单和已签名整包下载，供客户端检查、下载与校验。</li>
+</ul>
+<p>服务端高可用、内部编排实现和具体业务协议另行定义，本设计只说明客户端依赖的配合能力。</p>
+<footer><span class="footer-label">客户端 MVP 设计 · 2026-10-18</span><a href="#01-skill">下一章：SKILL</a></footer></article><article id="01-skill" data-file="01-SKILL.md" hidden><h1>01 · SKILL</h1>
 <blockquote>
-<p>串讲重点：Skill 是完整文件包；实验先固定快照，正式发布再联动 Agent。</p>
+<p>串讲重点：客户端提供 Skill 列表与包内文件管理，支持文件级上传、编辑和实验；运维人员上传完整草稿、发布完整文件包，服务端配合保存和分发。</p>
 </blockquote>
 <h2 id="01-skill-US">US</h2>
-<h3>现有页面与缺口</h3>
-<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/01-skill.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/01-skill.png" alt="现有 Skill 文件树、正文阅读与编辑入口"></a><figcaption>实拍现有 Web 演示界面；资源与执行数据来自演示适配器。</figcaption></figure>
-<p>沿用文件阅读和草稿编辑。待补：官方/本地、完整包版本、选择 Agent 实验、上传草稿与联动发布；当前保存草稿仍是本地单文件保存。</p>
+<h3>界面设计</h3>
+<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/01-skill-list.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/01-skill-list.png" alt="Skill 列表：搜索、来源筛选与本地管理"></a><figcaption>本次实现的 Web 界面实拍，图中使用演示数据。浏览器预览保存到 IndexedDB，桌面客户端保存到当前用户的 <code>.omnimind-ops/skills</code>。</figcaption></figure>
+<p>Skill 页面分为两层：列表管理 Skill，进入一个 Skill 后管理包内目录与文件。资源标明本地或官方来源，版本记录以完整文件包为单位。用户上传、查看和编辑具体文件，在页面选择 Agent 发起草稿实验；运维人员可上传草稿，并手填 Skill 与受影响 Agent 的标签完成联动发布。</p>
 <ol>
 <li>作为运维人员，我在客户端编辑草稿并按需上传，让服务端集中保存修订。</li>
 <li>作为运维人员，我在 Skill 页面勾选一个 Agent，即可实验尚未上传的草稿。</li>
 <li>作为运维人员，我手填 Skill 和受影响 Agent 的新标签，一次完成正式发布。</li>
 <li>作为用户，我使用官方已发布 Skill；需要修改时复制成本地 Skill，保留官方原件。</li>
+<li>作为用户，我能在列表中找到、新建或复制 Skill，进入后向指定目录上传文件，并看到每个文件的保存结果。</li>
 </ol>
 <figure class="usecase"><a class="screenshot-link" href="./assets/01-skill-usecase.svg" target="_blank" rel="noopener" aria-label="放大用例图"><img src="./assets/01-skill-usecase.svg" alt="Skill 用例图：编辑、实验、发布与使用"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure><h2 id="01-skill-简要设计">简要设计</h2>
-<p>Skill 的版本单位是<strong>整个文件包</strong>，包括说明、脚本、引用资料和随包资源。实验、发布都对应确定的完整快照，日志、截图等实验产物另存。</p>
-<p>本地 Skill 可自由编辑，不设发布标签。官方 Skill 的草稿修订、正式版本由服务端保存；客户端保留未同步编辑和下载缓存。普通用户只同步、查看、使用官方已发布版本，仍可编辑自己的本地 Skill。</p>
-<h2 id="01-skill-服务端">服务端</h2>
-<ul>
-<li>复用现有登录与 Token，判定运维权限；草稿上传、创建版本、正式发布均由服务端校验。</li>
-<li>保存完整草稿修订与不可变发布包，提供版本清单和 HTTPS 下载。</li>
-<li>正式发布时列出受影响的官方 Agent，按新 Skill 版本生成新装配、新 Agent ID。</li>
-<li>接收运维人员手填的 Skill 标签及各受影响 Agent 的新标签，一次完成联动发布。保存草稿不联动 Agent。</li>
-</ul>
+<p>客户端围绕“编辑 → 实验 → 上传或发布”组织 Skill 操作。用户可以自由编辑、保存本地 Skill，不设发布标签；在页面勾选现有 Agent，就能运行尚未上传的草稿。实验前固定完整快照，日志、截图等实验产物另存。</p>
+<p>客户端按<strong>整个文件包</strong>保存和装配 Skill，包括说明、脚本、引用资料和随包资源。官方发布包只读，普通用户可同步、查看和使用；运维人员可上传草稿修订、发布新版本。服务端配合集中保存这些官方物料，客户端保留未同步编辑、下载缓存和已下载的历史版本。</p>
+<h3>页面方案：Skill 列表 → 包内文件管理</h3>
+<p>已安装 <a href="https://pro.beui.dev/components/file-manager"><code>@beui-pro/file-manager-workspace</code></a>，接入 Skill 列表与包内文件管理。目录导航、搜索、文件列表、预览和上传交互使用客户端的暖灰底色、绿色强调、细边框及 Geist / MiSans 字体。</p>
+<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/01-skill-files.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/01-skill-files.png" alt="已实现的 Skill 包内文件管理"></a><figcaption>本次实现的 Web 界面实拍：可浏览目录、搜索文件、上传、新建、重命名和删除；官方已发布包只读。</figcaption></figure>
+<p>已完成列表管理、文件级上传、文本编辑及真实内容持久化。下表保留完整页面目标，其中官方草稿维护、历史版本切换、选 Agent 实验、服务端草稿上传与联动发布尚未接入。当前页面不提供这些操作的假成功入口。</p>
+<table>
+<thead>
+<tr>
+<th>页面区域</th>
+<th>内容与操作</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Skill 列表</td>
+<td>标题「Skill」；按名称搜索；全部、本地、官方筛选；默认列表，每行显示名称、简述、来源，以及本地已保存 / 未同步编辑 / 草稿修订 / 正式标签等对应状态。点击进入该 Skill。</td>
+</tr>
+<tr>
+<td>列表主操作</td>
+<td>「新建 Skill」创建本地 Skill；官方资源提供「复制为本地」。运维人员可进入官方草稿维护，普通用户没有官方写入入口。</td>
+</tr>
+<tr>
+<td>包内文件管理</td>
+<td>面包屑显示「Skill / 名称 / 当前目录」；目录导航和文件列表显示名称、类型、大小及操作结果。选中文件后阅读或编辑，保留源码、预览、分栏三种阅读方式。</td>
+</tr>
+<tr>
+<td>可编辑内容</td>
+<td>「上传文件」支持选择或拖入多个文件，加入当前目录；「新建文件」「新建文件夹」及重命名、删除作用于当前本地内容或官方草稿。上传说明、脚本、图片及附件均保留实际文件内容和相对路径；不支持预览的文件仍可保存。</td>
+</tr>
+<tr>
+<td>官方发布版本</td>
+<td>展示人工标签和版本轨迹；目录与文件只读，可查看、复制为本地或由运维人员转入草稿维护。切换版本不覆盖本地已下载历史包。</td>
+</tr>
+<tr>
+<td>草稿操作区</td>
+<td>「选择 Agent 实验」固定当前完整快照；运维人员另有「上传草稿」「发布」。文件尚在写入或有未处理失败时，不把它们当作已保存内容进入实验、上传或发布。</td>
+</tr>
+</tbody></table>
+<p>列表没有 Skill 时显示「新建 Skill」；搜索无结果时允许清除筛选。文件区为空时显示当前目录及上传入口。加载和失败状态留在对应列表或目录中，不把失败伪装成空内容。窄窗口收起目录导航，保留面包屑、文件名、状态和上传入口；操作可通过键盘完成，保存与失败结果用文字说明。</p>
+<p>组件自带的收藏、最近访问和演示存储统计不进入本期 MVP。已替换组件原版的临时上传存储：浏览器使用 IndexedDB；桌面通过现有 JavaScript runtime 写入真实 Skill 文件目录，重启后可读取。</p>
+<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/01-skill-file-upload.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/01-skill-file-upload.png" alt="上传文件、编辑和保存后的实际界面"></a><figcaption>浏览器实测上传 Markdown 文件、修改后保存，刷新页面仍能读取。桌面文件系统另由 runtime 测试验证；此图不是桌面运行截图。</figcaption></figure>
+<p>目录与版本规则、当前运行加载路径及后续完整快照装配见<a href="../skill-storage-and-loading.md">客户端 Skill 文件管理、版本与运行加载</a>。本地包放在 <code>skills/local/&lt;localId&gt;</code>；官方版本放在 <code>skills/releases/&lt;skillId&gt;/&lt;contentId&gt;</code>，人工标签通过 <code>tags.json</code> 映射到内容 ID。正式发布和同步校验仍由后续服务端接入完成。</p>
+<h3>文件上传与版本的边界</h3>
+<table>
+<thead>
+<tr>
+<th>动作</th>
+<th>写入位置与结果</th>
+<th>权限</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>上传文件 / 编辑 / 重命名 / 删除</td>
+<td>改变当前可编辑 Skill 的本地内容；尚未同步的修改保留在本机，不生成发布标签</td>
+<td>本地资源可自由修改；官方草稿维护仅运维人员</td>
+</tr>
+<tr>
+<td>上传草稿</td>
+<td>把当前完整文件包保存为服务端草稿修订；不联动 Agent</td>
+<td>服务端确认的运维人员</td>
+</tr>
+<tr>
+<td>正式发布</td>
+<td>固定完整包快照，提交 Skill 与受影响 Agent 的手填新标签，完成联动发布</td>
+<td>服务端确认的运维人员</td>
+</tr>
+</tbody></table>
+<p>文件级上传不产生独立文件版本，也不直接改写已发布包。同名文件先展示目标路径，由用户选择替换或跳过，不静默改名；目录失效则停止对应写入，不把文件改放到根目录。批量上传分别显示成功和失败，失败项可重试，原文件与其他已成功项保留。重命名、删除前展示目标路径并提醒可能影响包内引用，不自动改写其他文件的内容。</p>
+<details>
+<summary>早期编辑界面与组件参考</summary>
+
+<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/01-skill-edit.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/01-skill-edit.png" alt="现有 Skill 草稿编辑器"></a><figcaption>现有 Web 实拍 · 演示数据 · 点击查看原图</figcaption></figure><p>早期单文件编辑器截图。当前包内编辑继续提供源码、预览和分栏模式；完整草稿实验与发布尚未接入。</p>
+<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/01-file-manager-reference.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/01-file-manager-reference.png" alt="指定 File Manager 组件的上游 Web 截图"></a><figcaption>上游组件参考，来源：pro.beui.dev/components/file-manager；英文内容为组件示例。</figcaption></figure>
+</details>
+
 <h2 id="01-skill-客户端">客户端</h2>
 <ul>
-<li>提供编辑、保存、实验、上传与发布入口；官方发布版本保持只读。</li>
-<li>实验只需在页面选择现有 Agent，临时装配当前草稿，运行前固定完整快照，复用本地会话界面。</li>
+<li>提供 Skill 列表、新建本地 Skill、官方复制本地，以及包内文件和目录管理；官方发布版本保持只读。</li>
+<li>文件级上传保存真实文件内容、相对路径与当前草稿变更，支持文本和二进制资源；不把浏览器临时地址当作已持久化文件。</li>
+<li>提供编辑、保存、实验、上传草稿与发布入口；清楚区分本地已保存、未同步编辑、服务端草稿修订与正式发布标签。</li>
+<li>实验只需在页面选择现有 Agent，临时装配当前草稿，运行前固定完整快照，在本地实验会话中展示过程与结果。</li>
 <li>未上传草稿也可实验，不修改模板 Agent，不要求发布标签或实验通过证明。</li>
 <li>新会话按 Agent 清单下载缺失包；保留已下载旧版本，不自动覆盖或清理。已有会话继续使用初始快照。</li>
 </ul>
 <h2 id="01-skill-详细设计">详细设计</h2>
-<details>
-<summary>查看现有草稿编辑器</summary>
-
-<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/01-skill-edit.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/01-skill-edit.png" alt="现有 Skill 草稿编辑器"></a><figcaption>现有 Web 实拍 · 演示数据 · 点击查看原图</figcaption></figure><p>当前支持编辑、预览和本地保存；完整包修订、服务端上传与发布仍需补齐。</p>
-</details>
-
-<figure class="diagram"><a class="screenshot-link" href="diagrams/01-skill.html" target="_blank" rel="noopener" aria-label="打开可缩放设计图"><img src="./assets/01-skill.svg" alt="Skill 草稿、实验与联动发布流程"></a><figcaption>设计图 · 点击缩放查看</figcaption></figure><p><a href="./diagrams/01-skill.html">打开交互图：Skill 生命周期</a></p>
-<p><strong>沿图讲三条路径：</strong></p>
-<ol>
-<li><strong>编辑 → 实验</strong>：本地编辑形成完整实验快照，选择 Agent 后运行；实验产物留在执行记录中，不混入 Skill 包。</li>
-<li><strong>编辑 → 上传草稿</strong>：运维人员按需上传，服务端保存修订；此时不产生 Agent 联动发布。</li>
-<li><strong>草稿 → 正式发布</strong>：手填 <code>v.1.0.0</code> 形式的新标签，并补齐受影响 Agent 的新标签；发布后内容不可变，标签不能改指向、覆盖或重用。</li>
-</ol>
-<p>本地 Agent 可以直接装配官方已发布 Skill。修改官方内容走“复制成本地 Skill”；维护官方内容走“编辑草稿并发布新版”。两条路径都不改写历史发布包。MVP 不增加审核、强制实验门槛、自动标签或历史清理。</p>
-<footer><span class="footer-label">需求设计与前端现状 · 2026-10-18</span><a href="#02-mcp">下一章：MCP</a></footer></article><article id="02-mcp" data-file="02-MCP.md" hidden><h1>02 · MCP</h1>
+<h3>运行模型一：向当前 Skill 上传文件</h3>
+<p><strong>条件：</strong> 用户从 Skill 列表进入本地 Skill，或运维人员进入官方草稿，选择目标目录后上传文件。该操作先写入本机，符合客户端保留未同步编辑的约定。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/01-skill-file-upload.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/01-skill-file-upload.svg" alt="运行模型：向 Skill 当前目录上传文件并保存"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/01-skill-file-upload.html">打开交互顺序图：Skill 文件级上传</a></p>
+<p><strong>结果：</strong> 客户端在实际写入完成后更新文件列表及保存状态，重启后可读取。官方草稿显示未同步编辑；用户按需选择实验，运维人员按需上传完整草稿或正式发布。普通用户的本地文件操作不触发服务端写入。</p>
+<h3>运行模型二：同名替换失败，保留原文件</h3>
+<p><strong>条件：</strong> 上传文件与目标目录中的文件同名。客户端先询问替换或跳过；本图展示选择替换但本地写入失败的情况。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/01-skill-file-conflict.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/01-skill-file-conflict.svg" alt="运行模型：同名文件替换失败时保留原内容"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/01-skill-file-conflict.html">打开交互顺序图：同名冲突与写入失败</a></p>
+<p><strong>结果：</strong> 原文件保持可读，失败项展示原因，不能标为已保存。用户重试时仍以明确的目标路径写入；选择跳过则不写入该项。批次中其他已成功文件不撤销。新建、编辑、重命名和删除失败也保留可恢复的原内容与当前未保存编辑，不生成新的完整包版本。</p>
+<h3>运行模型三：在客户端实验草稿</h3>
+<p><strong>条件：</strong> 用户在 Skill 页面勾选现有 Agent 作为模板；草稿可以尚未上传。客户端准备好其他物料、完成工具检查，并取得 Chrome 执行名额后开始实验。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/01-skill-experiment.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/01-skill-experiment.svg" alt="运行模型：在客户端实验未上传的 Skill 草稿"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/01-skill-experiment.html">打开交互顺序图：Skill 草稿实验</a></p>
+<p><strong>结果：</strong> 实验使用运行前固定的完整装配快照，过程与结果展示在本地实验会话。原 Agent 和已发布 Skill 不变，不要求发布标签；日志、截图等产物另存，不混入 Skill 文件包。</p>
+<h3>运行模型四：上传草稿修订</h3>
+<p><strong>条件：</strong> 运维人员选择上传当前完整 Skill 文件包。客户端先固定已保存草稿的完整快照，再使用现有登录与 Token 上传，权限由服务端判断；上传开始后的继续编辑不改变本次快照。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/01-skill-draft-upload.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/01-skill-draft-upload.svg" alt="运行模型：运维人员上传 Skill 草稿修订"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/01-skill-draft-upload.html">打开交互顺序图：Skill 草稿上传</a></p>
+<p><strong>结果：</strong> 成功后客户端显示服务端保存的草稿修订。此时不发布 Skill，也不联动 Agent；权限不符或上传失败时展示原因，本地草稿仍保留。对于官方 Skill，普通用户只同步、查看和使用已发布版本；本地 Skill 仍可自由管理。</p>
+<h3>运行模型五：正式联动发布</h3>
+<p><strong>条件：</strong> 运维人员决定发布完整 Skill 快照，并手填 Skill 与所有受影响官方 Agent 的新标签，统一使用 <code>v.1.0.0</code> 形式。提交表示已经确认，不设置审核或强制实验门槛。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/01-skill-publish.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/01-skill-publish.svg" alt="运行模型：客户端发起 Skill 与 Agent 联动发布"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/01-skill-publish.html">打开交互顺序图：Skill 与 Agent 联动发布</a></p>
+<p><strong>结果：</strong> 服务端一次完成 Skill 发布、受影响 Agent 装配更新、新 Agent ID 生成及手填标签保存；客户端显示本次发布结果。权限或标签校验失败则显示原因，不显示发布成功。已发布内容不可变，标签不能改指向、覆盖或重用。</p>
+<p>本地 Agent 可直接装配官方已发布 Skill。需要修改官方内容时，复制成本地 Skill；维护官方内容则编辑草稿并发布新版。两条路径都不改写历史发布包，也不自动清理旧版本。</p>
+<h2 id="01-skill-服务端配合">服务端配合</h2>
+<p>为支持客户端的草稿保存、发布与同步，服务端需要配合：</p>
+<ul>
+<li>基于现有登录与 Token 返回用户身份和运维权限，并校验草稿上传、创建版本、正式发布请求。</li>
+<li>接收包含目录、相对路径及真实文件内容的完整草稿修订与不可变发布包，提供版本清单和 HTTPS 下载。文件级编辑发生在客户端，不新增文件级发布或服务端审批流程。</li>
+<li>向客户端提供正式发布所影响的官方 Agent；按新 Skill 版本更新装配、生成新 Agent ID。</li>
+<li>接收客户端提交的 Skill 标签及各受影响 Agent 的手填新标签，一次完成联动发布。保存草稿不联动 Agent。</li>
+</ul>
+<footer><span class="footer-label">客户端 MVP 设计 · 2026-10-18</span><a href="#02-mcp">下一章：MCP</a></footer></article><article id="02-mcp" data-file="02-MCP.md" hidden><h1>02 · MCP</h1>
 <blockquote>
-<p>串讲重点：MCP 是 Agent 使用的外部能力；同步接入配置，不管理外部服务版本。</p>
+<p>串讲重点：客户端随 Agent 获取 MCP 配置，连接远端 MCP 并展示调用过程；服务端配合提供官方配置。</p>
 </blockquote>
 <h2 id="02-mcp-US">US</h2>
-<h3>现有页面与缺口</h3>
-<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/02-mcp.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/02-mcp.png" alt="现有 MCP 能力详情：工具、资源与提示词"></a><figcaption>实拍现有 Web 演示界面；资源与执行数据来自演示适配器。</figcaption></figure>
-<p>沿用能力列表与详情弹窗。待补：实际远端连接配置或引用、连接状态和失败原因；MCP 配置跟随 Agent 同步，不增加独立发布体系。</p>
+<h3>界面设计</h3>
+<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/02-mcp.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/02-mcp.png" alt="现有 MCP 能力详情：工具、资源与提示词"></a><figcaption>界面实拍，图中使用演示数据。</figcaption></figure>
+<p>MCP 位于 Agent 的能力配置区，支持选择服务、查看工具/资源/提示词清单，以及展示连接配置或引用、连接状态和失败原因。官方 Agent 的配置只读；配置随 Agent 同步，MCP 服务本身不纳入发布版本。</p>
 <ol>
 <li>作为运维人员，我为官方 Agent 配好所需 MCP，让用户同步 Agent 后获得对应配置。</li>
 <li>作为用户，我通过客户端连接远端 MCP，包括内部服务提供的 MCP，执行 Agent 所需操作。</li>
 <li>作为用户，我查看当次启用的 MCP 和工具清单，了解运行时实际使用了哪些能力。</li>
 </ol>
 <figure class="usecase"><a class="screenshot-link" href="./assets/02-mcp-usecase.svg" target="_blank" rel="noopener" aria-label="放大用例图"><img src="./assets/02-mcp-usecase.svg" alt="MCP 用例图：配置、同步、连接与追溯"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure><h2 id="02-mcp-简要设计">简要设计</h2>
-<p>支持远端 MCP 接入，内部服务也可以提供 MCP。MCP 连接配置或引用属于 Agent 装配物料，与 Agent 一并同步；<strong>外部 MCP 服务实现本身不进入本项目的版本与发布体系</strong>。</p>
-<p>Agent 内容 ID 包含其选定的 MCP 装配配置，因此更改官方 Agent 的装配需要形成新的 Agent 版本。这里固定的是配置选择，并不承诺固定远端 MCP 的服务实现、工具行为或发布周期。</p>
-<h2 id="02-mcp-服务端">服务端</h2>
-<ul>
-<li>保存官方 Agent 所需 MCP 配置或引用，作为 Agent 物料提供同步。</li>
-<li>对官方 Agent 配置的写入沿用运维权限校验；普通用户使用已发布配置。</li>
-<li>服务端若提供 MCP，按自身服务职责维护该接入点；本规格不新增 MCP 版本仓库或发布流程。</li>
-<li>LangGraph 仍负责流程编排，具体 Agent 执行与 MCP 调用由客户端承接，不因 MCP 来源改变分工。</li>
-</ul>
+<p>用户在客户端的 Agent 能力区选择 MCP、查看能力清单；客户端运行 Agent 时，按装配配置连接对应的远端 MCP 并调用工具。MCP 可以来自内部服务，也可以来自其他已配置的远端地址。</p>
+<p>官方 Agent 所需的 MCP 连接配置或引用随 Agent 一并同步，客户端保持只读；本地 Agent 使用自己的配置。配置选择参与 Agent 内容 ID，更改官方装配需要形成新的 Agent 版本。<strong>外部 MCP 服务实现本身不进入本项目的版本与发布体系</strong>，不固定其工具行为或发布周期。</p>
 <h2 id="02-mcp-客户端">客户端</h2>
 <ul>
 <li>随官方 Agent 同步所需 MCP 连接配置，按当次装配建立远端连接并使用工具。</li>
@@ -138,33 +310,39 @@
 <li>密钥和 Token 不进入运行快照；配置的同步不意味着将凭据写入可观测记录。</li>
 </ul>
 <h2 id="02-mcp-详细设计">详细设计</h2>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/02-mcp.html" target="_blank" rel="noopener" aria-label="打开可缩放设计图"><img src="./assets/02-mcp.svg" alt="MCP 配置同步与运行时连接关系"></a><figcaption>设计图 · 点击缩放查看</figcaption></figure><p><a href="./diagrams/02-mcp.html">打开交互图：MCP 接入边界</a></p>
-<p><strong>沿图讲两条线：</strong> 物料线由服务端把 Agent 的 MCP 配置同步到客户端；执行线由客户端 Agent 连接实际 MCP 服务、调用工具，再纳入该轮任务结果。</p>
-<p>MCP 服务可以来自内部服务，也可以来自其他已配置的远端地址。服务端作为配置来源、MCP 作为工具服务，是两个职责，部署在同一处也不合并其含义。</p>
-<p>MVP 沿用任务执行记录和快照追溯接入情况，不新增 MCP 发布标签、服务实现下载、独立升级器或监控平台。具体鉴权方式、传输参数随实际接入确定，本次串讲不扩展为协议设计。</p>
-<footer><span class="footer-label">需求设计与前端现状 · 2026-10-18</span><a href="#03-builtintool">下一章：builtinTool</a></footer></article><article id="03-builtintool" data-file="03-buildintool.md" hidden><h1>03 · builtinTool</h1>
+<h3>运行模型一：连接成功并调用 MCP</h3>
+<p><strong>条件：</strong> 客户端已固定本轮使用的 Agent 装配；官方 MCP 配置或引用随 Agent 同步，本地 Agent 使用自己的配置。所需远端 MCP 可用。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/02-mcp-call.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/02-mcp-call.svg" alt="运行模型：客户端连接 MCP 并调用工具"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/02-mcp-call.html">打开交互顺序图：MCP 连接与调用</a></p>
+<p><strong>结果：</strong> 客户端取得能力清单后执行所需工具调用，展示过程，并将工具结果纳入本轮任务结果。运行快照记录启用的 MCP 与工具清单，不包含密钥和 Token。图中的 Agent 物料是当次装配，不表示每次工具调用都重新同步。</p>
+<h3>运行模型二：所需 MCP 连接失败</h3>
+<p><strong>条件：</strong> 本轮所需 MCP 无法连接或鉴权失败。调用方可以是用户或发起远端任务的服务端。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/02-mcp-failure.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/02-mcp-failure.svg" alt="运行模型：所需 MCP 连接失败"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/02-mcp-failure.html">打开交互顺序图：MCP 连接失败</a></p>
+<p><strong>结果：</strong> 客户端不进入该 MCP 的工具调用，记录并展示失败原因；远端任务按任务结果回传规则通知服务端。连接成功后若实际工具调用失败，同样记录该调用错误并纳入本轮失败结果，不把失败伪装为成功。</p>
+<p>MCP 可以由内部服务或其他远端服务提供。服务端作为配置来源、MCP 作为工具服务，是两个职责，部署在同一处也不合并其含义。MVP 不增加 MCP 发布标签、服务实现下载、独立升级器或监控平台；具体鉴权方式和传输参数随实际接入确定。</p>
+<h2 id="02-mcp-服务端配合">服务端配合</h2>
+<p>为支持客户端获取配置、连接 MCP，服务端需要配合：</p>
+<ul>
+<li>将官方 Agent 所需 MCP 配置或引用纳入 Agent 物料，提供同步。</li>
+<li>校验官方配置写入者的运维权限，向普通用户提供已发布配置。</li>
+<li>若由内部服务提供 MCP，提供可供客户端连接的接入点；其内部实现和发布流程不在本规格范围内。</li>
+</ul>
+<p>LangGraph 编排流程时调用客户端 Agent；客户端承担实际执行及 MCP 调用。MCP 的来源不改变这一边界。</p>
+<footer><span class="footer-label">客户端 MVP 设计 · 2026-10-18</span><a href="#03-builtintool">下一章：builtinTool</a></footer></article><article id="03-builtintool" data-file="03-buildintool.md" hidden><h1>03 · builtinTool</h1>
 <blockquote>
-<p>串讲重点：内置工具随桌面端交付；Agent 选择要用的工具，运行前检查是否具备。</p>
+<p>串讲重点：用户在客户端为 Agent 选择内置工具；客户端运行前检查是否齐全，缺失时提示更新桌面端。</p>
 </blockquote>
 <h2 id="03-builtintool-US">US</h2>
-<h3>现有页面与缺口</h3>
-<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/03-tools.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/03-tools.png" alt="现有 Agent 工具勾选页签"></a><figcaption>实拍现有 Web 演示界面；资源与执行数据来自演示适配器。</figcaption></figure>
-<p>沿用工具选择。待补：运行前的缺失工具提示和桌面更新入口。截图中的“操作前先确认”属于旧演示，不是本期新增的审核要求。</p>
+<h3>界面设计</h3>
+<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/03-tools.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/03-tools.png" alt="现有 Agent 工具勾选页签"></a><figcaption>界面实拍，图中使用演示数据。</figcaption></figure>
+<p>Agent 能力区的“工具”页签展示并选择 builtinTool。运行前检查所需工具；缺失时列出工具名称、说明失败原因，并提供桌面更新入口。截图中的“操作前先确认”不属于本期 MVP 流程。</p>
 <ol>
 <li>作为运维人员，我为 Agent 选择所需内置工具，让装配明确表达执行需要。</li>
 <li>作为用户，我运行 Agent 前获知缺少的工具，按提示更新桌面端。</li>
 <li>作为用户，我查看当次工具清单和桌面端版本，追溯实际执行环境。</li>
 </ol>
 <figure class="usecase"><a class="screenshot-link" href="./assets/03-builtintool-usecase.svg" target="_blank" rel="noopener" aria-label="放大用例图"><img src="./assets/03-builtintool-usecase.svg" alt="builtinTool 用例图：选择、检查、更新与追溯"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure><h2 id="03-builtintool-简要设计">简要设计</h2>
-<p>builtinTool 的实现随桌面应用版本交付，不建立独立工具包发布与同步系统。Agent 装配记录选定的工具，所选 builtinTool 是 Agent 内容 ID 的组成部分。</p>
-<p><strong>Agent 版本固定工具选择；桌面端版本说明实际实现。</strong> 同一个 Agent 在不同桌面版本上运行时，运行快照保留实际桌面端版本和工具清单，满足追溯需要，不另造一套工具发布标签。</p>
-<h2 id="03-builtintool-服务端">服务端</h2>
-<ul>
-<li>保存官方 Agent 所需的 builtinTool 清单，随 Agent 物料同步。</li>
-<li>通过已有 Agent 发布流程管理工具选择；官方装配改变后生成新的 Agent ID，并由运维人员手填发布标签。</li>
-<li>接收客户端因缺少所需工具而返回的失败结果，由既有流程决定后续处理。</li>
-<li>不向客户端单独分发 builtinTool 实现，不将工具更新混入 Skill 文件包同步。</li>
-</ul>
+<p>客户端在 Agent 的“工具”页签展示可选 builtinTool，保存用户选定的工具清单。每次运行前，对照已安装桌面版本提供的工具检查装配是否齐全；缺失就结束本次任务并提示更新桌面端。</p>
+<p>builtinTool 的实现随桌面应用版本交付，不建立独立工具包发布与同步系统。<strong>Agent 版本固定工具选择；桌面端版本说明实际实现。</strong> 所选 builtinTool 参与 Agent 内容 ID；客户端运行快照记录实际桌面版本和工具清单，不另设工具发布标签。</p>
 <h2 id="03-builtintool-客户端">客户端</h2>
 <ul>
 <li>根据已安装桌面版本提供可用内置工具，执行前检查 Agent 所需工具是否齐全。</li>
@@ -173,42 +351,200 @@
 <li>运行快照记录启用的工具清单和桌面端版本；调用状态、错误与起止时间仍放入执行记录。</li>
 </ul>
 <h2 id="03-builtintool-详细设计">详细设计</h2>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/03-builtintool.html" target="_blank" rel="noopener" aria-label="打开可缩放设计图"><img src="./assets/03-builtintool.svg" alt="builtinTool 运行前检查与桌面更新关系"></a><figcaption>设计图 · 点击缩放查看</figcaption></figure><p><a href="./diagrams/03-builtintool.html">打开交互图：内置工具可用性检查</a></p>
-<p><strong>沿图讲一次运行前检查：</strong> 读取 Agent 所需工具清单，对照客户端实际可用工具；齐全则继续运行，缺失则结束本次任务并提示更新桌面端。完成更新后由用户或服务端重新发起调用，不自动重跑失败任务。</p>
-<p>Skill 缺失与 builtinTool 缺失采取不同处理：Skill 仍按物料同步规则下载所需完整文件包；builtinTool 通过桌面应用更新获得。二者最终都服务于同一份 Agent 装配，但交付渠道各自明确。</p>
-<p>本章只确认工具可用性检查与交付职责。桌面版本检查、下载和安装见 <a href="#05-updater">05 · 桌面端更新</a>；MVP 不增加内置工具独立安装、热更新或单独版本仓库。</p>
-<footer><span class="footer-label">需求设计与前端现状 · 2026-10-18</span><a href="#04-agent">下一章：Agent</a></footer></article><article id="04-agent" data-file="04-agent.md" hidden><h1>04 · Agent：装配、发布与会话</h1>
+<h3>运行模型一：所需工具齐全</h3>
+<p><strong>条件：</strong> 客户端收到一轮任务，按固定的 Agent 装配检查所需 builtinTool。调用方可以是用户或服务端；物料准备、其他运行检查均成功且 Chrome 空闲。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/03-builtintool-ready.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/03-builtintool-ready.svg" alt="运行模型：所需 builtinTool 齐全时执行"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/03-builtintool-ready.html">打开交互顺序图：builtinTool 齐全</a></p>
+<p><strong>结果：</strong> 客户端固定运行快照后执行本轮任务，展示过程并保存结果；远端任务按回传规则返回结果。快照记录当次工具清单与桌面端版本，工具实现由该桌面版本确定。</p>
+<h3>运行模型二：缺少所需工具</h3>
+<p><strong>条件：</strong> 运行前发现至少一个 Agent 所需 builtinTool 不在当前桌面版本中。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/03-builtintool-missing.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/03-builtintool-missing.svg" alt="运行模型：缺少 builtinTool 时直接失败"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/03-builtintool-missing.html">打开交互顺序图：builtinTool 缺失</a></p>
+<p><strong>结果：</strong> 本轮直接失败，不开始 Chrome 操作。客户端列出缺失工具并提示更新桌面端；远端任务回传失败原因。完成更新后由用户或服务端重新发起调用，不自动重跑该失败任务。</p>
+<p>Skill 缺失仍按物料同步规则下载完整文件包；builtinTool 缺失通过桌面应用更新解决。桌面版本检查、下载和安装见 <a href="#05-updater">05 · 桌面端更新</a>。MVP 不增加内置工具独立安装、热更新或单独版本仓库。</p>
+<h2 id="03-builtintool-服务端配合">服务端配合</h2>
+<p>为支持客户端装配与检查，服务端需要配合：</p>
+<ul>
+<li>在官方 Agent 物料中提供所需 builtinTool 清单。</li>
+<li>接收运维人员提交的工具选择变更，按 Agent 发布规则生成新的 Agent ID、保存手填发布标签。</li>
+<li>远端调用失败时，接收客户端返回的工具缺失结果，决定后续处理。</li>
+</ul>
+<p>builtinTool 实现由桌面应用交付，服务端物料同步不单独分发工具实现，也不将其混入 Skill 文件包。</p>
+<footer><span class="footer-label">客户端 MVP 设计 · 2026-10-18</span><a href="#04-agent">下一章：Agent</a></footer></article><article id="04-agent" data-file="04-agent.md" hidden><h1>04 · Agent：装配、发布与会话</h1>
 <blockquote>
-<p>串讲重点：Agent 定义“装配什么能力”，运行快照说明“这次实际用了什么”。</p>
+<p>串讲重点：客户端将确定的提示词、Skill 完整包、builtinTool 与远端 MCP 组装成一次可运行的 Agent；核心资产按版本演进，每周发布已确认的改进。</p>
 </blockquote>
 <h2 id="04-agent-US">US</h2>
-<h3>现有页面与缺口</h3>
-<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/04-agent.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/04-agent.png" alt="现有 Agent 配置、能力装配与系统提示词"></a><figcaption>实拍现有 Web 演示界面；资源与执行数据来自演示适配器。</figcaption></figure>
-<p>沿用配置与提示词编辑器。待补：官方/本地身份、固定 Skill 版本、Agent 内容 ID、人工标签和快照入口；当前阅读模式只读不代表官方版本权限。</p>
+<h3>界面设计</h3>
+<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/04-agent.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/04-agent.png" alt="现有 Agent 配置、能力装配与系统提示词"></a><figcaption>界面实拍，图中使用演示数据。</figcaption></figure>
+<p>Agent 页面包含名称、描述、系统提示词及 MCP、builtinTool、Skill 装配配置。资源标明本地或官方来源，展示内容 ID、发布标签与固定的 Skill 版本。官方发布配置只读；用户可发起会话并查看该会话的运行快照。</p>
 <ol>
 <li>作为用户，我能自由编辑本地 Agent，也能选择官方 Agent 发起自己的会话。</li>
 <li>作为运维人员，我能发布固定装配的官方 Agent，用手填标签标识发布版本。</li>
-<li>作为服务端调用方，我能调用官方 Agent，并为每次调用传入独立上下文。</li>
+<li>作为用户，我能在客户端查看服务端发起的独立任务会话、执行过程和结果。</li>
 <li>作为使用者，我能追溯实际装配和运行条件，已有会话不受新发布影响。</li>
 </ol>
 <figure class="usecase"><a class="screenshot-link" href="./assets/04-agent-usecase.svg" target="_blank" rel="noopener" aria-label="放大用例图"><img src="./assets/04-agent-usecase.svg" alt="Agent 用例图：用户选择与编辑、运维发布、服务端调用"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure><h2 id="04-agent-简要设计">简要设计</h2>
-<p>Agent 分为本地和官方两类。本地 Agent 可以随时编辑、保存，不设发布标签，服务端不会调用它。官方 Agent 的已发布配置只读，客户端同步后使用；运维人员通过草稿和发布流程维护新版本。</p>
+<p>客户端提供本地 Agent 编辑和官方 Agent 使用两条路径。本地 Agent 可以随时编辑、保存，不设发布标签，服务端不会调用它。用户同步官方 Agent 后，可以查看只读配置并主动发起会话；运维人员在客户端维护官方草稿并发布新版本，由服务端配合保存和分发。</p>
+<p>客户端开始会话时固定 Agent 与 Skill 快照，并按装配执行。用户主动发起的会话允许正常输入；接到服务端调用时，客户端使用传入的上下文新建独立会话，该会话仅供本地查看过程和结果。</p>
 <p>Agent 的内容 ID 根据系统提示词、固定 Skill 版本、所选 builtinTool 和 MCP 装配配置生成。正式发布时手填 <code>v.1.0.0</code> 形式的标签，已发布内容和标签指向不可变。模型和推理参数仅记录于运行快照，不参与内容 ID。</p>
-<h2 id="04-agent-服务端">服务端</h2>
-<ul>
-<li>保存官方 Agent 草稿修订、装配清单、内容 ID 和发布标签，校验运维写入权限。</li>
-<li>Skill 正式发布时列出受影响 Agent，更新装配并生成新 ID；运维人员同次手填新标签完成联动发布。保存 Skill 草稿不联动。</li>
-<li>LangGraph 管理流程上下文，将客户端 Agent 调用作为工具。每个 Agent 的业务输入输出由服务端单独定义，本章不展开。</li>
-</ul>
+<h3>装配清单里保存什么</h3>
+<table>
+<thead>
+<tr>
+<th>组成</th>
+<th>清单保存的内容</th>
+<th>运行时装配成什么</th>
+<th>版本边界</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Agent 提示词</td>
+<td>系统提示词的确定正文：角色、任务目标、边界与输出要求</td>
+<td>本次 Agent 的系统指令</td>
+<td>提示词修改参与 Agent 新内容 ID；随 Agent 发布，不单独维护提示词标签</td>
+</tr>
+<tr>
+<td>Skill</td>
+<td>官方 Skill 的身份、完整包内容 ID 和展示标签；本地 Agent 也可引用本地包</td>
+<td>会话目录下完整、只读的 Skill 快照，包括入口与包内引用文件</td>
+<td>正式 Agent 固定官方 Skill 内容 ID；本地可编辑包在运行前固定快照，不使用浮动“最新版”代替</td>
+</tr>
+<tr>
+<td>builtinTool</td>
+<td>所选内置工具 ID</td>
+<td>当前桌面版本中对应的可调用工具实现</td>
+<td>工具选择参与 Agent ID；实现随桌面版本，缺失时提示更新，不通过 Skill 同步安装</td>
+</tr>
+<tr>
+<td>MCP</td>
+<td>所选远端服务的连接配置或配置引用、凭据引用</td>
+<td>远端连接与该服务返回的工具定义、调用入口</td>
+<td>非敏感装配配置参与 Agent ID；MCP 服务本身没有本项目发布标签，也不保证外部实现历史冻结</td>
+</tr>
+<tr>
+<td>运行条件</td>
+<td>当前会话实际选用的模型、推理参数与桌面版本</td>
+<td>模型实例和运行环境</td>
+<td>记录在运行快照，不因模型参数变化发布新的 Agent</td>
+</tr>
+</tbody></table>
+<p>配置保存的是“本次需要哪些能力”，运行装配则将它们解析为实际文件和可调用工具。MVP 保持 MCP 服务级选择：连接选中的服务并取得工具清单，不新增逐工具授权管理界面。密钥、Token 从运行时凭据来源取得，其值不进入发布指纹或快照。</p>
+<h3>与每周资产发布的关系</h3>
+<p>Agent 提示词和 Skill 是持续改进的核心资产。只修改提示词时，发布新的 Agent，原 Skill 包继续复用；修改 Skill 时，正式发布完整新包，并一次更新所有受影响官方 Agent 的引用、内容 ID 和人工新标签。周内编辑与保存草稿不联动，按周选择已确认的改进发布；详见<a href="#00-overview">总体设计中的周迭代</a>。</p>
+<p>以下完整装配为目标设计。当前代码已支持内置工具选择，并在每轮读取所选 <code>SKILL.md</code> 后拼接指令；Agent 配置仍在 runtime 内存中，MCP 连接、官方版本发布、完整 Skill 后端与会话固定快照尚未接入。当前仓库也没有 <code>langgraph.ts</code> 文件，实际入口和未来配置示例见<a href="../skill-storage-and-loading.md">Skill 存储与运行加载</a>。</p>
+<details>
+<summary>Agent 装配与运行快照的关系</summary>
+
+<figure class="diagram"><a class="screenshot-link" href="diagrams/04-agent.html" target="_blank" rel="noopener" aria-label="打开可缩放设计图"><img src="./assets/04-agent.svg" alt="Agent 装配关系：固定物料生成内容 ID，运行环境进入快照"></a><figcaption>结构或状态概览 · 点击缩放查看</figcaption></figure><p><a href="./diagrams/04-agent.html">打开装配关系图</a></p>
+</details>
+
 <h2 id="04-agent-客户端">客户端</h2>
 <ul>
 <li>提供本地 Agent 编辑；允许直接引用官方已发布 Skill，修改官方 Skill 时先复制成本地副本。</li>
 <li>官方配置保持只读，但用户主动发起的会话可以正常输入。服务端发起的会话只展示执行过程和结果，不接受本地追加指令。</li>
 <li>远端每次调用创建独立会话；手动会话固定开始时的 Agent、Skill 快照，新版只对新会话生效。</li>
 <li>Skill 实验页面勾选现有 Agent 作为模板，临时替换为草稿装配，不修改原 Agent，也不产生发布标签。</li>
+<li>将 MCP 配置解析为远端连接及工具，将 builtinTool ID 解析为本机实现，将 Skill 引用解析为完整包快照；装配成功后才构造 Agent 并开始执行。</li>
+<li>发现物料缺失、工具缺失或 MCP 接入失败时，显示具体失败项并停止本次准备；不静默删除能力后继续运行。</li>
 </ul>
 <h2 id="04-agent-详细设计">详细设计</h2>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/04-agent.html" target="_blank" rel="noopener" aria-label="打开可缩放设计图"><img src="./assets/04-agent.svg" alt="Agent 装配关系图：固定物料生成内容 ID，运行环境进入快照"></a><figcaption>设计图 · 点击缩放查看</figcaption></figure><p><a href="./diagrams/04-agent.html">打开可缩放交互图</a></p>
+<h3>运行模型一：完整装配后开始执行</h3>
+<p><strong>条件：</strong> 用户选定 Agent 发起新会话，或服务端传入确定的官方 Agent 版本与上下文。图中展示官方 Agent 缺少部分 Skill 包、同步和各项检查均成功的情况；缓存已齐全则跳过下载。本地 Agent 读取当前已保存配置，并在本次准备中固定其内容。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/04-assembly-ready.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/04-assembly-ready.svg" alt="完整装配：提示词、Skill、builtinTool 与 MCP 进入同一次运行"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/04-assembly-ready.html">打开运行模型：Agent 完整装配</a></p>
+<p>装配按下面的顺序完成。表中的步骤是客户端职责，不要求拆成独立服务：</p>
+<table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>客户端动作</th>
+<th>得到的确定结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1. 读取 Agent</td>
+<td>确定 Agent 配置与提示词；官方调用核对指定内容 ID，取得关联物料清单</td>
+<td>提示词、Skill 引用、builtinTool 选择和 MCP 配置属于同一个 Agent 装配</td>
+</tr>
+<tr>
+<td>2. 准备 Skill</td>
+<td>按内容 ID 检查 <code>.omnimind-ops/skills/releases</code>；缺失包走 HTTPS 下载并校验。官方指定包与本地包的当前内容均完整复制到会话快照目录</td>
+<td>每个 Skill 都有本次固定目录，保留内部相对路径；历史发布包和其他会话不变</td>
+</tr>
+<tr>
+<td>3. 解析 builtinTool</td>
+<td>在当前桌面提供的工具集合中逐个查找所选 ID，绑定其输入定义和调用实现</td>
+<td>本次允许模型使用的内置工具集合；缺失任一项就停止</td>
+</tr>
+<tr>
+<td>4. 连接 MCP</td>
+<td>解析随 Agent 同步的连接配置，运行时取得凭据，连接选中的远端服务并读取工具清单</td>
+<td>将各工具的名称、说明、输入定义与远端调用入口绑定；不下载 MCP 服务实现</td>
+</tr>
+<tr>
+<td>5. 合并工具</td>
+<td>汇总已选 builtinTool 与 MCP 工具，保留每个入口的来源与实际调用目标</td>
+<td>一个明确的可调用工具集合；同名且无法明确区分时失败，不静默覆盖其中一个工具</td>
+</tr>
+<tr>
+<td>6. 固定运行条件</td>
+<td>保存 Agent／Skill 身份、启用工具和 MCP 清单、桌面版本、模型与参数</td>
+<td>本次运行快照不含密钥或 Token；调用 ID、状态、起止时间与错误另记执行记录</td>
+</tr>
+<tr>
+<td>7. 构造并执行</td>
+<td>取得 Chrome 执行名额后，把系统提示词、合并工具、只读 Skill 后端和所选 Skill 路径显式交给运行引擎</td>
+<td>LangGraph.js / Deep Agents 按固定装配执行；忙时直接返回，不开始模型或 Chrome 操作</td>
+</tr>
+</tbody></table>
+<p>系统提示词描述 Agent 的任务与边界；Skill 通过只读文件后端提供方法和资料，模型按需读取入口与引用文件。包内脚本不会因为被上传而自动执行；需要执行操作时仍通过实际装配的工具入口完成。builtinTool 在客户端调用，MCP 工具通过已配置的连接调用远端，二者的结果回到同一次 Agent 运行。MCP 返回的 resource、prompt 与 tool 是不同能力，不把 resource／prompt 自动注册成工具，也不自动覆盖 Agent 系统提示词。</p>
+<p><strong>结果：</strong> 本次运行获得明确的提示词、可读 Skill 文件集合和可调用工具集合。不能把包含所有历史版本的 Skill 根目录直接作为本次搜索范围。手动会话后续轮次复用原 Agent／Skill 快照及配置；MCP 连接可以重新建立，但这不代表外部服务行为被快照冻结。每轮仍重新检查 Chrome 是否空闲。</p>
+<h3>运行模型二：装配失败时停止</h3>
+<p><strong>条件：</strong> Agent 与 Skill 已解析，但所需 MCP 无法连接或鉴权失败。图中只展示这一条失败路径，其他失败按下表处理。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/04-assembly-failure.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/04-assembly-failure.svg" alt="装配失败：MCP 接入失败，不构造或执行 Agent"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/04-assembly-failure.html">打开运行模型：Agent 装配失败</a></p>
+<table>
+<thead>
+<tr>
+<th>失败位置</th>
+<th>本次处理</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Agent 版本无法取得或不匹配</td>
+<td>同步所需版本；同步失败就结束，不改用其他 Agent</td>
+</tr>
+<tr>
+<td>Skill 缺包且补齐失败，或包校验失败</td>
+<td>结束本次准备，保留已下载的完整历史包，不挂载半包或旧版代替；正常缺包先下载指定版本</td>
+</tr>
+<tr>
+<td>builtinTool 缺失</td>
+<td>列出缺失工具并提示更新桌面端，不通过物料同步安装工具实现</td>
+</tr>
+<tr>
+<td>MCP 连接、鉴权失败或工具清单无法取得</td>
+<td>标明失败的 MCP 并结束；不移除这个 MCP 后继续执行</td>
+</tr>
+<tr>
+<td>工具名称存在无法区分的冲突</td>
+<td>指出冲突来源，要求调整装配，不静默选择任意实现</td>
+</tr>
+<tr>
+<td>快照保存或运行引擎构造失败</td>
+<td>记录准备失败，不进入模型与 Chrome 操作</td>
+</tr>
+<tr>
+<td>Chrome 正被另一任务占用</td>
+<td>返回“忙”，由用户或服务端重新安排，不排入客户端任务队列</td>
+</tr>
+</tbody></table>
+<p><strong>结果：</strong> 客户端展示失败环节和原因；远端任务按原调用 ID 回传失败。若已取得 Chrome 名额则释放，已有缓存与未同步编辑保留，不自动重试整次任务。此处沿用已确认的状态、错误与运行快照观测边界，本次文档补充不新增日志、span 或指标要求。</p>
+<h3>运行模型三：编辑本地 Agent 后开始会话</h3>
+<p>**条件：**用户编辑本地 Agent 并保存；本次所需物料已准备好，builtinTool 检查通过。客户端在取得 Chrome 执行名额后执行。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/04-local-session.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/04-local-session.svg" alt="本地 Agent 运行顺序：保存装配、读取物料、固定快照、执行"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/04-local-session.html">打开运行模型</a></p>
+<p>**结果：**本轮按确定的 Agent、Skill 和运行条件执行。之后再编辑本地 Agent，也不会改变这个会话已经固定的快照；修改从新会话生效。本地 Agent 不设发布标签，也不接受服务端调用。缺包、缺少工具和忙时的处理分别见<a href="#06-sync">同步与装配</a>、<a href="#03-builtintool">builtinTool</a>与<a href="#07-execution">任务执行与恢复</a>。</p>
+<h3>运行模型四：官方发布新版，已有会话继续使用原快照</h3>
+<p>**条件：**已有手动会话已经固定快照；随后官方发布了新的 Agent 装配。图中先展示用户继续旧会话，再展示另开新会话，两次输入分别触发各自的准备和执行。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/04-official-new-version.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/04-official-new-version.svg" alt="官方 Agent 新版发布后的顺序：旧会话保持原快照，新会话同步新版"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/04-official-new-version.html">打开运行模型</a></p>
+<p>**结果：**旧会话的原 Agent、Skill 版本保持不变；新会话按用户所选的官方新版同步物料并固定新快照。官方配置始终只读，但用户主动发起的会话可以继续输入。服务端发起的任务另建独立只读会话，具体运行模型见<a href="#07-execution">任务执行与恢复</a>。</p>
 <table>
 <thead>
 <tr>
@@ -220,12 +556,12 @@
 <tbody><tr>
 <td>Agent 内容 ID</td>
 <td>标识确定的能力装配</td>
-<td>装配变化生成新 ID</td>
+<td>系统提示词、Skill 版本、builtinTool 选择或 MCP 装配变化后生成新 ID</td>
 </tr>
 <tr>
 <td>正式发布标签</td>
 <td>人工识别一次官方发布</td>
-<td>手填，不改指向、不重用</td>
+<td>手填 <code>v.1.0.0</code> 形式，不改指向、不重用</td>
 </tr>
 <tr>
 <td>运行快照</td>
@@ -233,13 +569,21 @@
 <td>运行前生成，不建立发布版本</td>
 </tr>
 </tbody></table>
-<p>运行快照保留 Agent/Skill 内容身份、官方标签、启用工具和 MCP 清单、桌面端版本、实际模型与参数；密钥和 Token 不进入快照。调用 ID、状态和错误属于执行记录。</p>
-<p>串讲时用同一个例子区分三者：Skill 升级会生成新的 Agent ID 和手填发布标签；仅调整模型参数不会发布新 Agent，而会在下一次运行快照中体现。</p>
-<footer><span class="footer-label">需求设计与前端现状 · 2026-10-18</span><a href="#05-updater">下一章：桌面端更新</a></footer></article><article id="05-updater" data-file="05-桌面端更新.md" hidden><h1>05 桌面端更新</h1>
-<p>串讲重点：<strong>用户决定下载和安装时机，只有空闲时才能安装重启。</strong> 本章沿用已有整包更新规格；桌面更新与 Skill、Agent 物料同步分别进行。</p>
+<p>运行快照保留 Agent/Skill 内容身份、官方标签、启用工具和 MCP 清单、桌面端版本、实际模型与参数；密钥和 Token 不进入快照。调用 ID、状态和错误属于执行记录。仅调整模型参数不发布新 Agent，实际参数记录在新会话的运行快照中。</p>
+<h2 id="04-agent-服务端配合">服务端配合</h2>
+<p>为支持客户端维护、同步和执行官方 Agent，服务端需要配合：</p>
+<ul>
+<li>接收并保存官方 Agent 草稿修订、装配清单、内容 ID 和手填发布标签，校验运维写入权限，并提供同步物料。</li>
+<li>在同一份官方装配中提供确定提示词、Skill 内容 ID、builtinTool ID 和 MCP 连接配置或引用，让客户端可以一次解析完整能力；凭据值不放进可分发的发布清单或运行快照。</li>
+<li>Skill 正式发布时向客户端提供受影响 Agent，更新装配并生成新 ID；接收同次手填的新标签完成联动发布。保存 Skill 草稿不联动。</li>
+<li>支持每周发布已确认的提示词与 Skill 改进并保留历史装配；只改提示词时可单独发布 Agent，MCP 服务和内置工具实现不随资产周发布复制一份。</li>
+<li>通过 LangGraph 调用客户端 Agent，传入每次独立任务的上下文，接收执行结果。每个 Agent 的业务输入输出由服务端单独定义，本章不展开。</li>
+</ul>
+<footer><span class="footer-label">客户端 MVP 设计 · 2026-10-18</span><a href="#05-updater">下一章：桌面端更新</a></footer></article><article id="05-updater" data-file="05-桌面端更新.md" hidden><h1>05 桌面端更新</h1>
+<p>串讲重点：<strong>用户决定下载和安装时机，只有空闲时才能安装重启。</strong> 桌面更新与 Skill、Agent 物料同步分别进行。</p>
 <h2 id="05-updater-US">US</h2>
-<h3>现有页面与缺口</h3>
-<p>现有 Web <strong>尚无桌面更新入口</strong>。这里需要新增一个轻量入口，承载检查、下载、待安装和失败状态；不以外观菜单或示意图冒充已存在的更新界面。</p>
+<h3>界面设计</h3>
+<p>桌面更新位于设置中，展示当前版本、新版说明和下载进度。用户主动检查、下载并确认安装；页面明确区分下载中、待安装、等待任务结束和失败状态。</p>
 <ol>
 <li>作为用户，我希望启动后得知新版，也能手动检查，查看版本和更新说明。</li>
 <li>作为用户，我希望自己决定何时下载、何时安装，并在下载期间继续工作。</li>
@@ -247,14 +591,8 @@
 <li>作为发布人员，我希望各平台完整安装包经过签名验证，再向客户端开放更新。</li>
 </ol>
 <figure class="usecase"><a class="screenshot-link" href="./assets/05-updater-usecase.svg" target="_blank" rel="noopener" aria-label="放大用例图"><img src="./assets/05-updater-usecase.svg" alt="桌面更新用例图：用户检查下载安装与发布人员交付"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure><h2 id="05-updater-简要设计">简要设计</h2>
-<p>采用已有规格确定的 Tauri 整包更新方案，从内网 HTTPS 静态站点读取清单和下载文件。首版覆盖 macOS arm64、Windows x64，一个稳定通道。前端、Tauri、Node、CEF 及随包运行时一起更新，builtinTool 随之更新；这不改变 Agent 使用专用 Chrome 的约定。</p>
+<p>客户端采用 Tauri 整包更新方案，从内网 HTTPS 静态站点读取清单和下载文件。首版覆盖 macOS arm64、Windows x64，一个稳定通道。前端、Tauri、Node、CEF 及随包运行时一起更新，builtinTool 随之更新；这不改变 Agent 使用专用 Chrome 的约定。</p>
 <p>应用版本使用有效 SemVer，与 Skill、Agent 手填的 <code>v.1.0.0</code> 发布标签分别管理。首次带更新能力的客户端手动安装，之后才能应用内升级。</p>
-<h2 id="05-updater-服务端">服务端</h2>
-<ul>
-<li>接收客户端交付流程生成并签名的最终更新包；更新站点不持有签名私钥。</li>
-<li>静态站点提供 <code>latest.json</code>、更新说明及两个目标的 HTTPS 下载地址和签名；内网下载不要求登录。</li>
-<li>两个平台包与清单版本一致，同一版本的包、地址与签名不可变；验证产物都可下载后，最后发布清单。</li>
-</ul>
 <h2 id="05-updater-客户端">客户端</h2>
 <ul>
 <li>客户端交付流程在受控构建环境生成最终整包并签名；已安装客户端仅内置公钥，私钥不进入安装包。</li>
@@ -264,97 +602,96 @@
 <li>下载成功只进入待安装，仍须用户确认；同版或更旧版本不覆盖当前应用。</li>
 </ul>
 <h2 id="05-updater-详细设计">详细设计</h2>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/05-updater.html" target="_blank" rel="noopener" aria-label="打开可缩放设计图"><img src="./assets/05-updater.svg" alt="更新流程：检查、用户下载、校验、空闲确认与安装重启"></a><figcaption>设计图 · 点击缩放查看</figcaption></figure><p><a href="./diagrams/05-updater.html">打开可交互更新流程图</a></p>
-<p>主路径：检查新版 → 用户下载 → 校验成功 → 用户确认安装 → 核对空闲 → 安装并重启。<strong>下载完成和任务结束都不自动安装。</strong> 有任务时阻止正常退出、提示等待，用户在任务结束后再次确认。</p>
-<p>安装前按真实执行活动重新检查，并阻止新任务进入；任务先开始则安装等待，安装准备先开始则新任务被明确拒绝。清理运行时和浏览器进程后交给安装器；准备失败不继续，安装与启动都完成才算成功。</p>
-<p>更新保留安装包外的会话、配置、脚本、运行证据及本地物料。强退或崩溃沿用任务中断处理，不把升级作为任务续跑入口。旧规格中的审批场景不增加为本 MVP 功能。</p>
-<p>验收在两个平台真实已安装的旧版上完成：任务期间不安装、错误包被拒绝、重启后版本正确且数据可用。本期不做差分、静默安装、强制更新、自动回滚或下载断点续传；域名、公钥与平台验收环境属于实施前待配置项。</p>
-<footer><span class="footer-label">需求设计与前端现状 · 2026-10-18</span><a href="#06-sync">下一章：同步与装配</a></footer></article><article id="06-sync" data-file="06-同步与装配.md" hidden><h1>06 · 同步与装配：清单先行、物料按需</h1>
+<h3>运行模型一：检查、下载并在空闲时安装</h3>
+<p>**条件：**存在适配当前系统、架构的更高版本，包下载和校验成功。主界面可用后检查一次，或由用户在设置中主动检查；两者之后使用相同流程。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/05-update-success.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/05-update-success.svg" alt="更新正常运行顺序：检查新版、用户下载、验签、确认、空闲安装与重启"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/05-update-success.html">打开运行模型</a></p>
+<p>**结果：**下载后停留在待安装，用户确认后才再次核对执行活动；空闲时阻止新任务进入，完成运行时与浏览器进程清理，再交给安装器。安装与启动都完成才算成功。更新保留安装包外的会话、配置、脚本、运行证据及本地物料。</p>
+<h3>运行模型二：确认安装时仍有任务</h3>
+<p>**条件：**更新包已经校验成功，但用户确认安装时还有执行活动。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/05-update-busy.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/05-update-busy.svg" alt="更新忙时运行顺序：发现任务、等待结束、用户再次确认"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/05-update-busy.html">打开运行模型</a></p>
+<p>**结果：**客户端提示等待，不安装、不退出。任务结束只改变可安装条件，不代替用户确认；用户再次确认后，重新进入模型一的空闲检查和安装准备。任务先开始则安装等待，安装准备先开始则新任务被明确拒绝。下载完成和任务结束都不会自动安装。</p>
+<h3>运行模型三：下载或校验失败</h3>
+<p>**条件：**本次下载失败，或已下载的包未通过完整性校验、签名验证。图中的两种原因都是直接失败的替代情况，不是连续执行的两个步骤。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/05-update-rejected.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/05-update-rejected.svg" alt="更新失败运行顺序：下载或校验失败、展示原因、保留当前应用"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/05-update-rejected.html">打开运行模型</a></p>
+<p>**结果：**明确提示原因，不调用安装器，不退出当前应用。检查清单失败、同版或更旧版本、安装准备失败，也不能进入安装步骤；同版或更旧版本不覆盖当前应用。强退或崩溃按<a href="#07-execution">任务执行与恢复</a>处理，不把升级作为任务续跑入口。</p>
+<p>验收在两个平台真实已安装的旧版上完成：任务期间不安装、错误包被拒绝、重启后版本正确且数据可用。本期不做差分、静默安装、强制更新、自动回滚或下载断点续传；域名、公钥与平台验收环境属于实施前待配置项。旧规格中的审批场景不增加为本 MVP 功能。</p>
+<h2 id="05-updater-服务端配合">服务端配合</h2>
+<p>更新站点为客户端提供检查与下载所需的发布产物：</p>
+<ul>
+<li>接收客户端交付流程生成并签名的最终更新包；更新站点不持有签名私钥。</li>
+<li>静态站点提供 <code>latest.json</code>、更新说明及两个目标的 HTTPS 下载地址和签名；内网下载不要求登录。</li>
+<li>两个平台包与清单版本一致，同一版本的包、地址与签名不可变；验证产物都可下载后，最后发布清单。</li>
+</ul>
+<footer><span class="footer-label">客户端 MVP 设计 · 2026-10-18</span><a href="#06-sync">下一章：同步与装配</a></footer></article><article id="06-sync" data-file="06-同步与装配.md" hidden><h1>06 · 同步与装配：清单先行、物料按需</h1>
 <blockquote>
-<p>串讲重点：按 Agent 清单装配确定版本，缺什么下载什么；失败就停止本次运行。</p>
+<p>串讲重点：客户端在新会话开始前核对版本、补齐缺包，再按 Agent 清单装配；准备失败就停止本次运行。</p>
 </blockquote>
 <h2 id="06-sync-US">US</h2>
-<h3>现有页面与缺口</h3>
-<p>现有 Web 只有通用的资源加载、失败与重试提示，<strong>尚无版本核对、缺包下载或缓存版本界面</strong>。这些状态应补在开始会话和资源版本位置，无需单独建立大型同步中心。</p>
+<h3>界面设计</h3>
+<p>新会话入口展示准备过程：核对版本、下载缺失物料、检查工具、准备完成或失败。资源详情展示版本与本地缓存情况。已有会话继续使用开始时的快照；同步到的新版本从新会话生效。</p>
 <ol>
 <li>作为用户，我希望新会话使用同步后的官方资源，已有会话继续使用开始时的快照。</li>
-<li>作为服务端调用方，我希望执行前核对指定 Agent 版本，避免客户端使用其他版本替代。</li>
+<li>作为用户，我希望客户端接到远端调用后先核对指定 Agent 版本，避免使用其他版本替代。</li>
 <li>作为用户，我希望只下载当前所需物料，并保留已下载的 Skill 版本轨迹。</li>
 <li>作为使用者，我希望同步或工具检查失败时看到明确原因，以便处理后重新发起。</li>
 </ol>
 <figure class="usecase"><a class="screenshot-link" href="./assets/06-sync-usecase.svg" target="_blank" rel="noopener" aria-label="放大用例图"><img src="./assets/06-sync-usecase.svg" alt="同步用例图：同步清单、获取缺失物料、按指定装配运行"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure><h2 id="06-sync-简要设计">简要设计</h2>
-<p>同步分两步：先获取版本清单，再按当前 Agent 的装配清单补齐缺失物料。不会为了同步清单下载全部历史包。官方资源按版本保存在本地，旧包不自动覆盖或清理；运行时选择对应版本装配。</p>
+<p>客户端同步分两步：先获取版本清单，再按当前 Agent 的装配清单补齐缺失物料。不会为了同步清单下载全部历史包。官方资源按版本保存在本地，旧包不自动覆盖或清理；运行时选择对应版本装配。</p>
 <p>HTTPS 负责清单和物料传输。WebSocket 负责调用和结果，不承担文件包同步。未上传的本地草稿可以直接实验，运行前固定完整快照，不要求先上传为官方版本。</p>
-<h2 id="06-sync-服务端">服务端</h2>
+<h2 id="06-sync-客户端">客户端</h2>
+<ul>
+<li>官方新会话同步版本清单；每次远端调用核对所需版本，不匹配或缺少物料就先同步。</li>
+<li>按清单下载缺失 Skill 包及其他 Agent 物料，复用本地已有的相同版本；同步失败则本次调用失败，不降级到旧版。</li>
+<li>运行前检查所需 builtinTool；缺失时提示更新桌面端，不尝试通过 Skill 同步安装内置工具。</li>
+<li>Skill 文件固定保存在当前用户主目录下的 <code>.omnimind-ops/skills</code>（macOS 为 <code>~/.omnimind-ops/skills</code>）。本地可编辑包与官方版本缓存分开；Windows 当前同样使用用户主目录，不硬编码盘符。</li>
+</ul>
+<p>本轮已接入本地文件持久化与官方缓存读取，完整包同步、摘要校验和会话固定快照尚未实现。目录、内容 ID 与人工标签的对应关系，以及当前 LangGraph.js 加载路径见<a href="../skill-storage-and-loading.md">Skill 存储与运行加载</a>。</p>
+<h2 id="06-sync-详细设计">详细设计</h2>
+<h3>运行模型一：所需版本已在本地</h3>
+<p>**条件：**用户发起官方 Agent 新会话；客户端从服务端核对版本清单后，发现本次所需完整物料都已缓存。远端调用也执行相同核对，但以服务端指定的 Agent 版本为准。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/06-cache-ready.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/06-cache-ready.svg" alt="缓存命中运行顺序：核对清单、检查缓存、固定装配"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/06-cache-ready.html">打开运行模型</a></p>
+<p>**结果：**相同版本不重复下载。客户端检查 builtinTool 并固定运行快照后，才进入执行流程；本地有旧包不代表可以跳过所需版本的核对。</p>
+<h3>运行模型二：下载本次缺失的物料</h3>
+<p>**条件：**版本清单已明确本次装配，但本地缺少其中某些完整 Skill 包或其他 Agent 物料。本图只展示下载成功的情况。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/06-download-missing.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/06-download-missing.svg" alt="按需下载运行顺序：清单核对、识别缺失、下载保存、固定快照"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/06-download-missing.html">打开运行模型</a></p>
+<p>**结果：**客户端只下载缺失项，按版本保存后装配。MCP 配置或引用与 Agent 一并准备；旧 Skill 包继续保留，不自动覆盖或清理。已有手动会话继续使用原快照，同步取得的新版只用于新会话。</p>
+<h3>运行模型三：核对或下载失败</h3>
+<p>**条件：**核对清单失败，或者下载所需物料失败、物料不可取得。任一条件都直接结束本次准备，不再继续后面的装配与执行。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/06-sync-failure.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/06-sync-failure.svg" alt="同步失败运行顺序：请求失败、保留缓存、反馈本次失败"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/06-sync-failure.html">打开运行模型</a></p>
+<p>**结果：**客户端展示明确原因，本次调用失败，不降级到旧版，不使用不完整装配。远端调用按原调用 ID 记录并回传失败；本地已有缓存与未同步编辑保留。用户或服务端处理原因后重新发起。</p>
+<p>物料齐备但缺少所需 builtinTool 时同样不能执行：客户端提示更新桌面端，不通过 Skill 同步补装内置工具，具体顺序见<a href="#03-builtintool">builtinTool</a>。未上传的本地草稿实验直接固定完整快照，不要求先经过官方同步。</p>
+<p>MVP 不引入 Git 仓库、全量历史镜像或自动清理机制。Skill 磁盘布局已确定：本地包位于 <code>local/&lt;localId&gt;</code>，官方完整版本位于 <code>releases/&lt;skillId&gt;/&lt;contentId&gt;</code>；运行快照计划另存 <code>.omnimind-ops/runs/&lt;sessionId&gt;</code>。准备完成后的运行互斥、结果补传和重启恢复见<a href="#07-execution">任务执行与恢复</a>。</p>
+<h2 id="06-sync-服务端配合">服务端配合</h2>
+<p>为支持客户端核对版本与按需装配，服务端需要：</p>
 <ul>
 <li>提供官方已发布 Agent、Skill 的版本清单和缺失物料下载；Agent 的 MCP 配置或引用随清单关联。</li>
 <li>远端调用明确所需 Agent 版本，客户端据此核对；具体字段和端点留到实现阶段确定。</li>
 <li>保留已发布版本和标签的不可变关系。Skill 发布产生新 Agent 装配，不改写历史版本。</li>
 <li>按现有身份体系开放相应读取和运维写入能力，不新增客户端账号体系。</li>
 </ul>
-<h2 id="06-sync-客户端">客户端</h2>
-<ul>
-<li>官方新会话同步版本清单；每次远端调用核对所需版本，不匹配或缺少物料就先同步。</li>
-<li>按清单下载缺失 Skill 包及其他 Agent 物料，复用本地已有的相同版本；同步失败则本次调用失败，不降级到旧版。</li>
-<li>运行前检查所需 builtinTool；缺失时提示更新桌面端，不尝试通过 Skill 同步安装内置工具。</li>
-<li>本地保存未同步编辑和缓存。默认目录为 macOS 的 <code>~/.omniops-bots</code>，Windows 的 <code>D:\.omniops-bots</code>。</li>
-</ul>
-<h2 id="06-sync-详细设计">详细设计</h2>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/06-sync.html" target="_blank" rel="noopener" aria-label="打开可缩放设计图"><img src="./assets/06-sync.svg" alt="同步时序图：查询清单、核对缓存、补齐缺包、固定装配"></a><figcaption>设计图 · 点击缩放查看</figcaption></figure><p><a href="./diagrams/06-sync.html">打开可缩放交互图</a></p>
-<table>
-<thead>
-<tr>
-<th>阶段</th>
-<th>判断</th>
-<th>可观察结果</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>核对版本</td>
-<td>所需 Agent 和物料是否齐备</td>
-<td>齐备则复用，缺失则下载</td>
-</tr>
-<tr>
-<td>补齐物料</td>
-<td>清单所需内容能否取得</td>
-<td>失败即结束本次调用</td>
-</tr>
-<tr>
-<td>检查能力</td>
-<td>桌面端是否具备所需 builtinTool</td>
-<td>缺失则提示更新</td>
-</tr>
-<tr>
-<td>固定装配</td>
-<td>本次使用哪些版本和运行条件</td>
-<td>生成快照后交给执行流程</td>
-</tr>
-</tbody></table>
-<p>“同步到新版本”和“改变当前会话”是两件事：同步可带来新的可用版本，但已开始的手动会话始终沿用原快照。远端调用则每次独立核对指定版本并创建会话。</p>
-<p>MVP 不引入 Git 仓库、全量历史镜像或自动清理机制；具体磁盘布局无需在本轮确定。运行互斥、结果补传和重启恢复见<a href="#07-execution">任务执行与恢复</a>。</p>
-<footer><span class="footer-label">需求设计与前端现状 · 2026-10-18</span><a href="#07-execution">下一章：任务执行与恢复</a></footer></article><article id="07-execution" data-file="07-任务执行与恢复.md" hidden><h1>07 · 任务执行与恢复：执行一次、结果可补传</h1>
+<footer><span class="footer-label">客户端 MVP 设计 · 2026-10-18</span><a href="#07-execution">下一章：任务执行与恢复</a></footer></article><article id="07-execution" data-file="07-任务执行与恢复.md" hidden><h1>07 · 任务执行与恢复：执行一次、结果可补传</h1>
 <blockquote>
-<p>串讲重点：连接中断与执行中断分开处理；补传结果不等于重新执行。</p>
+<p>串讲重点：客户端统一管理 Chrome 执行、过程展示和结果保存；断线后补传结果，重启后不续跑未完成任务。</p>
 </blockquote>
 <h2 id="07-execution-US">US</h2>
-<h3>现有页面与缺口</h3>
-<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/07-debug.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/07-debug.png" alt="现有 Agent 调试会话与右侧工作台"></a><figcaption>实拍现有 Web 演示界面；资源与执行数据来自演示适配器。</figcaption></figure>
-<p>沿用会话和工具过程展示。待补：服务端发起标识与只读、调用 ID、快照、结果待确认/已交付和重启中断。此调试入口尚不等同于完整 Skill 草稿实验。</p>
+<h3>界面设计</h3>
+<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/07-debug.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/07-debug.png" alt="现有 Agent 调试会话与右侧工作台"></a><figcaption>界面实拍，图中使用演示数据。</figcaption></figure>
+<p>会话展示消息与工具调用过程，任务横条展示执行状态。服务端发起的会话明确标识来源并保持只读。执行记录包含调用 ID、起止时间、结果或错误、运行快照，以及结果待确认、已交付或重启中断状态。</p>
 <ol>
 <li>作为用户，我希望本地与远端任务共用专用 Chrome，保留登录态且不并发操作。</li>
-<li>作为服务端调用方，我希望收到忙、取消、超时等明确结果，便于安排后续流程。</li>
+<li>作为用户，我希望客户端明确展示忙、取消、超时等状态，并把远端任务的结果回传给服务端。</li>
 <li>作为使用者，我希望断线时任务继续执行，恢复连接后能取得结果。</li>
 <li>作为用户，我希望重启后知道哪些任务已经完成、哪些执行中断，不自动重做操作。</li>
 </ol>
 <figure class="usecase"><a class="screenshot-link" href="./assets/07-execution-usecase.svg" target="_blank" rel="noopener" aria-label="放大用例图"><img src="./assets/07-execution-usecase.svg" alt="执行用例图：发起任务、查看过程、取消任务、接收结果"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure><h2 id="07-execution-简要设计">简要设计</h2>
 <p>客户端管理一个专用 Chrome 环境，本地、实验和远端任务共用，每轮只允许一个任务执行。忙时直接返回“忙”，客户端不排队。手动会话等待用户输入时释放执行名额，下一轮重新检查；会话和固定快照继续保留。</p>
 <p>一轮任务可以包含多次模型调用，单次模型输出结束不等于任务结束。任务终止与结果交付分别处理：执行已结束但尚未收到服务端确认时，保留结果等待补传。</p>
-<h2 id="07-execution-服务端">服务端</h2>
-<ul>
-<li>通过 WebSocket 发送调用、上下文和按调用 ID 发起的取消请求；后续调度由 LangGraph 决定。</li>
-<li>接收任务状态、最终结果、运行快照，并确认收到。</li>
-<li>收到“忙”或“执行中断、结果未知”后决定后续处理；客户端不自动重跑。</li>
-</ul>
+<details>
+<summary>任务状态与结果交付状态概览</summary>
+
+<figure class="diagram"><a class="screenshot-link" href="diagrams/07-execution.html" target="_blank" rel="noopener" aria-label="打开可缩放设计图"><img src="./assets/07-execution.svg" alt="任务状态与结果交付状态"></a><figcaption>结构或状态概览 · 点击缩放查看</figcaption></figure><p><a href="./diagrams/07-execution.html">打开状态概览</a></p>
+</details>
+
 <h2 id="07-execution-客户端">客户端</h2>
 <ul>
 <li>展示逐条模型输出和工具调用过程；远端任务会话保持只读，不向服务端逐条传输过程内容。</li>
@@ -363,75 +700,73 @@
 <li>有任务运行时阻止正常退出并提示等待，结束后由用户退出；强制退出或崩溃按重启规则处理。</li>
 </ul>
 <h2 id="07-execution-详细设计">详细设计</h2>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/07-execution.html" target="_blank" rel="noopener" aria-label="打开可缩放设计图"><img src="./assets/07-execution.svg" alt="任务状态与结果交付图：运行、断线继续、补传确认、重启中断"></a><figcaption>设计图 · 点击缩放查看</figcaption></figure><p><a href="./diagrams/07-execution.html">打开可缩放交互图</a></p>
-<table>
-<thead>
-<tr>
-<th>情况</th>
-<th>执行处理</th>
-<th>结果处理</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>WebSocket 断线，客户端仍运行</td>
-<td>当前任务继续，退避重连</td>
-<td>完成结果本地保存，重连补传</td>
-</tr>
-<tr>
-<td>结果已完成，服务端未确认</td>
-<td>不重新执行</td>
-<td>按原调用 ID 补传，确认前保留</td>
-</tr>
-<tr>
-<td>重启发现未完成任务</td>
-<td>不续跑、不自动重试</td>
-<td>回报“执行中断、结果未知”</td>
-</tr>
-<tr>
-<td>服务端取消或客户端超时</td>
-<td>停止后续步骤</td>
-<td>回传取消或“执行超时”</td>
-</tr>
-</tbody></table>
-<p>结果和快照先保存本地，再等待服务端确认。已有记录在重启后保留：已完成任务补传结果，未完成任务报告中断未知。该规则避免因通信恢复重复启动任务，不承诺 Chrome 外部操作的副作用恰好发生一次。</p>
-<p>执行记录保存调用 ID、状态、起止时间和错误；快照保留实际装配与运行条件，均不把凭据写入快照。本轮可观测范围是这些记录与客户端过程展示，不新增监控平台。验收重点是断线不重跑、重启不续跑、结果可补传，以及 Chrome 单任务限制。</p>
-<footer><span class="footer-label">需求设计与前端现状 · 2026-10-18</span><a href="#08-frontend">下一章：前端现状与缺口</a></footer></article><article id="08-frontend" data-file="08-前端现状与缺口.md" hidden><h1>08 · 前端现状与缺口</h1>
+<p>以下每张顺序图对应一个独立运行场景。正常执行与结果确认见<a href="#00-overview">客户端总体设计</a>。</p>
+<h3>场景一：Chrome 正忙</h3>
+<p>本地、实验和远端任务共用一个 Chrome 执行名额。图中已有任务尚未结束。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-busy.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-busy.svg" alt="场景一：Chrome 正忙"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/07-busy.html">打开顺序图：场景一：Chrome 正忙</a></p>
+<p>本轮返回忙，不排队、不自动重试。手动会话及固定快照保留，等待输入时不占用名额；下一轮重新检查。</p>
+<h3>场景二：执行中 WebSocket 断线</h3>
+<p>客户端进程仍在运行。图中任务先执行完成，连接随后恢复；退避重连与执行可以并行。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-disconnect.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-disconnect.svg" alt="场景二：执行中 WebSocket 断线"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/07-disconnect.html">打开顺序图：场景二：执行中 WebSocket 断线</a></p>
+<p>当前任务继续，结果与快照先保存本地。恢复连接后按原调用 ID 补传；确认之前保留，不重新执行。</p>
+<h3>场景三：重启发现已完成、未确认的结果</h3>
+<p>上次任务已完成并持久化结果，但服务端尚未确认。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-restart-complete.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-restart-complete.svg" alt="场景三：重启发现已完成、未确认的结果"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/07-restart-complete.html">打开顺序图：场景三：重启发现已完成、未确认的结果</a></p>
+<p>只恢复结果交付，不装配或重跑任务。已有记录继续保留。</p>
+<h3>场景四：重启发现未完成任务</h3>
+<p>客户端此前强退或崩溃，磁盘记录中任务未完成。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-restart-incomplete.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-restart-incomplete.svg" alt="场景四：重启发现未完成任务"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/07-restart-incomplete.html">打开顺序图：场景四：重启发现未完成任务</a></p>
+<p>回报“执行中断、结果未知”，不续跑、不自动重试，已有记录保留，由服务端决定后续处理。</p>
+<h3>场景五：服务端按调用 ID 取消</h3>
+<p>远端任务正在执行，客户端收到取消请求。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-cancel.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-cancel.svg" alt="场景五：服务端按调用 ID 取消"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/07-cancel.html">打开顺序图：场景五：服务端按调用 ID 取消</a></p>
+<p>停止后续步骤，保存并回传取消结果；已完成操作不回滚。客户端远端会话保持只读。</p>
+<h3>场景六：本轮执行超时</h3>
+<p>每轮使用统一、可配置的客户端兜底超时。图中展示远端任务的结果交付。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-timeout.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-timeout.svg" alt="场景六：本轮执行超时"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/07-timeout.html">打开顺序图：场景六：本轮执行超时</a></p>
+<p>停止后续步骤，记录并回传“执行超时”；本地会话展示相同终止原因。已完成操作不回滚，不自动重试。</p>
+<h3>场景七：需要人工登录或验证</h3>
+<p>图中为远端任务：Chrome 操作触发需要人处理的登录或验证。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-login.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-login.svg" alt="场景七：需要人工登录或验证"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/07-login.html">打开顺序图：场景七：需要人工登录或验证</a></p>
+<p>本次任务直接失败，客户端提示原因。用户在专用 Chrome 处理后发起新任务；远端任务由服务端重新调用，不暂停恢复原任务。</p>
+<p>执行记录保存调用 ID、状态、起止时间与错误；快照保存实际装配与运行条件，不含密钥和 Token。本轮可观测范围是这些记录与客户端过程展示，不新增监控平台。通信恢复不重复启动任务，但不承诺外部 Chrome 操作的副作用恰好发生一次。</p>
+<h2 id="07-execution-服务端配合">服务端配合</h2>
+<p>为支持客户端接收任务并交付结果，服务端需要：</p>
+<ul>
+<li>通过 WebSocket 发送调用、上下文和按调用 ID 发起的取消请求；后续调度由 LangGraph 决定。</li>
+<li>接收任务状态、最终结果、运行快照，并确认收到。</li>
+<li>收到“忙”或“执行中断、结果未知”后决定后续处理；客户端不自动重跑。</li>
+</ul>
+<footer><span class="footer-label">客户端 MVP 设计 · 2026-10-18</span><a href="#08-frontend">下一章：前端现状与缺口</a></footer></article><article id="08-frontend" data-file="08-前端现状与缺口.md" hidden><h1>08 · 前端现状与缺口</h1>
 <blockquote>
-<p>串讲重点：沿用已有页面与视觉风格，把资源发布、同步装配和任务交付补成完整流程。</p>
+<p>串讲重点：围绕客户端页面和用户操作，说明界面、交互与执行能力的完成情况，最后列出所需的服务端配合。</p>
 </blockquote>
 <h2 id="08-frontend-US">US</h2>
 <ol>
-<li>作为串讲参与者，我能直接对照现有页面，分清已经可用的交互与尚待接通的业务。</li>
+<li>作为串讲参与者，我能结合页面理解完整业务流程，并知道各项能力的完成情况。</li>
 <li>作为使用者，我能知道资源来自本地还是官方、使用哪个版本，以及任务执行和结果交付到了哪一步。</li>
-<li>作为运维人员，我在已有 Skill、Agent 页面完成编辑、实验与发布，不需要另一套管理后台。</li>
+<li>作为运维人员，我在 Skill、Agent 页面完成编辑、实验与发布。</li>
 </ol>
 <h2 id="08-frontend-简要设计">简要设计</h2>
-<p>现有前端已经具备左侧导航、会话、Agent 配置、Skill 文件阅读与编辑、右侧工作台。继续沿用<strong>暖灰底色、绿色强调、细边框、轻量圆角，以及 Geist / MiSans 字体</strong>。新增功能融入这些页面，不重做导航体系。</p>
-<p>普通 Web 启动使用演示适配器；桌面入口另有 Tauri 本地运行时适配。因此，下列截图代表<strong>已有 Web 的真实页面与交互</strong>，其中资源和执行数据为演示内容，不能据此认为远端发布、同步或任务交付已经接通。</p>
-<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/00-workspace.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/00-workspace.png" alt="现有 Web 工作区：左侧导航、中央会话和右侧工作台"></a><figcaption>沿用这套页面框架；连接、同步和任务状态应放在相应操作附近。</figcaption></figure>
-<h2 id="08-frontend-服务端">服务端</h2>
-<ul>
-<li>提供已有登录身份与运维权限，客户端据此展示写入入口，服务端继续执行权限校验。</li>
-<li>提供官方草稿修订、发布版本、版本清单与物料下载；Skill 发布联动受影响 Agent。</li>
-<li>通过 WebSocket 调用与取消任务，接收状态、结果、快照并确认收到。</li>
-<li>提供桌面更新清单和整包下载。发布、同步、MCP 连接与更新的真实状态需要接入数据，不能只补按钮。</li>
-</ul>
+<p>前端由左侧导航、中央业务页面与右侧工作台组成。会话承载执行与交互，Agent 页面管理装配，Skill 页面管理文件包与版本，工作台展示浏览器和执行过程。视觉采用<strong>暖灰底色、绿色强调、细边框、轻量圆角，以及 Geist / MiSans 字体</strong>。</p>
+<p>截图直接展示当前前端设计，图中使用演示数据。页面与交互的完成情况、业务接入的完成情况分别列在下表中。</p>
+<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/00-workspace.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/00-workspace.png" alt="现有 Web 工作区：左侧导航、中央会话和右侧工作台"></a><figcaption>左侧导航组织资源与会话，中央区域承载当前业务，右侧工作台展示执行环境。</figcaption></figure>
 <h2 id="08-frontend-客户端">客户端</h2>
-<p>MVP 优先补齐三组完整流程：</p>
+<p>前端围绕三组业务流程组织：</p>
 <ol>
-<li><strong>资源身份与发布</strong>：区分本地和官方；在 Skill、Agent 现有页面补版本、只读、草稿实验、运维上传和手填标签发布。</li>
+<li><strong>资源身份与发布</strong>：Skill、Agent 页面区分本地与官方资源，管理版本、只读配置、草稿实验、运维上传和手填标签发布。</li>
 <li><strong>同步与开始运行</strong>：在新会话入口展示版本核对、缺失物料下载和工具检查；准备失败说明原因，准备完成固定快照。</li>
-<li><strong>执行与结果交付</strong>：复用会话和任务横条，补远端只读、执行记录、快照、结果待确认与重启中断状态。</li>
+<li><strong>执行与结果交付</strong>：会话与任务横条展示执行过程；服务端会话只读，执行记录呈现快照、结果待确认与重启中断状态。</li>
 </ol>
-<p>桌面更新另补轻量设置入口，展示检查、下载、待安装和失败状态；不用扩大为独立更新中心。</p>
-<h2 id="08-frontend-详细设计">详细设计</h2>
+<p>设置中的桌面更新入口展示检查、下载、待安装和失败状态。</p>
+<h3>完成情况</h3>
 <table>
 <thead>
 <tr>
 <th>对应章节</th>
-<th>沿用已有页面</th>
-<th>需要补的交互</th>
-<th>依赖的接入</th>
+<th>已具备的界面能力</th>
+<th>尚未完成的界面能力</th>
+<th>尚未完成的业务接入</th>
 </tr>
 </thead>
 <tbody><tr>
@@ -442,9 +777,9 @@
 </tr>
 <tr>
 <td>01 Skill</td>
-<td>文件树、阅读、编辑、预览、保存草稿</td>
-<td>本地/官方标识、完整包编辑、版本轨迹、官方只读与复制本地、选 Agent 实验、上传与联动发布</td>
-<td>包快照、草稿修订、发布与实验装配</td>
+<td>File Manager 列表与包内管理、来源筛选、新建与复制、文件级上传、新建目录/文件、重命名/删除、文本编辑与预览、冲突与失败提示、官方包只读；浏览器和桌面文件持久化</td>
+<td>历史版本切换、官方草稿维护、选 Agent 实验、上传草稿与联动发布</td>
+<td>完整包运行快照、草稿修订、发布与实验装配；官方身份、下载与校验</td>
 </tr>
 <tr>
 <td>02 MCP</td>
@@ -472,9 +807,9 @@
 </tr>
 <tr>
 <td>06 同步装配</td>
-<td>通用加载中、失败和重试样式</td>
-<td>核对版本、缺包下载、缓存版本、失败原因；已有会话沿用原快照</td>
-<td>清单、按需下载、本地多版本保存与装配</td>
+<td>通用加载中、失败和重试样式；按独立 ID 展示本机官方缓存包</td>
+<td>核对版本、缺包下载、版本轨迹；已有会话沿用原快照</td>
+<td>远端清单、按需下载与摘要校验、完整包固定装配；本地多版本目录读取已接入</td>
 </tr>
 <tr>
 <td>07 执行恢复</td>
@@ -483,29 +818,48 @@
 <td>持久化、确认与补传、服务端取消、兜底超时</td>
 </tr>
 </tbody></table>
-<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/04-agent.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/04-agent.png" alt="现有 Agent 页面：配置、能力选择与系统提示词"></a><figcaption>这里补官方身份、固定版本和发布入口。现有“调试”只进入 Agent 调试会话，还不是“临时装配当前 Skill 草稿”的实验流程。</figcaption></figure>
-<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/01-skill.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/01-skill.png" alt="现有 Skill 页面：文件树、正文阅读与编辑入口"></a><figcaption>这里补版本轨迹、完整包操作、选择 Agent 实验和发布。现有“保存草稿”保存的是本地单文件内容，尚不是服务端草稿修订。</figcaption></figure>
-<p>串讲时避免三个误解：</p>
+<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/04-agent.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/04-agent.png" alt="现有 Agent 页面：配置、能力选择与系统提示词"></a><figcaption>Agent 页面管理身份、提示词、能力装配与发布版本。当前调试入口可打开会话，临时装配 Skill 草稿的实验流程尚未完成。</figcaption></figure>
+<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/01-skill-list.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/01-skill-list.png" alt="Skill 列表：已实现的来源筛选与本地管理"></a><figcaption>本次 Web 界面实拍。Skill 列表和包内文件管理已实现；图片中的数据为演示内容。</figcaption></figure>
+<p>Skill 页面见 <a href="#01-skill">01 SKILL</a>：已安装 <code>@beui-pro/file-manager-workspace</code> 并接入真实文件内容保存。浏览器使用 IndexedDB；桌面通过 JavaScript runtime 保存到 <code>.omnimind-ops/skills</code>，无 Rust 改动。文件上传与服务端草稿上传、正式发布是三个不同动作，后两项尚未接入。</p>
+<p>桌面 Skill 读取和 Agent 可选清单使用同一目录。当前运行时每轮只读取所选包的 <code>SKILL.md</code> 并拼接提示词，尚未挂载完整包，也未固定会话快照。仓库没有 <code>langgraph.ts</code> 文件；实际调用链及后续 <code>backend</code> / <code>skills</code> 配置见<a href="../skill-storage-and-loading.md">Skill 存储与运行加载</a>。</p>
+<p>完成情况与范围：</p>
 <ul>
-<li><strong>旧审批演示不作为本期新增需求。</strong> 页面已有“操作前先确认”和审批状态，后续按已确认的 MVP 流程调整；不增加发布审核。</li>
-<li><strong>调试不等于草稿实验。</strong> 实验需要把当前完整草稿临时装配给选中的 Agent，并固定快照，不能仅打开原 Agent 的调试会话。</li>
-<li><strong>没有更新入口是前端缺口。</strong> 这不等于断言整个仓库没有底层更新代码；本次审查限定在现有 Web 页面与接入接口。</li>
+<li><strong>审批不属于本期 MVP 流程。</strong> 截图中的“操作前先确认”和审批状态是当前实现中的历史内容；正式发布无审核环节。</li>
+<li><strong>草稿实验尚未完成。</strong> 实验将当前完整草稿临时装配给选中的 Agent，并固定快照；当前调试入口只打开 Agent 会话。</li>
+<li><strong>桌面更新界面尚未完成。</strong> 本章只列前端页面与接入接口的完成情况。</li>
 </ul>
 <details>
 <summary>查看前端源证据</summary>
 
 <ul>
-<li>启动与数据来源：<a href="../../web/src/main.tsx">main.tsx</a> 第 26–35 行；<a href="../../web/src/adapters/demo.ts">演示适配器</a> 第 20–31 行；<a href="../../web/src/adapters/tauri/index.ts">Tauri 适配器</a> 第 81–115 行。</li>
-<li>现有布局与 Agent 调试入口：<a href="../../web/src/App.tsx">App.tsx</a> 第 286–383、651–687 行；<a href="../../web/src/components/workbench/workbench.tsx">工作台调试会话</a> 第 674–686 行。</li>
-<li>Skill 文件操作：<a href="../../web/src/components/skills/skill-screen.tsx">skill-screen.tsx</a> 第 222–245、348–402、496–520 行；<a href="../../web/src/adapters/browser-storage.ts">localStorage 草稿</a> 第 27–49 行；<a href="../../web/src/skills/source.ts">Skill 数据类型</a> 第 3–12 行。</li>
+<li>启动与数据来源：<a href="../../web/src/main.tsx">main.tsx</a>、<a href="../../web/src/adapters/demo.ts">演示适配器</a>、<a href="../../web/src/adapters/tauri/index.ts">Tauri 适配器</a>。</li>
+<li>现有布局与 Agent 调试入口：<a href="../../web/src/App.tsx">App.tsx</a>、<a href="../../web/src/components/workbench/workbench.tsx">工作台调试会话</a>。</li>
+<li>Skill 文件操作：<a href="../../web/src/components/skills/skill-library-screen.tsx">Skill 管理页</a>、<a href="../../web/src/skills/library.ts">SkillLibrary 接口与本地行为</a>、<a href="../../web/src/adapters/browser-skill-library.ts">浏览器 IndexedDB</a>、<a href="../../web/src/adapters/tauri/skills.ts">Tauri 适配器</a>、<a href="../../desktop/runtime/skill-library.mjs">桌面文件存储</a>。</li>
 <li>Agent 当前类型仅引用能力 ID：<a href="../../web/src/agents/source.ts">source.ts</a> 第 1–15、37–48 行；阅读模式只读不是官方权限：<a href="../../web/src/components/premium/agent-builder/agent-builder.tsx">agent-builder.tsx</a> 第 227–234 行；Web 保存修改演示内存：<a href="../../web/src/adapters/demo/resources.ts">resources.ts</a> 第 170–198 行。</li>
 <li>MCP、工具与旧审批开关：<a href="../../web/src/components/premium/agent-builder/agent-configuration.tsx">agent-configuration.tsx</a> 第 143–195 行；<a href="../../web/src/components/premium/agent-builder/mcp-capability-dialog.tsx">MCP 能力弹窗</a> 第 60–98 行。</li>
 <li>执行与恢复边界：<a href="../../web/src/desktop/runtime.ts">任务类型</a> 第 28–42、62–78 行；<a href="../../web/src/components/chat/chat-composer.tsx">聊天忙时限制和审批面板</a> 第 76–107、132–170 行；<a href="../../web/src/workspace/store.ts">工作区内存状态</a> 第 39–46 行；<a href="../../web/src/chat/registry.ts">线程内存缓存</a> 第 23–41 行。</li>
-<li>更新与同步接口范围：<a href="../../web/src/app/dependencies.tsx">应用依赖</a> 第 19–30 行；<a href="../../web/src/agents/source.ts">Agent 来源接口</a> 第 45–48 行；<a href="../../web/src/skills/source.ts">Skill 来源接口</a> 第 10–13 行。现有 Web 未检索到更新流程入口或对应适配器。</li>
+<li>更新与同步接口范围：<a href="../../web/src/app/dependencies.tsx">应用依赖</a>、<a href="../../web/src/agents/source.ts">Agent 来源接口</a>、<a href="../../web/src/skills/source.ts">Skill 来源接口</a>。桌面资源加载见 <a href="../../desktop/runtime/resources.mjs">resources.mjs</a>；现有 Web 未接入官方物料下载或桌面更新流程。</li>
 <li>视觉依据：<a href="../../web/src/index.css">index.css</a> 第 13–14、57–92 行；<a href="../../web/src/components/premium/docs-pages/docs-article.css">文档阅读样式</a> 第 20–25、41–83 行。</li>
 </ul>
 </details>
-<footer><span class="footer-label">需求设计与前端现状 · 2026-10-18</span><a href="#00-overview">回到总体架构</a></footer></article></div></main><script>const chapters=[["00-overview","00-总体架构.md","总体架构"],["01-skill","01-SKILL.md","SKILL"],["02-mcp","02-MCP.md","MCP"],["03-builtintool","03-buildintool.md","builtinTool"],["04-agent","04-agent.md","Agent"],["05-updater","05-桌面端更新.md","桌面端更新"],["06-sync","06-同步与装配.md","同步与装配"],["07-execution","07-任务执行与恢复.md","任务执行与恢复"],["08-frontend","08-前端现状与缺口.md","前端现状与缺口"]];
+
+<h2 id="08-frontend-详细设计">详细设计</h2>
+<p>前端状态按运行模型呈现。下面两种场景展示用户在客户端观察到的开始、运行和交付；各模块的其他失败情况见对应章节顺序图。</p>
+<h3>正常开始：准备完成后进入会话</h3>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/00-manual.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/00-manual.svg" alt="用户发起会话的运行模型"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/00-manual.html">打开顺序图：用户发起会话的运行模型</a></p>
+<p>界面先展示准备状态，准备完成后展示执行过程，结束后展示结果并允许下一轮输入。准备或工具检查失败时停在失败状态，按同步与 builtinTool 章节的运行模型处理。</p>
+<h3>执行中断线：区分执行结果与交付状态</h3>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-disconnect.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-disconnect.svg" alt="断线继续执行与结果补传"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/07-disconnect.html">打开顺序图：断线继续执行与结果补传</a></p>
+<p>界面同时表达连接状态与任务状态：连接断开时任务仍可运行，任务结束后可处于“结果待确认”，确认收到后转为“已交付”。连接恢复本身不触发重新执行。</p>
+<h2 id="08-frontend-服务端配合">服务端配合</h2>
+<p>客户端页面与业务接入依赖以下服务端能力：</p>
+<ul>
+<li>提供已有登录身份与运维权限，客户端据此展示写入入口，服务端继续执行权限校验。</li>
+<li>提供官方草稿修订、发布版本、版本清单与物料下载；Skill 发布联动受影响 Agent。</li>
+<li>通过 WebSocket 调用与取消任务，接收状态、结果、快照并确认收到。</li>
+<li>提供桌面更新清单和整包下载。</li>
+</ul>
+<footer><span class="footer-label">客户端 MVP 设计 · 2026-10-18</span><a href="#00-overview">回到客户端总体设计</a></footer></article></div></main><script>const chapters=[["00-overview","00-总体架构.md","客户端总体设计"],["01-skill","01-SKILL.md","SKILL"],["02-mcp","02-MCP.md","MCP"],["03-builtintool","03-buildintool.md","builtinTool"],["04-agent","04-agent.md","Agent"],["05-updater","05-桌面端更新.md","桌面端更新"],["06-sync","06-同步与装配.md","同步与装配"],["07-execution","07-任务执行与恢复.md","任务执行与恢复"],["08-frontend","08-前端现状与缺口.md","前端现状与缺口"]];
 const navLinks=[...document.querySelectorAll('.chapter-nav a')];
 const articles=[...document.querySelectorAll('article')];
 let current=-1;
@@ -523,13 +877,14 @@ function show(){
  document.getElementById('chapter-select').value=id;
  document.getElementById('source').href=file;
  const diagram=document.getElementById('diagram');
- diagram.hidden=current===8;
- diagram.classList.toggle('empty-diagram',current===8);
- diagram.href='diagrams/'+id+'.html';
+ const runtimeLink=article.querySelector('a[href*="diagrams/runtime/"]');
+ diagram.hidden=!runtimeLink;
+ diagram.classList.toggle('empty-diagram',!runtimeLink);
+ diagram.href=runtimeLink?.getAttribute('href')||'#'+id;
  document.getElementById('prev').disabled=current===0;
  document.getElementById('next').disabled=current===chapters.length-1;
  document.getElementById('sections').innerHTML=[...article.querySelectorAll('h2')].map(h=>'<a href="#'+h.id+'">'+h.textContent+'</a>').join('');
- document.title=title+' · OmniOps 需求串讲';
+ document.title=title+' · OmniOps 客户端需求串讲';
  if(hash!==id&&hash.startsWith(id+'-'))requestAnimationFrame(()=>document.getElementById(hash)?.scrollIntoView({behavior:reduced?'instant':'smooth',block:'start'}));
  else if(changed)requestAnimationFrame(()=>window.scrollTo({top:0,behavior:'instant'}));
 }

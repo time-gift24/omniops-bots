@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "执行中断线：继续执行、重连补传",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1100,
+      640
+    ]
+  },
+  "participants": [
+    {
+      "id": "client",
+      "label": "桌面客户端",
+      "type": "frontend"
+    },
+    {
+      "id": "chrome",
+      "label": "专用 Chrome",
+      "type": "external"
+    },
+    {
+      "id": "record",
+      "label": "本地记录",
+      "type": "database"
+    },
+    {
+      "id": "server",
+      "label": "服务端",
+      "type": "backend"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m-07-disconnect-0",
+      "from": "client",
+      "to": "chrome",
+      "y": 180,
+      "label": "WS 已断线：继续当前任务",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m-07-disconnect-1",
+      "from": "chrome",
+      "to": "client",
+      "y": 247,
+      "label": "返回任务结果",
+      "variant": "return"
+    },
+    {
+      "id": "m-07-disconnect-2",
+      "from": "client",
+      "to": "record",
+      "y": 313,
+      "label": "保存结果与快照：待确认",
+      "variant": "default"
+    },
+    {
+      "id": "m-07-disconnect-3",
+      "from": "client",
+      "to": "server",
+      "y": 380,
+      "label": "退避重连，恢复 WS 连接",
+      "variant": "default"
+    },
+    {
+      "id": "m-07-disconnect-4",
+      "from": "client",
+      "to": "server",
+      "y": 447,
+      "label": "按原调用 ID 补传结果",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m-07-disconnect-5",
+      "from": "server",
+      "to": "client",
+      "y": 513,
+      "label": "确认收到",
+      "variant": "return"
+    },
+    {
+      "id": "m-07-disconnect-6",
+      "from": "client",
+      "to": "record",
+      "y": 550,
+      "label": "标记结果已交付",
+      "variant": "default"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "断线不等于终止",
+      "items": [
+        "退避重连可与正在执行的任务并行",
+        "图中展示任务先完成、连接后恢复的情况"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "只补传结果",
+      "items": [
+        "确认前一直保留结果与快照",
+        "不会因重连重新执行 Chrome 操作"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+[
+  {
+    "name": "04-assembly-ready",
+    "file": "assets/runtime/04-assembly-ready.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "58430",
+    "data-last-export-canonical": "true",
+    "formatNormalization": "trim trailing whitespace and add final newline only",
+    "source_sha256": "d7fbe33db04c8953ade281ac350e2fa67c25b55a41a44bacaf0ce64f3411e108",
+    "checked_in_sha256": "6c1dc7cd28c4a0fe8af110d2d1fa030ceb14ea98ccbf67cb7e27323a9ccdc919",
+    "checked_in_bytes": 58410
+  },
+  {
+    "name": "04-assembly-failure",
+    "file": "assets/runtime/04-assembly-failure.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "49783",
+    "data-last-export-canonical": "true",
+    "formatNormalization": "trim trailing whitespace and add final newline only",
+    "source_sha256": "a3baa776085d0ac78546644d60882d53b803f8ec60450c1780fdc0f0dca919d4",
+    "checked_in_sha256": "9d9d0a2d88f9a223a26bfc68c7f43772132bd497c90fe04bfc08c23219f43116",
+    "checked_in_bytes": 49763
+  },
+  {
+    "name": "00-weekly-evolution",
+    "file": "assets/runtime/00-weekly-evolution.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "52154",
+    "data-last-export-canonical": "true",
+    "formatNormalization": "trim trailing whitespace and add final newline only",
+    "source_sha256": "3a0290069c0ed0fe764e35e907ae2ab8c1c6712e501b0ab911ef71ef0a531e5a",
+    "checked_in_sha256": "b8ebf157538446094351c934da7b9324919f5e1a38d10a0022b39cf75647b48e",
+    "checked_in_bytes": 52134
+  }
+]

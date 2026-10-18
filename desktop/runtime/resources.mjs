@@ -6,6 +6,7 @@ import { homedir, tmpdir } from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { RuntimeError, invalid } from './errors.mjs';
+import { createSkillLibrary, defaultSkillRoot } from './skill-library.mjs';
 
 const exec = promisify(execFile);
 const MAX_FILE = 2 * 1024 * 1024;
@@ -130,7 +131,8 @@ async function changedLines(before, after) {
   } finally { await rm(directory, { recursive: true, force: true }); }
 }
 
-export function createResources({ homeDir = homedir(), skillsDir = process.env.OMNIOPS_BOTS_SKILLS_DIR || path.join(homeDir, '.agents', 'skills') } = {}) {
+export function createResources({ homeDir = homedir(), skillsDir = defaultSkillRoot(homeDir) } = {}) {
+  const skillLibrary = createSkillLibrary({ root: skillsDir });
   const roots = new Set();
   const sessions = new Map();
   let baselineBytes = 0;
@@ -140,41 +142,7 @@ export function createResources({ homeDir = homedir(), skillsDir = process.env.O
     instructions: '你是桌面浏览器助手。使用内置浏览器核实页面信息，清楚说明将执行的操作。被拒绝后调整方案，不要原样重试。',
     mcpServerIds: [], toolIds: TOOLS.map(tool => tool.id), skillIds: [], requireApproval: true,
   }]]);
-  let skillsPromise;
-  async function loadSkills() {
-    if (!skillsPromise) skillsPromise = (async () => {
-      let entries;
-      try { entries = await readdir(skillsDir, { withFileTypes: true }); }
-      catch (error) { if (error.code === 'ENOENT') return []; throw new RuntimeError('skills-unavailable', '无法读取本地技能目录。'); }
-      const result = [];
-      let total = 0;
-      for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
-        if (entry.name.startsWith('.') || (!entry.isDirectory() && !entry.isSymbolicLink())) continue;
-        const root = await realpath(path.join(skillsDir, entry.name));
-        try { await access(path.join(root, 'SKILL.md')); } catch { continue; }
-        if (result.length >= 256) throw new RuntimeError('resource-limit', '技能数量超过读取上限，请通过 OMNIOPS_BOTS_SKILLS_DIR 选择较小的目录。');
-        const sourceBytes = await readBounded(root, 'SKILL.md', Math.min(256 * 1024, MAX_TOTAL - total));
-        total += sourceBytes.length;
-        const source = sourceBytes.toString('utf8');
-        const frontmatter = source.match(/^---\r?\n([\s\S]*?)\r?\n---/u)?.[1] ?? '';
-        const field = name => frontmatter.match(new RegExp(`^${name}:\\s*(.+)$`, 'mu'))?.[1]?.replace(/^["']|["']$/gu, '').trim();
-        const files = [{ path: 'SKILL.md', content: source }];
-        for (const file of await filesIn(root)) {
-          if (file.path === 'SKILL.md' || file.bytes > 256 * 1024 || !/\.(?:md|txt|json|ya?ml|toml|m?[jt]s|tsx?|py|sh|css|html)$/iu.test(file.path)) continue;
-          if (total + file.bytes > MAX_TOTAL) throw new RuntimeError('resource-limit', '技能目录超过读取上限，请通过 OMNIOPS_BOTS_SKILLS_DIR 选择较小的目录。');
-          const content = await readBounded(root, file.path, 256 * 1024);
-          if (!content.includes(0)) {
-            total += content.length;
-            if (total > MAX_TOTAL) throw new RuntimeError('resource-limit', '技能目录超过读取上限，请通过 OMNIOPS_BOTS_SKILLS_DIR 选择较小的目录。');
-            files.push({ path: file.path, content: content.toString('utf8') });
-          }
-        }
-        result.push({ id: entry.name, name: field('name') || entry.name, description: field('description') || '', files });
-      }
-      return result;
-    })().catch(error => { skillsPromise = undefined; throw error; });
-    return skillsPromise;
-  }
+  const loadSkills = () => skillLibrary.sourceSkills();
   function getAgent(id) {
     const configuration = agents.get(string(id, 'Agent', 256));
     if (!configuration) throw invalid('找不到这个 Agent。');
@@ -184,6 +152,7 @@ export function createResources({ homeDir = homedir(), skillsDir = process.env.O
     const skills = await loadSkills();
     const instructions = [configuration.instructions, ...configuration.skillIds.map(id => {
       const skill = skills.find(item => item.id === id);
+      if (!skill) throw invalid('Agent 引用的 Skill 已移除或缺少有效 SKILL.md，请重新装配。');
       return `\n<skill name=${JSON.stringify(skill.name)}>\n${skill.files.find(file => file.path === 'SKILL.md').content}\n</skill>`;
     })].join('\n');
     if (instructions.length > 256 * 1024) throw new RuntimeError('resource-limit', 'Agent 指令与所选技能合计过长，请减少技能后保存。');
@@ -231,6 +200,7 @@ export function createResources({ homeDir = homedir(), skillsDir = process.env.O
     return session;
   }
   async function handle(method, params = {}) {
+    if (skillLibrary.hasMethod(method)) return skillLibrary.handle(method, params);
     switch (method) {
       case 'workspace_directories': {
         const result = [];
@@ -279,5 +249,5 @@ export function createResources({ homeDir = homedir(), skillsDir = process.env.O
       default: throw invalid('未知的资源操作。');
     }
   }
-  return { hasMethod: method => METHODS.has(method), handle, getAgent };
+  return { hasMethod: method => METHODS.has(method) || skillLibrary.hasMethod(method), handle, getAgent };
 }

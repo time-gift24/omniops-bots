@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/02-mcp-call.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/02-mcp-call.html",
+  "specification": {
+    "sha256": "8ca20fdd0fd76bdf35566acc50760d01bc6b125b21ed8371732e4dbb54b81ed6",
+    "bytes": 1986
+  },
+  "artifact": {
+    "sha256": "cba529cbab89970ba6efd3ac193204f8b009be97865c7baed641b3943f49dd08",
+    "bytes": 702424
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}
