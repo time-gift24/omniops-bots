@@ -25,6 +25,8 @@ import { AgentConfigurationPanel } from "./agent-configuration"
 
 export type AgentBuilderProps = {
   initialConfiguration?: AgentConfiguration
+  initialDraft?: AgentConfiguration
+  onDraftChange?: (configuration: AgentConfiguration) => void
   mcpServers?: readonly McpServer[]
   tools?: readonly AgentResource[]
   skills?: readonly AgentResource[]
@@ -36,6 +38,8 @@ export type AgentBuilderProps = {
 
 export function AgentBuilder({
   initialConfiguration = DEFAULT_AGENT,
+  initialDraft = initialConfiguration,
+  onDraftChange,
   mcpServers = MCP_SERVERS,
   tools = AGENT_TOOLS,
   skills = AGENT_SKILLS,
@@ -44,7 +48,7 @@ export function AgentBuilder({
   onSave,
   className,
 }: AgentBuilderProps) {
-  const [configuration, setConfiguration] = useState(initialConfiguration)
+  const [configuration, setConfiguration] = useState(initialDraft)
   const [saved, setSaved] = useState(initialConfiguration)
   const [saveState, setSaveState] = useState<ButtonState>("idle")
   const [error, setError] = useState("")
@@ -65,6 +69,7 @@ export function AgentBuilder({
 
   function change(next: AgentConfiguration) {
     setConfiguration(next)
+    onDraftChange?.(next)
     setError("")
     window.clearTimeout(resetTimer.current)
     setSaveState("idle")

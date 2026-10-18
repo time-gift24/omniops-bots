@@ -1,10 +1,9 @@
-"use client";
+"use client"
 
-import * as React from "react";
+import * as React from "react"
 
-import type { ThreadStore } from "@/chat/thread-store.ts";
-import { useThreadState } from "@/chat/react.ts";
-import { AgentChatCredits } from "@/components/premium/agent-chat-input/agent-chat-credits";
+import type { ThreadStore } from "@/chat/thread-store.ts"
+import { AgentChatCredits } from "@/components/premium/agent-chat-input/agent-chat-credits"
 import {
   AgentComposerAction,
   AgentComposerAttach,
@@ -12,10 +11,10 @@ import {
   AgentComposerInput,
   AgentComposerModel,
   AgentComposerSurface,
-} from "@/components/premium/agent-chat-input/composition";
-import type { AgentChatCreditsLabels } from "@/components/premium/agent-chat-input/credits-labels";
-import type { AgentChatInputStatus } from "@/components/premium/agent-chat-input/types";
-import { cn } from "@/lib/utils";
+} from "@/components/premium/agent-chat-input/composition"
+import type { AgentChatCreditsLabels } from "@/components/premium/agent-chat-input/credits-labels"
+import type { AgentChatInputStatus } from "@/components/premium/agent-chat-input/types"
+import { cn } from "@/lib/utils"
 
 const LABELS: Partial<AgentChatCreditsLabels> = {
   editor: "消息输入",
@@ -28,7 +27,7 @@ const LABELS: Partial<AgentChatCreditsLabels> = {
   closePreview: "关闭预览",
   removeAttachment: (name) => `移除附件 ${name}`,
   previewAttachment: (name) => `预览 ${name}`,
-};
+}
 
 /** 仅用于 mock 网关。 */
 const MODELS = [
@@ -36,30 +35,33 @@ const MODELS = [
   { id: "sonnet-5", label: "Sonnet 5" },
   { id: "opus-4.8", label: "Opus 4.8" },
   { id: "gpt-5.6", label: "GPT 5.6" },
-] as const;
-export const DEFAULT_CHAT_MODEL = MODELS[0].id;
+] as const
+export const DEFAULT_CHAT_MODEL = MODELS[0].id
 
 /** 失败后仍可继续输入，error 仅作语义标记。 */
 function toComposerStatus(status: string): AgentChatInputStatus {
-  if (status === "submitted" || status === "streaming") return status;
-  if (status === "failed") return "error";
-  return "ready";
+  if (status === "submitted" || status === "streaming") return status
+  if (status === "failed") return "error"
+  return "ready"
 }
 
 export function ChatComposer({
   store,
   className,
 }: {
-  store: ThreadStore;
-  className?: string;
+  store: ThreadStore
+  className?: string
 }) {
-  const state = useThreadState(store);
+  const status = React.useSyncExternalStore(
+    store.subscribe,
+    () => store.getState().status
+  )
   const draft = React.useSyncExternalStore(
     store.subscribeDraft,
     store.getDraft,
-    store.getDraft,
-  );
-  const model = draft.model ?? DEFAULT_CHAT_MODEL;
+    store.getDraft
+  )
+  const model = draft.model ?? DEFAULT_CHAT_MODEL
 
   return (
     <AgentChatCredits
@@ -70,7 +72,7 @@ export function ChatComposer({
       onValueChange={(text) => store.updateDraft({ text })}
       // 技能体系未上线：空列表让 `/` 保持纯文本，不触发面板。
       skills={[]}
-      status={toComposerStatus(state.status)}
+      status={toComposerStatus(status)}
       placeholder=""
       models={MODELS}
       model={model}
@@ -85,10 +87,10 @@ export function ChatComposer({
             name: attachment.name,
             mediaType: attachment.type ?? "application/octet-stream",
           })),
-          model,
-        );
-        if (accepted) store.updateDraft({ text: "", attachments: [] });
-        return accepted;
+          model
+        )
+        if (accepted) store.updateDraft({ text: "", attachments: [] })
+        return accepted
       }}
       className={cn("max-w-[736px]", className)}
     >
@@ -106,5 +108,5 @@ export function ChatComposer({
       </AgentComposerSurface>
       <AgentComposerAttachments />
     </AgentChatCredits>
-  );
+  )
 }

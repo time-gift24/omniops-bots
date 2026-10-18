@@ -1,28 +1,28 @@
-"use client";
+"use client"
 
-import * as React from "react";
-import { LayoutGroup, motion, useReducedMotion } from "motion/react";
+import * as React from "react"
+import { LayoutGroup, motion, useReducedMotion } from "motion/react"
 import {
   ArrowDown01Icon,
   Folder01Icon,
-} from "@hugeicons-pro/core-stroke-rounded";
-import { HugeiconsIcon } from "@hugeicons/react";
+} from "@hugeicons-pro/core-stroke-rounded"
+import { HugeiconsIcon } from "@hugeicons/react"
 
-import { useThreadState, useThreadStore } from "@/chat/react.ts";
+import { useThreadStore } from "@/chat/react.ts"
 import {
   ChatComposer,
   DEFAULT_CHAT_MODEL,
-} from "@/components/chat/chat-composer";
-import { ChatThread } from "@/components/chat/chat-thread";
-import { Button } from "@/components/ui/button";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { SPRING_PANEL } from "@/lib/ease";
+} from "@/components/chat/chat-composer"
+import { ChatThread } from "@/components/chat/chat-thread"
+import { Button } from "@/components/ui/button"
+import { TooltipProvider } from "@/components/ui/tooltip"
+import { SPRING_PANEL } from "@/lib/ease"
 
 const SUGGESTIONS = [
   "为什么这次构建这么慢？",
   "帮我排查一下昨天部署失败的原因",
   "总结一下这个仓库本周的变更",
-];
+]
 
 export function ChatScreen({
   threadId = "main",
@@ -30,23 +30,25 @@ export function ChatScreen({
   onChooseWorkspace,
   suggestions = SUGGESTIONS,
 }: {
-  threadId?: string;
-  workspaceName?: string;
-  onChooseWorkspace?: () => void;
-  suggestions?: readonly string[];
+  threadId?: string
+  workspaceName?: string
+  onChooseWorkspace?: () => void
+  suggestions?: readonly string[]
 }) {
-  const store = useThreadStore(threadId);
-  const state = useThreadState(store);
+  const store = useThreadStore(threadId)
+  const empty = React.useSyncExternalStore(
+    store.subscribe,
+    () => store.getState().messages.length === 0
+  )
   const editMessage = React.useCallback(
     (text: string) => {
-      store.updateDraft({ text, attachments: [] });
+      store.updateDraft({ text, attachments: [] })
     },
-    [store],
-  );
-  const reduce = useReducedMotion();
-  const empty = state.messages.length === 0;
+    [store]
+  )
+  const reduce = useReducedMotion()
 
-  const composer = <ChatComposer store={store} className="mx-auto w-full" />;
+  const composer = <ChatComposer store={store} className="mx-auto w-full" />
 
   return (
     <TooltipProvider>
@@ -111,7 +113,7 @@ export function ChatScreen({
                         store.send(
                           suggestion,
                           undefined,
-                          store.getDraft().model ?? DEFAULT_CHAT_MODEL,
+                          store.getDraft().model ?? DEFAULT_CHAT_MODEL
                         )
                       }
                     >
@@ -149,5 +151,5 @@ export function ChatScreen({
         </div>
       </LayoutGroup>
     </TooltipProvider>
-  );
+  )
 }

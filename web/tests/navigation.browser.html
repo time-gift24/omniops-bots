@@ -5,6 +5,7 @@
 <!-- Run npm run dev, then open /tests/navigation.browser.html. Both viewport sizes run automatically. -->
 <div id="fixture"></div>
 <pre id="result">Running…</pre>
+<script>performance.setResourceTimingBufferSize(5000);</script>
 <script type="module">
   import React from "react";
   import { createRoot } from "react-dom/client";
@@ -23,6 +24,10 @@
   const viewport = new URLSearchParams(location.search).get("viewport");
   const mobile = viewport === "mobile";
   const passed = [];
+  const agentModule = "/src/components/premium/agent-builder/agent-builder.tsx";
+  const skillModule = "/src/components/skills/skill-screen.tsx";
+  const moduleRequested = path => performance.getEntriesByType("resource")
+    .some(entry => new URL(entry.name).pathname === path);
   const wait = (ms = 20) => new Promise(resolve => setTimeout(resolve, ms));
   const assert = (condition, message) => { if (!condition) throw new Error(message); };
   const until = async (condition, message, timeout = 5000) => {
@@ -133,21 +138,84 @@
       flushSync(() => root.render(React.createElement(React.StrictMode, null,
         React.createElement(ThemeProvider, null, React.createElement(App)))));
       await until(() => button("工作区") && Boolean(drawer()) === mobile, "App did not mount at the requested viewport");
+      assert(!moduleRequested(agentModule) && !moduleRequested(skillModule),
+        "Agent and skill pages must not load at startup");
       if (button("收起工作台")) click(button("收起工作台"));
 
+      const agentName = () => {
+        const field = fixture.querySelector('aside[aria-label="Agent 配置"] input');
+        if (!visible(field)) click(button("Agent 配置"));
+        assert(visible(field), "Agent name must be editable");
+        return field;
+      };
+      const agentPrompt = () => fixture.querySelector('textarea[aria-label="系统提示词"], textarea[aria-label="指令"]');
+      const editAgentPrompt = async () => {
+        if (!visible(agentPrompt())) click(button("编辑", fixture.querySelector("header")));
+        await until(() => visible(agentPrompt()), "Agent system prompt editor did not open");
+        return agentPrompt();
+      };
       await selectItem("Agent", DEFAULT_AGENT.name);
+      await until(() => visible(fixture.querySelector('aside[aria-label="Agent 配置"] input')) || button("Agent 配置"),
+        "Agent editor did not finish loading");
+      assert(moduleRequested(agentModule) && !moduleRequested(skillModule),
+        "Visiting Agent must load its page without loading the skill page");
       await checkPath("Agent", DEFAULT_AGENT.name);
-      let nameField = fixture.querySelector('aside[aria-label="Agent 配置"] input');
-      if (!visible(nameField)) click(button("Agent 配置"));
-      nameField = fixture.querySelector('aside[aria-label="Agent 配置"] input');
-      assert(visible(nameField), "Agent name must be editable");
+      let nameField = agentName();
       setInput(nameField, "导航回归助手");
+      const firstAgentPrompt = `${DEFAULT_AGENT.instructions}\n\n保留客户支持助手的未保存提示词。`;
+      setInput(await editAgentPrompt(), firstAgentPrompt);
       await checkPath("Agent", "导航回归助手");
       await selectItem("Agent", "数据周报");
       await checkPath("Agent", "数据周报");
-      passed.push("Agent parent, selected Agent and live name updates");
+      setInput(agentName(), "周报草稿助手");
+      const secondAgentPrompt = "保留数据周报助手的独立草稿，不能被其他 Agent 的编辑或撤销覆盖。";
+      setInput(await editAgentPrompt(), secondAgentPrompt);
+      await selectItem("Agent", DEFAULT_AGENT.name);
+      await checkPath("Agent", "导航回归助手");
+      assert(agentName().value === "导航回归助手" && (await editAgentPrompt()).value === firstAgentPrompt && !button("保存").disabled,
+        "Switching A to B to A must restore A's name, system prompt and dirty state");
+      click(button("撤销"));
+      await checkPath("Agent", DEFAULT_AGENT.name);
+      assert(agentName().value === DEFAULT_AGENT.name && agentPrompt().value === DEFAULT_AGENT.instructions && button("保存").disabled,
+        "Undo must restore A's saved configuration and clean state");
+      const savedAgentPrompt = `${DEFAULT_AGENT.instructions}\n\n保存后切换仍使用新的保存基线。`;
+      setInput(agentPrompt(), savedAgentPrompt);
+      click(button("保存"));
+      await until(() => button("已保存"), "Agent save did not finish");
+      await selectItem("Agent", "数据周报");
+      await checkPath("Agent", "周报草稿助手");
+      assert(agentName().value === "周报草稿助手" && (await editAgentPrompt()).value === secondAgentPrompt && !button("保存").disabled,
+        "Undoing A must not change B's independent draft or dirty state");
+      await selectItem("资料库", "参考资料");
+      await selectItem("Agent", "数据周报");
+      await checkPath("Agent", "周报草稿助手");
+      assert(agentName().value === "周报草稿助手" && (await editAgentPrompt()).value === secondAgentPrompt && !button("保存").disabled,
+        "Switching sections must preserve the unsaved Agent configuration");
+      await selectItem("Agent", DEFAULT_AGENT.name);
+      assert((await editAgentPrompt()).value === savedAgentPrompt && button("保存").disabled,
+        "Returning to a saved Agent must restore its saved content without a dirty draft");
+      setInput(agentPrompt(), "随后未保存的修改");
+      click(button("撤销"));
+      assert(agentPrompt().value === savedAgentPrompt && button("保存").disabled,
+        "Undo after switching must use the most recently saved baseline");
+      await selectItem("Agent", "数据周报");
+      setInput(agentName(), "");
+      setInput(await editAgentPrompt(), "");
+      await selectItem("Agent", DEFAULT_AGENT.name);
+      await selectItem("Agent", "数据周报");
+      assert(agentName().value === "" && (await editAgentPrompt()).value === "",
+        "Empty draft fields must survive Agent switches without falling back to saved values");
+      click(button("保存"));
+      assert(/请先填写名称和(?:系统提示词|指令)/.test(fixture.querySelector('[role="alert"]')?.textContent ?? ""),
+        "Restored empty drafts must still pass through save validation");
+      click(button("撤销"));
+      await checkPath("Agent", "数据周报");
+      passed.push("Agent drafts survive identity and section switches with independent undo baselines");
 
       await selectItem("技能", DEMO_SKILLS[0].name);
+      await until(() => visible(fixture.querySelector('[data-slot="skill-screen"]')), "Skill page did not finish loading");
+      assert(moduleRequested(skillModule), "Visiting skills must load the skill page");
+      passed.push("Agent and skill pages load only on their first visit");
       await checkPath("技能", DEMO_SKILLS[0].name);
       await selectItem("技能", DEMO_SKILLS[1].name);
       await checkPath("技能", DEMO_SKILLS[1].name);

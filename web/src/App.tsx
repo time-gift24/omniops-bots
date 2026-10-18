@@ -1,4 +1,14 @@
-import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react"
+import {
+  Component,
+  lazy,
+  Suspense,
+  type ReactNode,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   BotIcon,
@@ -10,7 +20,6 @@ import {
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import { defaultThreadRegistry } from "@/chat/react"
 import { ChatScreen } from "@/components/chat/chat-screen"
-import { AgentBuilder } from "@/components/premium/agent-builder/agent-builder"
 import {
   type AgentConfiguration,
   DEFAULT_AGENT,
@@ -39,11 +48,54 @@ import { WorkspacePicker } from "@/components/workspace/workspace-picker"
 import { EASE_OUT } from "@/lib/ease"
 import { createMockWorkbenchBackend } from "@/workbench/mock-backend"
 import { createWorkspaceStore } from "@/workspace/store"
-import { SkillScreen } from "@/components/skills/skill-screen"
 import { ThemePicker } from "@/components/theme-picker"
 import { DEMO_SKILLS } from "@/skills/data"
 
-type AgentEntry = { id: string; configuration: AgentConfiguration }
+const AgentBuilder = lazy(() =>
+  import("@/components/premium/agent-builder/agent-builder").then((module) => ({
+    default: module.AgentBuilder,
+  }))
+)
+const SkillScreen = lazy(() =>
+  import("@/components/skills/skill-screen").then((module) => ({
+    default: module.SkillScreen,
+  }))
+)
+
+class PageLoadBoundary extends Component<
+  { children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false }
+
+  static getDerivedStateFromError() {
+    return { failed: true }
+  }
+
+  render() {
+    if (!this.state.failed) return this.props.children
+    return (
+      <div
+        role="alert"
+        className="grid h-full place-content-center gap-3 px-6 text-center"
+      >
+        <p className="text-sm">页面加载失败，请稍后刷新重试。</p>
+        <p className="text-xs text-muted-foreground">
+          刷新会清空未保存的草稿，请先切换栏目保存。
+        </p>
+        <Button variant="outline" onClick={() => window.location.reload()}>
+          刷新页面
+        </Button>
+      </div>
+    )
+  }
+}
+
+type AgentEntry = {
+  id: string
+  configuration: AgentConfiguration
+  draft?: AgentConfiguration
+}
 
 const INITIAL_AGENTS: readonly AgentEntry[] = [
   { id: "customer-support", configuration: DEFAULT_AGENT },
@@ -362,10 +414,23 @@ export function App() {
               <div
                 className={view.kind === "skill" ? "h-full min-h-0" : "hidden"}
               >
-                <SkillScreen
-                  skillId={openedSkillId}
-                  active={view.kind === "skill"}
-                />
+                <PageLoadBoundary>
+                  <Suspense
+                    fallback={
+                      <p
+                        role="status"
+                        className="p-6 text-sm text-muted-foreground"
+                      >
+                        正在加载技能…
+                      </p>
+                    }
+                  >
+                    <SkillScreen
+                      skillId={openedSkillId}
+                      active={view.kind === "skill"}
+                    />
+                  </Suspense>
+                </PageLoadBoundary>
               </div>
             ) : null}
             {view.kind === "page" ? (
@@ -377,27 +442,50 @@ export function App() {
               </div>
             ) : view.kind === "skill" ? null : view.kind === "agent" &&
               activeAgent ? (
-              <AgentBuilder
-                key={activeAgent.id}
-                initialConfiguration={activeAgent.configuration}
-                toolbarTarget={agentToolbarTarget}
-                onDebug={() => {
-                  workbenchRef.current?.openAgentDebug(
-                    activeAgent.id,
-                    activeAgent.configuration.name
-                  )
-                  setWorkbenchOpen(true)
-                }}
-                onSave={(configuration) =>
-                  setAgents((current) =>
-                    current.map((agent) =>
-                      agent.id === activeAgent.id
-                        ? { ...agent, configuration }
-                        : agent
-                    )
-                  )
-                }
-              />
+              <PageLoadBoundary>
+                <Suspense
+                  fallback={
+                    <p
+                      role="status"
+                      className="p-6 text-sm text-muted-foreground"
+                    >
+                      正在加载Agent…
+                    </p>
+                  }
+                >
+                  <AgentBuilder
+                    key={activeAgent.id}
+                    initialConfiguration={activeAgent.configuration}
+                    initialDraft={activeAgent.draft}
+                    onDraftChange={(draft) =>
+                      setAgents((current) =>
+                        current.map((agent) =>
+                          agent.id === activeAgent.id
+                            ? { ...agent, draft }
+                            : agent
+                        )
+                      )
+                    }
+                    toolbarTarget={agentToolbarTarget}
+                    onDebug={() => {
+                      workbenchRef.current?.openAgentDebug(
+                        activeAgent.id,
+                        activeAgent.configuration.name
+                      )
+                      setWorkbenchOpen(true)
+                    }}
+                    onSave={(configuration) =>
+                      setAgents((current) =>
+                        current.map((agent) =>
+                          agent.id === activeAgent.id
+                            ? { ...agent, configuration, draft: undefined }
+                            : agent
+                        )
+                      )
+                    }
+                  />
+                </Suspense>
+              </PageLoadBoundary>
             ) : activeSession && activeWorkspace ? (
               <ChatScreen
                 key={activeSession.id}
