@@ -1,0 +1,333 @@
+{
+  "status": "pass",
+  "sha256": "e838b72d466558347255bb0ba8b512e11d3f00d32851dd31fceeddd6467455b7",
+  "bytes": 39799,
+  "checks": [
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "chapter": "00-overview",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "chapter": "01-skill",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "chapter": "02-mcp",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "chapter": "03-builtintool",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "chapter": "04-agent",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "chapter": "05-updater",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "chapter": "06-sync",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "chapter": "07-execution",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "chapter": "00-overview",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "chapter": "01-skill",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "chapter": "02-mcp",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "chapter": "03-builtintool",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "chapter": "04-agent",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "chapter": "05-updater",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "chapter": "06-sync",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "chapter": "07-execution",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "chapter": "00-overview",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "chapter": "01-skill",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "chapter": "02-mcp",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "chapter": "03-builtintool",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "chapter": "04-agent",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "chapter": "05-updater",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "chapter": "06-sync",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "chapter": "07-execution",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 2048,
+        "height": 1320
+      },
+      "chapter": "00-overview",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 2048,
+        "height": 1320
+      },
+      "chapter": "01-skill",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 2048,
+        "height": 1320
+      },
+      "chapter": "02-mcp",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 2048,
+        "height": 1320
+      },
+      "chapter": "03-builtintool",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 2048,
+        "height": 1320
+      },
+      "chapter": "04-agent",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 2048,
+        "height": 1320
+      },
+      "chapter": "05-updater",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 2048,
+        "height": 1320
+      },
+      "chapter": "06-sync",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 2048,
+        "height": 1320
+      },
+      "chapter": "07-execution",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "chapter": "00-overview",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "chapter": "01-skill",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "chapter": "02-mcp",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "chapter": "03-builtintool",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "chapter": "04-agent",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "chapter": "05-updater",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "chapter": "06-sync",
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "chapter": "07-execution",
+      "passed": true
+    }
+  ],
+  "navigation": {
+    "previousNext": true,
+    "chapterJump": true,
+    "sectionJump": true
+  },
+  "pageErrors": []
+}

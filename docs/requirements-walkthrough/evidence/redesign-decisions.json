@@ -1,0 +1,31 @@
+{
+  "mode": "Read",
+  "scope": "扩展现有需求串讲材料，沿用现行产品视觉；不开发产品功能",
+  "design_authority": [
+    "web/src/index.css",
+    "web/src/components/premium/docs-pages/docs-article.css",
+    "assets/screenshots/01-skill.png",
+    "assets/screenshots/04-agent.png"
+  ],
+  "detector": {
+    "runs": 1,
+    "advisories": 4,
+    "resolved_font_sizes": {
+      "26px": "24px",
+      "19px": "18px",
+      "15px": "14px"
+    },
+    "retained_color": "rgb(14, 120, 86) 继承当前 web/src/index.css 的 primary，用户明确要求沿用；旧 DESIGN.md 未改写"
+  },
+  "documents_not_modified": [
+    "PRODUCT.md",
+    "DESIGN.md",
+    "AGENTS.md"
+  ],
+  "capture_source": "Playwright + Chrome，从现有 Vite Web 页面直接捕获，未生成或重绘界面。",
+  "review_corrections": [
+    "跨章正文链接解码后转换为阅读器锚点，显式 Markdown 入口保留",
+    "两处粗体提示在 Markdown 源中补空格，避免生成器原样输出星号",
+    "深色 hover 色值与当前 Web CSS 保持一致"
+  ]
+}

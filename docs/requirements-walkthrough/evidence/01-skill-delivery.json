@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "workflow",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/01-skill.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/01-skill.html",
+  "specification": {
+    "sha256": "a3a4f9e26c0f6e479f44801fb414c2a33b8aae79125b080115ae4f9e4a9c64f3",
+    "bytes": 3177
+  },
+  "artifact": {
+    "sha256": "a7bfc475983b024b2a229992371602d88b418e8b4b0a1dc3c96589a4e92537fe",
+    "bytes": 706941
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

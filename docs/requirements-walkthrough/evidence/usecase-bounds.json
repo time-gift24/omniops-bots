@@ -1,0 +1,66 @@
+[
+  {
+    "name": "00-overview-usecase.svg",
+    "viewBox": [
+      1000,
+      520
+    ],
+    "overflow": []
+  },
+  {
+    "name": "01-skill-usecase.svg",
+    "viewBox": [
+      1000,
+      520
+    ],
+    "overflow": []
+  },
+  {
+    "name": "02-mcp-usecase.svg",
+    "viewBox": [
+      1000,
+      520
+    ],
+    "overflow": []
+  },
+  {
+    "name": "03-builtintool-usecase.svg",
+    "viewBox": [
+      1000,
+      520
+    ],
+    "overflow": []
+  },
+  {
+    "name": "04-agent-usecase.svg",
+    "viewBox": [
+      1000,
+      520
+    ],
+    "overflow": []
+  },
+  {
+    "name": "05-updater-usecase.svg",
+    "viewBox": [
+      1000,
+      520
+    ],
+    "overflow": []
+  },
+  {
+    "name": "06-sync-usecase.svg",
+    "viewBox": [
+      1000,
+      520
+    ],
+    "overflow": []
+  },
+  {
+    "name": "07-execution-usecase.svg",
+    "viewBox": [
+      1000,
+      520
+    ],
+    "overflow": []
+  }
+]

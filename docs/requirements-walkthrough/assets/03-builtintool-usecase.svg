@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="520" viewBox="0 0 1000 520" role="img" aria-labelledby="title desc">
+    <title id="title">builtinTool用例图</title>
+    <desc id="desc">内置工具使用的主要用例：选择 Agent 所需工具；检查缺失并提示桌面更新；追溯工具与桌面版本。角色与椭圆之间为无方向参与关系，未表示执行先后。</desc>
+    <style>
+      text { font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; fill:#16354b; }
+      .heading { font-size:28px; font-weight:700; }
+      .boundary { fill:#f5f9fc; stroke:#a0b8c9; stroke-width:2; }
+      .boundary-label { font-size:20px; font-weight:600; }
+      .association { stroke:#688296; stroke-width:2; fill:none; }
+      .usecase { fill:#ffffff; stroke:#26749c; stroke-width:2.5; }
+      .usecase-label { font-size:22px; font-weight:500; text-anchor:middle; dominant-baseline:central; }
+      .actor circle { fill:#ffffff; stroke:#294f67; stroke-width:2.5; }
+      .actor path { fill:none; stroke:#294f67; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; }
+      .actor-label { font-size:22px; font-weight:600; text-anchor:middle; }
+      .legend { font-size:20px; fill:#4b6577; }
+    </style>
+    <rect width="1000" height="520" fill="#ffffff" />
+    <text x="32" y="44" class="heading">builtinTool · 用例</text>
+    <rect x="250" y="76" width="500" height="400" rx="10" class="boundary" />
+    <text x="270" y="106" class="boundary-label">内置工具使用</text>
+<line x1="157" y1="180" x2="290" y2="180" class="association" />
+<line x1="843" y1="360" x2="710" y2="300" class="association" />
+<line x1="843" y1="360" x2="710" y2="420" class="association" />
+<ellipse cx="500" cy="180" rx="210" ry="31" class="usecase" /><text x="500" y="180" class="usecase-label">选择 Agent 所需工具</text>
+<ellipse cx="500" cy="300" rx="210" ry="31" class="usecase" /><text x="500" y="300" class="usecase-label">检查缺失并提示桌面更新</text>
+<ellipse cx="500" cy="420" rx="210" ry="31" class="usecase" /><text x="500" y="420" class="usecase-label">追溯工具与桌面版本</text>
+<g class="actor" aria-label="运维人员">
+      <circle cx="125" cy="140" r="14" />
+      <path d="M 125 154 V 191 M 101 170 H 149 M 125 191 L 102 220 M 125 191 L 148 220" />
+      <text x="125" y="249" class="actor-label">运维人员</text>
+    </g>
+<g class="actor" aria-label="用户">
+      <circle cx="875" cy="320" r="14" />
+      <path d="M 875 334 V 371 M 851 350 H 899 M 875 371 L 852 400 M 875 371 L 898 400" />
+      <text x="875" y="429" class="actor-label">用户</text>
+    </g>
+<text x="32" y="508" class="legend">角色参与关系 · 无方向关联线 · 不表示执行顺序</text></svg>

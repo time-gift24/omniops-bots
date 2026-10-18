@@ -1,0 +1,154 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "00 · 总体架构",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1100,
+      540
+    ]
+  },
+  "components": [
+    {
+      "id": "orchestrator",
+      "type": "backend",
+      "label": "LangGraph 服务",
+      "sublabel": "上下文 · 调用 · 取消",
+      "pos": [
+        40,
+        70
+      ],
+      "size": [
+        200,
+        90
+      ]
+    },
+    {
+      "id": "executor",
+      "type": "frontend",
+      "label": "客户端 Agent",
+      "sublabel": "装配快照 · 执行 · 回传",
+      "pos": [
+        450,
+        70
+      ],
+      "size": [
+        200,
+        90
+      ]
+    },
+    {
+      "id": "chrome",
+      "type": "external",
+      "label": "专用 Chrome",
+      "sublabel": "保留登录态 · 单任务",
+      "pos": [
+        860,
+        70
+      ],
+      "size": [
+        200,
+        90
+      ]
+    },
+    {
+      "id": "registry",
+      "type": "database",
+      "label": "官方物料服务",
+      "sublabel": "草稿修订 · 不可变发布",
+      "pos": [
+        40,
+        360
+      ],
+      "size": [
+        200,
+        90
+      ]
+    },
+    {
+      "id": "local-store",
+      "type": "database",
+      "label": "客户端本地存储",
+      "sublabel": "版本缓存 · 快照 · 结果",
+      "pos": [
+        450,
+        360
+      ],
+      "size": [
+        200,
+        90
+      ]
+    },
+    {
+      "id": "mcp-service",
+      "type": "external",
+      "label": "远端 MCP",
+      "sublabel": "连接配置随 Agent 同步",
+      "pos": [
+        860,
+        360
+      ],
+      "size": [
+        200,
+        90
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "orchestrator",
+      "to": "executor",
+      "label": "WebSocket 双向",
+      "variant": "emphasis"
+    },
+    {
+      "from": "executor",
+      "to": "chrome",
+      "label": "浏览器操作",
+      "variant": "emphasis"
+    },
+    {
+      "from": "registry",
+      "to": "local-store",
+      "label": "HTTPS 物料同步"
+    },
+    {
+      "from": "local-store",
+      "to": "executor",
+      "label": "按清单装配"
+    },
+    {
+      "from": "executor",
+      "to": "mcp-service",
+      "label": "远端工具调用"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "服务端负责",
+      "items": [
+        "流程编排与权限判定",
+        "官方草稿、版本与发布"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "客户端负责",
+      "items": [
+        "编辑、实验、同步和执行",
+        "结果确认前持久化保留"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "MVP 边界",
+      "items": [
+        "一次只执行一轮任务",
+        "断线补传，不重跑任务"
+      ]
+    }
+  ]
+}

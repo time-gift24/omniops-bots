@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "02 · MCP 配置同步与远端调用",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1040,
+      570
+    ]
+  },
+  "participants": [
+    {
+      "id": "materials",
+      "type": "backend",
+      "label": "官方物料服务"
+    },
+    {
+      "id": "client",
+      "type": "frontend",
+      "label": "客户端 Agent"
+    },
+    {
+      "id": "mcp",
+      "type": "external",
+      "label": "远端 MCP 服务"
+    }
+  ],
+  "messages": [
+    {
+      "id": "message-0",
+      "from": "materials",
+      "to": "client",
+      "y": 180,
+      "label": "HTTPS：同步 Agent 的 MCP 配置",
+      "variant": "emphasis"
+    },
+    {
+      "id": "message-1",
+      "from": "client",
+      "to": "mcp",
+      "y": 245,
+      "label": "使用已配置的远端连接",
+      "variant": "default"
+    },
+    {
+      "id": "message-2",
+      "from": "mcp",
+      "to": "client",
+      "y": 310,
+      "label": "可用工具",
+      "variant": "return"
+    },
+    {
+      "id": "message-3",
+      "from": "client",
+      "to": "mcp",
+      "y": 375,
+      "label": "执行工具调用",
+      "variant": "emphasis"
+    },
+    {
+      "id": "message-4",
+      "from": "mcp",
+      "to": "client",
+      "y": 440,
+      "label": "工具结果",
+      "variant": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "同步的是配置",
+      "items": [
+        "连接配置或引用随 Agent 下发",
+        "官方 Agent 配置保持只读"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "服务独立演进",
+      "items": [
+        "MCP 服务不做本项目版本管理",
+        "服务端也可以提供 MCP"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "运行可追溯",
+      "items": [
+        "快照记录实际启用的 MCP 与工具",
+        "密钥和 Token 不进入快照"
+      ]
+    }
+  ]
+}

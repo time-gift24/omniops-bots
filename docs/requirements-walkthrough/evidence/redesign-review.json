@@ -1,0 +1,17 @@
+{
+  "disposition": "ship",
+  "scope": "对首次独立审查列出的两项修复进行限定复核",
+  "verdict": [
+    {
+      "issue": "正文跨章链接离开阅读器",
+      "status": "resolved"
+    },
+    {
+      "issue": "两处粗体显示原始Markdown标记",
+      "status": "resolved"
+    }
+  ],
+  "remaining": [],
+  "artifact_sha256": "7f217623f9b2f720c2516a5aa1a94a7384265e606e3a8fd9fa160dbd58fd10d7",
+  "documenter": "只读核对通过，当前暖灰/松绿/字体与现有 Web 一致，系统规范未修改。"
+}

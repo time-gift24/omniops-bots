@@ -1,0 +1,169 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "04 · Agent 发布版本与运行快照",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1100,
+      540
+    ],
+    "legend": {
+      "entries": {
+        "backend": {
+          "label": "处理逻辑"
+        },
+        "frontend": {
+          "label": "配置输入"
+        },
+        "database": {
+          "label": "版本 / 快照"
+        }
+      }
+    }
+  },
+  "components": [
+    {
+      "id": "assembly",
+      "type": "frontend",
+      "label": "装配内容",
+      "sublabel": "Prompt · Skill · 工具 · MCP",
+      "pos": [
+        40,
+        70
+      ],
+      "size": [
+        200,
+        90
+      ]
+    },
+    {
+      "id": "identity",
+      "type": "backend",
+      "label": "Agent 内容 ID",
+      "sublabel": "由固定装配内容生成",
+      "pos": [
+        450,
+        70
+      ],
+      "size": [
+        200,
+        90
+      ]
+    },
+    {
+      "id": "official",
+      "type": "database",
+      "label": "官方发布版本",
+      "sublabel": "手填标签 · 不可变",
+      "pos": [
+        860,
+        70
+      ],
+      "size": [
+        200,
+        90
+      ]
+    },
+    {
+      "id": "settings",
+      "type": "frontend",
+      "label": "实际运行设置",
+      "sublabel": "模型 · 参数 · 桌面版本",
+      "pos": [
+        40,
+        360
+      ],
+      "size": [
+        200,
+        90
+      ]
+    },
+    {
+      "id": "frozen",
+      "type": "database",
+      "label": "会话运行快照",
+      "sublabel": "启动前固定 · 排除凭据",
+      "pos": [
+        450,
+        360
+      ],
+      "size": [
+        200,
+        90
+      ]
+    },
+    {
+      "id": "session",
+      "type": "backend",
+      "label": "客户端会话",
+      "sublabel": "本地输入 / 远端独立调用",
+      "pos": [
+        860,
+        360
+      ],
+      "size": [
+        200,
+        90
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "assembly",
+      "to": "identity",
+      "label": "生成唯一 ID",
+      "variant": "emphasis"
+    },
+    {
+      "from": "identity",
+      "to": "official",
+      "label": "运维正式发布",
+      "variant": "emphasis"
+    },
+    {
+      "from": "settings",
+      "to": "frozen",
+      "label": "记录实际条件"
+    },
+    {
+      "from": "official",
+      "to": "frozen",
+      "label": "按版本装配"
+    },
+    {
+      "from": "frozen",
+      "to": "session",
+      "label": "开始会话",
+      "variant": "emphasis",
+      "labelDy": 22
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "两类资源",
+      "items": [
+        "官方版本只读",
+        "本地 Agent 自由编辑、无标签"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "两类会话",
+      "items": [
+        "用户主动会话正常输入",
+        "服务端任务会话只读"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "两个身份",
+      "items": [
+        "Agent ID 管装配版本",
+        "运行快照不另建发布版本"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/00-overview.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/00-overview.html",
+  "specification": {
+    "sha256": "930edb58d86488d6d69e4afbc01ca9a375c6c7fd2eea293fa9efaf557573d639",
+    "bytes": 2838
+  },
+  "artifact": {
+    "sha256": "c97c6149d4e2f8fbe276274106a5f3d3cd8611f31feaa230bffb339953175134",
+    "bytes": 706477
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

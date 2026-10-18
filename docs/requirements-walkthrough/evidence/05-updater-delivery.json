@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "workflow",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/05-updater.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/05-updater.html",
+  "specification": {
+    "sha256": "17e785edf0c396476446472556c13bcae423e9aee6254532d8f94eb6de0de524",
+    "bytes": 3782
+  },
+  "artifact": {
+    "sha256": "b8f14fb4530351fe1e0f736de8f81a62164c26112a612f1ba1f936e3d34e9d57",
+    "bytes": 708652
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

@@ -1,0 +1,150 @@
+{
+  "schema_version": 1,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "任务生命周期：执行与结果交付",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [
+      980,
+      566
+    ]
+  },
+  "lanes": [
+    {
+      "id": "main",
+      "label": "调用与交付"
+    },
+    {
+      "id": "execution-stop",
+      "label": "停止执行"
+    },
+    {
+      "id": "terminal",
+      "label": "重启处理"
+    }
+  ],
+  "states": [
+    {
+      "id": "call-received",
+      "type": "start",
+      "label": "接收调用",
+      "sublabel": "独立会话 · 原调用 ID",
+      "lane": "main",
+      "col": 0,
+      "step": "01"
+    },
+    {
+      "id": "assembly-ready",
+      "type": "active",
+      "label": "装配就绪",
+      "sublabel": "核对版本与内置工具",
+      "lane": "main",
+      "col": 1,
+      "step": "02"
+    },
+    {
+      "id": "chrome-running",
+      "type": "active",
+      "label": "独占执行",
+      "sublabel": "每轮占用专用 Chrome",
+      "lane": "main",
+      "col": 2,
+      "step": "03"
+    },
+    {
+      "id": "result-pending",
+      "type": "waiting",
+      "label": "结果待确认",
+      "sublabel": "结果与快照已存本地",
+      "lane": "main",
+      "col": 3,
+      "step": "04"
+    },
+    {
+      "id": "result-acknowledged",
+      "type": "success",
+      "label": "交付完成",
+      "sublabel": "服务端确认收到",
+      "lane": "main",
+      "col": 4,
+      "step": "05"
+    },
+    {
+      "id": "execution-stopped",
+      "type": "failure",
+      "label": "停止后续步骤",
+      "sublabel": "已完成操作不回滚",
+      "lane": "execution-stop",
+      "col": 0
+    },
+    {
+      "id": "process-restarted",
+      "type": "external",
+      "label": "客户端重启",
+      "sublabel": "检查本地执行记录",
+      "lane": "terminal",
+      "col": 0,
+      "yOffset": -66
+    },
+    {
+      "id": "interrupted-unknown",
+      "type": "failure",
+      "label": "中断 · 结果未知",
+      "sublabel": "保留记录 · 回报服务端",
+      "lane": "terminal",
+      "col": 2,
+      "yOffset": -66
+    }
+  ],
+  "transitions": [
+    {
+      "id": "stop-request",
+      "from": "chrome-running",
+      "to": "execution-stopped",
+      "label": "取消 / 超时",
+      "variant": "security",
+      "labelDy": 24
+    },
+    {
+      "id": "stop-result",
+      "from": "execution-stopped",
+      "to": "result-pending",
+      "label": "保存终止结果",
+      "variant": "default"
+    },
+    {
+      "id": "unfinished-on-restart",
+      "from": "process-restarted",
+      "to": "interrupted-unknown",
+      "label": "原任务未完成",
+      "variant": "security"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "单任务与忙响应",
+      "items": [
+        "本地、实验和远端任务共用 Chrome；忙时拒绝，不排队。",
+        "手动会话等待输入时释放名额，下一轮重新检查。"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "断线只影响交付",
+      "items": [
+        "WebSocket 断线后退避重连，当前任务继续执行。",
+        "确认前保留结果；按原调用 ID 补传，不重新执行。"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "重启后不续跑",
+      "items": [
+        "未完成任务回报“执行中断、结果未知”，由服务端决定后续。",
+        "任务运行时阻止正常退出；取消、超时均不自动重试。"
+      ]
+    }
+  ]
+}

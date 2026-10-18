@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/06-sync.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/06-sync.html",
+  "specification": {
+    "sha256": "36675adf42cc61d415b17aafdd168fd3ddcb4e82c4917a71e6188148a8274859",
+    "bytes": 2446
+  },
+  "artifact": {
+    "sha256": "d841e82ad4f0dbb36a0ee5d9eab06ebac33a7ae03dca57962cf38fa15e84e36a",
+    "bytes": 704912
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

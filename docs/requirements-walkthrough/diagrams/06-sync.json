@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "06 · 按指定版本同步与装配",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1100,
+      620
+    ]
+  },
+  "participants": [
+    {
+      "id": "caller",
+      "type": "backend",
+      "label": "LangGraph 服务"
+    },
+    {
+      "id": "client",
+      "type": "frontend",
+      "label": "客户端"
+    },
+    {
+      "id": "cache",
+      "type": "database",
+      "label": "本地版本缓存"
+    },
+    {
+      "id": "registry",
+      "type": "backend",
+      "label": "官方物料服务"
+    }
+  ],
+  "messages": [
+    {
+      "id": "message-0",
+      "from": "caller",
+      "to": "client",
+      "y": 180,
+      "label": "调用与指定 Agent",
+      "variant": "emphasis"
+    },
+    {
+      "id": "message-1",
+      "from": "client",
+      "to": "registry",
+      "y": 235,
+      "label": "HTTPS：查询版本清单",
+      "variant": "default"
+    },
+    {
+      "id": "message-2",
+      "from": "registry",
+      "to": "client",
+      "y": 290,
+      "label": "Agent 与所需物料清单",
+      "variant": "return"
+    },
+    {
+      "id": "message-3",
+      "from": "client",
+      "to": "cache",
+      "y": 345,
+      "label": "核对已下载版本",
+      "variant": "default"
+    },
+    {
+      "id": "message-4",
+      "from": "client",
+      "to": "registry",
+      "y": 400,
+      "label": "HTTPS：仅请求缺失包",
+      "variant": "emphasis"
+    },
+    {
+      "id": "message-5",
+      "from": "registry",
+      "to": "client",
+      "y": 455,
+      "label": "缺失的完整文件包",
+      "variant": "return"
+    },
+    {
+      "id": "message-6",
+      "from": "client",
+      "to": "cache",
+      "y": 510,
+      "label": "保存新包并固定本次装配",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "匹配即可使用",
+      "items": [
+        "已缓存的同版本无需重下",
+        "旧版保留，不自动清理"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "会话固定快照",
+      "items": [
+        "新会话使用同步后的装配",
+        "已有手动会话不切版本"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "同步失败就失败",
+      "items": [
+        "不使用旧版替代指定版本",
+        "MCP 配置一起同步"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,392 @@
+{
+  "status": "pass",
+  "sha256": "1e559cfd55bd06cd8c0ec70c96f7d13fb03fc952e86b3b7f541dac4e080eced0",
+  "bytes": 65064,
+  "checks": [
+    {
+      "id": "00-overview",
+      "width": 1440,
+      "active": true,
+      "headings": [
+        "US",
+        "简要设计",
+        "服务端",
+        "客户端",
+        "详细设计"
+      ],
+      "images": true,
+      "overflow": false
+    },
+    {
+      "id": "01-skill",
+      "width": 1440,
+      "active": true,
+      "headings": [
+        "US",
+        "简要设计",
+        "服务端",
+        "客户端",
+        "详细设计"
+      ],
+      "images": true,
+      "overflow": false
+    },
+    {
+      "id": "02-mcp",
+      "width": 1440,
+      "active": true,
+      "headings": [
+        "US",
+        "简要设计",
+        "服务端",
+        "客户端",
+        "详细设计"
+      ],
+      "images": true,
+      "overflow": false
+    },
+    {
+      "id": "03-builtintool",
+      "width": 1440,
+      "active": true,
+      "headings": [
+        "US",
+        "简要设计",
+        "服务端",
+        "客户端",
+        "详细设计"
+      ],
+      "images": true,
+      "overflow": false
+    },
+    {
+      "id": "04-agent",
+      "width": 1440,
+      "active": true,
+      "headings": [
+        "US",
+        "简要设计",
+        "服务端",
+        "客户端",
+        "详细设计"
+      ],
+      "images": true,
+      "overflow": false
+    },
+    {
+      "id": "05-updater",
+      "width": 1440,
+      "active": true,
+      "headings": [
+        "US",
+        "简要设计",
+        "服务端",
+        "客户端",
+        "详细设计"
+      ],
+      "images": true,
+      "overflow": false
+    },
+    {
+      "id": "06-sync",
+      "width": 1440,
+      "active": true,
+      "headings": [
+        "US",
+        "简要设计",
+        "服务端",
+        "客户端",
+        "详细设计"
+      ],
+      "images": true,
+      "overflow": false
+    },
+    {
+      "id": "07-execution",
+      "width": 1440,
+      "active": true,
+      "headings": [
+        "US",
+        "简要设计",
+        "服务端",
+        "客户端",
+        "详细设计"
+      ],
+      "images": true,
+      "overflow": false
+    },
+    {
+      "id": "08-frontend",
+      "width": 1440,
+      "active": true,
+      "headings": [
+        "US",
+        "简要设计",
+        "服务端",
+        "客户端",
+        "详细设计"
+      ],
+      "images": true,
+      "overflow": false
+    },
+    {
+      "id": "00-overview",
+      "width": 1920,
+      "active": true,
+      "headings": [
+        "US",
+        "简要设计",
+        "服务端",
+        "客户端",
+        "详细设计"
+      ],
+      "images": true,
+      "overflow": false
+    },
+    {
+      "id": "01-skill",
+      "width": 1920,
+      "active": true,
+      "headings": [
+        "US",
+        "简要设计",
+        "服务端",
+        "客户端",
+        "详细设计"
+      ],
+      "images": true,
+      "overflow": false
+    },
+    {
+      "id": "02-mcp",
+      "width": 1920,
+      "active": true,
+      "headings": [
+        "US",
+        "简要设计",
+        "服务端",
+        "客户端",
+        "详细设计"
+      ],
+      "images": true,
+      "overflow": false
+    },
+    {
+      "id": "03-builtintool",
+      "width": 1920,
+      "active": true,
+      "headings": [
+        "US",
+        "简要设计",
+        "服务端",
+        "客户端",
+        "详细设计"
+      ],
+      "images": true,
+      "overflow": false
+    },
+    {
+      "id": "04-agent",
+      "width": 1920,
+      "active": true,
+      "headings": [
+        "US",
+        "简要设计",
+        "服务端",
+        "客户端",
+        "详细设计"
+      ],
+      "images": true,
+      "overflow": false
+    },
+    {
+      "id": "05-updater",
+      "width": 1920,
+      "active": true,
+      "headings": [
+        "US",
+        "简要设计",
+        "服务端",
+        "客户端",
+        "详细设计"
+      ],
+      "images": true,
+      "overflow": false
+    },
+    {
+      "id": "06-sync",
+      "width": 1920,
+      "active": true,
+      "headings": [
+        "US",
+        "简要设计",
+        "服务端",
+        "客户端",
+        "详细设计"
+      ],
+      "images": true,
+      "overflow": false
+    },
+    {
+      "id": "07-execution",
+      "width": 1920,
+      "active": true,
+      "headings": [
+        "US",
+        "简要设计",
+        "服务端",
+        "客户端",
+        "详细设计"
+      ],
+      "images": true,
+      "overflow": false
+    },
+    {
+      "id": "08-frontend",
+      "width": 1920,
+      "active": true,
+      "headings": [
+        "US",
+        "简要设计",
+        "服务端",
+        "客户端",
+        "详细设计"
+      ],
+      "images": true,
+      "overflow": false
+    },
+    {
+      "id": "00-overview",
+      "width": 390,
+      "active": true,
+      "headings": [
+        "US",
+        "简要设计",
+        "服务端",
+        "客户端",
+        "详细设计"
+      ],
+      "images": true,
+      "overflow": false
+    },
+    {
+      "id": "01-skill",
+      "width": 390,
+      "active": true,
+      "headings": [
+        "US",
+        "简要设计",
+        "服务端",
+        "客户端",
+        "详细设计"
+      ],
+      "images": true,
+      "overflow": false
+    },
+    {
+      "id": "02-mcp",
+      "width": 390,
+      "active": true,
+      "headings": [
+        "US",
+        "简要设计",
+        "服务端",
+        "客户端",
+        "详细设计"
+      ],
+      "images": true,
+      "overflow": false
+    },
+    {
+      "id": "03-builtintool",
+      "width": 390,
+      "active": true,
+      "headings": [
+        "US",
+        "简要设计",
+        "服务端",
+        "客户端",
+        "详细设计"
+      ],
+      "images": true,
+      "overflow": false
+    },
+    {
+      "id": "04-agent",
+      "width": 390,
+      "active": true,
+      "headings": [
+        "US",
+        "简要设计",
+        "服务端",
+        "客户端",
+        "详细设计"
+      ],
+      "images": true,
+      "overflow": false
+    },
+    {
+      "id": "05-updater",
+      "width": 390,
+      "active": true,
+      "headings": [
+        "US",
+        "简要设计",
+        "服务端",
+        "客户端",
+        "详细设计"
+      ],
+      "images": true,
+      "overflow": false
+    },
+    {
+      "id": "06-sync",
+      "width": 390,
+      "active": true,
+      "headings": [
+        "US",
+        "简要设计",
+        "服务端",
+        "客户端",
+        "详细设计"
+      ],
+      "images": true,
+      "overflow": false
+    },
+    {
+      "id": "07-execution",
+      "width": 390,
+      "active": true,
+      "headings": [
+        "US",
+        "简要设计",
+        "服务端",
+        "客户端",
+        "详细设计"
+      ],
+      "images": true,
+      "overflow": false
+    },
+    {
+      "id": "08-frontend",
+      "width": 390,
+      "active": true,
+      "headings": [
+        "US",
+        "简要设计",
+        "服务端",
+        "客户端",
+        "详细设计"
+      ],
+      "images": true,
+      "overflow": false
+    }
+  ],
+  "failed": [],
+  "errors": [],
+  "navigation": {
+    "mobileNavigation": true,
+    "next": true,
+    "prev": true
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "workflow",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/03-builtintool.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/03-builtintool.html",
+  "specification": {
+    "sha256": "5e961fd72ee1545e136956a2728611f9adfe5b47f37a14148f17664f3399cff0",
+    "bytes": 3309
+  },
+  "artifact": {
+    "sha256": "be15b9a6f53969e49df28f1bd31d4cc44b62655e6f84f3240808be66f016bbc0",
+    "bytes": 707555
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

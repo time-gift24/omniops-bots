@@ -1,0 +1,9 @@
+{
+  "source": "现有 Web npm 锁定依赖，按本次文档字符选取原始 MiSans VF 子集，未重绘字体",
+  "misans_subsets": 18,
+  "bytes": 1336999,
+  "families": [
+    "Geist Variable",
+    "MiSans VF"
+  ]
+}

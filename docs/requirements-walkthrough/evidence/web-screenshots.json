@@ -1,0 +1,122 @@
+[
+  {
+    "id": "00-workspace",
+    "file": "assets/screenshots/00-workspace.png",
+    "note": "首次打开，工作区、会话与右侧工作台",
+    "url": "http://127.0.0.1:5173/",
+    "viewport": {
+      "width": 1600,
+      "height": 1000
+    },
+    "mode": "现有 Web 页面，demo adapters",
+    "capturedAt": "2026-10-18T15:02:55.478Z",
+    "sha256": "6fd8b26687dfa9529b75284938e9ab6b25ab631bd759eba5a46139c4227b583e",
+    "origin": "Origin: Direct Playwright screenshot of existing OmniOps Bots Web UI at http://127.0.0.1:5173/, 1600x1000, official light theme, demo adapters. 首次打开，工作区、会话与右侧工作台. No UI mockup or generated visual.",
+    "bytes": 68632
+  },
+  {
+    "id": "04-agent",
+    "file": "assets/screenshots/04-agent.png",
+    "note": "Agent 配置与系统提示词，MCP / 工具 / 技能装配入口",
+    "url": "http://127.0.0.1:5173/",
+    "viewport": {
+      "width": 1600,
+      "height": 1000
+    },
+    "mode": "现有 Web 页面，demo adapters",
+    "capturedAt": "2026-10-18T15:02:56.137Z",
+    "sha256": "75ee9ac90ba2949433ac5751c8f2315f03329b331e0f28a725ed512d77d9e1f3",
+    "origin": "Origin: Direct Playwright screenshot of existing OmniOps Bots Web UI at http://127.0.0.1:5173/, 1600x1000, official light theme, demo adapters. Agent 配置与系统提示词，MCP / 工具 / 技能装配入口. No UI mockup or generated visual.",
+    "bytes": 76361
+  },
+  {
+    "id": "02-mcp",
+    "file": "assets/screenshots/02-mcp.png",
+    "note": "已有 MCP 能力查看弹窗，数据为演示清单",
+    "url": "http://127.0.0.1:5173/",
+    "viewport": {
+      "width": 1600,
+      "height": 1000
+    },
+    "mode": "现有 Web 页面，demo adapters",
+    "capturedAt": "2026-10-18T15:02:56.471Z",
+    "sha256": "c35a32ede280839cf7c07bbf8822edadf9b0ad307b21437256eda3c38837c556",
+    "origin": "Origin: Direct Playwright screenshot of existing OmniOps Bots Web UI at http://127.0.0.1:5173/, 1600x1000, official light theme, demo adapters. 已有 MCP 能力查看弹窗，数据为演示清单. No UI mockup or generated visual.",
+    "bytes": 116480
+  },
+  {
+    "id": "03-tools",
+    "file": "assets/screenshots/03-tools.png",
+    "note": "已有工具装配页签；操作前确认开关属于旧演示流程",
+    "url": "http://127.0.0.1:5173/",
+    "viewport": {
+      "width": 1600,
+      "height": 1000
+    },
+    "mode": "现有 Web 页面，demo adapters",
+    "capturedAt": "2026-10-18T15:02:57.075Z",
+    "sha256": "5aceb42a4b49affa00bc98bb5fa806c9d6dd962a75892718b98374174aa15af3",
+    "origin": "Origin: Direct Playwright screenshot of existing OmniOps Bots Web UI at http://127.0.0.1:5173/, 1600x1000, official light theme, demo adapters. 已有工具装配页签；操作前确认开关属于旧演示流程. No UI mockup or generated visual.",
+    "bytes": 81405
+  },
+  {
+    "id": "07-debug",
+    "file": "assets/screenshots/07-debug.png",
+    "note": "已有 Agent 调试会话入口，不代表草稿实验已实现",
+    "url": "http://127.0.0.1:5173/",
+    "viewport": {
+      "width": 1600,
+      "height": 1000
+    },
+    "mode": "现有 Web 页面，demo adapters",
+    "capturedAt": "2026-10-18T15:02:57.427Z",
+    "sha256": "06b50b221b85086ed336566b210eab8dabdf3b2eb1f154fa746bb51dee05afbf",
+    "origin": "Origin: Direct Playwright screenshot of existing OmniOps Bots Web UI at http://127.0.0.1:5173/, 1600x1000, official light theme, demo adapters. 已有 Agent 调试会话入口，不代表草稿实验已实现. No UI mockup or generated visual.",
+    "bytes": 113091
+  },
+  {
+    "id": "01-skill",
+    "file": "assets/screenshots/01-skill.png",
+    "note": "已有 Skill 文件树、正文阅读与目录",
+    "url": "http://127.0.0.1:5173/",
+    "viewport": {
+      "width": 1600,
+      "height": 1000
+    },
+    "mode": "现有 Web 页面，demo adapters",
+    "capturedAt": "2026-10-18T15:02:58.592Z",
+    "sha256": "05bc5884e173981f01fd8cf843c264a8eecfcc9114005687278f6e8edfe082b5",
+    "origin": "Origin: Direct Playwright screenshot of existing OmniOps Bots Web UI at http://127.0.0.1:5173/, 1600x1000, official light theme, demo adapters. 已有 Skill 文件树、正文阅读与目录. No UI mockup or generated visual.",
+    "bytes": 159469
+  },
+  {
+    "id": "01-skill-edit",
+    "file": "assets/screenshots/01-skill-edit.png",
+    "note": "已有单文件 Markdown 草稿编辑器；未写入任何编辑内容",
+    "url": "http://127.0.0.1:5173/",
+    "viewport": {
+      "width": 1600,
+      "height": 1000
+    },
+    "mode": "现有 Web 页面，demo adapters",
+    "capturedAt": "2026-10-18T15:02:58.913Z",
+    "sha256": "87802129cddb59b07bdb21d619cded0572f515d49fe35b343fd2150494698287",
+    "origin": "Origin: Direct Playwright screenshot of existing OmniOps Bots Web UI at http://127.0.0.1:5173/, 1600x1000, official light theme, demo adapters. 已有单文件 Markdown 草稿编辑器；未写入任何编辑内容. No UI mockup or generated visual.",
+    "bytes": 159143
+  },
+  {
+    "id": "05-appearance",
+    "file": "assets/screenshots/05-appearance.png",
+    "note": "现有全局外观菜单；更新检查与安装入口尚不存在",
+    "url": "http://127.0.0.1:5173/",
+    "viewport": {
+      "width": 1600,
+      "height": 1000
+    },
+    "mode": "现有 Web 页面，demo adapters",
+    "capturedAt": "2026-10-18T15:02:59.261Z",
+    "sha256": "6502e84902c49b30de70909e0ee0903538f14a33cff7e86527512c99e36830ce",
+    "origin": "Origin: Direct Playwright screenshot of existing OmniOps Bots Web UI at http://127.0.0.1:5173/, 1600x1000, official light theme, demo adapters. 现有全局外观菜单；更新检查与安装入口尚不存在. No UI mockup or generated visual.",
+    "bytes": 167566
+  }
+]

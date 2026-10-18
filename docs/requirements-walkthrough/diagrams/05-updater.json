@@ -1,0 +1,168 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "桌面更新｜用户决定，空闲安装",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "backend": {
+          "label": "处理逻辑"
+        },
+        "frontend": {
+          "label": "用户操作"
+        },
+        "security": {
+          "label": "检查 / 失败"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "receive_update",
+      "label": "检查与下载"
+    },
+    {
+      "id": "install_update",
+      "label": "空闲后安装"
+    }
+  ],
+  "mainPath": [
+    "find_release",
+    "choose_download",
+    "fetch_verify",
+    "wait_idle",
+    "choose_install",
+    "install_restart"
+  ],
+  "nodes": [
+    {
+      "id": "find_release",
+      "lane": "receive_update",
+      "col": 0,
+      "type": "frontend",
+      "label": "检查并展示新版",
+      "sublabel": "启动检查 / 手动检查"
+    },
+    {
+      "id": "choose_download",
+      "lane": "receive_update",
+      "col": 1,
+      "type": "frontend",
+      "label": "用户选择下载",
+      "sublabel": "版本与更新说明"
+    },
+    {
+      "id": "fetch_verify",
+      "lane": "receive_update",
+      "col": 2,
+      "type": "security",
+      "label": "整包下载与验签",
+      "sublabel": "HTTPS + 内置公钥"
+    },
+    {
+      "id": "reject_update",
+      "lane": "receive_update",
+      "col": 3,
+      "type": "security",
+      "label": "提示失败，不安装",
+      "sublabel": "当前应用继续可用",
+      "width": 160
+    },
+    {
+      "id": "wait_idle",
+      "lane": "install_update",
+      "col": 2,
+      "type": "backend",
+      "label": "等待任务结束",
+      "sublabel": "已经空闲则继续"
+    },
+    {
+      "id": "choose_install",
+      "lane": "install_update",
+      "col": 3,
+      "type": "frontend",
+      "label": "用户确认安装",
+      "sublabel": "再次核对空闲"
+    },
+    {
+      "id": "install_restart",
+      "lane": "install_update",
+      "col": 4,
+      "type": "backend",
+      "label": "清理、安装与重启",
+      "sublabel": "保留本地用户数据",
+      "width": 160
+    }
+  ],
+  "edges": [
+    {
+      "from": "find_release",
+      "to": "choose_download",
+      "role": "main"
+    },
+    {
+      "from": "choose_download",
+      "to": "fetch_verify",
+      "label": "点击下载",
+      "role": "main"
+    },
+    {
+      "from": "fetch_verify",
+      "to": "wait_idle",
+      "label": "校验通过",
+      "role": "main",
+      "variant": "emphasis",
+      "toSide": "top"
+    },
+    {
+      "from": "fetch_verify",
+      "to": "reject_update",
+      "label": "下载 / 验签失败",
+      "role": "error",
+      "variant": "security"
+    },
+    {
+      "from": "wait_idle",
+      "to": "choose_install",
+      "label": "可安装提示",
+      "role": "main"
+    },
+    {
+      "from": "choose_install",
+      "to": "install_restart",
+      "label": "空闲且阻止新任务",
+      "role": "main",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "下载与安装是两次决定",
+      "items": [
+        "下载期间可以继续执行任务",
+        "任务结束、下载完成均不自动安装"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "发布完整包后，再发布清单",
+      "items": [
+        "最终产物签名；两个平台版本一致",
+        "包可下载后发布 latest.json；版本内容不可变"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "桌面更新独立于物料同步",
+      "items": [
+        "builtinTool 随桌面整包更新",
+        "安装和重启成功后，验证原有数据仍可用"
+      ]
+    }
+  ]
+}

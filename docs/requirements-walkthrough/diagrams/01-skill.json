@@ -1,0 +1,159 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "01 · Skill 草稿到正式发布",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "legend": {
+      "entries": {
+        "backend": {
+          "label": "处理逻辑"
+        },
+        "frontend": {
+          "label": "用户操作"
+        },
+        "database": {
+          "label": "版本 / 记录"
+        },
+        "security": {
+          "label": "检查 / 失败"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "release",
+      "label": "正式发布"
+    },
+    {
+      "id": "trial",
+      "label": "本地实验 · 可选"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "draft",
+      "lane": "release",
+      "col": 0,
+      "type": "frontend",
+      "label": "编辑完整草稿",
+      "sublabel": "客户端保存未同步编辑"
+    },
+    {
+      "id": "tags",
+      "lane": "release",
+      "col": 1,
+      "type": "frontend",
+      "label": "手填发布标签",
+      "sublabel": "Skill + 受影响 Agent"
+    },
+    {
+      "id": "publish",
+      "lane": "release",
+      "col": 2,
+      "type": "backend",
+      "label": "发布 Skill",
+      "sublabel": "服务端校验运维权限"
+    },
+    {
+      "id": "linked",
+      "lane": "release",
+      "col": 3,
+      "type": "database",
+      "label": "联动 Agent",
+      "sublabel": "新 ID + 新标签"
+    },
+    {
+      "id": "choose",
+      "lane": "trial",
+      "col": 0,
+      "type": "frontend",
+      "label": "选择模板 Agent",
+      "sublabel": "未上传也能实验"
+    },
+    {
+      "id": "trial-run",
+      "lane": "trial",
+      "col": 1,
+      "type": "backend",
+      "label": "固定快照并实验",
+      "sublabel": "原 Agent 不变"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-0",
+      "from": "draft",
+      "to": "tags",
+      "label": "准备正式发布",
+      "role": "main",
+      "variant": "emphasis"
+    },
+    {
+      "id": "edge-1",
+      "from": "tags",
+      "to": "publish",
+      "label": "HTTPS 提交",
+      "role": "main",
+      "variant": "emphasis"
+    },
+    {
+      "id": "edge-2",
+      "from": "publish",
+      "to": "linked",
+      "label": "更新装配",
+      "role": "main",
+      "variant": "emphasis"
+    },
+    {
+      "id": "edge-3",
+      "from": "draft",
+      "to": "choose",
+      "label": "可直接实验",
+      "role": "branch",
+      "variant": "dashed"
+    },
+    {
+      "id": "edge-4",
+      "from": "choose",
+      "to": "trial-run",
+      "label": "临时装配",
+      "role": "branch",
+      "variant": "dashed"
+    }
+  ],
+  "mainPath": [
+    "draft",
+    "tags",
+    "publish",
+    "linked"
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "版本单位",
+      "items": [
+        "整个 Skill 文件包",
+        "日志与截图另存"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "发布规则",
+      "items": [
+        "标签手填 v.1.0.0",
+        "发布后内容与标签不可变"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "草稿边界",
+      "items": [
+        "上传只保存草稿修订",
+        "不触发 Agent 版本联动"
+      ]
+    }
+  ]
+}

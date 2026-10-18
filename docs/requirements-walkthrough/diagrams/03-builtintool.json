@@ -1,0 +1,164 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "03 · builtinTool 运行前检查",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "legend": {
+      "entries": {
+        "backend": {
+          "label": "处理逻辑"
+        },
+        "frontend": {
+          "label": "用户操作"
+        },
+        "database": {
+          "label": "版本 / 记录"
+        },
+        "security": {
+          "label": "检查 / 失败"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "run",
+      "label": "每轮执行前"
+    },
+    {
+      "id": "missing",
+      "label": "缺少工具时",
+      "variant": "exception"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "required",
+      "lane": "run",
+      "col": 0,
+      "type": "frontend",
+      "label": "读取工具清单",
+      "sublabel": "Agent 声明所需能力"
+    },
+    {
+      "id": "check",
+      "lane": "run",
+      "col": 1,
+      "type": "security",
+      "label": "检查本机工具",
+      "sublabel": "随桌面端安装"
+    },
+    {
+      "id": "snapshot",
+      "lane": "run",
+      "col": 2,
+      "type": "database",
+      "label": "固定运行快照",
+      "sublabel": "记录桌面版本与工具"
+    },
+    {
+      "id": "execute",
+      "lane": "run",
+      "col": 3,
+      "type": "backend",
+      "label": "开始执行",
+      "sublabel": "当前工具已就绪"
+    },
+    {
+      "id": "fail",
+      "lane": "missing",
+      "col": 1,
+      "type": "security",
+      "label": "本次直接失败",
+      "sublabel": "提示缺失工具"
+    },
+    {
+      "id": "upgrade",
+      "lane": "missing",
+      "col": 2,
+      "type": "frontend",
+      "label": "用户更新桌面端",
+      "sublabel": "之后发起新任务"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-0",
+      "from": "required",
+      "to": "check",
+      "label": "核对所需能力",
+      "role": "main",
+      "variant": "emphasis"
+    },
+    {
+      "id": "edge-1",
+      "from": "check",
+      "to": "snapshot",
+      "label": "工具齐全",
+      "role": "main",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "edge-2",
+      "from": "snapshot",
+      "to": "execute",
+      "label": "就绪",
+      "role": "main",
+      "variant": "emphasis"
+    },
+    {
+      "id": "edge-3",
+      "from": "check",
+      "to": "fail",
+      "label": "存在缺失",
+      "role": "error",
+      "variant": "security",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "edge-4",
+      "from": "fail",
+      "to": "upgrade",
+      "label": "提示更新",
+      "role": "branch",
+      "variant": "dashed"
+    }
+  ],
+  "mainPath": [
+    "required",
+    "check",
+    "snapshot",
+    "execute"
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "版本归属",
+      "items": [
+        "工具实现跟随桌面版本",
+        "不单独发布工具包"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Agent 装配",
+      "items": [
+        "固定选用的工具",
+        "具体实现记入运行快照"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Skill 仍独立同步",
+      "items": [
+        "缺 Skill 按需下载",
+        "缺内置工具更新客户端"
+      ]
+    }
+  ]
+}

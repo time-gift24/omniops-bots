@@ -1,0 +1,74 @@
+[
+  {
+    "name": "00-overview",
+    "file": "assets/00-overview.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "50154",
+    "data-last-export-canonical": "true",
+    "checked_in_bytes": 50134,
+    "post_export_normalization": "移除行尾空格并增加文件末尾换行；原导出字节数保留，详见 format-normalization.json"
+  },
+  {
+    "name": "01-skill",
+    "file": "assets/01-skill.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "50660",
+    "data-last-export-canonical": "true",
+    "checked_in_bytes": 50640,
+    "post_export_normalization": "移除行尾空格并增加文件末尾换行；原导出字节数保留，详见 format-normalization.json"
+  },
+  {
+    "name": "02-mcp",
+    "file": "assets/02-mcp.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "46126",
+    "data-last-export-canonical": "true",
+    "checked_in_bytes": 46106,
+    "post_export_normalization": "移除行尾空格并增加文件末尾换行；原导出字节数保留，详见 format-normalization.json"
+  },
+  {
+    "name": "03-builtintool",
+    "file": "assets/03-builtintool.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "51195",
+    "data-last-export-canonical": "true",
+    "checked_in_bytes": 51175,
+    "post_export_normalization": "移除行尾空格并增加文件末尾换行；原导出字节数保留，详见 format-normalization.json"
+  },
+  {
+    "name": "04-agent",
+    "file": "assets/04-agent.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "49838",
+    "data-last-export-canonical": "true",
+    "checked_in_bytes": 49818,
+    "post_export_normalization": "移除行尾空格并增加文件末尾换行；原导出字节数保留，详见 format-normalization.json"
+  },
+  {
+    "name": "05-updater",
+    "file": "assets/05-updater.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "52127",
+    "data-last-export-canonical": "true",
+    "checked_in_bytes": 52107,
+    "post_export_normalization": "移除行尾空格并增加文件末尾换行；原导出字节数保留，详见 format-normalization.json"
+  },
+  {
+    "name": "06-sync",
+    "file": "assets/06-sync.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "49002",
+    "data-last-export-canonical": "true",
+    "checked_in_bytes": 48982,
+    "post_export_normalization": "移除行尾空格并增加文件末尾换行；原导出字节数保留，详见 format-normalization.json"
+  },
+  {
+    "name": "07-execution",
+    "file": "assets/07-execution.svg",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "53104",
+    "data-last-export-canonical": "true",
+    "checked_in_bytes": 53084,
+    "post_export_normalization": "移除行尾空格并增加文件末尾换行；原导出字节数保留，详见 format-normalization.json"
+  }
+]

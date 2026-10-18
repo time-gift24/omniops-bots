@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/04-agent.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/04-agent.html",
+  "specification": {
+    "sha256": "d8a6172f9d5c7e55ae96963fd7cd56cde43f72efc4d4fd5dcf61289414b608eb",
+    "bytes": 3118
+  },
+  "artifact": {
+    "sha256": "a1c3cbd7ea2c746cc5ea42df6064c7c47a49c62314ec46b5dcb9d8219ff43030",
+    "bytes": 706148
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

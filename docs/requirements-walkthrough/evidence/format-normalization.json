@@ -1,0 +1,75 @@
+{
+  "purpose": "满足仓库提交检查，仅清理行尾空白与文件末尾换行，不改变文档内容、SVG几何或HTML行为。",
+  "changes": [
+    {
+      "path": "assets/00-overview.svg",
+      "before_sha256": "f9e905589991cf7f6779d30a04ac71bddc902e7df0ad992a4ae076eb0565abbc",
+      "after_sha256": "4bf006639951add607c77e59211c445255d37cf1f442c5ea5b9a8cc0cdbad05e",
+      "before_bytes": 50154,
+      "after_bytes": 50134
+    },
+    {
+      "path": "assets/01-skill.svg",
+      "before_sha256": "ec2a071ac2889adb10c402374e5d6a0c5e92596030bfbe6602ee7a0641bc46e2",
+      "after_sha256": "50e6633aecb19d2d8001e2f99c14d935ad4688e416bf32fef6733c03d579165f",
+      "before_bytes": 50660,
+      "after_bytes": 50640
+    },
+    {
+      "path": "assets/07-execution.svg",
+      "before_sha256": "c55bd74a82b0909ddb8fefd45d1b6e0ce5bf0320c576ea82f5e14687d3b0aff7",
+      "after_sha256": "8a8fb08981e06be1c2a8710097c90ccff5d8b9c9146ef3e607c63d5663b819ce",
+      "before_bytes": 53104,
+      "after_bytes": 53084
+    },
+    {
+      "path": "assets/02-mcp.svg",
+      "before_sha256": "88022a368d9342af8aa6b3ac8eaf33e1db7527da6130068a09aad55acfd1bf78",
+      "after_sha256": "31212cb38dfb3730c12dec8cabf0957ac4d78f8a56512909bac429d657541258",
+      "before_bytes": 46126,
+      "after_bytes": 46106
+    },
+    {
+      "path": "assets/05-updater.svg",
+      "before_sha256": "ff97d29426c002735e27a61bedac0180e6e5278913ad079d7e436768976dbdfe",
+      "after_sha256": "bbd30e0198e8a467fcc84c47487161a7d38552709b0046c5d0832c62c3afc70a",
+      "before_bytes": 52127,
+      "after_bytes": 52107
+    },
+    {
+      "path": "assets/06-sync.svg",
+      "before_sha256": "4799a47082058469504a5b6c87157b8d225c38d8b7240a71945f4cce460bee53",
+      "after_sha256": "d0aad08ce909e2a3f31d097d6907267a001c0c351125c290ad9c11e3bf7c33ae",
+      "before_bytes": 49002,
+      "after_bytes": 48982
+    },
+    {
+      "path": "assets/04-agent.svg",
+      "before_sha256": "21ad499975a3da4df16b4c8e15ae710e82b59be32ad697738252950eb191cd58",
+      "after_sha256": "37aa47fbdb7c60cb122ee6c5fe68407de09692d66778ce7107cff1fd65e79220",
+      "before_bytes": 49838,
+      "after_bytes": 49818
+    },
+    {
+      "path": "assets/03-builtintool.svg",
+      "before_sha256": "d057beac4647cb5b2362523d6dba0ae33245a663f4a5a9b098b5dcfcd091b96c",
+      "after_sha256": "23e709c395f14c1ea77149d8d3d4bc1539463176f362fa175309bfa0da9eddb8",
+      "before_bytes": 51195,
+      "after_bytes": 51175
+    },
+    {
+      "path": "assets/fonts/LICENSES.md",
+      "before_sha256": "db5ed7f98b330c5ef92204590b56234e76ec0a6a9e708f04bf246d8300ba30d1",
+      "after_sha256": "e17dae42abf2b0abf562ce4cb5b3136942753fe0b0207128b8eb13c5daa76821",
+      "before_bytes": 15916,
+      "after_bytes": 15915
+    },
+    {
+      "path": "index.html",
+      "before_sha256": "7f217623f9b2f720c2516a5aa1a94a7384265e606e3a8fd9fa160dbd58fd10d7",
+      "after_sha256": "1e559cfd55bd06cd8c0ec70c96f7d13fb03fc952e86b3b7f541dac4e080eced0",
+      "before_bytes": 65063,
+      "after_bytes": 65064
+    }
+  ]
+}
