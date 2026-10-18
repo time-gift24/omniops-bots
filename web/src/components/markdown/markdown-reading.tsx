@@ -149,7 +149,8 @@ export function MarkdownOutline({
         <BranchedMenu
           ariaLabel="本页目录"
           items={items}
-          collapsible={false}
+          selectableParents
+          defaultOpen="all"
           active={active}
           onSelect={onSelect}
           color="var(--sidebar-foreground)"

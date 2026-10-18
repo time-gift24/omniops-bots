@@ -569,6 +569,7 @@ export function SkillScreen({
               </article>
               {!wide && outlineSections.length > 0 ? (
                 <MarkdownOutline
+                  key={key}
                   sections={outlineSections}
                   active={activeSection ?? ""}
                   onSelect={(id) => {

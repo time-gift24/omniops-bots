@@ -4,14 +4,16 @@
 
 import {
   isValidElement,
+  useId,
   useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
   type ReactNode,
 } from "react"
-import { animate, useReducedMotion } from "motion/react"
+import { motion, useReducedMotion } from "motion/react"
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
+import { ArrowRight01Icon } from "@hugeicons-pro/core-stroke-rounded"
 import { SPRING_GLIDE } from "@/lib/ease"
 import "./branched-menu.css"
 
@@ -36,10 +38,10 @@ export type BranchedMenuProps = {
   items: readonly BranchedMenuItem[]
   /** Controlled selected value. Leave undefined to manage selection internally. */
   active?: string
-  defaultOpen?: number | readonly number[]
+  defaultOpen?: number | readonly number[] | "all"
   defaultActive?: string
-  /** Document headings navigate while their branches stay expanded. */
-  collapsible?: boolean
+  /** Parent labels navigate; a separate button toggles their descendants. */
+  selectableParents?: boolean
   onSelect?: (value: string, item: BranchedMenuItem | BranchedMenuChild) => void
   onToggle?: (index: number, open: boolean) => void
   ariaLabel?: string
@@ -71,12 +73,42 @@ const renderIcon = (icon: IconSvgElement | ReactNode) =>
 const toSet = (open: number | readonly number[]): ReadonlySet<number> =>
   new Set(typeof open === "number" ? (open >= 0 ? [open] : []) : open)
 
+function MenuToggle({
+  label,
+  open,
+  onClick,
+  tabIndex,
+  controls,
+}: {
+  label: string
+  open: boolean
+  onClick: () => void
+  tabIndex?: number
+  controls?: string
+}) {
+  const action = `${open ? "收起" : "展开"}${label}`
+  return (
+    <button
+      type="button"
+      className="branched-menu__toggle"
+      aria-label={action}
+      title={action}
+      aria-expanded={open}
+      aria-controls={controls}
+      tabIndex={tabIndex}
+      onClick={onClick}
+    >
+      <HugeiconsIcon icon={ArrowRight01Icon} size={12} aria-hidden="true" />
+    </button>
+  )
+}
+
 export function BranchedMenu({
   items,
   active: controlledActive,
   defaultOpen = 0,
   defaultActive = "",
-  collapsible = true,
+  selectableParents = false,
   onSelect,
   onToggle,
   ariaLabel,
@@ -93,27 +125,52 @@ export function BranchedMenu({
   drawDuration = 400,
   className = "",
 }: BranchedMenuProps) {
-  const [open, setOpen] = useState<ReadonlySet<number>>(() =>
-    toSet(defaultOpen)
+  const [open, setOpen] = useState<ReadonlyMap<string, boolean>>(
+    () => new Map()
   )
+  const initiallyOpen = defaultOpen === "all" ? null : toSet(defaultOpen)
   const [internalActive, setInternalActive] = useState(() => {
     if (defaultActive) return defaultActive
     const first = items.find(
       (item, index) =>
-        item.children && (!collapsible || toSet(defaultOpen).has(index))
+        item.children &&
+        (defaultOpen === "all" || toSet(defaultOpen).has(index))
     )
     return first?.children?.[0]?.value ?? ""
   })
   const active = controlledActive ?? internalActive
+  const id = useId()
+  const groups = items.map((item, index) => {
+    const key = item.value ?? item.label
+    const isOpen =
+      Boolean(item.children?.length) &&
+      (open.get(key) ?? (initiallyOpen === null || initiallyOpen.has(index)))
+    let hiddenParent: BranchedMenuChild | undefined
+    let visibleActive = active
+    const rows = (item.children ?? []).flatMap((kid, k, siblings) => {
+      if (hiddenParent && (kid.depth ?? 0) > (hiddenParent.depth ?? 0)) {
+        if (kid.value === active) visibleActive = hiddenParent.value
+        return []
+      }
+      hiddenParent = undefined
+      const key = `${item.value ?? item.label}\0${kid.value}`
+      const isOpen = open.get(key) ?? true
+      const hasChildren =
+        k + 1 < siblings.length &&
+        (siblings[k + 1].depth ?? 0) > (kid.depth ?? 0)
+      if (hasChildren && !isOpen) hiddenParent = kid
+      return [{ kid, key, isOpen, hasChildren }]
+    })
+    return { item, key, isOpen, rows, visibleActive }
+  })
   const navRef = useRef<HTMLElement>(null)
-  const heads = useRef<(HTMLButtonElement | null)[]>([])
+  const heads = useRef<(HTMLDivElement | null)[]>([])
   const markerRef = useRef<HTMLSpanElement>(null)
 
   const activeSection = items.findIndex((item) =>
     item.children?.some((kid) => kid.value === active)
   )
-  const markerShown =
-    activeSection >= 0 && (!collapsible || open.has(activeSection))
+  const markerShown = activeSection >= 0 && groups[activeSection].isOpen
   useLayoutEffect(() => {
     const place = (glide: boolean) => {
       const marker = markerRef.current
@@ -142,28 +199,7 @@ export function BranchedMenu({
     return () => observer.disconnect()
   }, [activeSection, markerShown, items, fontSize, rowHeight])
 
-  const folds = useRef<(HTMLDivElement | null)[]>([])
-  const foldHeights = useRef<number[]>([])
-  const firstFold = useRef(true)
   const reduceMotion = useReducedMotion()
-  useLayoutEffect(() => {
-    items.forEach((item, index) => {
-      if (!item.children) return
-      const fold = folds.current[index]
-      if (!fold) return
-      const target =
-        !collapsible || open.has(index)
-          ? PAD * 2 + item.children.length * rowHeight
-          : 0
-      if (firstFold.current || reduceMotion || !collapsible) {
-        fold.style.height = `${target}px`
-      } else if (foldHeights.current[index] !== target) {
-        animate(fold, { height: target }, { ...SPRING_GLIDE })
-      }
-      foldHeights.current[index] = target
-    })
-    firstFold.current = false
-  })
 
   const select = (
     value: string,
@@ -172,15 +208,13 @@ export function BranchedMenu({
     setInternalActive(value)
     onSelect?.(value, item)
   }
-  const toggle = (index: number) => {
-    const isOpen = !open.has(index)
+  const toggle = (key: string, isOpen: boolean, index?: number) => {
     setOpen((previous) => {
-      const next = new Set(previous)
-      if (isOpen) next.add(index)
-      else next.delete(index)
+      const next = new Map(previous)
+      next.set(key, !(previous.get(key) ?? isOpen))
       return next
     })
-    onToggle?.(index, isOpen)
+    if (index !== undefined) onToggle?.(index, !isOpen)
   }
 
   const r = Math.min(radius, rowHeight / 2 - 2)
@@ -210,11 +244,14 @@ export function BranchedMenu({
         className="branched-menu__marker"
         aria-hidden="true"
       />
-      {items.map((item, index) => {
-        const kids = item.children?.length ? item.children : undefined
-        const isOpen = kids ? !collapsible || open.has(index) : false
+      {groups.map(({ item, key, isOpen, rows, visibleActive }, index) => {
+        const kids = rows.length ? rows.map((row) => row.kid) : undefined
         const leafValue = item.value ?? item.label
-        const leafActive = (!kids || !collapsible) && leafValue === active
+        const leafActive = (!kids || selectableParents) && leafValue === active
+        const activeAncestor =
+          selectableParents &&
+          !isOpen &&
+          item.children?.some((kid) => kid.value === active)
         const bodyHeight = kids ? PAD * 2 + kids.length * rowHeight : 0
         const ancestors: number[] = []
         const stems = new Map<
@@ -246,48 +283,73 @@ export function BranchedMenu({
         })
         const activeBranches = new Set<number>()
         for (
-          let k = kids?.findIndex((kid) => kid.value === active) ?? -1;
+          let k = kids?.findIndex((kid) => kid.value === visibleActive) ?? -1;
           k >= 0;
           k = branches[k].parent
         )
           activeBranches.add(k)
         return (
           <div
-            key={item.value ?? item.label}
+            key={key}
             className="branched-menu__section"
             data-open={isOpen ? "" : undefined}
           >
-            <button
+            <div
+              className="branched-menu__row"
+              data-disclosure={kids && selectableParents ? "" : undefined}
               ref={(element) => {
                 heads.current[index] = element
               }}
-              type="button"
-              className="branched-menu__head"
-              title={item.label}
-              aria-expanded={kids && collapsible ? isOpen : undefined}
-              aria-current={leafActive ? "true" : undefined}
-              data-active={leafActive ? "" : undefined}
-              onClick={() =>
-                kids && collapsible ? toggle(index) : select(leafValue, item)
-              }
             >
-              {item.icon ? (
-                <span className="branched-menu__icon" aria-hidden="true">
-                  {renderIcon(item.icon)}
-                </span>
+              <button
+                type="button"
+                className="branched-menu__head"
+                title={item.label}
+                aria-expanded={kids && !selectableParents ? isOpen : undefined}
+                aria-controls={
+                  kids && !selectableParents ? `${id}-${index}` : undefined
+                }
+                aria-current={leafActive ? "true" : undefined}
+                data-active={leafActive || activeAncestor ? "" : undefined}
+                onClick={() =>
+                  kids && !selectableParents
+                    ? toggle(key, isOpen, index)
+                    : select(leafValue, item)
+                }
+              >
+                {item.icon ? (
+                  <span className="branched-menu__icon" aria-hidden="true">
+                    {renderIcon(item.icon)}
+                  </span>
+                ) : null}
+                <span className="branched-menu__label">{item.label}</span>
+                {item.badge ? (
+                  <span className="branched-menu__badge">{item.badge}</span>
+                ) : null}
+              </button>
+              {kids && selectableParents ? (
+                <MenuToggle
+                  label={item.label}
+                  open={isOpen}
+                  controls={`${id}-${index}`}
+                  onClick={() => toggle(key, isOpen, index)}
+                />
               ) : null}
-              <span className="branched-menu__label">{item.label}</span>
-              {item.badge ? (
-                <span className="branched-menu__badge">{item.badge}</span>
-              ) : null}
-            </button>
+            </div>
             {kids ? (
               <div className="branched-menu__body">
-                <div
+                <motion.div
                   className="branched-menu__fold"
-                  ref={(element) => {
-                    folds.current[index] = element
-                  }}
+                  id={`${id}-${index}`}
+                  inert={!isOpen}
+                  aria-hidden={!isOpen}
+                  initial={false}
+                  animate={{ height: isOpen ? bodyHeight : 0 }}
+                  transition={
+                    reduceMotion
+                      ? { duration: 0 }
+                      : { type: "spring", ...SPRING_GLIDE }
+                  }
                 >
                   <div
                     className="branched-menu__tree"
@@ -333,45 +395,64 @@ export function BranchedMenu({
                         />
                       ))}
                     </svg>
-                    {kids.map((kid) => (
-                      <button
-                        key={kid.value}
-                        type="button"
-                        className="branched-menu__item"
-                        title={kid.label}
-                        style={
-                          kid.depth
-                            ? {
-                                paddingInlineStart:
-                                  indent + kid.depth * DEPTH_STEP,
-                              }
-                            : undefined
-                        }
-                        aria-current={kid.value === active ? "true" : undefined}
-                        data-active={kid.value === active ? "" : undefined}
-                        tabIndex={isOpen ? 0 : -1}
-                        onClick={() => select(kid.value, kid)}
-                      >
-                        {kid.icon ? (
-                          <span
-                            className="branched-menu__icon"
-                            aria-hidden="true"
+                    {rows.map(
+                      ({ kid, key, isOpen: childOpen, hasChildren }) => (
+                        <div
+                          key={key}
+                          className="branched-menu__row"
+                          data-disclosure={hasChildren ? "" : undefined}
+                        >
+                          <button
+                            type="button"
+                            className="branched-menu__item"
+                            title={kid.label}
+                            style={
+                              kid.depth
+                                ? {
+                                    paddingInlineStart:
+                                      indent + kid.depth * DEPTH_STEP,
+                                  }
+                                : undefined
+                            }
+                            aria-current={
+                              kid.value === active ? "true" : undefined
+                            }
+                            data-active={
+                              kid.value === visibleActive ? "" : undefined
+                            }
+                            tabIndex={isOpen ? 0 : -1}
+                            onClick={() => select(kid.value, kid)}
                           >
-                            {renderIcon(kid.icon)}
-                          </span>
-                        ) : null}
-                        <span className="branched-menu__label">
-                          {kid.label}
-                        </span>
-                        {kid.badge ? (
-                          <span className="branched-menu__badge">
-                            {kid.badge}
-                          </span>
-                        ) : null}
-                      </button>
-                    ))}
+                            {kid.icon ? (
+                              <span
+                                className="branched-menu__icon"
+                                aria-hidden="true"
+                              >
+                                {renderIcon(kid.icon)}
+                              </span>
+                            ) : null}
+                            <span className="branched-menu__label">
+                              {kid.label}
+                            </span>
+                            {kid.badge ? (
+                              <span className="branched-menu__badge">
+                                {kid.badge}
+                              </span>
+                            ) : null}
+                          </button>
+                          {hasChildren ? (
+                            <MenuToggle
+                              label={kid.label}
+                              open={childOpen}
+                              tabIndex={isOpen ? 0 : -1}
+                              onClick={() => toggle(key, childOpen)}
+                            />
+                          ) : null}
+                        </div>
+                      )
+                    )}
                   </div>
-                </div>
+                </motion.div>
               </div>
             ) : null}
           </div>

@@ -68,6 +68,44 @@
   display: flex;
   flex-direction: column;
 }
+.branched-menu__row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.branched-menu__row > :is(.branched-menu__head, .branched-menu__item) {
+  flex: 1;
+  min-width: 0;
+}
+.branched-menu__row[data-disclosure]
+  > :is(.branched-menu__head, .branched-menu__item) {
+  padding-right: 24px;
+}
+.branched-menu__toggle {
+  position: absolute;
+  right: 0;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--bm-muted);
+  cursor: pointer;
+}
+.branched-menu__toggle:hover {
+  color: var(--bm-ink);
+  background: var(--accent);
+}
+.branched-menu__toggle svg {
+  transition: transform 150ms ease;
+}
+.branched-menu__toggle[aria-expanded="true"] svg {
+  transform: rotate(90deg);
+}
 
 /* Section heads read as sidebar group labels: small, muted, weight 500. */
 .branched-menu__head {
@@ -108,6 +146,10 @@
   background: var(--accent);
   color: var(--accent-foreground);
   font-weight: 500;
+}
+
+.branched-menu__row[data-disclosure] > .branched-menu__head[data-active] {
+  margin-right: 0;
 }
 
 .branched-menu__fold {
@@ -188,7 +230,8 @@
 
 /* Keyboard focus stays visible even though the design removes outlines. */
 .branched-menu__head:focus-visible,
-.branched-menu__item:focus-visible {
+.branched-menu__item:focus-visible,
+.branched-menu__toggle:focus-visible {
   border-radius: 6px;
   box-shadow: 0 0 0 2px var(--sidebar-ring, var(--bm-accent));
 }
@@ -218,7 +261,8 @@
     transition: opacity 150ms ease;
   }
 
-  .branched-menu__reach {
+  .branched-menu__reach,
+  .branched-menu__toggle svg {
     transition: none;
   }
 }
