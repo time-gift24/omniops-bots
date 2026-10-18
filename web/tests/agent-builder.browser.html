@@ -70,10 +70,21 @@
       "Agent actions must match the current reading or editing mode")
     for (const control of controls) assert(control.getAttribute("aria-label") && control.textContent.trim() === "",
       "Agent actions must be icon-only controls with accessible names")
+    for (const control of controls) {
+      for (let wrapper = control.parentElement; wrapper && dock.contains(wrapper); wrapper = wrapper.parentElement) {
+        const style = getComputedStyle(wrapper)
+        assert([style.borderTopWidth, style.borderRightWidth, style.borderBottomWidth, style.borderLeftWidth].every(width => Number.parseFloat(width) === 0),
+          "Agent floating controls must not have an additional enclosing border")
+      }
+    }
     const bounds = dock.getBoundingClientRect()
     assert(bounds.left >= -1 && bounds.right <= innerWidth + 1, "Agent action dock must fit the viewport")
-    for (let index = 1; index < controls.length; index++) assert(controls[index - 1].getBoundingClientRect().right <= controls[index].getBoundingClientRect().left + 1,
-      "Agent action controls must not overlap")
+    for (let index = 1; index < controls.length; index++) {
+      const previous = controls[index - 1].getBoundingClientRect()
+      const current = controls[index].getBoundingClientRect()
+      assert(previous.bottom <= current.top + 1 && Math.abs((previous.left + previous.right) / 2 - (current.left + current.right) / 2) <= 1,
+        "Agent floating controls must form one vertical column without overlap")
+    }
   }
   const field = (name) => {
     const label = [...editor().querySelectorAll("label[for]")].find((element) =>

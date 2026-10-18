@@ -234,8 +234,9 @@ export function AgentBuilder({
             value={configuration}
           />
         </aside>
-        <div className="doc-action-surface relative flex min-h-0 min-w-0 flex-1">
+        <div className="doc-action-surface doc-action-surface-vertical relative flex min-h-0 min-w-0 flex-1">
           <DocumentActions
+            vertical
             editing={editing}
             busy={saving}
             dirty={dirty}

@@ -114,13 +114,34 @@
       const actions = [...dock.querySelectorAll("button")].filter(visible);
       for (const action of actions) assert(action.getAttribute("aria-label") && action.textContent.trim() === "",
         "Document action buttons must expose accessible names without visible text labels");
+      for (const action of actions) {
+        for (let wrapper = action.parentElement; wrapper && dock.contains(wrapper); wrapper = wrapper.parentElement) {
+          const style = getComputedStyle(wrapper);
+          assert([style.borderTopWidth, style.borderRightWidth, style.borderBottomWidth, style.borderLeftWidth].every(width => Number.parseFloat(width) === 0),
+            "Floating controls must not have an additional enclosing border");
+        }
+      }
+      if (expected[0] === "Agent") {
+        for (let index = 1; index < actions.length; index++) {
+          const previous = actions[index - 1].getBoundingClientRect();
+          const current = actions[index].getBoundingClientRect();
+          assert(previous.bottom <= current.top + 1 && Math.abs((previous.left + previous.right) / 2 - (current.left + current.right) / 2) <= 1,
+            "Agent floating controls must form one vertical column without overlap");
+        }
+      }
       if (button("撤销", dock)) {
         assert(button(skillVisible ? "保存草稿" : "保存", dock) && !button("调试", dock) && !button("编辑", dock),
           "Editing must expose save and undo without reading-mode actions");
       } else assert(button("编辑", dock) && (skillVisible || button("调试", dock)),
         "Reading mode must expose Edit and the Agent debug action");
-      for (let index = 1; index < actions.length; index++) assert(actions[index - 1].getBoundingClientRect().right <= actions[index].getBoundingClientRect().left + 1,
-        "Document action buttons must not overlap");
+      if (expected[0] === "技能") {
+        for (let index = 1; index < actions.length; index++) {
+          const previous = actions[index - 1].getBoundingClientRect();
+          const current = actions[index].getBoundingClientRect();
+          assert(previous.right <= current.left + 1 && Math.abs((previous.top + previous.bottom) / 2 - (current.top + current.bottom) / 2) <= 1,
+            "Skill floating controls must form one horizontal row without overlap");
+        }
+      }
     } else assert(!dock, "Leaving a document must hide its floating action dock");
     for (let index = 0; index < controls.length; index++) {
       const left = controls[index].getBoundingClientRect();

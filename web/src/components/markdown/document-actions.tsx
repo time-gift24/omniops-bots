@@ -18,6 +18,7 @@ export function DocumentActions({
   busy = false,
   disabled = false,
   dirty = false,
+  vertical = false,
   saveLabel = "保存",
   onEdit,
   onSave,
@@ -29,6 +30,7 @@ export function DocumentActions({
   busy?: boolean
   disabled?: boolean
   dirty?: boolean
+  vertical?: boolean
   saveLabel?: string
   onEdit: () => void
   onSave: () => void
@@ -50,22 +52,24 @@ export function DocumentActions({
     }
     wasEditing.current = editing
   }, [editing])
-  const iconClass = "size-7 shrink-0"
-  const frameClass =
-    "rounded-full border border-foreground/30 bg-background shadow-sm"
+  const iconClass =
+    "size-7 shrink-0 text-muted-foreground/70 hover:text-foreground focus-visible:text-foreground"
 
   return (
     <div
       role="group"
       aria-label="页面操作"
       data-slot="document-actions"
-      className="absolute top-3 right-3 z-20 flex items-center gap-2"
+      className={cn(
+        "absolute top-3 right-3 z-20 flex items-center gap-1",
+        vertical && "flex-col"
+      )}
     >
       {!editing && (onDebug || onRestore) ? (
         <Button
           variant="ghost"
           size="icon"
-          className={cn(iconClass, frameClass, "size-9")}
+          className={iconClass}
           aria-label={onDebug ? "调试" : "恢复原始内容"}
           title={onDebug ? "调试" : "恢复原始内容"}
           disabled={disabled || busy}
@@ -80,11 +84,12 @@ export function DocumentActions({
       ) : null}
       <motion.div
         initial={false}
-        animate={{ width: editing ? 68 : 36 }}
+        animate={{ width: !vertical && editing ? 60 : 28 }}
+        style={{ height: vertical && editing ? 60 : 28 }}
         transition={reduce ? { duration: 0 } : SPRING_PANEL}
         className={cn(
-          frameClass,
-          "relative flex h-9 items-center justify-end gap-1 p-[3px]"
+          "relative flex items-center justify-end gap-1",
+          vertical && "flex-col"
         )}
       >
         {editing ? (
@@ -102,8 +107,12 @@ export function DocumentActions({
         ) : null}
         <Button
           ref={actionRef}
+          variant="ghost"
           size="icon"
-          className={cn(iconClass, "relative")}
+          className={cn(
+            iconClass,
+            "relative hover:bg-primary/10 hover:text-primary focus-visible:bg-primary/10 focus-visible:text-primary"
+          )}
           aria-label={editing ? saveLabel : "编辑"}
           title={editing ? `${saveLabel}（⌘/Ctrl+S）` : "编辑"}
           aria-busy={busy}

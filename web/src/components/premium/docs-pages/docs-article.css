@@ -24,9 +24,19 @@
 .doc-article {
   padding: 2.5rem 1.5rem 4rem;
 }
-.doc-action-surface .doc-article > .doc-preview > .chat-markdown > :first-child,
-.doc-action-surface .doc-article > h1 {
+.doc-action-surface:not(.doc-action-surface-vertical)
+  .doc-article
+  > .doc-preview
+  > .chat-markdown
+  > :first-child,
+.doc-action-surface:not(.doc-action-surface-vertical) .doc-article > h1 {
   margin-right: 5rem;
+}
+.doc-action-surface-vertical .doc-reading-layout {
+  padding-right: 2rem;
+}
+.doc-action-surface-vertical [data-slot="markdown-editor-toolbar"] {
+  padding-right: 0.5rem;
 }
 .doc-outline {
   display: none;
