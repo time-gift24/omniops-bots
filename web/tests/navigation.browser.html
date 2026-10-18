@@ -15,7 +15,6 @@
   import { createTestDependencies, withTestTheme } from "/tests/support.tsx";
   import { createMockGateway } from "/src/adapters/demo/chat.ts";
   import { DEFAULT_AGENT } from "/src/adapters/demo/resources.ts";
-  import { defaultSections } from "/src/components/premium/sidebar-blocks/sidebar-rail.tsx";
   import { DEMO_SKILLS } from "/src/adapters/demo/skills.ts";
 
   const fixture = document.querySelector("#fixture");
@@ -86,6 +85,21 @@
       "The shared Header must reserve room for the floating workbench toggle");
     const controls = [...fixture.querySelector("header").querySelectorAll("button")]
       .filter(visible).concat(toggle ? [toggle] : []);
+    const skillVisible = visible(fixture.querySelector('[data-slot="skill-screen"]'));
+    assert(!fixture.querySelector(".skill-doc-bar"), "Skill content must not retain its old document toolbar");
+    if (skillVisible) {
+      const action = button("完成编辑", fixture.querySelector("header")) ?? button("编辑", fixture.querySelector("header"));
+      assert(action, "The visible skill page must expose its editing controls in the shared Header");
+      assert(breadcrumb().getBoundingClientRect().right <= action.getBoundingClientRect().left + 1,
+        "Skill editing controls must stay to the right of the shared breadcrumb");
+      if (button("完成编辑", fixture.querySelector("header"))) assert(button("保存草稿", fixture.querySelector("header")),
+        "Skill editing must expose both finish and save controls in the shared Header");
+      for (const control of controls) assert(control.getBoundingClientRect().left >= -1 && control.getBoundingClientRect().right <= innerWidth + 1,
+        "Skill Header controls must fit the viewport");
+    } else {
+      assert(!fixture.querySelector('header [data-slot="skill-toolbar"]'),
+        "Leaving the skill page must remove its Header controls");
+    }
     for (let index = 0; index < controls.length; index++) {
       const left = controls[index].getBoundingClientRect();
       for (const control of controls.slice(index + 1)) {
@@ -107,6 +121,10 @@
     click(button(name, fixture.querySelector('nav[aria-label="工作区导航区域"]')));
     await until(() => visible(panel()) && (!mobile || drawer()?.getAttribute("aria-hidden") === "false"),
       `${name} navigation did not open`);
+  };
+  const revealNavigation = async () => {
+    if (mobile && drawer()?.getAttribute("aria-hidden") !== "false") click(button("展开导航"));
+    await until(() => visible(panel()), "Navigation panel did not become visible");
   };
   const selectItem = async (section, name) => {
     await openSection(section);
@@ -160,6 +178,10 @@
       flushSync(() => root.render(React.createElement(React.StrictMode, null,
         withTestTheme(React.createElement(App), dependencies))));
       await until(() => button("工作区") && Boolean(drawer()) === mobile, "App did not mount at the requested viewport");
+      const hiddenSections = ["资料库", "动态", "设置"];
+      const hiddenItems = ["参考资料", "收藏的页面", "素材", "本周", "与我共享", "归档", "偏好设置", "成员", "连接"];
+      const rail = fixture.querySelector('nav[aria-label="工作区导航区域"]');
+      for (const name of hiddenSections) assert(!button(name, rail), `${name} placeholder must not appear in the navigation rail`);
       assert(!moduleRequested(agentModule) && !moduleRequested(skillModule),
         "Agent and skill pages must not load at startup");
       if (button("收起工作台")) click(button("收起工作台"));
@@ -221,7 +243,9 @@
       await checkPath("Agent", "周报草稿助手");
       assert(agentName().value === "周报草稿助手" && (await editAgentPrompt()).value === secondAgentPrompt && !button("保存").disabled,
         "Undoing A must not change B's independent draft or dirty state");
-      await selectItem("资料库", "参考资料");
+      await openSection("工作区");
+      await dismissNavigation();
+      await checkPath("工作区");
       await selectItem("Agent", "数据周报");
       await checkPath("Agent", "周报草稿助手");
       assert(agentName().value === "周报草稿助手" && (await editAgentPrompt()).value === secondAgentPrompt && !button("保存").disabled,
@@ -272,11 +296,12 @@
       await dismissNavigation();
       passed.push("skill selection and search share the header and sidebar state");
 
-      click(button("编辑", fixture.querySelector('[data-slot="skill-screen"]')));
+      click(button("编辑", fixture.querySelector("header")));
       const skillDraft = () => fixture.querySelector('[data-slot="skill-screen"] textarea[aria-label="编辑 SKILL.md"]');
       await until(() => visible(skillDraft()), "Skill source editor did not open");
       const draft = `${skillDraft().value}\n\n导航保留未保存的草稿`;
       setInput(skillDraft(), draft);
+      await checkPath("技能", DEMO_SKILLS[0].name);
       click(button("技能", breadcrumb()));
       await checkPath("技能");
       await checkOverview("技能", DEMO_SKILLS.map(skill => skill.name));
@@ -285,17 +310,55 @@
       await checkPath("技能", DEMO_SKILLS[0].name);
       assert(visible(skillDraft()) && skillDraft().value === draft,
         "Returning from the skill parent must preserve its unsaved source");
-      await selectItem("资料库", "参考资料");
-      await checkPath("资料库", "参考资料");
-      assert(!visible(skillDraft()), "Generic pages must hide the skill editor");
+      await openSection("工作区");
+      await dismissNavigation();
+      await checkPath("工作区");
+      assert(!visible(skillDraft()), "The workspace must hide the skill editor");
       await selectItem("技能", DEMO_SKILLS[0].name);
       await checkPath("技能", DEMO_SKILLS[0].name);
       assert(visible(skillDraft()) && skillDraft().value === draft,
-        "Returning from a generic page must preserve the unsaved skill editor");
-      passed.push("unsaved skill source survives parent and generic page navigation");
+        "Returning from the workspace must preserve the unsaved skill editor");
+      passed.push("unsaved skill source survives parent and workspace navigation");
+
+      const checkNewSessionNavigation = async workspaceName => {
+        const count = createdThreads.size;
+        for (const [section, item] of [["Agent", DEFAULT_AGENT.name], ["技能", DEMO_SKILLS[0].name]]) {
+          for (const fromOverview of [false, true]) {
+            await selectItem(section, item);
+            if (fromOverview) {
+              click(button(section, breadcrumb()));
+              await checkPath(section);
+              await checkOverview(section, [item]);
+            }
+            await revealNavigation();
+            click(button("新会话", panel().querySelector('[data-slot="sidebar-header"]')));
+            if (!workspaceName) {
+              await until(() => dialog()?.querySelector("input"), "New conversation without a workspace must open the picker");
+              assert(rail.querySelector('[aria-label="工作区"]')?.getAttribute("aria-current") === "page" &&
+                fixture.querySelector('nav[aria-label="面包屑"] [aria-current="page"]')?.textContent.trim() === "工作区" && !overview(),
+                `New conversation from ${section} ${fromOverview ? "overview" : "detail"} must navigate to workspace before choosing a directory`);
+              click(button("取消", dialog()));
+              await until(() => !dialog(), "Workspace picker cancellation did not close the dialog");
+            }
+            await dismissNavigation();
+            await checkPath(...(workspaceName ? ["工作区", workspaceName, "新会话"] : ["工作区"]));
+            assert(button("工作区", rail)?.getAttribute("aria-current") === "page" && !visible(overview()),
+              "New conversation must select the workspace rail and leave the previous overview");
+            assert(!visible(fixture.querySelector('aside[aria-label="Agent 配置"]')) && !visible(fixture.querySelector('[data-slot="skill-screen"]')),
+              "New conversation must hide Agent and skill pages");
+            if (workspaceName) assert(visible(editor()), "New conversation with a workspace must display the chat editor");
+          }
+        }
+        assert(createdThreads.size === count,
+          workspaceName ? "Repeated new-conversation navigation must reuse the existing empty conversation" : "Cancelling directory selection must not create a conversation");
+      };
+      await checkNewSessionNavigation();
+      passed.push("new conversation leaves Agent and skill details and overviews before directory selection, including cancellation");
 
       await addWorkspace("/workspace/cognacta");
       await checkPath("工作区", "cognacta", "新会话");
+      await checkNewSessionNavigation("cognacta");
+      passed.push("new conversation from Agent and skill details and overviews returns to the active workspace chat");
       const title = "验证会话面包屑在较长标题下仍保留栏目和工作区路径";
       flushSync(() => {
         editor().textContent = title;
@@ -344,64 +407,52 @@
         "Workspace parent navigation must restore existing sessions without creating threads");
       passed.push("workspace and section parents open real lists without creating sessions");
 
-      for (const section of defaultSections.slice(1)) {
-        const items = section.groups.flatMap(group => group.items);
-        await selectItem("Agent", "数据周报");
-        await openSection(section.label);
-        await dismissNavigation();
-        await checkPath(section.label, section.groups[0].items[0].label);
-        for (const item of items) {
-          await openSection(section.label);
-          click(button(item.label, panel()));
-          assert(selectedRow(item.label), "The selected generic sidebar row must match the page");
-          assert(button(section.label, fixture.querySelector('nav[aria-label="工作区导航区域"]'))?.getAttribute("aria-current") === "page",
-            "The selected generic section must match the page");
-          await dismissNavigation();
-          await checkPath(section.label, item.label);
-          assert(!visible(fixture.querySelector('aside[aria-label="Agent 配置"]')) && !visible(fixture.querySelector('[data-slot="skill-screen"]')),
-            "Generic navigation must replace the previous editor");
-          assert([...fixture.querySelectorAll("h1, h2, h3")].some(element => visible(element) && label(element) === item.label),
-            "The generic page must match the selected sidebar item");
-        }
-        click(button(section.label, breadcrumb()));
-        await checkPath(section.label);
-        await checkOverview(section.label, items.map(item => item.label));
-        assert(items.every(item => !selectedRow(item.label)),
-          "A section overview must not keep a child selected");
-        click(button(items.at(-1).label, overview()));
-        await checkPath(section.label, items.at(-1).label);
-      }
-      passed.push("all nine generic pages share the Header and return through all three parent pages");
+      click(button("cognacta", breadcrumb()));
+      await checkPath("工作区", "cognacta");
+      await checkOverview("cognacta", [title]);
+      await revealNavigation();
+      click(button("在 客户支持 中新建会话", panel()));
+      await dismissNavigation();
+      await checkPath("工作区", "客户支持", "新会话");
+      assert(visible(editor()) && !visible(overview()) && button("工作区", rail)?.getAttribute("aria-current") === "page",
+        "A workspace group new-conversation button must leave the overview and show that workspace's chat");
+      assert(createdThreads.size === threadCount, "The workspace group action must reuse its existing empty conversation");
+      passed.push("workspace group new conversation leaves the overview and selects its target workspace");
 
-      await openSection("资料库");
+      await openSection("工作区");
       click(button("搜索导航", panel()));
       await until(() => document.querySelector("[cmdk-input]"), "Navigation search did not open");
-      setInput(document.querySelector("[cmdk-input]"), "连接");
-      const genericMatch = () => [...document.querySelectorAll("[cmdk-item]")]
-        .find(element => visible(element) && label(element) === "连接");
-      await until(genericMatch, "Navigation search did not find the requested generic page");
-      click(genericMatch());
-      await until(() => !dialog(), "Generic page selection did not close search");
-      await checkPath("设置", "连接");
-      await openSection("设置");
-      assert(selectedRow("连接") && !selectedRow("偏好设置"),
-        "Global navigation search must update the selected generic sidebar row");
+      for (const name of hiddenSections) assert(![...document.querySelectorAll("[cmdk-group-heading]")].some(element => label(element).startsWith(`${name} ·`)),
+        `${name} placeholder must not appear in navigation search groups`);
+      for (const name of hiddenItems) assert(![...document.querySelectorAll("[cmdk-item]")].some(element => label(element) === name),
+        `${name} placeholder must not appear in navigation search results`);
+      passed.push("placeholder sections and pages stay hidden in navigation and search");
+      setInput(document.querySelector("[cmdk-input]"), DEMO_SKILLS[1].name);
+      const navigationMatch = () => [...document.querySelectorAll("[cmdk-item]")]
+        .find(element => visible(element) && label(element) === DEMO_SKILLS[1].name);
+      await until(navigationMatch, "Navigation search did not find the requested skill");
+      click(navigationMatch());
+      await until(() => !dialog(), "Skill selection did not close navigation search");
+      await checkPath("技能", DEMO_SKILLS[1].name);
+      await openSection("技能");
+      assert(selectedRow(DEMO_SKILLS[1].name) && !selectedRow(DEMO_SKILLS[0].name),
+        "Global navigation search must update the selected skill sidebar row");
       await dismissNavigation();
-      await checkPath("设置", "连接");
-      passed.push("global navigation search shares the generic page and sidebar state");
+      await checkPath("技能", DEMO_SKILLS[1].name);
+      passed.push("global navigation search shares the skill page and sidebar state");
 
       click(button("打开工作台"));
       await until(() => button("收起工作台") && !button("打开工作台"), "Workbench did not open");
-      await checkPath("设置", "连接");
+      await checkPath("技能", DEMO_SKILLS[1].name);
       click(button("收起工作台"));
       await until(() => button("打开工作台"), "Workbench did not close");
-      await checkPath("设置", "连接");
+      await checkPath("技能", DEMO_SKILLS[1].name);
       const before = path();
       await dismissNavigation();
       click(button(mobile ? "展开导航" : "收起导航"));
       await checkPath(...before);
       await dismissNavigation();
-      passed.push("generic pages and collapsed navigation retain the correct breadcrumb");
+      passed.push("skill pages and collapsed navigation retain the correct breadcrumb");
     }
     result.textContent = `PASS ${viewport ?? "all viewports"}: ${passed.join("; ")}`;
     result.dataset.passed = "true";

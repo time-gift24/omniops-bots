@@ -14,9 +14,6 @@
   flex-direction: column;
   overflow: hidden;
 }
-.skill-doc-bar {
-  background: var(--background);
-}
 .doc-reading-scroll {
   container: reading / inline-size;
 }
@@ -94,6 +91,8 @@
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
   }
+}
+@container skill-header (min-width: 960px) {
   .skill-files-trigger {
     display: none;
   }

@@ -20,6 +20,7 @@ function WorkspaceGroup({
   activeSessionId,
   expanded,
   store,
+  onCreate,
   onNavigate,
 }: {
   workspace: Workspace;
@@ -27,6 +28,7 @@ function WorkspaceGroup({
   activeSessionId: string | null;
   expanded: boolean;
   store: WorkspaceStore;
+  onCreate: (workspaceId: string) => void;
   onNavigate: () => void;
 }) {
   const listId = useId();
@@ -97,10 +99,7 @@ function WorkspaceGroup({
           size="icon-lg"
           aria-label={`在 ${workspace.name} 中新建会话`}
           title="新会话"
-          onClick={() => {
-            store.startSession(workspace.id);
-            onNavigate();
-          }}
+          onClick={() => onCreate(workspace.id)}
           className="shrink-0 rounded-full text-muted-foreground"
         >
           <HugeiconsIcon icon={PlusSignIcon} size={16} aria-hidden="true" />
@@ -166,11 +165,13 @@ export function WorkspacePanel({
   state,
   store,
   onAdd,
+  onCreate,
   onNavigate,
 }: {
   state: WorkspaceState;
   store: WorkspaceStore;
   onAdd: () => void;
+  onCreate: (workspaceId: string) => void;
   onNavigate: () => void;
 }) {
   return (
@@ -204,6 +205,7 @@ export function WorkspacePanel({
             activeSessionId={state.activeSessionId}
             expanded={state.expandedWorkspaceIds.includes(workspace.id)}
             store={store}
+            onCreate={onCreate}
             onNavigate={onNavigate}
           />
         ))

@@ -113,6 +113,23 @@
       .querySelector('[role="status"]')
       ?.textContent.includes("草稿已保存")
   const content = () => fixture.querySelector('[aria-label="文件内容"]')
+  const header = () => fixture.querySelector("header")
+  const checkHeader = () => {
+    assert(!fixture.querySelector(".skill-doc-bar"), "Skill content must not retain the old document toolbar")
+    const controls = [...header().querySelectorAll("button")].filter(visible)
+    const bounds = header().getBoundingClientRect()
+    for (let index = 0; index < controls.length; index++) {
+      const left = controls[index].getBoundingClientRect()
+      assert(left.left >= bounds.left - 1 && left.right <= bounds.right + 1,
+        "Skill Header controls must fit their container")
+      for (const control of controls.slice(index + 1)) {
+        const right = control.getBoundingClientRect()
+        assert(Math.min(left.right, right.right) - Math.max(left.left, right.left) <= 1 ||
+          Math.min(left.bottom, right.bottom) - Math.max(left.top, right.top) <= 1,
+          "Skill Header controls must not overlap")
+      }
+    }
+  }
   const fileLink = (path) =>
     [...document.querySelectorAll('nav[aria-label="技能文件"]')]
       .map((nav) =>
@@ -139,17 +156,27 @@
     )
   }
   const startEditing = async (path) => {
-    await until(() => button("编辑") && !button("编辑").disabled, "Draft initialization must finish before editing")
-    click(button("编辑"))
+    await until(() => button("编辑", header()) && !button("编辑", header()).disabled, "Draft initialization must finish before editing")
+    click(button("编辑", header()))
     await until(() => editor(path), `Expected source editor for ${path}`)
+    assert(button("完成编辑", header()) && button("保存草稿", header()),
+      "Finish and save must live in the shared Header with accessible names")
+    checkHeader()
   }
   function Probe() {
     const skillId = "weekly-report"
-    return React.createElement(SkillScreen, {
-      skillId,
-      skills: DEMO_SKILLS,
-      active: true,
-    })
+    const [toolbarTarget, setToolbarTarget] = React.useState(null)
+    return React.createElement("div", { className: "flex h-full min-h-0 flex-col" },
+      React.createElement("header", { className: "@container/skill-header flex h-12 shrink-0 items-center gap-2 px-4" },
+        React.createElement("span", { className: "min-w-0 flex-1 truncate" }, "周报助手"),
+        React.createElement("div", { ref: setToolbarTarget, className: "flex shrink-0 items-center" })),
+      React.createElement("div", { className: "min-h-0 flex-1" },
+        React.createElement(SkillScreen, {
+          skillId,
+          skills: DEMO_SKILLS,
+          active: true,
+          toolbarTarget,
+        })))
   }
   const render = (key) =>
     flushSync(() => root.render(withDependencies(React.createElement(Probe, { key }), dependencies)))
@@ -178,6 +205,8 @@
       !fixture.querySelector("textarea"),
       "Default reading view must not expose a source editor"
     )
+    assert(button("编辑", header()), "Reading mode must expose Edit in the shared Header")
+    checkHeader()
     checks.push("Markdown reading and collapsed frontmatter")
 
     await startEditing("SKILL.md")
@@ -199,6 +228,7 @@
         button("源码")?.getAttribute("aria-pressed") === "true",
       "Narrowing split mode must select source semantically and visually"
     )
+    checkHeader()
     click(button("预览"))
     await until(
       () =>

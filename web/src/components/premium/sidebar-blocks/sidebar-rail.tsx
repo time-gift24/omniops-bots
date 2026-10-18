@@ -577,7 +577,7 @@ function SidebarRailShell({
         open={searchOpen}
         onOpenChange={setSearchOpen}
         title="搜索导航"
-        description="搜索页面、资料库和设置"
+        description="搜索可用页面"
         fallbackFocusRef={toggleRef}
       >
         <CommandInput

@@ -45,11 +45,16 @@
     mcpServerIds: [], toolIds: [], skillIds: [], requireApproval: false,
   };
   function Pages({ visible, skillId }) {
-    return h(React.Fragment, null,
-      h("div", { id: "skill-page", style: { display: visible === "skill" ? "block" : "none" } },
-        h(SkillScreen, { skills, skillId, active: visible === "skill" })),
-      h("div", { id: "agent-page", style: { display: visible === "agent" ? "block" : "none" } },
-        h(AgentBuilder, { initialConfiguration: agent, mcpServers: [], tools: [], skills: [], onSave() {} })),
+    const [toolbarTarget, setToolbarTarget] = React.useState(null);
+    return h("div", { className: "flex h-full min-h-0 flex-col" },
+      h("header", { className: "@container/skill-header flex h-12 shrink-0 items-center gap-2 px-4" },
+        h("span", { className: "min-w-0 flex-1 truncate" }, visible === "skill" ? skills.find(skill => skill.id === skillId).name : agent.name),
+        h("div", { ref: setToolbarTarget, className: "flex shrink-0 items-center" })),
+      h("div", { className: "min-h-0 flex-1" },
+        h("div", { id: "skill-page", className: "h-full min-h-0", style: { display: visible === "skill" ? "block" : "none" } },
+          h(SkillScreen, { skills, skillId, active: visible === "skill", toolbarTarget: visible === "skill" ? toolbarTarget : null })),
+        h("div", { id: "agent-page", className: "h-full min-h-0", style: { display: visible === "agent" ? "block" : "none" } },
+          h(AgentBuilder, { initialConfiguration: agent, mcpServers: [], tools: [], skills: [], onSave() {} }))),
     );
   }
   const render = (visible, skillId = skills[0].id) => flushSync(() => root.render(withDependencies(h(Pages, { visible, skillId }), dependencies)));
@@ -86,6 +91,8 @@
   try {
     render("agent");
     await until(() => heading("skill") && heading("agent") && outline("agent"), "Both real reading pages must mount");
+    assert(!fixture.querySelector(".skill-doc-bar"), "Skill content must not retain the old document toolbar");
+    assert(!fixture.querySelector("header button"), "An inactive Skill page must not render Header controls");
     uniqueIds();
     assert(heading("skill").id !== heading("agent").id, "Matching Chinese headings must have distinct document IDs");
     const hiddenSkillScroll = scroll("skill").scrollTop;
@@ -96,6 +103,8 @@
 
     render("skill", skills[1].id);
     await until(() => page("skill").querySelector(".doc-preview")?.textContent.includes("SECOND_MAIN"), "Switching Skill must render its current file");
+    await until(() => [...fixture.querySelectorAll("header button")].some(button => (button.getAttribute("aria-label") ?? button.textContent).trim() === "编辑"),
+      "The active Skill page must render Edit in the shared Header");
     uniqueIds();
     const hiddenAgentScroll = scroll("agent").scrollTop;
     click(link("本页定位"));
@@ -108,6 +117,8 @@
     await until(() => page("skill").querySelector(".doc-preview")?.textContent.includes("SECOND_MAIN") && aligned("skill"), "Returning across files must resolve the current document heading");
     assert(scroll("agent").scrollTop === hiddenAgentScroll, "Skill links must not scroll the hidden Agent page");
     uniqueIds();
+    render("agent", skills[1].id);
+    assert(!fixture.querySelector("header button"), "Leaving Skill must remove its shared Header controls");
 
     renderProbe("first");
     startScroll(10000);

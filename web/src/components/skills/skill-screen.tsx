@@ -7,6 +7,7 @@ import {
   useState,
   type MouseEvent,
 } from "react"
+import { createPortal } from "react-dom"
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
 import {
   BookOpen01Icon,
@@ -120,10 +121,12 @@ export function SkillScreen({
   skills,
   skillId,
   active,
+  toolbarTarget,
 }: {
   skills: readonly Skill[]
   skillId: string
   active: boolean
+  toolbarTarget: HTMLElement | null
 }) {
   const { skillDrafts, host } = useAppDependencies()
   const [saved, setSaved] = useState<Record<string, string>>({})
@@ -419,109 +422,119 @@ export function SkillScreen({
 
   return (
     <div className="skill-docs" data-slot="skill-screen">
-      <div className="skill-doc-bar flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-border bg-background px-4 py-2 sm:px-6">
-        <div className="flex min-w-0 flex-1 items-center gap-2.5">
-          <Button
-            variant="ghost"
-            size="icon-lg"
-            className="skill-files-trigger rounded-full"
-            aria-label="浏览技能文件"
-            onClick={() => setNavOpen(true)}
-          >
-            <HugeiconsIcon icon={Files01Icon} size={18} aria-hidden="true" />
-          </Button>
-          <p
-            className="truncate font-mono text-xs text-muted-foreground"
-            title={path}
-          >
-            {path}
-          </p>
-          {dirty ? (
-            <span
-              className="size-1.5 shrink-0 rounded-full bg-primary"
-              title="有未保存的修改"
+      {active && toolbarTarget
+        ? createPortal(
+            <div
+              className="flex min-h-11 items-center gap-1 py-1"
+              data-slot="skill-toolbar"
             >
-              <span className="sr-only">有未保存的修改</span>
-            </span>
-          ) : null}
-          <div
-            role="status"
-            aria-live="polite"
-            className={
-              message
-                ? "flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground"
-                : "sr-only"
-            }
-          >
-            {message ? (
-              <HugeiconsIcon
-                icon={CheckmarkCircle02Icon}
-                size={14}
-                aria-hidden="true"
-              />
-            ) : null}
-            {message}
-          </div>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          {editing ? (
-            <>
               <Button
                 variant="ghost"
-                className="rounded-full"
-                onClick={() => setEditing(false)}
-              >
-                完成编辑
-              </Button>
-              <Button
-                className="rounded-full"
-                disabled={!dirty || loading || busy}
-                onClick={save}
-                title="保存草稿（⌘/Ctrl+S）"
+                size="icon"
+                className="skill-files-trigger rounded-full"
+                aria-label="浏览技能文件"
+                title={path}
+                onClick={() => setNavOpen(true)}
               >
                 <HugeiconsIcon
-                  icon={FloppyDiskIcon}
-                  size={15}
+                  icon={Files01Icon}
+                  size={18}
                   aria-hidden="true"
                 />
-                保存草稿
               </Button>
-            </>
-          ) : (
-            <>
-              {saved[key] !== undefined || source !== original ? (
-                <Button
-                  variant="ghost"
-                  size="icon-lg"
-                  className="rounded-full"
-                  aria-label="恢复原始内容"
-                  title="恢复原始内容"
-                  disabled={loading || busy}
-                  onClick={restore}
+              {dirty ? (
+                <span
+                  className="size-1.5 shrink-0 rounded-full bg-primary"
+                  title="有未保存的修改"
                 >
-                  <HugeiconsIcon
-                    icon={RefreshIcon}
-                    size={17}
-                    aria-hidden="true"
-                  />
-                </Button>
+                  <span className="sr-only">有未保存的修改</span>
+                </span>
               ) : null}
-              <Button
-                className="rounded-full"
-                disabled={loading || busy || !skill}
-                onClick={() => {
-                  setEditing(true)
-                  setMode("source")
-                  setMessage("")
-                }}
+              <div
+                role="status"
+                aria-live="polite"
+                className="sr-only @min-[560px]/skill-header:not-sr-only @min-[560px]/skill-header:text-xs @min-[560px]/skill-header:text-muted-foreground"
               >
-                <HugeiconsIcon icon={Edit02Icon} size={15} aria-hidden="true" />
-                编辑
-              </Button>
-            </>
-          )}
-        </div>
-      </div>
+                {message}
+              </div>
+              {editing ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    className="rounded-full"
+                    aria-label="完成编辑"
+                    title="完成编辑"
+                    onClick={() => setEditing(false)}
+                  >
+                    <HugeiconsIcon
+                      icon={CheckmarkCircle02Icon}
+                      size={15}
+                      aria-hidden="true"
+                    />
+                    <span className="hidden @min-[400px]/skill-header:inline">
+                      完成编辑
+                    </span>
+                  </Button>
+                  <Button
+                    className="rounded-full"
+                    aria-label="保存草稿"
+                    disabled={!dirty || loading || busy}
+                    onClick={save}
+                    title="保存草稿（⌘/Ctrl+S）"
+                  >
+                    <HugeiconsIcon
+                      icon={FloppyDiskIcon}
+                      size={15}
+                      aria-hidden="true"
+                    />
+                    <span className="hidden @min-[400px]/skill-header:inline">
+                      保存草稿
+                    </span>
+                  </Button>
+                </>
+              ) : (
+                <>
+                  {saved[key] !== undefined || source !== original ? (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-full"
+                      aria-label="恢复原始内容"
+                      title="恢复原始内容"
+                      disabled={loading || busy}
+                      onClick={restore}
+                    >
+                      <HugeiconsIcon
+                        icon={RefreshIcon}
+                        size={17}
+                        aria-hidden="true"
+                      />
+                    </Button>
+                  ) : null}
+                  <Button
+                    className="rounded-full"
+                    aria-label="编辑"
+                    title="编辑"
+                    disabled={loading || busy || !skill}
+                    onClick={() => {
+                      setEditing(true)
+                      setMode("source")
+                      setMessage("")
+                    }}
+                  >
+                    <HugeiconsIcon
+                      icon={Edit02Icon}
+                      size={15}
+                      aria-hidden="true"
+                    />
+                    编辑
+                  </Button>
+                </>
+              )}
+            </div>,
+            toolbarTarget
+          )
+        : null}
       {error ? (
         <div
           role="alert"

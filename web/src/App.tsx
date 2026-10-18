@@ -184,6 +184,8 @@ function WorkspaceApp({
   const [view, setView] = useState<View>({ kind: "chat" })
   const [agentToolbarTarget, setAgentToolbarTarget] =
     useState<HTMLDivElement | null>(null)
+  const [skillToolbarTarget, setSkillToolbarTarget] =
+    useState<HTMLDivElement | null>(null)
   const [openedSkillId, setOpenedSkillId] = useState<string | null>(null)
   const [workbenchOpen, setWorkbenchOpen] = useState(true)
   const workbenchId = useId()
@@ -299,6 +301,10 @@ function WorkspaceApp({
                 }
                 store={store}
                 onAdd={() => setPicker("add")}
+                onCreate={(workspaceId) => {
+                  startSession(workspaceId)
+                  close()
+                }}
                 onNavigate={() => {
                   setView({ kind: "chat" })
                   close()
@@ -343,7 +349,6 @@ function WorkspaceApp({
         },
       ],
     },
-    ...defaultSections.slice(1),
   ]
   const activeSection = sections.find(
     (section) => section.id === activeSectionId
@@ -375,6 +380,12 @@ function WorkspaceApp({
     setView({ kind: "section", sectionId, workspaceId })
   }
 
+  function startSession(workspaceId?: string) {
+    setView({ kind: "chat" })
+    contentRef.current?.focus({ preventScroll: true })
+    if (!store.startSession(workspaceId)) setPicker("choose")
+  }
+
   function selectItem(item: SidebarRailItem, section: SidebarRailSection) {
     if (section.id === "skills") {
       setOpenedSkillId(item.id.slice("skill:".length))
@@ -393,10 +404,12 @@ function WorkspaceApp({
       setView({ kind: "page", sectionId: section.id, itemId: item.id })
       return
     }
-    setView({ kind: "chat" })
     if (item.id.startsWith("workspace:"))
-      store.startSession(item.id.slice("workspace:".length))
-    else store.selectSession(item.id)
+      startSession(item.id.slice("workspace:".length))
+    else {
+      setView({ kind: "chat" })
+      store.selectSession(item.id)
+    }
   }
 
   return (
@@ -418,12 +431,15 @@ function WorkspaceApp({
               className="@container/agent-header flex min-w-0 flex-1"
             />
           ) : view.kind === "skill" ? (
-            <Breadcrumbs
-              items={[
-                { label: "技能", onSelect: () => openSection("skills") },
-                { label: activeSkill?.name ?? "技能" },
-              ]}
-            />
+            <div className="@container/skill-header flex min-w-0 flex-1 items-center gap-2">
+              <Breadcrumbs
+                items={[
+                  { label: "技能", onSelect: () => openSection("skills") },
+                  { label: activeSkill?.name ?? "技能" },
+                ]}
+              />
+              <div ref={setSkillToolbarTarget} className="ml-auto shrink-0" />
+            </div>
           ) : view.kind === "chat" ? (
             <Breadcrumbs
               items={[
@@ -514,10 +530,7 @@ function WorkspaceApp({
         contentClassName="p-0 sm:p-0"
         sections={sections}
         createLabel="新会话"
-        onCreate={() => {
-          setView({ kind: "chat" })
-          if (!store.startSession()) setPicker("choose")
-        }}
+        onCreate={() => startSession()}
         onItemSelect={selectItem}
       >
         <div className="h-full min-h-0">
@@ -545,6 +558,9 @@ function WorkspaceApp({
                       skills={skills}
                       skillId={openedSkillId}
                       active={view.kind === "skill"}
+                      toolbarTarget={
+                        view.kind === "skill" ? skillToolbarTarget : null
+                      }
                     />
                   </Suspense>
                 </PageLoadBoundary>
@@ -732,10 +748,8 @@ function WorkspaceApp({
         }}
         workspaces={state.workspaces}
         addOnly={picker === "add"}
-        onPick={(id) => store.startSession(id)}
-        onAdd={(directory) =>
-          store.startSession(store.addWorkspace(directory).id)
-        }
+        onPick={startSession}
+        onAdd={(directory) => startSession(store.addWorkspace(directory).id)}
         fallbackFocusRef={contentRef}
       />
     </>
