@@ -82,6 +82,9 @@
     await emit(first, { type: "part-started", partId: 0, kind: "text" });
     await emit(first, { type: "delta", partId: 0, text: "Live" });
     type("next draft");
+    const deadline = performance.now() + 5000;
+    while (!fixture.textContent.includes("Live") && performance.now() < deadline) await wait(10);
+    assert(fixture.textContent.includes("Live"), "The lazy-loaded thread must show its first delta before measuring updates");
     await wait(300);
 
     // Observe only the real editor's synchronization work, not ancestor Profiler commits.

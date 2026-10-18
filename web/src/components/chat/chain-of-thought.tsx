@@ -170,7 +170,7 @@ function toolTitle(
   return `已${verb}`;
 }
 
-function ToolStep({
+const ToolStep = React.memo(function ToolStep({
   part,
   messageState,
 }: {
@@ -216,7 +216,7 @@ function ToolStep({
       <TraceCollapsibleContent>{detail}</TraceCollapsibleContent>
     </TraceCollapsible>
   );
-}
+});
 
 function ReasoningStep({
   part,

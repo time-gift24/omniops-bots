@@ -2,7 +2,7 @@
 "use client"
 
 import { useEffect, useState, type RefObject } from "react"
-import { docsSectionId } from "./docs-data"
+import { findDocsHeading } from "./docs-data"
 
 /**
  * Tracks which section heading is being read.
@@ -29,7 +29,7 @@ export function useScrollspy(
     const update = () => {
       const headings = sectionIds.map((id) => ({
         id,
-        el: document.getElementById(docsSectionId(id)),
+        el: findDocsHeading(container, id),
       }))
       const line =
         container.getBoundingClientRect().top + container.clientHeight * 0.3

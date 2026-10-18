@@ -13,7 +13,10 @@ import {
   ChatComposer,
   DEFAULT_CHAT_MODEL,
 } from "@/components/chat/chat-composer"
-import { ChatThread } from "@/components/chat/chat-thread"
+import {
+  ChatThreadLoading,
+  preloadChatThread,
+} from "@/components/chat/chat-thread-loading"
 import { Button } from "@/components/ui/button"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { SPRING_PANEL } from "@/lib/ease"
@@ -99,6 +102,8 @@ export function ChatScreen({
                 <motion.div
                   layoutId={reduce ? undefined : "composer"}
                   className="w-full"
+                  onInputCapture={preloadChatThread}
+                  onPointerEnter={preloadChatThread}
                 >
                   {composer}
                 </motion.div>
@@ -109,13 +114,14 @@ export function ChatScreen({
                       variant="outline"
                       size="sm"
                       className="rounded-full"
-                      onClick={() =>
+                      onClick={() => {
+                        preloadChatThread()
                         store.send(
                           suggestion,
                           undefined,
                           store.getDraft().model ?? DEFAULT_CHAT_MODEL
                         )
-                      }
+                      }}
                     >
                       {suggestion}
                     </Button>
@@ -136,12 +142,14 @@ export function ChatScreen({
                 </div>
               ) : null}
               <div className="min-h-0 flex-1">
-                <ChatThread store={store} onEditMessage={editMessage} />
+                <ChatThreadLoading store={store} onEditMessage={editMessage} />
               </div>
               <div className="shrink-0 px-4 pb-4 sm:px-8 sm:pb-6">
                 <motion.div
                   layoutId={reduce ? undefined : "composer"}
                   className="mx-auto max-w-[736px]"
+                  onInputCapture={preloadChatThread}
+                  onPointerEnter={preloadChatThread}
                 >
                   {composer}
                 </motion.div>

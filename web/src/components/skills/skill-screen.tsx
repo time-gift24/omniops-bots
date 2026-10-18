@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useId,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -32,6 +33,7 @@ import {
 } from "@/components/markdown/markdown-editor"
 import {
   docsSectionId,
+  findDocsHeading,
   type DocsSection,
 } from "@/components/premium/docs-pages/docs-data"
 import { DocsMobileNav } from "@/components/premium/docs-pages/docs-mobile-nav"
@@ -118,22 +120,24 @@ function SkillPreview({
   onLink: (event: MouseEvent<HTMLDivElement>) => void
 }) {
   const root = useRef<HTMLDivElement>(null)
+  const instanceId = useId()
   const { metadata, body } = splitFrontmatter(source)
   useLayoutEffect(() => {
     const used = new Map<string, number>()
     const sections = Array.from(
-      root.current?.querySelectorAll("h1,h2,h3,h4,h5,h6") ?? []
+      root.current?.querySelectorAll<HTMLElement>("h1,h2,h3,h4,h5,h6") ?? []
     ).map((heading) => {
       const label = heading.textContent ?? ""
       const base = headingSlug(label)
       const count = used.get(base) ?? 0
       used.set(base, count + 1)
       const id = count ? `${base}-${count}` : base
-      heading.id = docsSectionId(id)
+      heading.id = docsSectionId(`${instanceId}-${id}`)
+      heading.dataset.docsSection = id
       return { id, label, level: Number(heading.tagName.slice(1)) }
     })
     onSections(sections.filter((section) => section.level <= 2))
-  }, [body, onSections])
+  }, [body, instanceId, onSections])
   return (
     <div ref={root} className="skill-preview" onClickCapture={onLink}>
       {body.trim() ? (
@@ -266,6 +270,13 @@ export function SkillScreen({
   )
   const reduceMotion = useReducedMotion()
   const scrollAnimation = useRef<AnimationPlaybackControls | null>(null)
+  useLayoutEffect(
+    () => () => {
+      scrollAnimation.current?.stop()
+      scrollAnimation.current = null
+    },
+    [key, editing, mode, reduceMotion]
+  )
   const scrollToY = useCallback(
     (top: number) => {
       const el = editorPreviewRef.current ?? scrollRef.current
@@ -385,7 +396,10 @@ export function SkillScreen({
     selectFile(target.path)
     requestAnimationFrame(() => {
       if (target.hash) {
-        const node = document.getElementById(docsSectionId(target.hash))
+        const node = findDocsHeading(
+          editorPreviewRef.current ?? scrollRef.current,
+          target.hash
+        )
         if (node) scrollToHeading(node)
       } else {
         scrollToY(0)
@@ -657,7 +671,10 @@ export function SkillScreen({
                     }))}
                     active={activeSection ?? ""}
                     onSelect={(id) => {
-                      const node = document.getElementById(docsSectionId(id))
+                      const node = findDocsHeading(
+                        editorPreviewRef.current ?? scrollRef.current,
+                        id
+                      )
                       if (node) scrollToHeading(node)
                     }}
                     color="var(--sidebar-foreground)"
