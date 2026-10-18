@@ -108,6 +108,11 @@ Running…</pre>
           () => workbench().querySelector("[inert]") && approval(),
           "Return must reveal pending approval"
         )
+        // The content becomes inert before the sliding panel stops covering chat.
+        await until(
+          () => workbench().getBoundingClientRect().width === 0,
+          "Returning must finish closing the browser panel"
+        )
         assert(
           runtime.desktop.getState().task.approval.id === pending,
           "Returning must not stop or decide pending operation"
@@ -115,7 +120,10 @@ Running…</pre>
         const allow = button("允许此操作")
         const bounds = allow.getBoundingClientRect()
         assert(
-          bounds.left >= 0 && bounds.right <= innerWidth,
+          bounds.left >= 0 &&
+            bounds.right <= innerWidth &&
+            bounds.top >= 0 &&
+            bounds.bottom <= innerHeight,
           "Approval action must fit the window"
         )
         assert(
