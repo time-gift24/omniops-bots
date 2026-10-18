@@ -1,4 +1,4 @@
-import type { IconSvgElement } from "@hugeicons/react";
+import type { IconSvgElement } from "@hugeicons/react"
 import {
   ChromeIcon,
   DatabaseIcon,
@@ -9,73 +9,51 @@ import {
   Search01Icon,
   Ticket02Icon,
   WorkflowIcon,
-} from "@hugeicons-pro/core-stroke-rounded";
+} from "@hugeicons-pro/core-stroke-rounded"
 
 export type AgentConfiguration = {
-  name: string;
-  description: string;
-  instructions: string;
-  model: string;
-  mcpServerIds: string[];
-  toolIds: string[];
-  skillIds: string[];
-  requireApproval: boolean;
-};
+  name: string
+  description: string
+  instructions: string
+  mcpServerIds: string[]
+  toolIds: string[]
+  skillIds: string[]
+  requireApproval: boolean
+}
 
 export type AgentResource = {
-  id: string;
-  name: string;
-  description: string;
-  icon?: IconSvgElement;
-};
-
-export type AgentModel = { id: string; label: string; description?: string };
+  id: string
+  name: string
+  description: string
+  icon?: IconSvgElement
+}
 
 /** MCP 服务提供的一项能力：工具、资源或提示词。 */
 export type McpCapability = {
-  name: string;
-  description: string;
+  name: string
+  description: string
   /** 参数摘要，技术下钻信息，等宽展示。 */
-  params?: string;
-};
+  params?: string
+}
 
 export type McpCapabilities = {
-  tools: readonly McpCapability[];
-  resources: readonly McpCapability[];
-  prompts: readonly McpCapability[];
-};
+  tools: readonly McpCapability[]
+  resources: readonly McpCapability[]
+  prompts: readonly McpCapability[]
+}
 
-export type McpServer = AgentResource & { capabilities: McpCapabilities };
+export type McpServer = AgentResource & { capabilities: McpCapabilities }
 
 export const DEFAULT_AGENT: AgentConfiguration = {
   name: "客户支持",
   description: "回答清楚，跟进得体。",
   instructions:
     "你是客户支持助手。回答时优先使用已连接的工具核实信息，保持清晰简洁。无法确认答案时如实说明，并建议转人工支持。涉及变更客户数据的操作，先征得用户确认。",
-  model: "balanced",
   mcpServerIds: ["feishu"],
   toolIds: ["search"],
   skillIds: ["meeting-notes"],
   requireApproval: true,
-};
-
-export const AGENT_MODELS: readonly AgentModel[] = [
-  {
-    id: "balanced",
-    label: "均衡",
-    description: "日常问答与多步任务",
-  },
-  {
-    id: "fast",
-    label: "快速",
-    description: "简单任务的即时响应",
-  },
-  {
-    id: "reasoning",
-    label: "推理",
-    description: "复杂问题与细致分析",
-  },
-];
+}
 
 export const MCP_SERVERS: readonly McpServer[] = [
   {
@@ -167,7 +145,7 @@ export const MCP_SERVERS: readonly McpServer[] = [
       prompts: [],
     },
   },
-];
+]
 
 export const AGENT_TOOLS: readonly AgentResource[] = [
   {
@@ -188,7 +166,7 @@ export const AGENT_TOOLS: readonly AgentResource[] = [
     description: "把问题升级给人工处理",
     icon: Ticket02Icon,
   },
-];
+]
 
 export const AGENT_SKILLS: readonly AgentResource[] = [
   {
@@ -209,4 +187,4 @@ export const AGENT_SKILLS: readonly AgentResource[] = [
     description: "从变更记录提炼面向用户的更新文案",
     icon: MagicWand01Icon,
   },
-];
+]

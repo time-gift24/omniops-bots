@@ -1,0 +1,120 @@
+.skill-docs {
+  container: skill / inline-size;
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  color: var(--foreground);
+  background: var(--background);
+}
+.skill-file-sidebar {
+  display: none;
+  width: 16rem;
+  flex-shrink: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+.skill-doc-bar {
+  background: var(--background);
+}
+.skill-reading-layout {
+  margin-inline: auto;
+  max-width: 76rem;
+}
+.skill-article {
+  padding: 2.5rem 1.5rem 4rem;
+}
+.skill-outline {
+  display: none;
+  padding-block: 3rem;
+  padding-right: 1.5rem;
+}
+.skill-outline-sticky {
+  position: sticky;
+  top: 1.5rem;
+  max-height: calc(100dvh - 8rem);
+  overflow-y: auto;
+}
+.skill-preview {
+  max-width: 42rem;
+  margin-inline: auto;
+  overflow-wrap: anywhere;
+}
+.skill-preview .chat-markdown {
+  font-size: 1rem;
+}
+.skill-preview h1 {
+  font-size: 1.875rem;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+  text-wrap: balance;
+}
+.skill-preview h2 {
+  font-size: 1.125rem;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+.skill-preview h3 {
+  font-size: 1rem;
+  margin-top: 2rem;
+  font-weight: 600;
+}
+.skill-preview :is(h1, h2, h3, h4, h5, h6) {
+  scroll-margin-top: 2rem;
+}
+.skill-preview p,
+.skill-preview li {
+  line-height: 1.85;
+}
+.skill-preview a {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+.skill-preview [data-slot="code-block"] {
+  max-width: 100%;
+}
+.skill-docs ::selection {
+  color: var(--foreground);
+  background: var(--accent);
+}
+@container skill (min-width: 960px) {
+  .skill-file-sidebar {
+    display: flex;
+    width: 15rem;
+    margin: 12px 0 12px 12px;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background: color-mix(in oklch, var(--muted) 70%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .skill-files-trigger {
+    display: none;
+  }
+}
+@container skill (min-width: 1100px) {
+  .skill-reading-layout:has(.skill-outline) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 11rem;
+    gap: 1.5rem;
+  }
+  .skill-outline {
+    display: block;
+  }
+  .skill-article {
+    padding: 3rem 3rem 4rem;
+  }
+  .skill-reading-wide {
+    max-width: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skill-docs *,
+  .skill-docs *::before,
+  .skill-docs *::after {
+    scroll-behavior: auto;
+    transition-duration: 0s;
+  }
+}

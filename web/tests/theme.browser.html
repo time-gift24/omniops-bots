@@ -1,6 +1,6 @@
 <!doctype html>
 <meta charset="utf-8" />
-<title>Theme storage regression check</title>
+<title>Theme and palette regression check</title>
 <!-- Run npm run dev, then open /tests/theme.browser.html. -->
 <div id="fixture"></div>
 <pre id="result">Running…</pre>
@@ -16,49 +16,135 @@
   const descriptor = Object.getOwnPropertyDescriptor(window, "localStorage");
   const assert = (condition, message) => { if (!condition) throw new Error(message); };
   const storageKey = "cognacta-theme-regression";
+  const paletteStorageKey = "cognacta-palette-regression";
   const realStorage = window.localStorage;
   const originalValue = realStorage.getItem(storageKey);
+  const originalPalette = realStorage.getItem(paletteStorageKey);
+  const originalMatchMedia = window.matchMedia;
+  const mediaQuery = Object.assign(new EventTarget(), { matches: false });
   let setTheme;
+  let setPalette;
   let currentTheme;
+  let currentPalette;
   function Probe() {
     const theme = useTheme();
     setTheme = theme.setTheme;
+    setPalette = theme.setPalette;
     currentTheme = theme.theme;
-    return React.createElement("span", null, theme.theme);
+    currentPalette = theme.palette;
+    return React.createElement("span", null, `${theme.theme} / ${theme.palette}`);
   }
   const render = key => flushSync(() => root.render(React.createElement(
-    ThemeProvider, { key, defaultTheme: "light", storageKey, disableTransitionOnChange: false }, React.createElement(Probe),
+    ThemeProvider, { key, defaultTheme: "light", storageKey, paletteStorageKey, disableTransitionOnChange: false }, React.createElement(Probe),
   )));
   const denied = () => { throw new DOMException("Storage denied", "SecurityError"); };
-  const expectTheme = theme => assert(currentTheme === theme && document.documentElement.classList.contains(theme), `Expected visible ${theme} theme`);
+  const expectTheme = (theme, resolved = theme) => assert(
+    currentTheme === theme && document.documentElement.classList.contains(resolved) && document.documentElement.style.colorScheme === resolved,
+    `Expected ${theme} theme resolved to visible ${resolved} with matching color-scheme`,
+  );
+  const expectPalette = palette => assert(currentPalette === palette && document.documentElement.dataset.palette === palette, `Expected visible ${palette} palette`);
+  const storageEvent = (key, newValue) => flushSync(() => window.dispatchEvent(new StorageEvent("storage", { key, newValue, storageArea: realStorage })));
   try {
+    window.matchMedia = query => query === "(prefers-color-scheme: dark)" ? mediaQuery : originalMatchMedia.call(window, query);
     Object.defineProperty(window, "localStorage", { configurable: true, get: denied });
     render("blocked-access");
     expectTheme("light");
+    expectPalette("official");
     flushSync(() => setTheme("dark"));
+    flushSync(() => setPalette("claude"));
     expectTheme("dark");
+    expectPalette("claude");
     flushSync(() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "d", bubbles: true })));
     expectTheme("light");
-    window.dispatchEvent(new StorageEvent("storage", { key: storageKey, newValue: "dark", storageArea: realStorage }));
+    expectPalette("claude");
+    storageEvent(storageKey, "dark");
+    storageEvent(paletteStorageKey, "official");
     expectTheme("light");
+    expectPalette("claude");
 
     Object.defineProperty(window, "localStorage", { configurable: true, value: { getItem: denied, setItem: denied } });
     render("blocked-methods");
     expectTheme("light");
+    expectPalette("official");
     flushSync(() => setTheme("dark"));
+    flushSync(() => setPalette("claude"));
     expectTheme("dark");
+    expectPalette("claude");
+
+    for (const blockedKey of [storageKey, paletteStorageKey]) {
+      realStorage.setItem(storageKey, "dark");
+      realStorage.setItem(paletteStorageKey, "claude");
+      Object.defineProperty(window, "localStorage", { configurable: true, value: {
+        getItem: key => key === blockedKey ? denied() : realStorage.getItem(key),
+        setItem: (key, value) => key === blockedKey ? denied() : realStorage.setItem(key, value),
+      } });
+      render(`blocked-${blockedKey}`);
+      expectTheme(blockedKey === storageKey ? "light" : "dark");
+      expectPalette(blockedKey === paletteStorageKey ? "official" : "claude");
+      flushSync(() => { setTheme("light"); setPalette("official"); });
+      expectTheme("light");
+      expectPalette("official");
+      assert(realStorage.getItem(blockedKey === storageKey ? paletteStorageKey : storageKey) === (blockedKey === storageKey ? "official" : "light"), "One denied setting must not prevent the other setting from persisting");
+    }
 
     Object.defineProperty(window, "localStorage", descriptor);
     realStorage.setItem(storageKey, "dark");
+    realStorage.setItem(paletteStorageKey, "claude");
     render("working-storage");
     expectTheme("dark");
-    flushSync(() => setTheme("light"));
-    assert(realStorage.getItem(storageKey) === "light", "Theme selection must persist when storage works");
-    flushSync(() => window.dispatchEvent(new StorageEvent("storage", { key: storageKey, newValue: "dark", storageArea: realStorage })));
+    expectPalette("claude");
+    for (const palette of ["official", "claude"]) {
+      for (const theme of ["light", "dark"]) {
+        flushSync(() => { setTheme(theme); setPalette(palette); });
+        expectTheme(theme);
+        expectPalette(palette);
+        assert(realStorage.getItem(storageKey) === theme && realStorage.getItem(paletteStorageKey) === palette, "Theme and palette selections must persist independently");
+      }
+    }
+    render("remounted-storage");
     expectTheme("dark");
-    flushSync(() => window.dispatchEvent(new StorageEvent("storage", { key: null, newValue: null, storageArea: realStorage })));
+    expectPalette("claude");
+    storageEvent(paletteStorageKey, "official");
+    expectTheme("dark");
+    expectPalette("official");
+    storageEvent(storageKey, "light");
     expectTheme("light");
-    result.textContent = "PASS: denied storage access/methods, fallback, in-memory selection, keyboard toggle, persistence, cross-tab updates and storage clear";
+    expectPalette("official");
+    storageEvent(paletteStorageKey, "claude");
+    storageEvent(storageKey, "invalid");
+    expectTheme("light");
+    expectPalette("claude");
+    storageEvent(storageKey, "dark");
+    storageEvent(paletteStorageKey, "invalid");
+    expectTheme("dark");
+    expectPalette("official");
+    storageEvent(paletteStorageKey, "claude");
+    storageEvent("unrelated-setting", "anything");
+    expectTheme("dark");
+    expectPalette("claude");
+    storageEvent(null, null);
+    expectTheme("light");
+    expectPalette("official");
+
+    for (const invalidKey of [storageKey, paletteStorageKey]) {
+      realStorage.setItem(storageKey, "dark");
+      realStorage.setItem(paletteStorageKey, "claude");
+      realStorage.setItem(invalidKey, "invalid");
+      render(`invalid-${invalidKey}`);
+      expectTheme(invalidKey === storageKey ? "light" : "dark");
+      expectPalette(invalidKey === paletteStorageKey ? "official" : "claude");
+    }
+    flushSync(() => { setPalette("claude"); setTheme("system"); });
+    expectTheme("system", "light");
+    expectPalette("claude");
+    mediaQuery.matches = true;
+    flushSync(() => mediaQuery.dispatchEvent(new Event("change")));
+    expectTheme("system", "dark");
+    expectPalette("claude");
+    flushSync(() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "d", bubbles: true })));
+    expectTheme("light");
+    expectPalette("claude");
+    result.textContent = "PASS: all four theme/palette combinations, denied storage access/methods and independent failures, fallback, keyboard toggle, system changes, persistence/remount, cross-tab updates, invalid values and storage clear";
     result.dataset.passed = "true";
   } catch (error) {
     result.textContent = `FAIL: ${error.message}`;
@@ -66,8 +152,11 @@
     throw error;
   } finally {
     root.unmount();
+    window.matchMedia = originalMatchMedia;
     Object.defineProperty(window, "localStorage", descriptor);
     if (originalValue === null) realStorage.removeItem(storageKey);
     else realStorage.setItem(storageKey, originalValue);
+    if (originalPalette === null) realStorage.removeItem(paletteStorageKey);
+    else realStorage.setItem(paletteStorageKey, originalPalette);
   }
 </script>

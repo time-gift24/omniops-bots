@@ -2,17 +2,21 @@ import * as React from "react"
 
 type Theme = "dark" | "light" | "system"
 type ResolvedTheme = "dark" | "light"
+type Palette = "official" | "claude"
 
 type ThemeProviderProps = {
   children: React.ReactNode
   defaultTheme?: Theme
   storageKey?: string
+  paletteStorageKey?: string
   disableTransitionOnChange?: boolean
 }
 
 type ThemeProviderState = {
   theme: Theme
   setTheme: (theme: Theme) => void
+  palette: Palette
+  setPalette: (palette: Palette) => void
 }
 
 const COLOR_SCHEME_QUERY = "(prefers-color-scheme: dark)"
@@ -28,6 +32,10 @@ function isTheme(value: string | null): value is Theme {
   }
 
   return THEME_VALUES.includes(value as Theme)
+}
+
+function isPalette(value: string | null): value is Palette {
+  return value === "official" || value === "claude"
 }
 
 function getSystemTheme(): ResolvedTheme {
@@ -80,6 +88,7 @@ export function ThemeProvider({
   children,
   defaultTheme = "system",
   storageKey = "theme",
+  paletteStorageKey = "cognacta-palette",
   disableTransitionOnChange = true,
   ...props
 }: ThemeProviderProps) {
@@ -92,6 +101,16 @@ export function ThemeProvider({
     }
 
     return defaultTheme
+  })
+  const [palette, setPaletteState] = React.useState<Palette>(() => {
+    try {
+      const storedPalette = localStorage.getItem(paletteStorageKey)
+      if (isPalette(storedPalette)) return storedPalette
+    } catch {
+      // Storage can be unavailable; the in-memory palette still works.
+    }
+
+    return "official"
   })
 
   const setTheme = React.useCallback(
@@ -106,8 +125,20 @@ export function ThemeProvider({
     [storageKey]
   )
 
+  const setPalette = React.useCallback(
+    (nextPalette: Palette) => {
+      try {
+        localStorage.setItem(paletteStorageKey, nextPalette)
+      } catch {
+        // Persistence must not prevent a palette change.
+      }
+      setPaletteState(nextPalette)
+    },
+    [paletteStorageKey]
+  )
+
   const applyTheme = React.useCallback(
-    (nextTheme: Theme) => {
+    (nextTheme: Theme, nextPalette: Palette) => {
       const root = document.documentElement
       const resolvedTheme =
         nextTheme === "system" ? getSystemTheme() : nextTheme
@@ -117,6 +148,8 @@ export function ThemeProvider({
 
       root.classList.remove("light", "dark")
       root.classList.add(resolvedTheme)
+      root.style.colorScheme = resolvedTheme
+      root.dataset.palette = nextPalette
 
       if (restoreTransitions) {
         restoreTransitions()
@@ -126,7 +159,7 @@ export function ThemeProvider({
   )
 
   React.useEffect(() => {
-    applyTheme(theme)
+    applyTheme(theme, palette)
 
     if (theme !== "system") {
       return undefined
@@ -134,7 +167,7 @@ export function ThemeProvider({
 
     const mediaQuery = window.matchMedia(COLOR_SCHEME_QUERY)
     const handleChange = () => {
-      applyTheme("system")
+      applyTheme("system", palette)
     }
 
     mediaQuery.addEventListener("change", handleChange)
@@ -142,7 +175,7 @@ export function ThemeProvider({
     return () => {
       mediaQuery.removeEventListener("change", handleChange)
     }
-  }, [theme, applyTheme])
+  }, [theme, palette, applyTheme])
 
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -192,16 +225,19 @@ export function ThemeProvider({
         return
       }
 
-      if (event.key !== null && event.key !== storageKey) {
+      if (event.key === null) {
+        setThemeState(defaultTheme)
+        setPaletteState("official")
         return
       }
 
-      if (isTheme(event.newValue)) {
-        setThemeState(event.newValue)
-        return
+      if (event.key === storageKey) {
+        setThemeState(isTheme(event.newValue) ? event.newValue : defaultTheme)
       }
 
-      setThemeState(defaultTheme)
+      if (event.key === paletteStorageKey) {
+        setPaletteState(isPalette(event.newValue) ? event.newValue : "official")
+      }
     }
 
     window.addEventListener("storage", handleStorageChange)
@@ -209,14 +245,16 @@ export function ThemeProvider({
     return () => {
       window.removeEventListener("storage", handleStorageChange)
     }
-  }, [defaultTheme, storageKey])
+  }, [defaultTheme, storageKey, paletteStorageKey])
 
   const value = React.useMemo(
     () => ({
       theme,
       setTheme,
+      palette,
+      setPalette,
     }),
-    [theme, setTheme]
+    [theme, setTheme, palette, setPalette]
   )
 
   return (

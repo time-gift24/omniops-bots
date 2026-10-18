@@ -1,0 +1,294 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Skill reading and draft regression check</title>
+<!-- Run npm run dev, then open /tests/skills.browser.html at desktop or mobile width. -->
+<div id="fixture" style="height: 800px; max-height: 100dvh"></div>
+<pre id="result">Running…</pre>
+<script type="module">
+  import React from "react"
+  import { createRoot } from "react-dom/client"
+  import { flushSync } from "react-dom"
+  import "/src/index.css"
+  import { SkillScreen } from "/src/components/skills/skill-screen.tsx"
+  import { DEMO_SKILLS } from "/src/skills/data.ts"
+
+  const fixture = document.querySelector("#fixture")
+  const result = document.querySelector("#result")
+  const root = createRoot(fixture)
+  const descriptor = Object.getOwnPropertyDescriptor(window, "localStorage")
+  const values = new Map()
+  const checks = []
+  let failWrites = false
+  const storage = {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => {
+      if (failWrites) throw new DOMException("Storage denied", "SecurityError")
+      values.set(key, value)
+    },
+    removeItem: (key) => values.delete(key),
+  }
+  const assert = (condition, message) => {
+    if (!condition) throw new Error(message)
+  }
+  const wait = (ms = 20) => new Promise((resolve) => setTimeout(resolve, ms))
+  const until = async (condition, message, timeout = 5000) => {
+    const deadline = performance.now() + timeout
+    while (!condition() && performance.now() < deadline) await wait()
+    assert(condition(), message)
+  }
+  const visible = (element) =>
+    element &&
+    element.getClientRects().length > 0 &&
+    !element.closest('[inert], [aria-hidden="true"]')
+  const button = (name, scope = document) =>
+    [...scope.querySelectorAll("button")].find(
+      (element) =>
+        visible(element) &&
+        (element.getAttribute("aria-label") ?? element.textContent).trim() ===
+          name
+    )
+  const link = (name, scope = document) =>
+    [...scope.querySelectorAll("a")].find(
+      (element) =>
+        visible(element) &&
+        (element.getAttribute("aria-label") ?? element.textContent)
+          .trim()
+          .replace(/\s*未保存$/, "") === name
+    )
+  const editor = (path) => {
+    const label = [...fixture.querySelectorAll("label[for]")].find(
+      (element) => element.textContent.trim() === `编辑 ${path}`
+    )
+    return label ? document.getElementById(label.htmlFor) : null
+  }
+  const click = (element) => {
+    assert(
+      visible(element) && !element.disabled,
+      "Expected an enabled, visible control"
+    )
+    flushSync(() => {
+      element.focus()
+      element.click()
+    })
+  }
+  const write = (path, value) =>
+    flushSync(() => {
+      const input = editor(path)
+      assert(input, `Missing editor for ${path}`)
+      Object.getOwnPropertyDescriptor(
+        HTMLTextAreaElement.prototype,
+        "value"
+      ).set.call(input, value)
+      input.dispatchEvent(new Event("input", { bubbles: true }))
+    })
+  const saveShortcut = () =>
+    flushSync(() =>
+      window.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "s",
+          ctrlKey: true,
+          bubbles: true,
+          cancelable: true,
+        })
+      )
+    )
+  const saved = () =>
+    fixture
+      .querySelector('[role="status"]')
+      ?.textContent.includes("已保存到此浏览器")
+  const content = () => fixture.querySelector('[aria-label="文件内容"]')
+  const fileLink = (path) =>
+    [...document.querySelectorAll('nav[aria-label="技能文件"]')]
+      .map((nav) =>
+        [...nav.querySelectorAll("button")].find(
+          (element) =>
+            visible(element) &&
+            element.textContent.trim().replace(/\s*未保存$/, "") ===
+              path.split("/").at(-1)
+        )
+      )
+      .find(Boolean)
+  const selectFile = async (path) => {
+    if (!fileLink(path)) {
+      click(button("浏览技能文件"))
+      await until(
+        () => fileLink(path),
+        `File navigation did not expose ${path}`
+      )
+    }
+    click(fileLink(path))
+    await until(
+      () => !button("关闭文件导航"),
+      "File selection must close mobile navigation"
+    )
+  }
+  const startEditing = async (path) => {
+    click(button("编辑"))
+    await until(() => editor(path), `Expected source editor for ${path}`)
+  }
+  function Probe() {
+    const [skillId, setSkillId] = React.useState("weekly-report")
+    return React.createElement(SkillScreen, {
+      skillId,
+      onSkillChange: setSkillId,
+      active: true,
+    })
+  }
+  const render = (key) =>
+    flushSync(() => root.render(React.createElement(Probe, { key })))
+  const original = DEMO_SKILLS.find((skill) => skill.id === "weekly-report")
+  const skillSource = original.files.find(
+    (file) => file.path === "SKILL.md"
+  ).content
+  const scriptSource = original.files.find(
+    (file) => file.path === "scripts/ss.js"
+  ).content
+
+  try {
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      value: storage,
+    })
+    render("initial")
+    await until(
+      () => content()?.querySelector("h1")?.textContent === "周报助手",
+      "Default view must render Markdown"
+    )
+    const summary = [...fixture.querySelectorAll("summary")].find(
+      (element) => element.textContent === "文件元数据（frontmatter）"
+    )
+    assert(
+      summary && !summary.closest("details").open,
+      "Frontmatter must be available and collapsed by default"
+    )
+    assert(
+      !fixture.querySelector("textarea"),
+      "Default reading view must not expose a source editor"
+    )
+    checks.push("Markdown reading and collapsed frontmatter")
+
+    await startEditing("SKILL.md")
+    assert(
+      editor("SKILL.md").value === skillSource,
+      "Editing must expose the complete original source including frontmatter"
+    )
+    fixture.style.width = "1200px"
+    await until(() => button("分栏"), "Wide container must expose split mode")
+    click(button("分栏"))
+    await until(
+      () => fixture.querySelector('[data-mode="split"]'),
+      "Wide container must enter split mode"
+    )
+    fixture.style.width = "380px"
+    await until(
+      () =>
+        fixture.querySelector('[data-mode="source"]') &&
+        button("源码")?.getAttribute("aria-pressed") === "true",
+      "Narrowing split mode must select source semantically and visually"
+    )
+    click(button("预览"))
+    await until(
+      () =>
+        !editor("SKILL.md") &&
+        button("预览")?.getAttribute("aria-pressed") === "true",
+      "Narrow preview must remain selectable after split fallback"
+    )
+    click(button("源码"))
+    fixture.style.width = ""
+    checks.push("wide split to narrow source and preview selection")
+    const edited = `${skillSource}\n\n## 浏览器回归\n\n保留这条尚未保存的编辑。\n`
+    write("SKILL.md", edited)
+    await selectFile("reference/template.md")
+    await until(
+      () => content()?.querySelector("h1")?.textContent === "周报模板",
+      "File navigation must change the selected document"
+    )
+    await selectFile("SKILL.md")
+    await startEditing("SKILL.md")
+    assert(
+      editor("SKILL.md").value === edited,
+      "Switching files must retain unsaved source"
+    )
+    saveShortcut()
+    await until(saved, "Ctrl+S must save the current draft")
+    render("restored")
+    await startEditing("SKILL.md")
+    assert(
+      editor("SKILL.md").value === edited,
+      "Remount must restore the saved source"
+    )
+    checks.push(
+      "complete source, unsaved file switching and Ctrl+S persistence"
+    )
+
+    write("SKILL.md", "")
+    saveShortcut()
+    await until(saved, "An empty draft must be saveable")
+    render("empty-restored")
+    await startEditing("SKILL.md")
+    assert(
+      editor("SKILL.md").value === "",
+      "An empty saved draft must not fall back to original content"
+    )
+    checks.push("empty draft persistence")
+
+    const unsaved = "# 保存失败后保留\n\n这段编辑仍然可以继续修改。\n"
+    write("SKILL.md", unsaved)
+    failWrites = true
+    click(button("保存草稿"))
+    await until(
+      () =>
+        fixture
+          .querySelector('[role="alert"]')
+          ?.textContent.includes("草稿保存失败"),
+      "Storage denial must produce a visible error"
+    )
+    assert(
+      editor("SKILL.md").value === unsaved && !button("保存草稿").disabled,
+      "Failed saving must preserve editable, unsaved content"
+    )
+    checks.push("storage errors preserve unsaved edits")
+
+    failWrites = false
+    values.clear()
+    render("links-and-script")
+    await until(
+      () => link("指标口径", content()),
+      "Markdown must expose its relative file link"
+    )
+    click(link("指标口径", content()))
+    await until(
+      () => content()?.querySelector("h1")?.textContent === "指标口径",
+      "Relative Markdown links must open metrics.md"
+    )
+    await selectFile("scripts/ss.js")
+    await until(
+      () => content()?.querySelector("h1")?.textContent === "ss.js",
+      "Script file must render its source view"
+    )
+    await startEditing("scripts/ss.js")
+    assert(
+      editor("scripts/ss.js").value === scriptSource,
+      "Script editing must retain the complete source"
+    )
+    const modes = fixture.querySelector('[role="group"][aria-label="编辑视图"]')
+    assert(
+      button("源码", modes)?.getAttribute("aria-pressed") === "true" &&
+        !button("预览", modes) &&
+        !button("分栏", modes),
+      "JavaScript must only offer source editing"
+    )
+    checks.push("relative file links and JavaScript source-only editing")
+
+    result.textContent = `PASS: ${checks.join("; ")}`
+    result.dataset.passed = "true"
+  } catch (error) {
+    result.textContent = `FAIL: ${error.message}`
+    result.dataset.passed = "false"
+    throw error
+  } finally {
+    flushSync(() => root.unmount())
+    if (descriptor) Object.defineProperty(window, "localStorage", descriptor)
+    else delete window.localStorage
+  }
+</script>

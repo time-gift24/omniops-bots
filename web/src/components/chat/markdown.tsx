@@ -3,6 +3,7 @@
 import * as React from "react";
 import {
   Streamdown,
+  defaultRehypePlugins,
   useIsCodeFenceIncomplete,
   type AnimateOptions,
   type ExtraProps,
@@ -86,15 +87,33 @@ export function Markdown({
   children,
   className,
   streaming = false,
+  linkBase,
+  componentOverrides,
 }: {
   children: string;
   className?: string;
   streaming?: boolean;
+  /** Resolve document-relative links without changing the stored Markdown. */
+  linkBase?: string;
+  componentOverrides?: React.ComponentProps<typeof Streamdown>["components"];
 }) {
+  const rehypePlugins = React.useMemo(
+    () =>
+      linkBase
+        ? (Object.entries(defaultRehypePlugins).map(([name, plugin]) =>
+            name === "harden" && Array.isArray(plugin)
+              ? [plugin[0], { ...plugin[1], defaultOrigin: linkBase }]
+              : plugin,
+          ) as React.ComponentProps<typeof Streamdown>["rehypePlugins"])
+        : undefined,
+    [linkBase],
+  );
   return (
     <Streamdown
+      key={linkBase}
       className={cn("chat-markdown", className)}
-      components={components}
+      components={{ ...components, ...componentOverrides }}
+      rehypePlugins={rehypePlugins}
       animated={streaming ? streamingAnimation : false}
       isAnimating={streaming}
     >

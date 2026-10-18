@@ -67,9 +67,13 @@ export type SidebarRailSection = {
   groups: readonly {
     label: string;
     items: readonly SidebarRailItem[];
+    /** Extra control rendered beside the group label, e.g. a search button. */
+    action?: ReactNode;
   }[];
   /** A section can own its rows while still supplying searchable items. */
   renderContent?: (closeNavigation: () => void) => ReactNode;
+  /** Full-page tools provide their own local navigation. */
+  collapseOnSelect?: boolean;
 };
 
 export const defaultSections: readonly SidebarRailSection[] = [
@@ -165,8 +169,14 @@ export type SidebarRailProps = {
   panelHeader?: ReactNode;
   /** Replaces the account control at the bottom of the icon rail. Pass null to hide it. */
   railFooter?: ReactNode;
+  /** Extra controls above the account at the bottom of the icon rail. */
+  railActions?: ReactNode;
   /** Replaces the workspace breadcrumbs; the navigation toggle stays built in. Pass null to hide them. */
   workspaceHeader?: ReactNode;
+  /** Full-height column rendered after the header+content column, e.g. the workbench panel. */
+  endPanel?: ReactNode;
+  /** Absolutely positioned overlay on the header+content column, e.g. a floating toggle over the header. Positioning classes are the caller's responsibility. */
+  headerOverlay?: ReactNode;
   /** Overrides the content wrapper padding; chat-like surfaces pass p-0 and own their padding. */
   contentClassName?: string;
   children?: ReactNode;
@@ -231,7 +241,10 @@ function SidebarRailShell({
   onAccountClick,
   panelHeader,
   railFooter,
+  railActions,
   workspaceHeader,
+  endPanel,
+  headerOverlay,
   contentClassName,
   children,
   expanded,
@@ -298,6 +311,7 @@ function SidebarRailShell({
     if (!section) return;
     setItemId(item.id);
     onItemSelect?.(item, section);
+    if (section.collapseOnSelect) setExpanded(false);
     if (!expanded && !context.isMobile) {
       toggleRef.current?.focus({ preventScroll: true });
       closePeek();
@@ -308,6 +322,7 @@ function SidebarRailShell({
     setSectionId(target.id);
     setItemId(item.id);
     onItemSelect?.(item, target);
+    if (target.collapseOnSelect) setExpanded(false);
     setSearchOpen(false);
     context.setOpenMobile(false);
     if (!expanded && !context.isMobile) {
@@ -425,7 +440,10 @@ function SidebarRailShell({
                         onItemSelect?.(firstItem, entry);
                       }
                     }
-                    if (context.isMobile) {
+                    if (entry.collapseOnSelect) {
+                      context.setOpenMobile(false);
+                      setExpanded(false);
+                    } else if (context.isMobile) {
                       triggerRef.current = event.currentTarget;
                       context.setOpenMobile(true);
                     } else setExpanded(true);
@@ -445,7 +463,8 @@ function SidebarRailShell({
               </MorphicTooltip>
             );
           })}
-          <div data-slot="sidebar-rail-footer" className="mt-auto">
+          <div data-slot="sidebar-rail-footer" className="mt-auto flex flex-col items-center gap-3">
+            {railActions}
             {railFooter === undefined ? (
               <MorphicTooltip
                 content={account.name}
@@ -488,9 +507,12 @@ function SidebarRailShell({
               ? section.renderContent(closeNavigation)
               : groups.map((group) => (
                   <AnimatedSidebarGroup key={group.label} className="gap-2 p-0">
-                    <AnimatedSidebarGroupLabel className="px-3 text-xs font-medium text-muted-foreground">
-                      {group.label}
-                    </AnimatedSidebarGroupLabel>
+                    <div className="flex items-center gap-1 pr-1">
+                      <AnimatedSidebarGroupLabel className="min-w-0 flex-1 px-3 text-xs font-medium text-muted-foreground">
+                        {group.label}
+                      </AnimatedSidebarGroupLabel>
+                      {group.action}
+                    </div>
                     <AnimatedSidebarGroupContent>
                       <SharedLayoutBg
                         as="ul"
@@ -663,7 +685,10 @@ function SidebarRailShell({
             </div>
           )}
         </div>
+        {headerOverlay}
       </div>
+
+      {endPanel}
     </>
   );
 }
