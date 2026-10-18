@@ -19,6 +19,7 @@ export type ManagedSkill = {
   description: string
   origin: "local" | "official"
   version?: string
+  contentId?: string
   readOnly: boolean
   modifiedAt: string | null
   entries: readonly SkillEntry[]

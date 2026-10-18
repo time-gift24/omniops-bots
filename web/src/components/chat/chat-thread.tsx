@@ -133,7 +133,7 @@ export function ChatThread({
     () => desktop.getState().task !== null,
   );
   const onRetry = useCallback((messageId: string) => {
-    if (desktop.getState().task) return;
+    if (desktop.getState().task || store.appendOnly) return;
     store.retry(messageId);
   }, [desktop, store]);
   const state = useThreadState(store);
@@ -156,10 +156,13 @@ export function ChatThread({
                 message={message}
                 streaming={busy && message.state === "streaming"}
                 onRetry={onRetry}
-                retryDisabled={busy || desktopBusy}
+                retryDisabled={busy || desktopBusy || store.appendOnly === true}
                 onEdit={onEditMessage}
               />
             ))}
+            {store.appendOnly && !busy && state.messages.length > 0 ? (
+              <p className="text-xs text-muted-foreground">需要重新尝试时，请发送一条新消息继续。</p>
+            ) : null}
           </MessageScrollerContent>
         </MessageScrollerViewport>
         <MessageScrollerButton />

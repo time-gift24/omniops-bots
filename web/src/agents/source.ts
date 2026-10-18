@@ -5,11 +5,15 @@ export type AgentConfiguration = {
   mcpServerIds: string[]
   toolIds: string[]
   skillIds: string[]
-  requireApproval: boolean
+  /** Legacy demo preference; local runtime executes the saved assembly directly. */
+  requireApproval?: boolean
 }
 
 export type AgentEntry = {
   id: string
+  source?: "local" | "official"
+  contentId?: string
+  releaseTag?: string
   configuration: AgentConfiguration
   draft?: AgentConfiguration
 }
@@ -18,6 +22,9 @@ export type AgentResource = {
   id: string
   name: string
   description: string
+  source?: "local" | "official"
+  contentId?: string
+  releaseTag?: string
 }
 
 /** MCP 服务提供的一项能力：工具、资源或提示词。 */
@@ -34,7 +41,18 @@ export type McpCapabilities = {
   prompts: readonly McpCapability[]
 }
 
-export type McpServer = AgentResource & { capabilities: McpCapabilities }
+export type McpConfiguration = {
+  id: string
+  name: string
+  description: string
+  url: string
+  credentialEnv?: string
+}
+export type McpServer = AgentResource & {
+  capabilities: McpCapabilities
+  url?: string
+  credentialEnv?: string
+}
 
 export type AgentResources = {
   mcpServers: readonly McpServer[]
@@ -45,4 +63,11 @@ export type AgentResources = {
 export interface AgentSource {
   load(): Promise<{ agents: readonly AgentEntry[]; resources: AgentResources }>
   save(id: string, configuration: AgentConfiguration): Promise<void>
+  create?(input?: {
+    configuration?: AgentConfiguration
+    copyFrom?: string
+  }): Promise<AgentEntry>
+  saveMcp?(server: McpConfiguration): Promise<void>
+  removeMcp?(id: string): Promise<void>
+  testMcp?(id: string): Promise<McpCapabilities>
 }

@@ -200,6 +200,7 @@ export function readDesktopSnapshot(value: unknown): DesktopSnapshot {
       threadId: string(entry.threadId),
       title: string(entry.title),
       phase: choice(entry.phase, [
+        "preparing",
         "running",
         "awaiting-approval",
         "submitting",
@@ -223,6 +224,7 @@ export function readDesktopSnapshot(value: unknown): DesktopSnapshot {
   }
   return {
     simulated: false,
+    ...(raw.closeBlocked === true ? { closeBlocked: true } : {}),
     task,
     browserRequest: number(raw.browserRequest),
     browser: {

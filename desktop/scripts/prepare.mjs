@@ -1,4 +1,4 @@
-import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { dirname, join, resolve } from 'node:path';
@@ -24,6 +24,14 @@ export function verifyNodeArchive(bytes, checksums, filename) {
   const actual = createHash('sha256').update(bytes).digest('hex');
   if (!expected || actual !== expected) throw new Error(`Node archive SHA-256 verification failed: ${filename}`);
   return actual;
+}
+
+export async function runtimeSourceFiles(directory) {
+  return (await readdir(directory, { withFileTypes: true }))
+    .filter(entry => entry.isFile() && /\.(?:mjs|ts)$/.test(entry.name)
+      && !/(?:^|\.)(?:test|spec)\.(?:mjs|ts)$/.test(entry.name)
+      && entry.name !== 'dev-runtime-bridge.mjs')
+    .map(entry => entry.name).sort();
 }
 
 async function download(url) {
@@ -89,8 +97,8 @@ async function main() {
   const staged = join(resources, 'runtime');
   await rm(staged, { recursive: true, force: true });
   await mkdir(staged, { recursive: true });
-  // Explicit production files keep tests, local model configuration, and checkpoint data out of both platform bundles.
-  for (const file of ['main.mjs', 'runtime.mjs', 'agent.mjs', 'browser.mjs', 'browser-target.mjs', 'input.mjs', 'chat-events.mjs', 'errors.mjs', 'script-workspace.mjs', 'script-runner.mjs', 'resources.mjs', 'skill-library.mjs', 'package.json', 'package-lock.json']) {
+  // Only root runtime source and dependency manifests belong in the private sidecar.
+  for (const file of [...await runtimeSourceFiles(join(desktop, 'runtime')), 'package.json', 'package-lock.json']) {
     await cp(join(desktop, 'runtime', file), join(staged, file), { recursive: true, dereference: true });
   }
   const installArgs = ['ci', '--omit=dev', '--prefix', staged, '--ignore-scripts'];

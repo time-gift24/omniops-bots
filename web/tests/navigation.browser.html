@@ -184,7 +184,7 @@
   const checkOverview = async (name, items) => {
     await until(() => visible(overview()) && label(overview().querySelector("h1")) === (name === "技能" ? "Skill" : name),
       `${name} parent did not open its overview page`);
-    for (const item of items) assert(overviewItem(item), `${name} overview must contain ${item}`);
+    for (const item of items) await until(() => overviewItem(item), `${name} overview must contain ${item}`);
   };
   const editor = () => fixture.querySelector('[role="textbox"][aria-label="消息输入"]');
   const addWorkspace = async directory => {

@@ -9,7 +9,7 @@ import readline from 'node:readline';
 test('JSONL entry returns structured safe errors, exact snapshots and clean shutdown without a configured model', { timeout: 15_000 }, async () => {
   const directory = await mkdtemp(join(tmpdir(), 'omniops-bots-ipc-'));
   const child = spawn(process.execPath, ['main.mjs'], { cwd: new URL('..', import.meta.url), env: {
-    ...process.env, OMNIOPS_BOTS_DATA_DIR: directory, OMNIOPS_BOTS_MODEL: '', OPENAI_API_KEY: '', OPENAI_BASE_URL: '',
+    ...process.env, OMNIOPS_BOTS_DATA_DIR: directory, OMNIOPS_BOTS_LOCAL_ROOT: join(directory, 'local'), OMNIOPS_BOTS_MODEL: '', OPENAI_API_KEY: '', OPENAI_BASE_URL: '',
     OMNIOPS_BOTS_BROWSER_CDP_ENDPOINT: 'http://127.0.0.1:1', OMNIOPS_BOTS_BROWSER_TARGET_ID: 'fixture-only',
   }, stdio: ['pipe', 'pipe', 'pipe'] });
   let id = 0;

@@ -46,13 +46,13 @@ test('real workspace scopes, session baselines and source skills stay isolated',
     await resources.handle('agent_save', { id: agent.id, configuration: { ...agent.configuration, skillIds: ['local/example'] } });
     assert.match(await resources.handle('agent_instructions', { id: agent.id }), /Use this skill/u);
     assert.equal(await readFile(path.join(skillsDir, 'local', 'example', 'SKILL.md'), 'utf8'), original);
-    const copied = resources.getAgent(agent.id);
+    const copied = await resources.getAgent(agent.id);
     copied.instructions = 'mutated';
-    assert.notEqual(resources.getAgent(agent.id).instructions, copied.instructions);
+    assert.notEqual((await resources.getAgent(agent.id)).instructions, copied.instructions);
     await assert.rejects(resources.handle('agent_save', { id: agent.id, configuration: { ...agent.configuration, mcpServerIds: ['fake'] } }));
     const separate = createResources({ homeDir: root, skillsDir });
     await assert.rejects(separate.handle('workspace_file', { scope, path: 'a.txt' }));
-    assert.deepEqual(separate.getAgent(agent.id).skillIds, []);
+    assert.deepEqual((await separate.getAgent(agent.id)).skillIds, ['local/example']);
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 

@@ -2,6 +2,7 @@ import type { DesktopTask } from "@/desktop/runtime"
 import { Button } from "@/components/ui/button"
 
 const labels: Record<DesktopTask["phase"], string> = {
+  preparing: "正在准备运行",
   running: "正在执行",
   "awaiting-approval": "等待你的批准",
   submitting: "正在提交决定",

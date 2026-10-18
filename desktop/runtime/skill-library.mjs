@@ -313,5 +313,24 @@ export function createSkillLibrary({ root = defaultSkillRoot() } = {}) {
     }
     return result;
   }
-  return { hasMethod: method => METHODS.has(method), handle, sourceSkills };
+  function capture(id) {
+    // Share the mutation queue so one snapshot cannot mix separate UI edits.
+    const result = queue.then(async () => {
+      const skill = await get(id);
+      const location = await packageRoot(id);
+      const entries = [];
+      for (const entry of skill.entries) {
+        const file = await resolve([...location.relative, ...relativePath(entry.path)]);
+        entries.push({ path: entry.path, kind: entry.kind, ...(entry.kind === 'file' ? { bytes: await regularBytes(file) } : {}) });
+      }
+      return { skill, entries };
+    });
+    queue = result.catch(() => {});
+    return result.catch(error => {
+      if (error instanceof RuntimeError) throw error;
+      if (error.code === 'ENOENT') throw notFound();
+      throw new RuntimeError('skills-unavailable', '无法固定完整 Skill 包，请检查文件后重试。');
+    });
+  }
+  return { hasMethod: method => METHODS.has(method), handle, sourceSkills, capture };
 }

@@ -19,6 +19,8 @@ export function DocumentActions({
   disabled = false,
   dirty = false,
   vertical = false,
+  readOnly = false,
+  debugLabel = "调试",
   saveLabel = "保存",
   onEdit,
   onSave,
@@ -31,6 +33,8 @@ export function DocumentActions({
   disabled?: boolean
   dirty?: boolean
   vertical?: boolean
+  readOnly?: boolean
+  debugLabel?: string
   saveLabel?: string
   onEdit: () => void
   onSave: () => void
@@ -70,8 +74,8 @@ export function DocumentActions({
           variant="ghost"
           size="icon"
           className={iconClass}
-          aria-label={onDebug ? "调试" : "恢复原始内容"}
-          title={onDebug ? "调试" : "恢复原始内容"}
+          aria-label={onDebug ? debugLabel : "恢复原始内容"}
+          title={onDebug ? debugLabel : "恢复原始内容"}
           disabled={disabled || busy}
           onClick={onDebug ?? onRestore}
         >
@@ -82,56 +86,60 @@ export function DocumentActions({
           />
         </Button>
       ) : null}
-      <motion.div
-        initial={false}
-        animate={{ width: !vertical && editing ? 60 : 28 }}
-        style={{ height: vertical && editing ? 60 : 28 }}
-        transition={reduce ? { duration: 0 } : SPRING_PANEL}
-        className={cn(
-          "relative flex items-center justify-end gap-1",
-          vertical && "flex-col"
-        )}
-      >
-        {editing ? (
+      {!readOnly ? (
+        <motion.div
+          initial={false}
+          animate={{ width: !vertical && editing ? 60 : 28 }}
+          style={{ height: vertical && editing ? 60 : 28 }}
+          transition={reduce ? { duration: 0 } : SPRING_PANEL}
+          className={cn(
+            "relative flex items-center justify-end gap-1",
+            vertical && "flex-col"
+          )}
+        >
+          {editing ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              className={iconClass}
+              aria-label="撤销"
+              title="撤销编辑"
+              disabled={disabled || busy}
+              onClick={onUndo}
+            >
+              <HugeiconsIcon icon={Undo02Icon} size={16} aria-hidden="true" />
+            </Button>
+          ) : null}
           <Button
+            ref={actionRef}
             variant="ghost"
             size="icon"
-            className={iconClass}
-            aria-label="撤销"
-            title="撤销编辑"
+            className={cn(
+              iconClass,
+              "relative hover:bg-primary/10 hover:text-primary focus-visible:bg-primary/10 focus-visible:text-primary"
+            )}
+            aria-label={editing ? saveLabel : "编辑"}
+            title={editing ? `${saveLabel}（⌘/Ctrl+S）` : "编辑"}
+            aria-busy={busy}
             disabled={disabled || busy}
-            onClick={onUndo}
+            onClick={editing ? onSave : onEdit}
           >
-            <HugeiconsIcon icon={Undo02Icon} size={16} aria-hidden="true" />
+            <HugeiconsIcon
+              icon={
+                busy ? Loading03Icon : editing ? FloppyDiskIcon : Edit02Icon
+              }
+              size={16}
+              aria-hidden="true"
+              className={
+                busy ? "animate-spin motion-reduce:animate-none" : undefined
+              }
+            />
+            {dirty ? (
+              <span className="absolute top-1 right-1 size-1 rounded-full bg-current" />
+            ) : null}
           </Button>
-        ) : null}
-        <Button
-          ref={actionRef}
-          variant="ghost"
-          size="icon"
-          className={cn(
-            iconClass,
-            "relative hover:bg-primary/10 hover:text-primary focus-visible:bg-primary/10 focus-visible:text-primary"
-          )}
-          aria-label={editing ? saveLabel : "编辑"}
-          title={editing ? `${saveLabel}（⌘/Ctrl+S）` : "编辑"}
-          aria-busy={busy}
-          disabled={disabled || busy}
-          onClick={editing ? onSave : onEdit}
-        >
-          <HugeiconsIcon
-            icon={busy ? Loading03Icon : editing ? FloppyDiskIcon : Edit02Icon}
-            size={16}
-            aria-hidden="true"
-            className={
-              busy ? "animate-spin motion-reduce:animate-none" : undefined
-            }
-          />
-          {dirty ? (
-            <span className="absolute top-1 right-1 size-1 rounded-full bg-current" />
-          ) : null}
-        </Button>
-      </motion.div>
+        </motion.div>
+      ) : null}
       <span role="status" className="sr-only">
         {busy ? "处理中" : dirty ? "有未保存的修改" : ""}
       </span>

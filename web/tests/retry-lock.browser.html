@@ -50,8 +50,13 @@
     assert(controls().every(button => !button.disabled), "Task completion makes historical retry available again");
     for (const button of controls()) flushSync(() => button.click());
     assert(retryCalls === 3, "Each retry control still invokes its action after release");
+    store.appendOnly = true;
+    flushSync(() => root.render(withDependencies(React.createElement(TooltipProvider, null, React.createElement(ChatThread, { store })), dependencies)));
+    assert(controls().length === 3 && controls().every(button => button.disabled), "Append-only sessions disable failed, stopped and completed reply replacement");
+    for (const button of controls()) flushSync(() => button.click());
+    assert(retryCalls === 3 && fixture.textContent.includes("发送一条新消息继续"), "Durable history remains intact and explains how to continue");
     result.dataset.passed = "true";
-    result.textContent = "PASS: failed/stopped/completed retry lock, immediate task guard, preserved history and re-enable after release";
+    result.textContent = "PASS: failed/stopped/completed retry lock, immediate task guard, preserved history and re-enable after release; append-only sessions preserve durable history";
   } catch (error) {
     result.dataset.passed = "false";
     result.textContent = `FAIL: ${error.message}`;

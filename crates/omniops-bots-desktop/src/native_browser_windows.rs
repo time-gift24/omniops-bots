@@ -387,7 +387,7 @@ pub fn initialize(window: &tauri::WebviewWindow) -> Result<Initialization, Error
         return Err("Tauri and CEF must share the same Windows UI thread".into());
     }
     PARENT.set(parent);
-    let cache_dir = window.app_handle().path().app_cache_dir()?;
+    let cache_dir = window.app_handle().path().app_data_dir()?;
     let root_cache = if std::env::var_os("OMNIOPS_BOTS_SMOKE_REPORT").is_some() {
         std::env::var_os("OMNIOPS_BOTS_SMOKE_DATA_DIR")
             .map(std::path::PathBuf::from)
@@ -396,7 +396,8 @@ pub fn initialize(window: &tauri::WebviewWindow) -> Result<Initialization, Error
         cache_dir
     }
     .join("cef");
-    std::fs::create_dir_all(&root_cache)?;
+    let profile = root_cache.join("browser-profile");
+    std::fs::create_dir_all(&profile)?;
     let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))?;
     let port = listener.local_addr()?.port();
     *SHARED.lock().unwrap() = Shared {
@@ -416,7 +417,8 @@ pub fn initialize(window: &tauri::WebviewWindow) -> Result<Initialization, Error
         command_line_args_disabled: 1,
         remote_debugging_port: i32::from(port),
         root_cache_path: root_cache.to_string_lossy().as_ref().into(),
-        cache_path: "".into(),
+        cache_path: profile.to_string_lossy().as_ref().into(),
+        persist_session_cookies: 1,
         log_severity: LogSeverity::DISABLE,
         // Sandbox requires the same bootstrap executable for browser and subprocesses.
         ..Default::default()

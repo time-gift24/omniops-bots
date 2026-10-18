@@ -11,6 +11,7 @@
   import { flushSync } from "react-dom"
   import "/src/index.css"
   import { AgentBuilder } from "/src/components/premium/agent-builder/agent-builder.tsx"
+  import { AgentResourceList } from "/src/components/premium/agent-builder/agent-resource-list.tsx"
   import { DEFAULT_AGENT, MCP_SERVERS, AGENT_TOOLS, AGENT_SKILLS, DEMO_MODELS } from "/src/adapters/demo/resources.ts"
   import { WorkbenchPanel } from "/src/components/workbench/workbench.tsx"
   import { createMockWorkbenchBackend } from "/src/adapters/demo/workbench.ts"
@@ -196,6 +197,16 @@
   }
 
   try {
+    flushSync(() => root.render(withDependencies(React.createElement(AgentResourceList, {
+      resources: [
+        { id: "local-draft", name: "本地技能", description: "尚无内容摘要", source: "local" },
+        { id: "official", name: "官方技能", description: "已发布内容", source: "official", contentId: "sha256:released", releaseTag: "v1.2.0" },
+      ], selected: ["local-draft"], disabled: false, emptyLabel: "暂无资源", onToggle() {},
+    }), dependencies)))
+    const resourceRows = [...fixture.querySelectorAll("li")]
+    assert(resourceRows[0].textContent.includes("本地草稿"), "Local Skill identity remains visible before it has a contentId")
+    assert(resourceRows[1].textContent.includes("官方 v1.2.0 · sha256:released") && resourceRows[1].querySelector('[title="sha256:released"]'), "Official Skill retains its release and complete content identity")
+    checks.push("local Skill draft identity and official release/content identity")
     flushSync(() => root.render(withDependencies(React.createElement(Probe), dependencies)))
     if (visible(button("Agent 配置", editor())))
       click(button("Agent 配置", editor()))

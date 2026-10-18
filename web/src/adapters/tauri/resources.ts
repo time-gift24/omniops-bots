@@ -1,5 +1,10 @@
 import type { Skill } from "@/skills/source"
-import type { AgentConfiguration, AgentResources } from "@/agents/source"
+import type {
+  AgentConfiguration,
+  AgentEntry,
+  AgentResource,
+  AgentResources,
+} from "@/agents/source"
 import { array, boolean, number, object, string } from "./protocol"
 
 export function readAgentConfiguration(value: unknown): AgentConfiguration {
@@ -8,18 +13,29 @@ export function readAgentConfiguration(value: unknown): AgentConfiguration {
     name: string(raw.name),
     description: string(raw.description),
     instructions: string(raw.instructions),
-    requireApproval: boolean(raw.requireApproval),
+    ...(raw.requireApproval === undefined
+      ? {}
+      : { requireApproval: boolean(raw.requireApproval) }),
     mcpServerIds: array(raw.mcpServerIds, string),
     toolIds: array(raw.toolIds, string),
     skillIds: array(raw.skillIds, string),
   }
 }
-const resource = (value: unknown) => {
+const resource = (value: unknown): AgentResource => {
   const raw = object(value)
   return {
     id: string(raw.id),
     name: string(raw.name),
     description: string(raw.description),
+    ...(raw.source === "local" || raw.source === "official"
+      ? { source: raw.source }
+      : {}),
+    ...(raw.contentId === undefined
+      ? {}
+      : { contentId: string(raw.contentId) }),
+    ...(raw.releaseTag === undefined
+      ? {}
+      : { releaseTag: string(raw.releaseTag) }),
   }
 }
 const capability = (value: unknown) => {
@@ -30,6 +46,30 @@ const capability = (value: unknown) => {
     ...(raw.params === undefined ? {} : { params: string(raw.params) }),
   }
 }
+export function readMcpCapabilities(value: unknown) {
+  const raw = object(value)
+  return {
+    tools: array(raw.tools ?? [], capability),
+    resources: array(raw.resources ?? [], capability),
+    prompts: array(raw.prompts ?? [], capability),
+  }
+}
+export function readAgent(value: unknown): AgentEntry {
+  const raw = object(value)
+  return {
+    id: string(raw.id),
+    ...(raw.source === "local" || raw.source === "official"
+      ? { source: raw.source }
+      : {}),
+    ...(raw.contentId === undefined
+      ? {}
+      : { contentId: string(raw.contentId) }),
+    ...(raw.releaseTag === undefined
+      ? {}
+      : { releaseTag: string(raw.releaseTag) }),
+    configuration: readAgentConfiguration(raw.configuration),
+  }
+}
 export function readAgents(value: unknown) {
   const raw = object(value),
     resources = object(raw.resources)
@@ -37,26 +77,19 @@ export function readAgents(value: unknown) {
     tools: array(resources.tools, resource),
     skills: array(resources.skills, resource),
     mcpServers: array(resources.mcpServers, (value) => {
-      const raw = object(value),
-        capabilities = object(raw.capabilities)
+      const raw = object(value)
       return {
         ...resource(raw),
-        capabilities: {
-          tools: array(capabilities.tools, capability),
-          resources: array(capabilities.resources, capability),
-          prompts: array(capabilities.prompts, capability),
-        },
+        ...(raw.url === undefined ? {} : { url: string(raw.url) }),
+        ...(raw.credentialEnv === undefined
+          ? {}
+          : { credentialEnv: string(raw.credentialEnv) }),
+        capabilities: readMcpCapabilities(raw.capabilities ?? {}),
       }
     }),
   }
   return {
-    agents: array(raw.agents, (value) => {
-      const entry = object(value)
-      return {
-        id: string(entry.id),
-        configuration: readAgentConfiguration(entry.configuration),
-      }
-    }),
+    agents: array(raw.agents, readAgent),
     resources: parsedResources,
   }
 }
@@ -101,7 +134,9 @@ export function readSkills(value: unknown): Skill[] {
       id: string(raw.id),
       name: string(raw.name),
       description: string(raw.description),
-      ...(raw.origin === "official" || raw.origin === "local" ? { origin: raw.origin } : {}),
+      ...(raw.origin === "official" || raw.origin === "local"
+        ? { origin: raw.origin }
+        : {}),
       ...(raw.version === undefined ? {} : { version: string(raw.version) }),
       files: array(raw.files, (entry) => {
         const file = object(entry)

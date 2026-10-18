@@ -29,12 +29,14 @@ export interface DesktopTask {
   runId: string
   threadId: string
   title: string
-  phase: "running" | "awaiting-approval" | "submitting" | "stopping"
+  phase:
+    "preparing" | "running" | "awaiting-approval" | "submitting" | "stopping"
   approval?: ApprovalRequest
   error?: string
 }
 
 export interface DesktopSnapshot {
+  closeBlocked?: boolean
   simulated: boolean
   task: DesktopTask | null
   browser: BrowserSnapshot

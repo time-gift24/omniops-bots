@@ -31,6 +31,7 @@ function readSkill(value: unknown): ManagedSkill {
     origin: raw.origin,
     readOnly: boolean(raw.readOnly),
     ...(raw.version === undefined ? {} : { version: string(raw.version) }),
+    ...(raw.contentId === undefined ? {} : { contentId: string(raw.contentId) }),
     modifiedAt: raw.modifiedAt === null ? null : string(raw.modifiedAt),
     entries: array(raw.entries, readEntry),
   }

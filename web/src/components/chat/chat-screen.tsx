@@ -39,7 +39,13 @@ export function ChatScreen({
   onChooseWorkspace?: () => void
   suggestions?: readonly string[]
 }) {
-  const { threads, desktop } = useAppDependencies()
+  const { threads, desktop, runs } = useAppDependencies()
+  const [modelSnapshot, setModelSnapshot] = React.useState<{
+    threadId: string
+    model: string
+  } | null>(null)
+  const fixedModel =
+    modelSnapshot?.threadId === threadId ? modelSnapshot.model : null
   const desktopTask = React.useSyncExternalStore(
     desktop.subscribe,
     () => desktop.getState().task,
@@ -50,6 +56,33 @@ export function ChatScreen({
     store.subscribe,
     () => store.getState().messages.length === 0
   )
+  React.useEffect(() => {
+    if (!runs || empty || desktopTask) return
+    let live = true
+    void runs
+      .snapshot(threadId)
+      .then((snapshot) => {
+        if (!live || typeof snapshot?.model !== "string") return
+        setModelSnapshot({ threadId, model: snapshot.model })
+        store.updateDraft({ model: snapshot.model })
+      })
+      .catch(() => {
+        /* Run history exposes snapshot read failures and supports retry. */
+      })
+    return () => {
+      live = false
+    }
+  }, [runs, threadId, empty, desktopTask, store])
+  const sessionModels = fixedModel
+    ? [
+        {
+          id: fixedModel,
+          label:
+            models.find((model) => model.id === fixedModel)?.label ??
+            fixedModel,
+        },
+      ]
+    : models
   const editMessage = React.useCallback(
     (text: string) => {
       store.updateDraft({ text, attachments: [] })
@@ -59,7 +92,11 @@ export function ChatScreen({
   const reduce = useReducedMotion()
 
   const composer = (
-    <ChatComposer store={store} models={models} className="mx-auto w-full" />
+    <ChatComposer
+      store={store}
+      models={sessionModels}
+      className="mx-auto w-full"
+    />
   )
 
   return (
@@ -120,7 +157,7 @@ export function ChatScreen({
                   {suggestions.map((suggestion) => (
                     <Button
                       key={suggestion}
-                      disabled={!models.length || Boolean(desktopTask)}
+                      disabled={!sessionModels.length || Boolean(desktopTask)}
                       variant="outline"
                       size="sm"
                       className="rounded-full"
@@ -130,9 +167,9 @@ export function ChatScreen({
                         store.send(
                           suggestion,
                           undefined,
-                          models.find(
+                          sessionModels.find(
                             (choice) => choice.id === store.getDraft().model
-                          )?.id ?? models[0]?.id
+                          )?.id ?? sessionModels[0]?.id
                         )
                       }}
                     >

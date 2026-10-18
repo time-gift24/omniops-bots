@@ -241,3 +241,77 @@ test("new sends and historical retry carry exactly preceding conversation withou
   assert.equal(requests[2].messages[0].text, "one")
   assert.equal(store.getState().messages[3].parts[0].text, "reply two")
 })
+
+test("native preparation gate precedes context and cancellation releases it without starting a model", async t => {
+  const { createTauriRuntime } = await load(t)
+  const preparation = deferred()
+  let contextCalls = 0
+  const host = bridge((command) => command === "runtime_prepare_run" ? preparation.promise : null)
+  const runtime = createTauriRuntime(host)
+  await runtime.initialize()
+  runtime.setContextResolver(async () => { contextCalls++; return {} })
+  const gateway = runtime.gatewayFor("preparing")
+  const iterator = gateway.stream(input)[Symbol.asyncIterator]()
+  const first = iterator.next()
+  assert.equal(runtime.desktop.getState().task.phase, "preparing")
+  assert.equal(contextCalls, 0)
+  host.emit({ event: "exit_blocked" })
+  assert.equal(runtime.desktop.getState().closeBlocked, true)
+  const stopped = gateway.abort()
+  preparation.resolve(null)
+  await stopped
+  assert.equal((await first).value.error.kind, "aborted")
+  assert.equal(host.calls.filter(([command]) => command === "runtime_release_run").length, 1)
+  assert.equal(runtime.desktop.getState().closeBlocked, false, "exit warning clears when the task stops")
+  assert.equal(host.calls.some(([, args]) => args?.method === "chat_start"), false)
+  assert.equal(runtime.desktop.getState().task, null)
+})
+
+test("failed native preparation gate exposes the failure, skips inputs and releases its reservation", async t => {
+  const { createTauriRuntime } = await load(t)
+  let contextCalls = 0
+  const host = bridge(command => { if (command === "runtime_prepare_run") throw new Error("应用正在退出，请重新打开。") })
+  const runtime = createTauriRuntime(host)
+  await runtime.initialize()
+  runtime.setContextResolver(async () => { contextCalls++; return {} })
+  const events = []
+  for await (const event of runtime.gatewayFor("closing").stream(input)) events.push(event)
+  assert.match(events[0].error.message, /退出/)
+  assert.equal(contextCalls, 0)
+  await tick()
+  assert.equal(host.calls.filter(([command]) => command === "runtime_release_run").length, 1)
+  assert.equal(runtime.desktop.getState().task, null)
+})
+
+test("durable native sessions reject in-place retries but accept a manual next turn after failure", async t => {
+  const { createTauriRuntime, ThreadStoreImpl } = await load(t)
+  const requests = []
+  const host = bridge((_command, args) => {
+    if (args.method !== "chat_start") return null
+    requests.push(args.params)
+    const run = args.params
+    queueMicrotask(() => {
+      host.emit({ event: "chat_event", runId: run.runId, threadId: run.threadId, data: { type: "started", metadata } })
+      host.emit({ event: "chat_event", runId: run.runId, threadId: run.threadId, data: requests.length === 1 ? { type: "failed", error: { kind: "unavailable", message: "temporary failure" } } : completed("next turn") })
+    })
+    return { runId: run.runId }
+  })
+  const runtime = createTauriRuntime(host)
+  await runtime.initialize()
+  const store = new ThreadStoreImpl("durable", runtime.gatewayFor("durable"))
+  assert.equal(store.appendOnly, true)
+  store.send("first")
+  await tick()
+  const before = store.snapshot()
+  store.retry()
+  store.retry("m-2")
+  await tick()
+  assert.equal(requests.length, 1)
+  assert.deepEqual(store.snapshot(), before, "retry cannot replace any persisted reply")
+  assert.equal(store.send("try again as a new turn"), true)
+  await tick()
+  assert.equal(requests.length, 2)
+  assert.equal(requests[1].threadId, "durable")
+  assert.equal(store.getState().messages[1].state, "failed")
+  assert.equal(store.getState().messages.at(-1).parts[0].text, "next turn")
+})

@@ -339,10 +339,12 @@ export function SkillLibraryScreen({
   skillId,
   onOpenSkill,
   onCatalogChange,
+  onExperiment,
 }: {
   skillId: string | null
   onOpenSkill: (id: string | null) => void
   onCatalogChange?: (skills: readonly ManagedSkill[]) => void
+  onExperiment?: (skillId: string) => void
 }) {
   const { skillLibrary: library, skills: source } = useAppDependencies()
   const [catalog, setCatalog] = useState<readonly ManagedSkill[]>([])
@@ -609,6 +611,34 @@ export function SkillLibraryScreen({
       /* Keep the conflicting file available for retry. */
     }
   }
+  async function experiment() {
+    if (!skill || !onExperiment || !library) return
+    const id = skill.id
+    try {
+      await run(async () => {
+        for (const [key, edit] of Object.entries(edits)) {
+          if (!key.startsWith(`${id}\u0000`) || edit.value === edit.saved)
+            continue
+          const path = key.slice(id.length + 1)
+          const next = await library.writeFile(
+            id,
+            path,
+            new Blob([edit.value], { type: skillFileMimeType(path) }),
+            { replace: true }
+          )
+          update(next)
+          if (mounted.current)
+            setEdits((current) => ({
+              ...current,
+              [key]: { ...current[key], saved: edit.value },
+            }))
+        }
+      })
+      if (mounted.current && scope.current === id) onExperiment(id)
+    } catch {
+      /* run preserves drafts and displays the failure. */
+    }
+  }
   const pathKey = skill && entry ? editKey(skill.id, entry.path) : ""
   const visible = catalog.filter(
     (item) =>
@@ -653,27 +683,39 @@ export function SkillLibraryScreen({
                   : "整理操作规范、脚本和参考资料，构建 Agent 的技能。")}
             </p>
           </div>
-          {skill ? (
-            skill.origin === "official" ? (
+          <div className="flex flex-wrap gap-2">
+            {skill && onExperiment ? (
+              <Button
+                variant="outline"
+                className="rounded-full"
+                disabled={busy || !library}
+                onClick={() => void experiment()}
+              >
+                在新会话中实验
+              </Button>
+            ) : null}
+            {skill ? (
+              skill.origin === "official" ? (
+                <Button
+                  className="rounded-full"
+                  disabled={busy || !library}
+                  onClick={() => void copy(skill)}
+                >
+                  <Copy />
+                  复制为本地 Skill
+                </Button>
+              ) : null
+            ) : !skillId ? (
               <Button
                 className="rounded-full"
                 disabled={busy || !library}
-                onClick={() => void copy(skill)}
+                onClick={() => setCreating((value) => !value)}
               >
-                <Copy />
-                复制为本地 Skill
+                <Plus />
+                新建 Skill
               </Button>
-            ) : null
-          ) : !skillId ? (
-            <Button
-              className="rounded-full"
-              disabled={busy || !library}
-              onClick={() => setCreating((value) => !value)}
-            >
-              <Plus />
-              新建 Skill
-            </Button>
-          ) : null}
+            ) : null}
+          </div>
         </div>
         {skill?.readOnly ? (
           <p className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">

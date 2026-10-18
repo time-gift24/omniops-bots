@@ -90,7 +90,14 @@ export function createBrowserService(config) {
     }
   }
 
+  async function assertAutomationReady() {
+    const target = await ensure();
+    const needsHuman = await target.page.locator('input[type="password"], iframe[src*="recaptcha"], iframe[src*="hcaptcha"], [data-sitekey]').evaluateAll(nodes => nodes.some(node => node.getClientRects().length > 0));
+    if (needsHuman) throw new RuntimeError('human-required', '页面需要人工登录或验证。请在专用浏览器中完成后发起新任务；本轮不会自动恢复。');
+  }
+
   return {
+    assertAutomationReady,
     getState: () => state,
     subscribe(listener) { publish = listener; },
     ensure,
@@ -101,6 +108,7 @@ export function createBrowserService(config) {
       return withCancellation(signal, async target => {
         if (targetUrl) await target.page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 15_000 });
         signal.throwIfAborted();
+        await assertAutomationReady();
         const interactive = await target.page.locator('input,textarea,button,select,a[href]').evaluateAll(nodes => nodes.filter(node => node.getClientRects().length).slice(0, 60).map(node => ({
           tag: node.tagName.toLowerCase(), id: node.id, name: node.getAttribute('name'), type: node.getAttribute('type'),
           placeholder: node.getAttribute('placeholder'), ariaLabel: node.getAttribute('aria-label'), text: node.textContent?.trim().slice(0, 100),

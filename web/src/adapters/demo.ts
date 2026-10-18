@@ -22,6 +22,7 @@ export function createDemoAdapters(
   const skillDrafts = overrides.skillDrafts ?? storage!.skillDrafts
   return {
     backendId,
+    ...(overrides.runs ? { runs: overrides.runs } : {}),
     gatewayFor: overrides.gatewayFor ?? runtime.gatewayFor,
     desktop: overrides.desktop ?? runtime.desktop,
     workbench: overrides.workbench ?? createMockWorkbenchBackend(),

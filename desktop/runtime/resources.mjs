@@ -7,20 +7,21 @@ import path from 'node:path';
 import { promisify } from 'node:util';
 import { RuntimeError, invalid } from './errors.mjs';
 import { createSkillLibrary, defaultSkillRoot } from './skill-library.mjs';
+import { createAssemblyStore } from './assembly.ts';
 
 const exec = promisify(execFile);
 const MAX_FILE = 2 * 1024 * 1024;
 const MAX_TOTAL = 32 * 1024 * 1024;
 const MAX_FILES = 5000;
 const IGNORED = new Set(['.git', '.svn', 'node_modules', 'target', 'dist', 'build', '.scratch', '.next', '.venv', '__pycache__']);
-const TOOLS = [
+export const BUILTIN_TOOLS = [
   { id: 'inspect_browser', name: '查看网页', description: '读取内置浏览器当前页面。' },
   { id: 'list_playwright_scripts', name: '列出脚本', description: '查看当前自动化脚本。' },
   { id: 'read_playwright_script', name: '读取脚本', description: '读取自动化脚本源码。' },
   { id: 'write_playwright_script', name: '编写脚本', description: '准备在内置浏览器中运行的脚本。' },
-  { id: 'run_playwright_script', name: '执行脚本', description: '经逐次审批后操作内置浏览器。' },
+  { id: 'run_playwright_script', name: '执行脚本', description: '运行确定源码的脚本操作内置浏览器。' },
 ];
-const METHODS = new Set(['agents_load', 'agent_save', 'agent_instructions', 'skills_list', 'workspace_directories', 'workspace_resolve', 'workspace_bind', 'workspace_files', 'workspace_file', 'workspace_changes']);
+const METHODS = new Set(['agents_load', 'agent_create', 'agent_save', 'agent_instructions', 'skills_list', 'workspace_directories', 'workspace_resolve', 'workspace_bind', 'workspace_files', 'workspace_file', 'workspace_changes']);
 
 function string(value, label, max = 4096) {
   if (typeof value !== 'string' || !value.trim() || value.length > max || /[\u0000-\u001f\u007f]/u.test(value)) throw invalid(`${label}无效。`);
@@ -131,23 +132,15 @@ async function changedLines(before, after) {
   } finally { await rm(directory, { recursive: true, force: true }); }
 }
 
-export function createResources({ homeDir = homedir(), skillsDir = defaultSkillRoot(homeDir) } = {}) {
+export function createResources({ homeDir = homedir(), skillsDir = defaultSkillRoot(homeDir), agentsDir = path.join(homeDir, '.omnimind-ops', 'agents'), runsDir = path.join(homeDir, '.omnimind-ops', 'runs'), mcpCatalog } = {}) {
   const skillLibrary = createSkillLibrary({ root: skillsDir });
+  const assembly = createAssemblyStore({ agentsDir, runsDir, skillLibrary, tools: BUILTIN_TOOLS, mcpCatalog });
   const roots = new Set();
   const sessions = new Map();
   let baselineBytes = 0;
   let baselineQueue = Promise.resolve();
-  const agents = new Map([['browser-assistant', {
-    name: '浏览器助手', description: '在内置浏览器中查阅信息并完成操作。',
-    instructions: '你是桌面浏览器助手。使用内置浏览器核实页面信息，清楚说明将执行的操作。被拒绝后调整方案，不要原样重试。',
-    mcpServerIds: [], toolIds: TOOLS.map(tool => tool.id), skillIds: [], requireApproval: true,
-  }]]);
   const loadSkills = () => skillLibrary.sourceSkills();
-  function getAgent(id) {
-    const configuration = agents.get(string(id, 'Agent', 256));
-    if (!configuration) throw invalid('找不到这个 Agent。');
-    return structuredClone(configuration);
-  }
+  async function getAgent(id) { return (await assembly.get(id)).configuration; }
   async function instructionsFor(configuration) {
     const skills = await loadSkills();
     const instructions = [configuration.instructions, ...configuration.skillIds.map(id => {
@@ -230,24 +223,12 @@ export function createResources({ homeDir = homedir(), skillsDir = defaultSkillR
         return { files, fileCount: files.length, added: files.reduce((sum, file) => sum + file.added, 0), removed: files.reduce((sum, file) => sum + file.removed, 0) };
       }
       case 'skills_list': return structuredClone(await loadSkills());
-      case 'agents_load': return { agents: [...agents].map(([id, configuration]) => ({ id, configuration: structuredClone(configuration) })), resources: { mcpServers: [], tools: structuredClone(TOOLS), skills: (await loadSkills()).map(({ id, name, description }) => ({ id, name, description })) } };
-      case 'agent_save': {
-        getAgent(params.id);
-        const configuration = params.configuration;
-        if (!configuration || typeof configuration !== 'object') throw invalid('Agent 配置无效。');
-        string(configuration.name, '名称', 256);
-        if (typeof configuration.description !== 'string' || configuration.description.length > 4096 || typeof configuration.instructions !== 'string' || !configuration.instructions.trim() || configuration.instructions.length > 65536 || typeof configuration.requireApproval !== 'boolean') throw invalid('Agent 配置无效。');
-        const knownSkills = new Set((await loadSkills()).map(skill => skill.id));
-        for (const [key, known] of [['mcpServerIds', new Set()], ['toolIds', new Set(TOOLS.map(tool => tool.id))], ['skillIds', knownSkills]]) {
-          if (!Array.isArray(configuration[key]) || configuration[key].length > 256 || new Set(configuration[key]).size !== configuration[key].length || configuration[key].some(id => !known.has(id))) throw invalid('Agent 引用了不可用的资源。');
-        }
-        await instructionsFor(configuration);
-        agents.set(params.id, structuredClone(configuration));
-        return null;
-      }
-      case 'agent_instructions': return instructionsFor(getAgent(params.id));
+      case 'agents_load': return { agents: await assembly.list(), resources: { mcpServers: await assembly.mcpServers(), tools: structuredClone(BUILTIN_TOOLS), skills: (await skillLibrary.handle('skill_library_list')).map(({ id, name, description, origin, contentId, version }) => ({ id, name, description, source: origin, ...(contentId ? { contentId } : {}), ...(version ? { releaseTag: version } : {}) })) } };
+      case 'agent_create': return assembly.create(params);
+      case 'agent_save': await assembly.save(params.id, params.configuration); return null;
+      case 'agent_instructions': return instructionsFor(await getAgent(params.id));
       default: throw invalid('未知的资源操作。');
     }
   }
-  return { hasMethod: method => METHODS.has(method) || skillLibrary.hasMethod(method), handle, getAgent };
+  return { hasMethod: method => METHODS.has(method) || skillLibrary.hasMethod(method), handle, getAgent, prepareSession: assembly.prepareSession };
 }

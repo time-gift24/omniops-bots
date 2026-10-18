@@ -29,12 +29,30 @@ export function AgentResourceList({
   onToggle,
   onInspect,
 }: AgentResourceListProps) {
-  if (!resources.length) {
+  const missing = selected.filter(
+    (id) => !resources.some((resource) => resource.id === id)
+  )
+  if (!resources.length && !missing.length) {
     return <p className="py-6 text-xs text-muted-foreground">{emptyLabel}</p>
   }
 
   return (
     <ul className="divide-y divide-border">
+      {missing.map((id) => (
+        <li
+          key={id}
+          className="flex items-center justify-between gap-2 py-3 text-xs text-destructive"
+        >
+          <span className="break-all">资源不可用：{id}</span>
+          <button
+            disabled={disabled}
+            className="shrink-0 underline disabled:opacity-50"
+            onClick={() => onToggle(id, false)}
+          >
+            移除
+          </button>
+        </li>
+      ))}
       {resources.map((resource) => {
         const enabled = selected.includes(resource.id)
         const icon = agentResourceIcon(resource.id)
@@ -58,6 +76,19 @@ export function AgentResourceList({
               <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
                 {resource.description}
               </span>
+              {resource.contentId || resource.source ? (
+                <span
+                  title={resource.contentId}
+                  className="mt-1 block truncate font-mono text-[10px] text-muted-foreground"
+                >
+                  {resource.source === "official"
+                    ? `官方${resource.releaseTag ? ` ${resource.releaseTag}` : ""}${resource.contentId ? " · " : ""}`
+                    : resource.contentId
+                      ? "本地 · "
+                      : "本地草稿"}
+                  {resource.contentId}
+                </span>
+              ) : null}
             </span>
           </>
         )

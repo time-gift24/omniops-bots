@@ -26,6 +26,7 @@ export interface TauriBridge {
 export type RunContext = {
   workspacePath?: string
   agentId?: string
+  experimentSkillId?: string
   instructions?: string
 }
 type PendingRun = {
@@ -80,7 +81,7 @@ export function createTauriRuntime(bridge: TauriBridge) {
     for (const listener of [...listeners]) listener()
   }
   const clearTask = (runId: string) => {
-    if (state.task?.runId === runId) publish({ ...state, task: null })
+    if (state.task?.runId === runId) publish({ ...state, task: null, closeBlocked: false })
   }
   const push = (run: PendingRun, event: ChatEvent) => {
     if (run.terminal) return
@@ -100,6 +101,7 @@ export function createTauriRuntime(bridge: TauriBridge) {
     publish({
       ...state,
       task: null,
+      closeBlocked: false,
       browser: { ...state.browser, status: "error", error: message },
     })
   }
@@ -107,6 +109,10 @@ export function createTauriRuntime(bridge: TauriBridge) {
     if (disposed || unavailable) return
     try {
       const event = object(value)
+      if (event.event === "exit_blocked") {
+        publish({ ...state, closeBlocked: true })
+        return
+      }
       if (event.event === "desktop_state") {
         const snapshot = readDesktopSnapshot(event.state)
         if (pendingStop && state.task?.runId === pendingStop.runId) {
@@ -293,6 +299,7 @@ export function createTauriRuntime(bridge: TauriBridge) {
   const gatewayFor = (threadId: string): ChatGateway => {
     let currentRun: PendingRun | undefined
     return {
+      appendOnly: true,
       async *stream(input: ChatRequest) {
         if (!connected || disposed) {
           yield failure("桌面服务未连接，请重新打开应用。")
@@ -321,12 +328,14 @@ export function createTauriRuntime(bridge: TauriBridge) {
             runId: run.runId,
             threadId,
             title: input.messages.at(-1)?.text.slice(0, 80) ?? "正在执行任务",
-            phase: "running",
+            phase: "preparing",
           },
+          closeBlocked: false,
         })
         run.start = (async () => {
           let serialized, context
           try {
+            await bridge.invoke("runtime_prepare_run", { runId: run.runId })
             serialized = await serializeRequest(input)
             context = await resolveContext(threadId)
           } catch (error) {
@@ -337,10 +346,16 @@ export function createTauriRuntime(bridge: TauriBridge) {
                 "invalid-request"
               )
             )
+            await bridge
+              .invoke("runtime_release_run", { runId: run.runId })
+              .catch(() => {})
             return
           }
           if (run.stopping || run.terminal || disposed) {
             push(run, failure("任务已停止。", "aborted"))
+            await bridge
+              .invoke("runtime_release_run", { runId: run.runId })
+              .catch(() => {})
             return
           }
           try {
@@ -368,6 +383,9 @@ export function createTauriRuntime(bridge: TauriBridge) {
               type: "failed",
               error: readRpcError(error, "任务未能连接桌面服务，请重试。"),
             })
+            await bridge
+              .invoke("runtime_release_run", { runId: run.runId })
+              .catch(() => {})
           }
         })()
         try {

@@ -41,6 +41,9 @@ struct Inner {
     ready: bool,
     error: Option<IpcError>,
     pending: HashMap<u64, oneshot::Sender<Reply>>,
+    starting: Option<u64>,
+    preparing: Option<String>,
+    task_active: bool,
     shutting_down: bool,
     exit_allowed: bool,
 }
@@ -53,6 +56,9 @@ impl Runtime {
                 ready: false,
                 error: None,
                 pending: HashMap::new(),
+                starting: None,
+                preparing: None,
+                task_active: false,
                 shutting_down: false,
                 exit_allowed: false,
             }),
@@ -60,10 +66,53 @@ impl Runtime {
         }
     }
 
+    fn prepare_run(&self, run_id: String) -> Result<(), Error> {
+        if run_id.trim().is_empty() || run_id.len() > 256 || run_id.chars().any(char::is_control) {
+            return Err(Error::InvalidInput("Run ID is invalid"));
+        }
+        let mut inner = self.inner.lock().unwrap();
+        if inner.shutting_down {
+            return Err(Error::Unavailable("Desktop is shutting down"));
+        }
+        if let Some(error) = &inner.error {
+            return Err(Error::Remote(error.clone()));
+        }
+        if inner.task_active
+            || inner.starting.is_some()
+            || inner.preparing.as_ref().is_some_and(|id| id != &run_id)
+        {
+            return Err(Error::Unavailable("Another task is still running"));
+        }
+        inner.preparing = Some(run_id);
+        Ok(())
+    }
+
+    fn release_run(&self, run_id: &str) {
+        let mut inner = self.inner.lock().unwrap();
+        if inner.preparing.as_deref() == Some(run_id) {
+            inner.preparing = None;
+        }
+    }
+
+    fn begin_shutdown(&self) -> Result<bool, Error> {
+        let mut inner = self.inner.lock().unwrap();
+        if inner.shutting_down || inner.exit_allowed {
+            return Ok(false);
+        }
+        if inner.preparing.is_some() || inner.starting.is_some() || inner.task_active {
+            return Err(Error::Unavailable("A task is still running"));
+        }
+        inner.shutting_down = true;
+        Ok(true)
+    }
+
     fn fail(&self, error: IpcError) {
         let mut inner = self.inner.lock().unwrap();
         inner.ready = false;
         inner.error = Some(error.clone());
+        inner.starting = None;
+        inner.preparing = None;
+        inner.task_active = false;
         for (_, sender) in inner.pending.drain() {
             let _ = sender.send(Err(error.clone()));
         }
@@ -127,6 +176,15 @@ impl Runtime {
             if inner.pending.len() >= 64 {
                 return Err(Error::Unavailable("Too many desktop requests"));
             }
+            if method == "chat_start"
+                && (inner.task_active
+                    || inner.starting.is_some()
+                    || inner.preparing.as_deref().is_some_and(|run_id| {
+                        params.get("runId").and_then(Value::as_str) != Some(run_id)
+                    }))
+            {
+                return Err(Error::Unavailable("Another task is still running"));
+            }
             let child = inner
                 .child
                 .as_mut()
@@ -138,12 +196,17 @@ impl Runtime {
                 return Err(Error::InvalidInput("Request is too large"));
             }
             child.write(&line)?;
+            if method == "chat_start" {
+                inner.preparing = None;
+                inner.starting = Some(id);
+            }
             inner.pending.insert(id, sender);
         }
         match tokio::time::timeout(timeout, receiver).await {
             Ok(Ok(result)) => result.map_err(Error::Remote),
             Ok(Err(_)) => Err(Error::Unavailable("Agent runtime disconnected")),
             Err(_) => {
+                // An IPC timeout does not prove that a queued start was never executed.
                 self.inner.lock().unwrap().pending.remove(&id);
                 Err(Error::Timeout)
             }
@@ -156,7 +219,11 @@ impl Runtime {
         }
         let message: Value = serde_json::from_slice(line)?;
         if let Some(id) = message["id"].as_u64() {
-            if let Some(sender) = self.inner.lock().unwrap().pending.remove(&id) {
+            let mut inner = self.inner.lock().unwrap();
+            if inner.starting == Some(id) {
+                inner.starting = None;
+            }
+            if let Some(sender) = inner.pending.remove(&id) {
                 let result = if let Some(error) = message.get("error") {
                     let error =
                         serde_json::from_value::<IpcError>(error.clone()).unwrap_or(IpcError {
@@ -180,7 +247,17 @@ impl Runtime {
                 inner.ready = true;
                 Ok(Some(message))
             }
-            Some("desktop_state" | "chat_event" | "runtime_exit" | "exit") => Ok(Some(message)),
+            Some("desktop_state") => {
+                let task = message["state"]
+                    .get("task")
+                    .ok_or(Error::InvalidInput("Runtime task state is missing"))?;
+                if !task.is_null() && !task.is_object() {
+                    return Err(Error::InvalidInput("Runtime task state is invalid"));
+                }
+                self.inner.lock().unwrap().task_active = !task.is_null();
+                Ok(Some(message))
+            }
+            Some("chat_event" | "runtime_exit" | "exit") => Ok(Some(message)),
             _ => Ok(None),
         }
     }
@@ -213,6 +290,16 @@ impl Runtime {
             tokio::time::sleep(Duration::from_millis(100)).await;
         }
     }
+}
+
+#[tauri::command]
+fn runtime_prepare_run(run_id: String, runtime: State<'_, Arc<Runtime>>) -> Result<(), IpcError> {
+    runtime.prepare_run(run_id).map_err(Into::into)
+}
+
+#[tauri::command]
+fn runtime_release_run(run_id: String, runtime: State<'_, Arc<Runtime>>) {
+    runtime.release_run(&run_id);
 }
 
 fn kill_child(child: CommandChild) {
@@ -515,6 +602,8 @@ fn run_app() -> Result<i32, Error> {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             runtime_request,
+            runtime_prepare_run,
+            runtime_release_run,
             browser_set_bounds,
             host_copy_text,
             host_open_external,
@@ -587,16 +676,19 @@ fn run_app() -> Result<i32, Error> {
                 app.exit(0);
             }
             RunEvent::ExitRequested { api, code, .. } => {
-                let mut inner = runtime.inner.lock().unwrap();
-                if inner.exit_allowed {
+                if runtime.inner.lock().unwrap().exit_allowed {
                     return;
                 }
                 api.prevent_exit();
-                if inner.shutting_down {
-                    return;
+                match runtime.begin_shutdown() {
+                    Ok(false) => return,
+                    Err(_) => {
+                        let _ =
+                            app.emit_to("main", "runtime-event", json!({"event":"exit_blocked"}));
+                        return;
+                    }
+                    Ok(true) => {}
                 }
-                inner.shutting_down = true;
-                drop(inner);
                 let runtime = runtime.inner().clone();
                 let app = app.clone();
                 tauri::async_runtime::spawn(async move {
@@ -622,6 +714,68 @@ fn run_app() -> Result<i32, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn task_preparation_and_shutdown_cannot_both_acquire_the_host() {
+        let runtime = Runtime::new();
+        runtime.prepare_run("preparing".into()).unwrap();
+        assert!(runtime.begin_shutdown().is_err());
+        runtime.release_run("stale");
+        assert!(runtime.begin_shutdown().is_err());
+        runtime.release_run("preparing");
+        assert!(runtime.begin_shutdown().unwrap());
+        assert!(runtime.prepare_run("too-late".into()).is_err());
+        assert!(!runtime.begin_shutdown().unwrap());
+
+        let runtime = Arc::new(Runtime::new());
+        let barrier = Arc::new(std::sync::Barrier::new(2));
+        let preparing = {
+            let runtime = runtime.clone();
+            let barrier = barrier.clone();
+            std::thread::spawn(move || {
+                barrier.wait();
+                runtime.prepare_run("concurrent".into()).is_ok()
+            })
+        };
+        barrier.wait();
+        let closing = runtime.begin_shutdown().is_ok_and(|started| started);
+        assert_ne!(preparing.join().unwrap(), closing);
+    }
+
+    #[test]
+    fn exit_waits_for_start_acknowledgement_and_backend_task_cleanup() {
+        let runtime = Runtime::new();
+        // A lost/timed-out RPC receiver must not make an unacknowledged start safe to exit.
+        runtime.inner.lock().unwrap().starting = Some(1);
+        assert!(runtime.begin_shutdown().is_err());
+        runtime
+            .receive(br#"{"event":"desktop_state","state":{"task":{"runId":"run"}}}"#)
+            .unwrap();
+        runtime
+            .receive(br#"{"id":1,"result":{"runId":"run"}}"#)
+            .unwrap();
+        assert!(runtime.begin_shutdown().is_err());
+        runtime
+            .receive(br#"{"event":"desktop_state","state":{"task":null}}"#)
+            .unwrap();
+        assert!(runtime.begin_shutdown().unwrap());
+
+        let runtime = Runtime::new();
+        runtime.inner.lock().unwrap().starting = Some(2);
+        runtime
+            .receive(br#"{"event":"desktop_state","state":{"task":null}}"#)
+            .unwrap();
+        assert!(runtime.begin_shutdown().is_err());
+        runtime
+            .receive(br#"{"id":2,"result":{"runId":"run"}}"#)
+            .unwrap();
+        assert!(runtime.begin_shutdown().unwrap());
+
+        let runtime = Runtime::new();
+        runtime.prepare_run("failed".into()).unwrap();
+        runtime.fail(Error::Unavailable("Runtime stopped").into());
+        assert!(runtime.begin_shutdown().unwrap());
+    }
 
     #[test]
     fn runtime_diagnostics_preserve_errors_and_exclude_untrusted_content() {

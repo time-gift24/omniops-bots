@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { mkdtemp, readFile, realpath, rm, symlink, writeFile } from 'node:fs/promises';
+import { chmod, lstat, mkdtemp, readFile, readdir, realpath, rm, symlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { chromium } from 'playwright-core';
@@ -8,8 +8,15 @@ import { ChatOpenAI } from '@langchain/openai';
 import { createScriptWorkspace } from '../script-workspace.mjs';
 import { createBrowserService } from '../browser.mjs';
 import { createDesktopRuntime } from '../runtime.mjs';
+import { createResources } from '../resources.mjs';
 import { createModelFixture } from './model-fixture.mjs';
 import { setTimeout as delay } from 'node:timers/promises';
+
+async function writable(directory) {
+  if (!(await lstat(directory)).isDirectory()) return;
+  await chmod(directory, 0o700);
+  for (const name of await readdir(directory)) await writable(join(directory, name));
+}
 
 async function until(check) {
   for (let i = 0; i < 1000; i++) { const value = await check(); if (value) return value; await delay(10); }
@@ -67,18 +74,13 @@ test('real CDP scripts retain source/hash, filesystem/process/network permission
     await assert.rejects(wrong.ensure(), /目标页面/);
     await wrong.close();
 
-    // Full protocol: only the model is synthetic; Deep Agents, HITL and Playwright are real.
+    // Only the model is synthetic; LangGraph, immutable assembly and Playwright execute locally.
     const chat = [];
-    runtime = createDesktopRuntime({ browser: service, workspace, modelName: fixture.model, emit: event => chat.push(event), modelFactory: () => new ChatOpenAI({ model: fixture.model, apiKey: 'fixture-key', configuration: { baseURL: fixture.baseURL }, useResponsesApi: false, maxRetries: 0 }) });
+    runtime = await createDesktopRuntime({ browser: service, workspace, resources: createResources({ homeDir: directory }), runsDir: join(directory, '.omnimind-ops/runs'), modelName: fixture.model, emit: event => chat.push(event), modelFactory: () => new ChatOpenAI({ model: fixture.model, apiKey: 'fixture-key', configuration: { baseURL: fixture.baseURL }, useResponsesApi: false, maxRetries: 0 }) });
     runtime.dispatch('chat_start', { runId: 'real-local', threadId: 'agent-test:local', request: { messages: [{ role: 'user', text: '填写本地搜索框，不提交' }] } });
-    let approvals = 0;
-    await until(async () => {
-      const task = runtime.getState().task;
-      if (!task) return true;
-      if (task.phase === 'awaiting-approval') { approvals++; await runtime.dispatch('decide', { runId: task.runId, approvalId: task.approval.id, decision: 'approve' }); }
-      return false;
-    });
-    assert.equal(approvals, 2);
+    await until(() => runtime.getState().task === null);
+    assert.equal(chat.some(event => event.state?.task?.phase === 'awaiting-approval'), false);
+    assert.equal(runtime.dispatch('run_get', { runId: 'real-local' }).status, 'completed');
     assert.equal(chat.findLast(event => event.event === 'chat_event').data.type, 'completed', JSON.stringify(chat.findLast(event => event.event === 'chat_event')));
     assert.equal(await page.getByRole('searchbox').inputValue(), 'abcd');
     assert.equal(new URL(page.url()).searchParams.has('q'), false);
@@ -90,14 +92,9 @@ test('real CDP scripts retain source/hash, filesystem/process/network permission
     await runtime.dispatch('forward');
     assert.equal(runtime.getState().browser.url, `${fixture.pageURL}?second=1`);
 
-    runtime.dispatch('chat_start', { runId: 'reject-local', threadId: 'local', request: { messages: [{ role: 'user', text: '检查页面' }] } });
-    const first = await until(() => runtime.getState().task?.phase === 'awaiting-approval' && runtime.getState().task.approval);
-    await runtime.dispatch('decide', { runId: 'reject-local', approvalId: first.id, decision: 'reject' });
-    const alternative = await until(() => runtime.getState().task?.phase === 'awaiting-approval' && runtime.getState().task.approval);
-    assert.notEqual(first.id, alternative.id);
-    assert.deepEqual(JSON.parse(alternative.parameters), {});
-    await runtime.dispatch('decide', { runId: 'reject-local', approvalId: alternative.id, decision: 'approve' });
-    await until(() => runtime.getState().task === null);
+    await page.setContent('<label>Password<input type="password"></label>');
+    await assert.rejects(service.inspect({}, new AbortController().signal), error => error.kind === 'human-required');
+    await page.goto(fixture.pageURL);
 
     runtime.dispatch('chat_start', { runId: 'stop-model', threadId: 'local', request: { messages: [{ role: 'user', text: '[hold-model]' }] } });
     await delay(100);
@@ -106,6 +103,6 @@ test('real CDP scripts retain source/hash, filesystem/process/network permission
     assert.equal(runtime.getState().task, null);
   } finally {
     await runtime?.close(); await service?.close(); await control?.close(); await server?.close();
-    await fixture.close(); await rm(directory, { recursive: true, force: true });
+    await fixture.close(); await writable(directory); await rm(directory, { recursive: true, force: true });
   }
 });

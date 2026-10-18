@@ -42,6 +42,12 @@ export type AgentBuilderProps = {
   toolbarTarget?: HTMLElement | null
   onSave: (configuration: AgentConfiguration) => void | Promise<void>
   className?: string
+  readOnly?: boolean
+  showApproval?: boolean
+  identity?: string
+  debugLabel?: string
+  resourceManager?: import("react").ReactNode
+  onCopy?: () => void
 }
 
 export function AgentBuilder({
@@ -56,6 +62,12 @@ export function AgentBuilder({
   toolbarTarget,
   onSave,
   className,
+  readOnly = false,
+  showApproval = true,
+  identity,
+  debugLabel,
+  resourceManager,
+  onCopy,
 }: AgentBuilderProps) {
   const [configuration, setConfiguration] = useState(initialDraft)
   const [saved, setSaved] = useState(initialConfiguration)
@@ -116,8 +128,12 @@ export function AgentBuilder({
       await onSave(configuration)
       setSaved(configuration)
       setEditing(false)
-    } catch {
-      setError("保存失败，请重试。")
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? `保存失败：${cause.message}`
+          : "保存失败，请重试。"
+      )
     } finally {
       lock.current = false
       setSaving(false)
@@ -157,6 +173,11 @@ export function AgentBuilder({
           {dirty ? "未保存" : ""}
         </span>
       </div>
+      {onCopy ? (
+        <Button variant="ghost" size="sm" onClick={onCopy}>
+          复制为本地
+        </Button>
+      ) : null}
       <Button
         size="icon"
         variant="ghost"
@@ -224,19 +245,31 @@ export function AgentBuilder({
             settingsOpen ? "block" : "hidden @min-[480px]/agent:block"
           )}
         >
+          {identity ? (
+            <p
+              title={identity}
+              className="mb-4 text-xs leading-5 break-all text-muted-foreground"
+            >
+              {identity}
+            </p>
+          ) : null}
           <AgentConfigurationPanel
             disabled={saving}
-            readOnly={!editing}
+            readOnly={readOnly || !editing}
+            showApproval={showApproval}
             mcpServers={mcpServers}
             onChange={change}
             tools={tools}
             skills={skills}
             value={configuration}
           />
+          {resourceManager}
         </aside>
         <div className="doc-action-surface doc-action-surface-vertical relative flex min-h-0 min-w-0 flex-1">
           <DocumentActions
             vertical
+            readOnly={readOnly}
+            debugLabel={debugLabel}
             editing={editing}
             busy={saving}
             dirty={dirty}

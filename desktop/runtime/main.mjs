@@ -1,6 +1,8 @@
 import { existsSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
+import { homedir } from 'node:os';
+import { createMcpCatalog, connectMcp } from './mcp.ts';
 import readline from 'node:readline';
 import { ChatOpenAI } from '@langchain/openai';
 import { embeddedBrowserConfig } from './browser-target.mjs';
@@ -21,10 +23,14 @@ const modelName = key && process.env.OMNIOPS_BOTS_MODEL || undefined;
 const redact = value => String(value).replaceAll(key || '\0', '[redacted]');
 const send = message => process.stdout.write(`${JSON.stringify(message)}\n`);
 const browser = createBrowserService(embeddedBrowserConfig(process.env));
-const workspace = await createScriptWorkspace({ dataDir, ensureBrowser: browser.ensure, signalEvent() {}, redact });
-const resources = createResources();
-const runtime = createDesktopRuntime({
-  browser, workspace, modelName, emit: send, redact, getAgent: id => resources.getAgent(id),
+const localRoot = process.env.OMNIOPS_BOTS_LOCAL_ROOT || join(homedir(), '.omnimind-ops');
+const runsDir = join(localRoot, 'runs');
+const mcpCatalog = createMcpCatalog({ directory: join(localRoot, 'config') });
+const resources = createResources({ skillsDir: join(localRoot, 'skills'), agentsDir: join(localRoot, 'agents'), runsDir, mcpCatalog });
+const runtime = await createDesktopRuntime({
+  browser, resources, runsDir, modelName, emit: send, redact,
+  timeoutMs: process.env.OMNIOPS_BOTS_RUN_TIMEOUT_MS ? Number(process.env.OMNIOPS_BOTS_RUN_TIMEOUT_MS) : 300_000,
+  workspaceFactory: session => createScriptWorkspace({ dataDir: session.directory, ensureBrowser: browser.ensure, signalEvent: send, redact }),
   modelFactory(model) {
     if (!key || !modelName) throw new RuntimeError('unavailable', '请配置本地模型后重启。');
     const baseURL = process.env.OPENAI_BASE_URL ? httpUrl(process.env.OPENAI_BASE_URL) : undefined;
@@ -68,6 +74,13 @@ input.on('line', line => {
   if (method === 'shutdown') { void close(id); return; }
   Promise.resolve().then(() => {
     if (shutdown) throw new RuntimeError('unavailable', '应用正在关闭。');
+    if (method === 'mcp_save') return mcpCatalog.save(params?.server);
+    if (method === 'mcp_remove') return mcpCatalog.remove(params?.id);
+    if (method === 'mcp_test') return (async () => {
+      const connection = await connectMcp([await mcpCatalog.get(params?.id)], { signal: AbortSignal.timeout(15_000), redact });
+      try { return connection.capabilities[0].capabilities; }
+      finally { await connection.close(); }
+    })();
     return resources.hasMethod(method) ? resources.handle(method, params) : runtime.dispatch(method, params);
   }).then(result => send({ id, result }), error => send({ id, error: safeError(error) }));
 });

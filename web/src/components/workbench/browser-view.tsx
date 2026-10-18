@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { useBrowserViewport } from "./use-browser-viewport"
 
 const taskLabels: Record<DesktopTask["phase"], string> = {
+  preparing: "准备中",
   running: "执行中",
   "awaiting-approval": "等待批准",
   submitting: "正在提交",
@@ -108,7 +109,7 @@ export function BrowserView({
           <div className="mx-auto flex h-full max-w-64 flex-col justify-center gap-2 pb-10 text-center">
             <h2 className="text-base font-medium">浏览器已就绪</h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              在地址栏输入网址，或批准任务的浏览器操作后，在这里查看页面。
+              在地址栏输入网址，或启动浏览器任务后，在这里查看页面。
             </p>
           </div>
         ) : browser.status === "loading" ? (

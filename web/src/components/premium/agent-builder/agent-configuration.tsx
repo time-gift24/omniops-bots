@@ -31,6 +31,7 @@ export function AgentConfigurationPanel({
   skills,
   disabled,
   readOnly,
+  showApproval = true,
 }: {
   value: AgentConfiguration
   onChange: (value: AgentConfiguration) => void
@@ -39,6 +40,7 @@ export function AgentConfigurationPanel({
   skills: readonly AgentResource[]
   disabled: boolean
   readOnly: boolean
+  showApproval?: boolean
 }) {
   const [tab, setTab] = useState("mcp")
   const [inspectedMcpId, setInspectedMcpId] = useState<string | null>(null)
@@ -163,7 +165,7 @@ export function AgentConfigurationPanel({
                 onToggle={(itemId, enabled) => toggle(section, itemId, enabled)}
                 onInspect={section.id === "mcp" ? setInspectedMcpId : undefined}
               />
-              {section.id === "tools" ? (
+              {section.id === "tools" && showApproval ? (
                 <div className="mt-2 flex items-center gap-2 border-t border-border py-3">
                   <HugeiconsIcon
                     icon={ShieldCheckIcon}
@@ -174,7 +176,7 @@ export function AgentConfigurationPanel({
                   <p className="min-w-0 flex-1 text-[13px]">操作前先确认</p>
                   <Switch
                     ariaLabel="变更数据的操作需要批准"
-                    checked={value.requireApproval}
+                    checked={value.requireApproval ?? false}
                     disabled={disabled || readOnly}
                     onCheckedChange={(requireApproval) =>
                       onChange({ ...value, requireApproval })

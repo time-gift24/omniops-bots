@@ -1,0 +1,126 @@
+<!doctype html>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Local Agent execution lifecycle regression</title>
+<div id="fixture" style="height:100dvh"></div>
+<pre id="result" style="position:fixed;bottom:0;left:0;z-index:100;background:Canvas;color:CanvasText;font-size:11px">Running…</pre>
+<script type="module">
+import React from "react"
+import { createRoot } from "react-dom/client"
+import { flushSync } from "react-dom"
+import "/src/index.css"
+import { App } from "/src/App.tsx"
+import { createTauriAdapters } from "/src/adapters/tauri/index.ts"
+import { createAppDependencies } from "/src/app/dependencies.tsx"
+import { withTestTheme } from "/tests/support.tsx"
+const result = document.querySelector("#result"), fixture = document.querySelector("#fixture")
+const root = createRoot(fixture), calls = [], records = [], sessions = new Map()
+const metadata = { providerName: "fixture", protocolName: "langgraph", requestedModel: "test-model" }
+const configuration = { name: "本地巡检", description: "执行检查", instructions: "# 巡检\n检查运行状态。", skillIds: [], toolIds: ["browser"], mcpServerIds: [] }
+let agents = [{ id: "local", source: "local", contentId: "local-v1", configuration }, { id: "official", source: "official", contentId: "official-v1", releaseTag: "v1", configuration: { ...configuration, name: "官方巡检" } }]
+let servers = [], listener, starts = [], skillText = "# 实验技能\n原始内容", failedMcp = true, failedSkillWrite = true
+const managed = () => ({ id: "skill", name: "实验技能", description: "验证完整草稿", origin: "local", contentId: "skill-v1", readOnly: false, modifiedAt: null, entries: [{ path: "SKILL.md", kind: "file", size: 20, mimeType: "text/markdown", modifiedAt: null }] })
+const empty = () => ({ simulated: false, task: null, browserRequest: 0, browser: { url: "", title: "", status: "empty", canGoBack: false, canGoForward: false } })
+const response = text => ({ assistant: { parts: [{ type: "text", text }] }, finish: { reason: "stop" }, usage: {}, metadata })
+const bridge = {
+  async listen(_name, handler) { listener = handler; return () => { listener = undefined } },
+  async invoke(command, args) {
+    calls.push([command, args])
+    if (["browser_set_bounds", "runtime_prepare_run", "runtime_release_run"].includes(command)) return null
+    if (command !== "runtime_request") throw new Error(`Unexpected command ${command}`)
+    const { method, params } = args
+    switch (method) {
+      case "status": return empty()
+      case "skill_library_info": return { kind: "desktop", root: "/tmp/test/skills" }
+      case "agents_load": return { agents, resources: { tools: [{ id: "browser", name: "浏览器", description: "页面操作" }], skills: [{ id: "skill", name: "实验技能", description: "完整草稿", contentId: "skill-v1" }], mcpServers: servers.map(server => ({ ...server, capabilities: { tools: [], resources: [], prompts: [] } })) } }
+      case "agent_create": { const agent = { id: `new-${agents.length}`, source: "local", contentId: `new-${agents.length}-v1`, configuration: { ...(params.copyFrom ? agents.find(a => a.id === params.copyFrom).configuration : configuration), name: "新建巡检" } }; agents = [...agents, agent]; return agent }
+      case "agent_save": agents = agents.map(agent => agent.id === params.id ? { ...agent, contentId: "local-v2", configuration: params.configuration } : agent); return null
+      case "skills_list": return []
+      case "skill_library_list": return [managed()]
+      case "skill_library_read": return { data: btoa(unescape(encodeURIComponent(skillText))), mimeType: "text/markdown" }
+      case "skill_library_write": if (failedSkillWrite) throw { kind: "unavailable", message: "Skill 保存失败，请重试。" }; skillText = decodeURIComponent(escape(atob(params.data))); return managed()
+      case "models_list": return [{ id: "test-model", label: "测试模型" }]
+      case "mcp_save": servers = [...servers.filter(server => server.id !== params.server.id), params.server]; return null
+      case "mcp_remove": servers = servers.filter(server => server.id !== params.id); return null
+      case "mcp_test": if (failedMcp) throw { kind: "mcp-connection", message: "MCP 连接失败，请检查服务地址。" }; return { tools: [{ name: "lookup", description: "查找" }], resources: [], prompts: [] }
+      case "runs_list": return structuredClone(records)
+      case "run_get": return structuredClone(records.find(run => run.runId === params.runId))
+      case "session_snapshot": return sessions.get(params.threadId) ?? null
+      case "chat_start": {
+        starts.push(params)
+        const snapshot = sessions.get(params.threadId) ?? { agent: { id: params.agentId, contentId: "local-v1" }, skills: params.experimentSkillId ? [{ id: "skill", contentId: "skill-v1", text: skillText }] : [], tools: ["browser"], mcpServers: [], model: "test-model", modelParameters: {}, desktopVersion: "0.1.0" }
+        sessions.set(params.threadId, snapshot)
+        const answer = response(`执行完成 ${starts.length}`)
+        records.push({ runId: params.runId, threadId: params.threadId, agentId: params.agentId, title: params.request.messages[0].text, status: "completed", startedAt: new Date().toISOString(), endedAt: new Date().toISOString(), inputMessages: params.request.messages, snapshot, result: answer })
+        setTimeout(() => { listener?.({ event: "chat_event", runId: params.runId, threadId: params.threadId, data: { type: "started", metadata } }); listener?.({ event: "chat_event", runId: params.runId, threadId: params.threadId, data: { type: "completed", response: answer } }) }, 30)
+        return { runId: params.runId }
+      }
+      default: throw new Error(`Unexpected method ${method}`)
+    }
+  },
+}
+const wait = (ms = 20) => new Promise(resolve => setTimeout(resolve, ms))
+const assert = (condition, message) => { if (!condition) throw new Error(message) }
+const until = async (condition, message) => { const until = Date.now() + 10000; while (!condition() && Date.now() < until) await wait(); assert(condition(), message) }
+const visible = element => element?.getClientRects().length && !element.closest('[hidden],[inert],[aria-hidden="true"]')
+const button = (name, scope = document) => [...scope.querySelectorAll("button")].find(element => visible(element) && (element.getAttribute("aria-label") === name || element.textContent.trim() === name))
+const click = name => { const element = typeof name === "string" ? button(name) : name; assert(visible(element) && !element.disabled, `Missing enabled control ${name}`); flushSync(() => element.click()) }
+function input(element, text) { assert(element, "Missing input"); flushSync(() => { if (element.isContentEditable) element.textContent = text; else Object.getOwnPropertyDescriptor(element instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype, "value").set.call(element, text); element.dispatchEvent(new Event("input", { bubbles: true })) }) }
+async function mount() { const runtime = await createTauriAdapters(bridge); runtime.setContextResolver(async () => ({})); const dependencies = createAppDependencies(runtime.adapters); flushSync(() => root.render(withTestTheme(React.createElement(App), dependencies))); await until(() => button("Agent"), "App did not load"); return runtime }
+async function agent(name) { click("Agent"); await until(() => button(name), `Agent ${name} unavailable`); click(name); await until(() => button("开始新会话"), "Agent page did not load") }
+async function send(text) { await until(() => [...fixture.querySelectorAll('[contenteditable="true"]')].some(visible), "Composer missing"); input([...fixture.querySelectorAll('[contenteditable="true"]')].find(visible), text); await until(() => button("发送") && !button("发送").disabled, "Send disabled"); click("发送"); await until(() => !button("停止任务") && fixture.textContent.includes(`执行完成 ${starts.length}`), "Run did not complete") }
+let runtime
+try {
+  runtime = await mount()
+  await agent("官方巡检")
+  assert(!button("编辑"), "Official Agent must be read-only")
+  assert(fixture.textContent.includes("official-v1"), "Agent identity must remain visible")
+  click("复制为本地")
+  await until(() => button("编辑"), "Copy must create editable local Agent")
+  assert(agents.length === 3, "Agent copy must be persisted through source")
+  assert(!fixture.querySelector('[aria-label="变更数据的操作需要批准"]'), "Real runtime must not display approval configuration")
+  click("开始新会话"); await send("检查一次")
+  const firstThread = starts[0].threadId
+  assert(starts[0].agentId === "new-2", "Agent identity must reach chat_start")
+  await agent("新建巡检"); click("开始新会话"); await send("再次检查")
+  assert(starts[1].threadId !== firstThread, "Each Agent launch requires a fresh stable session")
+  assert(!calls.some(([, args]) => args?.method === "agent_instructions"), "Frontend must not assemble instructions per turn")
+  await agent("新建巡检")
+  const manager = [...fixture.querySelectorAll("summary")].find(element => element.textContent === "管理本地 MCP 服务")
+  if (!visible(manager)) click("Agent 配置")
+  manager.click()
+  click("添加 MCP 服务")
+  input(fixture.querySelector('input[placeholder="团队知识库"]'), "测试 MCP")
+  input(fixture.querySelector('input[placeholder="https://example.com/mcp"]'), "https://example.com/mcp")
+  input(fixture.querySelector('input[placeholder="TEAM_MCP_TOKEN"]'), "MCP_TOKEN")
+  click("保存服务"); await until(() => button("测试连接"), "MCP save did not refresh catalog")
+  click("测试连接"); await until(() => fixture.textContent.includes("MCP 连接失败"), "MCP failures must be visible")
+  failedMcp = false; click("测试连接"); await until(() => fixture.textContent.includes("连接成功：1 个工具"), "Real MCP test result missing")
+  click("技能"); await until(() => button("实验技能"), "Skill catalog missing"); click("实验技能")
+  await until(() => button("在新会话中实验"), "Skill experiment action missing")
+  click("SKILL.md"); await until(() => button("编辑文件"), "Skill file editor unavailable"); click("编辑文件")
+  await until(() => fixture.querySelector('textarea[aria-label="SKILL.md 内容"]'), "Skill text input unavailable")
+  input(fixture.querySelector('textarea[aria-label="SKILL.md 内容"]'), "# 完整实验草稿\n使用当前未保存的内容。")
+  click("在新会话中实验"); await until(() => fixture.textContent.includes("Skill 保存失败"), "Failed experiment save must be visible")
+  assert(!button("开始实验会话") && starts.length === 2, "Failed draft save must not launch experiment")
+  assert(fixture.querySelector('textarea[aria-label="SKILL.md 内容"]').value.includes("完整实验草稿"), "Failed experiment save must retain draft")
+  failedSkillWrite = false
+  click("在新会话中实验"); await until(() => button("开始实验会话"), "Experiment Agent selector missing"); click("开始实验会话")
+  await send("实验一次")
+  assert(skillText.includes("完整实验草稿"), "Experiment must save the complete current draft before opening a session")
+  assert(starts[2].experimentSkillId === "skill" && starts[2].threadId !== starts[1].threadId, "Skill experiment must create a fresh Agent-bound session")
+  flushSync(() => root.render(null)); runtime.dispose(); runtime = await mount()
+  assert(starts.length === 3, "Reloading must not start execution")
+  click("执行记录"); if (button("Close sidebar")) click("Close sidebar"); await until(() => fixture.querySelector('section[aria-label="执行记录"]')?.textContent.includes("检查一次"), "Persisted runs unavailable after remount")
+  const row = [...fixture.querySelectorAll('section[aria-label="执行记录"] button')].find(element => element.textContent.includes("检查一次"))
+  click(row); await until(() => button("继续会话"), "Run details missing")
+  ;[...fixture.querySelectorAll("summary")].find(element => element.textContent === "运行快照").click()
+  assert(fixture.textContent.includes("local-v1"), "Historical content identity must remain inspectable")
+  click("继续会话"); await until(() => fixture.textContent.includes("执行完成 1"), "Recovered transcript missing")
+  assert(starts.length === 3, "Opening historical conversation must not execute")
+  await send("继续检查")
+  assert(starts[3].threadId === firstThread, "Continuation must use the original session identity")
+  result.textContent = "PASS: official read-only/copy, Agent-bound unique sessions, native gate, MCP save/test failure/success, Skill draft-save failure/retry and experiment, persisted history/snapshot, restore without execution, continuation"
+  result.dataset.passed = "true"
+} catch (error) { result.textContent = `FAIL: ${error.stack}`; result.dataset.passed = "false"; throw error }
+</script>

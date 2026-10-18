@@ -7,12 +7,15 @@ import { createTauriSkillLibrary } from "./skills"
 import { array, boolean, object, string } from "./protocol"
 import {
   readAgents,
+  readAgent,
+  readMcpCapabilities,
   readChanges,
   readDirectory,
   readFile,
   readFiles,
   readSkills,
 } from "./resources"
+import { createRunSource } from "./runs"
 import {
   createTauriRuntime,
   type TauriBridge,
@@ -83,6 +86,7 @@ export async function createTauriAdapters(providedBridge?: TauriBridge) {
     runtime.dispose()
     throw error
   })
+  const sessions = createRunSource(request)
   const adapters: FrontendAdapters = {
     backendId: "desktop",
     gatewayFor: runtime.gatewayFor,
@@ -98,10 +102,21 @@ export async function createTauriAdapters(providedBridge?: TauriBridge) {
     },
     agents: {
       load: async () => readAgents(await request("agents_load")),
+      create: async (input = {}) =>
+        readAgent(await request("agent_create", input)),
       save: async (id, configuration) => {
         await request("agent_save", { id, configuration })
       },
+      saveMcp: async (server) => {
+        await request("mcp_save", { server })
+      },
+      removeMcp: async (id) => {
+        await request("mcp_remove", { id })
+      },
+      testMcp: async (id) =>
+        readMcpCapabilities(await request("mcp_test", { id })),
     },
+    runs: sessions.runs,
     skills: { list: async () => readSkills(await request("skills_list")) },
     skillLibrary,
     models: {
@@ -135,13 +150,9 @@ export async function createTauriAdapters(providedBridge?: TauriBridge) {
     bindWorkspace,
     setContextResolver(resolver: (threadId: string) => Promise<RunContext>) {
       runtime.setContextResolver(async (threadId) => {
-        const context = await resolver(threadId)
-        if (!context.agentId) return context
         return {
-          ...context,
-          instructions: string(
-            await request("agent_instructions", { id: context.agentId })
-          ),
+          ...(await resolver(threadId)),
+          ...sessions.contextFor(threadId),
         }
       })
     },

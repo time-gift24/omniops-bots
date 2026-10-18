@@ -18,6 +18,7 @@ use std::{
     cell::{Cell, RefCell},
     ffi::CString,
     net::{Ipv4Addr, TcpListener},
+    os::unix::fs::PermissionsExt,
     sync::{LazyLock, Mutex, OnceLock},
     time::{Duration, Instant},
 };
@@ -395,8 +396,8 @@ wrap_app! {
         fn on_before_command_line_processing(&self, _process_type: Option<&CefString>, command_line: Option<&mut CommandLine>) {
             if let Some(command_line) = command_line {
                 command_line.append_switch_with_value(Some(&"remote-debugging-address".into()), Some(&"127.0.0.1".into()));
-                // This ephemeral automation profile must not wait for the user's login keychain.
-                // These are also Playwright's Chromium defaults; the CEF sandbox stays enabled.
+                // Keep the dedicated automation profile independent of the user's login keychain.
+                // Its directory is user-private; the CEF sandbox stays enabled.
                 command_line.append_switch(Some(&"use-mock-keychain".into()));
                 command_line.append_switch_with_value(Some(&"password-store".into()), Some(&"basic".into()));
             }
@@ -491,8 +492,12 @@ pub fn initialize(window: &tauri::WebviewWindow) -> Result<Initialization, Error
         .map_err(|_| "Native browser application handle is already set")?;
     install_cef_application_protocol()?;
     PARENT.set(window.ns_view()?.cast());
-    let root_cache = window.app_handle().path().app_cache_dir()?.join("cef");
-    std::fs::create_dir_all(&root_cache)?;
+    let root_cache = window.app_handle().path().app_data_dir()?.join("cef");
+    let profile = root_cache.join("browser-profile");
+    std::fs::create_dir_all(&profile)?;
+    for directory in [&root_cache, &profile] {
+        std::fs::set_permissions(directory, std::fs::Permissions::from_mode(0o700))?;
+    }
     let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))?;
     let port = listener.local_addr()?.port();
     let endpoint = format!("http://127.0.0.1:{port}");
@@ -512,7 +517,8 @@ pub fn initialize(window: &tauri::WebviewWindow) -> Result<Initialization, Error
         multi_threaded_message_loop: 0,
         remote_debugging_port: i32::from(port),
         root_cache_path: root_cache.to_string_lossy().as_ref().into(),
-        cache_path: "".into(), // Incognito: no persisted cookies, login state or passwords.
+        cache_path: profile.to_string_lossy().as_ref().into(),
+        persist_session_cookies: 1,
         log_severity: LogSeverity::DISABLE,
         command_line_args_disabled: 1,
         ..Default::default()

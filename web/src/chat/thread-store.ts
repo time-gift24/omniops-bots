@@ -30,6 +30,7 @@ export interface ThreadDraft {
 }
 
 export interface ThreadStore {
+  readonly appendOnly: boolean;
   getState(): ThreadViewState;
   subscribe(listener: () => void): () => void;
   getDraft(): ThreadDraft;
@@ -50,6 +51,8 @@ export interface ThreadStore {
   /** 进行中的线程不可驱逐。 */
   readonly streaming: boolean;
   snapshot(): ThreadSnapshot;
+  /** Restore only into an empty idle store; never starts a request or overwrites live work. */
+  restore(snapshot: ThreadSnapshot): boolean;
 }
 
 export class ThreadStoreImpl implements ThreadStore {
@@ -99,6 +102,10 @@ export class ThreadStoreImpl implements ThreadStore {
     return () => this.draftListeners.delete(listener);
   };
 
+  get appendOnly(): boolean {
+    return this.gateway.appendOnly === true;
+  }
+
   get listenerCount(): number {
     return this.listeners.size + this.draftListeners.size;
   }
@@ -109,6 +116,15 @@ export class ThreadStoreImpl implements ThreadStore {
 
   snapshot(): ThreadSnapshot {
     return { version: 1, state: structuredClone(this.state) };
+  }
+
+  restore(snapshot: ThreadSnapshot): boolean {
+    if (snapshot.version !== 1 || snapshot.state.threadId !== this.state.threadId)
+      throw new Error("会话记录身份不匹配。");
+    if (this.streaming || this.state.messages.length) return false;
+    this.state = structuredClone(snapshot.state);
+    this.emit();
+    return true;
   }
 
   send = (
@@ -158,7 +174,7 @@ export class ThreadStoreImpl implements ThreadStore {
   };
 
   retry = (messageId?: string): void => {
-    if (this.streaming) return;
+    if (this.streaming || this.appendOnly) return;
     const index = this.state.messages.findLastIndex(
       (message) =>
         message.role === "assistant" &&

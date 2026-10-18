@@ -102,7 +102,7 @@ export async function createScriptWorkspace({ dataDir, ensureBrowser, signalEven
     if (Buffer.byteLength(parametersJSON) > 16_384) throw new Error('parameters exceeds 16 KiB');
     signal?.throwIfAborted();
     const source = await readSource(name);
-    if (sha256 !== undefined && source.sha256 !== sha256) throw new Error('脚本源码已改变，请重新审阅并批准当前版本。');
+    if (sha256 !== undefined && source.sha256 !== sha256) throw new Error('脚本源码已改变，请重新读取当前版本。');
     const id = `${new Date().toISOString().replaceAll(':', '-').replace('.', '-')}_${randomUUID()}`;
     const runDir = join(runsDir, id);
     const artifactDir = join(runDir, 'output');

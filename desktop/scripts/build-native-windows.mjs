@@ -5,6 +5,7 @@ import { createReadStream, existsSync } from 'node:fs';
 import { cp, mkdir, open, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { delimiter, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { runtimeSourceFiles } from './prepare.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const hostCrate = join(root, 'crates/omniops-bots-desktop');
@@ -163,7 +164,9 @@ async function verifyPackage() {
   assert.ok(bundledFiles.every(file => !/(^|[\\/])(model\.env|[^\\/]*\.sqlite(?:-wal|-shm)?|dev-runtime-bridge\.mjs|test\.mjs)$/.test(file.target)), 'Native installer contains a local credential, database or development bridge');
   assert.match(nsis, /!define INSTALLWEBVIEW2MODE "offlineInstaller"/);
   assert.match(nsis, /MicrosoftEdgeWebView2RuntimeInstallerX64\.exe/);
-  const runtimeSourceMatchesStagedFiles = (await Promise.all((await readdir(join(resources, 'runtime'))).filter(name => name.endsWith('.mjs')).map(async name => await digest(join(root, 'desktop/runtime', name)) === await digest(join(resources, 'runtime', name))))).every(Boolean);
+  const sourceFiles = await runtimeSourceFiles(join(root, 'desktop/runtime'));
+  assert.deepEqual(await runtimeSourceFiles(join(resources, 'runtime')), sourceFiles, 'Re-prepare added or removed runtime modules before packaging');
+  const runtimeSourceMatchesStagedFiles = (await Promise.all(sourceFiles.map(async name => await digest(join(root, 'desktop/runtime', name)) === await digest(join(resources, 'runtime', name))))).every(Boolean);
   assert.ok(runtimeSourceMatchesStagedFiles, 'Re-prepare changed runtime source before packaging');
   const summary = {
     version: config.version, target, browserMode: 'embedded', builtOn: process.platform === 'win32' ? 'Windows x64' : 'macOS arm64 (cross compiled)',
