@@ -24,6 +24,10 @@
 .doc-article {
   padding: 2.5rem 1.5rem 4rem;
 }
+.doc-action-surface .doc-article > .doc-preview > .chat-markdown > :first-child,
+.doc-action-surface .doc-article > h1 {
+  margin-right: 5rem;
+}
 .doc-outline {
   display: none;
   padding-block: 3rem;

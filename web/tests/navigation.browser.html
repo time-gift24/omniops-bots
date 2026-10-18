@@ -100,6 +100,17 @@
       const bounds = dock.getBoundingClientRect();
       assert(bounds.top >= fixture.querySelector("header").getBoundingClientRect().bottom - 1 && bounds.right <= innerWidth + 1 && bounds.left >= -1,
         "The document action dock must remain below the Header and inside the viewport");
+      const readingScroll = dock.parentElement.querySelector(".doc-reading-scroll");
+      assert(readingScroll && readingScroll.getBoundingClientRect().top <= bounds.top + 1,
+        "Document actions must overlay the body without reserving a separate top row");
+      for (const group of [...readingScroll.querySelectorAll('[role="group"][aria-label="编辑视图"]')].filter(visible)) {
+        for (const control of [...group.querySelectorAll("button")].filter(visible)) {
+          const rectangle = control.getBoundingClientRect();
+          assert(Math.min(bounds.right, rectangle.right) - Math.max(bounds.left, rectangle.left) <= 1 ||
+            Math.min(bounds.bottom, rectangle.bottom) - Math.max(bounds.top, rectangle.top) <= 1,
+            `The document action dock must not overlap the ${label(control)} editor view control`);
+        }
+      }
       const actions = [...dock.querySelectorAll("button")].filter(visible);
       for (const action of actions) assert(action.getAttribute("aria-label") && action.textContent.trim() === "",
         "Document action buttons must expose accessible names without visible text labels");

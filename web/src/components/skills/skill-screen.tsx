@@ -493,7 +493,7 @@ export function SkillScreen({
             />
           </div>
         </aside>
-        <div className="relative flex min-h-0 min-w-0 flex-1 pt-14">
+        <div className="doc-action-surface relative flex min-h-0 min-w-0 flex-1">
           <DocumentActions
             editing={editing}
             busy={busy}

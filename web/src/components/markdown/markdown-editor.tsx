@@ -71,8 +71,8 @@ export function MarkdownEditor({
         className
       )}
     >
-      <div className="flex min-h-10 shrink-0 items-center justify-between gap-3 border-b border-border px-2 py-1">
-        <div className="flex min-w-0 items-center gap-2 pl-1">
+      <div className="flex min-h-10 shrink-0 items-center justify-between gap-3 border-b border-border py-1 pr-20 pl-2">
+        <div className="flex min-w-0 flex-1 items-center gap-2 pl-1">
           <span className="truncate text-[13px] font-medium">
             {title ?? (markdown ? "Markdown" : "源码")}
           </span>
@@ -83,7 +83,7 @@ export function MarkdownEditor({
               : ` / ${maxLength.toLocaleString("zh-CN")} 字符`}
           </span>
         </div>
-        <div role="group" aria-label="编辑视图" className="flex gap-0.5">
+        <div role="group" aria-label="编辑视图" className="flex shrink-0 gap-0.5">
           {(
             [
               "source",
