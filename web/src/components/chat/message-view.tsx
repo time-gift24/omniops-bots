@@ -100,10 +100,12 @@ export function MessageView({
   streaming,
   onRetry,
   onEdit,
+  retryDisabled = false,
 }: {
   message: ChatMessageView;
   streaming: boolean;
   onRetry: () => void;
+  retryDisabled?: boolean;
   /** 把用户消息文本放回输入框。 */
   onEdit?: (text: string) => void;
 }) {
@@ -174,7 +176,7 @@ export function MessageView({
           <div className="flex items-center gap-2 text-sm text-destructive">
             <HugeiconsIcon icon={AlertCircleIcon} className="size-4" />
             <span>回复中断，已保留已输出的内容。</span>
-            <Button variant="ghost" size="sm" onClick={onRetry}>
+            <Button variant="ghost" size="sm" disabled={retryDisabled} onClick={onRetry}>
               <HugeiconsIcon icon={RefreshCcwIcon} className="size-4" />
               重试
             </Button>
@@ -183,7 +185,7 @@ export function MessageView({
         {message.state === "stopped" && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span>已停止。</span>
-            <Button variant="ghost" size="sm" onClick={onRetry}>
+            <Button variant="ghost" size="sm" disabled={retryDisabled} onClick={onRetry}>
               <HugeiconsIcon icon={RefreshCcwIcon} className="size-4" />
               重新生成
             </Button>
@@ -216,7 +218,7 @@ export function MessageView({
                 }
               />
             </MessageAction>
-            <MessageAction label="重试" onClick={onRetry}>
+            <MessageAction label="重试" disabled={retryDisabled} onClick={onRetry}>
               <HugeiconsIcon icon={RefreshCcwIcon} className="size-4" />
             </MessageAction>
           </MessageFooter>

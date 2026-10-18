@@ -1,8 +1,12 @@
 "use client"
 
 import * as React from "react"
+import { ArrowUp01Icon, StopIcon } from "@hugeicons-pro/core-stroke-rounded"
+import { HugeiconsIcon } from "@hugeicons/react"
 
+import { useAppDependencies } from "@/app/dependencies"
 import type { ThreadStore } from "@/chat/thread-store.ts"
+import { ApprovalPanel } from "@/components/chat/approval-panel"
 import { AgentChatCredits } from "@/components/premium/agent-chat-input/agent-chat-credits"
 import {
   AgentComposerAction,
@@ -14,6 +18,7 @@ import {
 } from "@/components/premium/agent-chat-input/composition"
 import type { AgentChatCreditsLabels } from "@/components/premium/agent-chat-input/credits-labels"
 import type { AgentChatInputStatus } from "@/components/premium/agent-chat-input/types"
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import type { ModelChoice } from "@/models/source"
 
@@ -32,6 +37,7 @@ const LABELS: Partial<AgentChatCreditsLabels> = {
 
 /** 失败后仍可继续输入，error 仅作语义标记。 */
 function toComposerStatus(status: string): AgentChatInputStatus {
+  if (status === "stopping") return "streaming"
   if (status === "submitted" || status === "streaming") return status
   if (status === "failed") return "error"
   return "ready"
@@ -46,9 +52,19 @@ export function ChatComposer({
   models: readonly ModelChoice[]
   className?: string
 }) {
+  const { desktop } = useAppDependencies()
+  const desktopState = React.useSyncExternalStore(
+    desktop.subscribe,
+    desktop.getState,
+    desktop.getState
+  )
   const status = React.useSyncExternalStore(
     store.subscribe,
     () => store.getState().status
+  )
+  const threadError = React.useSyncExternalStore(
+    store.subscribe,
+    () => store.getState().error?.message
   )
   const draft = React.useSyncExternalStore(
     store.subscribeDraft,
@@ -57,55 +73,124 @@ export function ChatComposer({
   )
   const model =
     models.find((choice) => choice.id === draft.model)?.id ?? models[0]?.id
+  const task = desktopState.task
+  const ownsTask = task?.threadId === store.getState().threadId
+  const approval = ownsTask ? task?.approval : undefined
+  const stopping = task?.phase === "stopping" || status === "stopping"
 
   return (
-    <AgentChatCredits
-      aria-label="消息输入"
-      labels={LABELS}
-      autoFocus
-      value={draft.text}
-      onValueChange={(text) => store.updateDraft({ text })}
-      // 技能体系未上线：空列表让 `/` 保持纯文本，不触发面板。
-      skills={[]}
-      status={toComposerStatus(status)}
-      placeholder=""
-      models={models}
-      model={model}
-      onModelChange={(model) => store.updateDraft({ model })}
-      attachments={draft.attachments}
-      onAttachmentsChange={(attachments) => store.updateDraft({ attachments })}
-      onStop={() => store.stop()}
-      onSubmit={(text, sent) => {
-        const accepted = store.send(
-          text,
-          sent.map((attachment) => ({
-            id: attachment.id,
-            name: attachment.name,
-            mediaType: attachment.type ?? "application/octet-stream",
-            size: attachment.size,
-            file: attachment.file,
-            url: attachment.url,
-          })),
-          model
-        )
-        if (accepted) store.updateDraft({ text: "", attachments: [] })
-        return accepted
-      }}
-      className={cn("max-w-[736px]", className)}
+    <div
+      data-slot="chat-composer-anchor"
+      className={cn("relative max-w-[736px]", className)}
     >
-      <AgentComposerSurface className="px-1 py-2">
-        <AgentComposerInput />
-        <div className="flex items-center justify-between gap-3 px-1">
-          <div className="flex min-w-0 items-center gap-0.5 text-muted-foreground">
-            <AgentComposerAttach />
-          </div>
-          <div className="flex shrink-0 items-center gap-1">
-            <AgentComposerModel />
-            <AgentComposerAction />
-          </div>
+      {task && ownsTask && approval ? (
+        <ApprovalPanel
+          key={`${task.runId}:${approval.id}`}
+          runtime={desktop}
+          task={task}
+          approval={approval}
+          error={threadError}
+          draft={draft.approval}
+          onDraftChange={(approval) => store.updateDraft({ approval })}
+          onStop={() => store.stop()}
+        />
+      ) : task ? (
+        <div
+          role="status"
+          className="absolute inset-x-0 bottom-[calc(100%+12px)] z-10 flex items-center justify-between gap-2 rounded-xl bg-popover px-3 py-2 text-xs text-muted-foreground shadow-[0_2px_8px_rgb(0_0_0/0.1)]"
+        >
+          <span className="min-w-0 break-words">
+            {ownsTask
+              ? stopping
+                ? "正在停止任务，确认结束后释放浏览器…"
+                : (task.error ?? threadError ?? "Agent 正在执行任务")
+              : "其他会话有任务正在进行；你可以先写草稿。"}
+          </span>
         </div>
-      </AgentComposerSurface>
-      <AgentComposerAttachments />
-    </AgentChatCredits>
+      ) : !desktopState.simulated && !models.length ? (
+        <p role="alert" className="absolute inset-x-0 bottom-[calc(100%+12px)] text-xs text-muted-foreground">
+          尚未配置模型。请设置本地模型配置并重新打开应用；目录与浏览器仍可使用。
+        </p>
+      ) : null}
+      <AgentChatCredits
+        aria-label="消息输入"
+        labels={LABELS}
+        autoFocus
+        value={draft.text}
+        onValueChange={(text) => store.updateDraft({ text })}
+        // 技能体系未上线：空列表让 `/` 保持纯文本，不触发面板。
+        skills={[]}
+        status={toComposerStatus(status)}
+        placeholder=""
+        models={models}
+        model={model}
+        onModelChange={(model) => store.updateDraft({ model })}
+        attachments={draft.attachments}
+        onAttachmentsChange={(attachments) =>
+          store.updateDraft({ attachments })
+        }
+        onStop={() => store.stop()}
+        onSubmit={(text, sent) => {
+          if (desktop.getState().task) return false
+          const accepted = store.send(
+            text,
+            sent.map((attachment) => ({
+              id: attachment.id,
+              name: attachment.name,
+              mediaType: attachment.type ?? "application/octet-stream",
+              size: attachment.size,
+              file: attachment.file,
+              url: attachment.url,
+            })),
+            model
+          )
+          if (accepted) store.updateDraft({ text: "", attachments: [] })
+          return accepted
+        }}
+        className="max-w-none"
+      >
+        <AgentComposerSurface className="px-1 py-2">
+          <AgentComposerInput />
+          <div className="flex items-center justify-between gap-3 px-1">
+            <div className="flex min-w-0 items-center gap-0.5 text-muted-foreground">
+              <AgentComposerAttach />
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+              <AgentComposerModel />
+              {task ? (
+                <Button
+                  size="icon"
+                  variant={ownsTask ? "secondary" : "default"}
+                  className="size-10 rounded-full"
+                  aria-label={
+                    ownsTask ? (stopping ? "正在停止任务" : "停止任务") : "发送"
+                  }
+                  title={ownsTask ? "停止当前任务" : "当前任务结束后可发送"}
+                  disabled={!ownsTask || stopping}
+                  onClick={() => store.stop()}
+                >
+                  <HugeiconsIcon
+                    icon={ownsTask ? StopIcon : ArrowUp01Icon}
+                    aria-hidden="true"
+                  />
+                </Button>
+              ) : stopping ? (
+                <Button
+                  size="icon"
+                  className="size-10 rounded-full"
+                  disabled
+                  aria-label="正在停止任务"
+                >
+                  <HugeiconsIcon icon={StopIcon} aria-hidden="true" />
+                </Button>
+              ) : (
+                <AgentComposerAction />
+              )}
+            </div>
+          </div>
+        </AgentComposerSurface>
+        <AgentComposerAttachments />
+      </AgentChatCredits>
+    </div>
   )
 }

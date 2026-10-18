@@ -70,7 +70,7 @@ test("an EOF without a terminal event is a truncated failure, not a user stop", 
   assert.equal(store.getState().messages.at(-1).parts[0].text, "kept");
 });
 
-test("a throwing abort still publishes the local stop and permits the next send", async t => {
+test("a throwing abort retains task ownership and reports the failure", async t => {
   const { ThreadStoreImpl } = await load(t);
   const end = Promise.withResolvers();
   t.after(() => end.resolve());
@@ -82,9 +82,9 @@ test("a throwing abort still publishes the local stop and permits the next send"
   store.subscribe(() => states.push(store.getState().status));
   store.send("old");
   assert.doesNotThrow(() => store.stop());
-  assert.equal(states.at(-1), "idle");
-  assert.equal(store.getState().messages.at(-1).state, "stopped");
-  assert.equal(store.send("new"), true);
+  assert.equal(states.at(-1), "streaming");
+  assert.equal(store.getState().error.message, "transport already closed");
+  assert.equal(store.send("new"), false);
   end.resolve();
   await settled(store);
 });

@@ -192,10 +192,12 @@ const variants${index + 1} = fixture${index + 1}.widths.flatMap((width) =>
   "## 全部回归完成 ✅\n\n将各组结果放在一起，再决定是否需要继续调整并发量、编译流程或部署资源。先确认每个变化都能独立复现，避免同时修改多个环节后难以确认收益。",
 ].join("\n\n")
 
-const sleep = (ms: number, signal: { aborted: boolean }) =>
+const sleep = (ms: number, signal: AbortSignal) =>
   new Promise<void>((resolve) => {
     if (signal.aborted) return resolve()
-    setTimeout(resolve, ms)
+    const done = () => { clearTimeout(timer); signal.removeEventListener("abort", done); resolve() }
+    const timer = setTimeout(done, ms)
+    signal.addEventListener("abort", done, { once: true })
   })
 
 const MODEL_PROFILES: Record<
@@ -233,11 +235,11 @@ export function createMockGateway(
   options: MockGatewayOptions = {}
 ): ChatGateway {
   const baseDelay = options.delayMs ?? 45
-  let active: { aborted: boolean } | undefined
+  let active: AbortController | undefined
 
   async function* script(
     request: ChatRequest,
-    signal: { aborted: boolean }
+    signal: AbortSignal
   ): AsyncGenerator<ChatEvent> {
     const text = request.messages.at(-1)?.text ?? ""
     const burst = text.includes("[burst]")
@@ -444,12 +446,12 @@ export function createMockGateway(
 
   return {
     stream(request) {
-      const signal = { aborted: false }
-      active = signal
-      return script(request, signal)
+      const controller = new AbortController()
+      active = controller
+      return script(request, controller.signal)
     },
     abort() {
-      if (active) active.aborted = true
+      active?.abort()
     },
   }
 }

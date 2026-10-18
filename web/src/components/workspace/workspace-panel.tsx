@@ -43,7 +43,9 @@ function WorkspaceGroup({
       (a, b) => Number(b.blank) - Number(a.blank) || b.updatedAt - a.updatedAt,
     );
   const running = (session: WorkspaceSession) =>
-    session.status === "submitted" || session.status === "streaming";
+    session.status === "submitted" ||
+    session.status === "streaming" ||
+    session.status === "stopping";
   const regular = rows.filter((session) => !session.blank && !running(session));
   const visibleIds = new Set(
     (showAll ? regular : regular.slice(0, 5)).map((session) => session.id),

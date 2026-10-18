@@ -8,6 +8,8 @@ feature-depth = 1
 db-path = "~/.cargo/advisory-db"
 db-urls = ["https://github.com/rustsec/advisory-db"]
 yanked = "deny"
+# Tauri's Linux-only GTK build macros; remove when upstream migrates.
+ignore = [{ id = "RUSTSEC-2024-0370", reason = "Tauri GTK macro dependency is unmaintained; current desktop targets are macOS and Windows." }]
 
 [licenses]
 allow = [
@@ -25,6 +27,44 @@ confidence-threshold = 0.8
 # Root certificate data used by rustls-platform-verifier on wasm targets.
 [[licenses.exceptions]]
 crate = "webpki-root-certs"
+allow = ["CDLA-Permissive-2.0"]
+
+
+# Required Tauri/CEF transitive dependencies, limited to reviewed versions.
+[[licenses.exceptions]]
+crate = "clipboard-win@=5.4.1"
+allow = ["BSL-1.0"]
+
+[[licenses.exceptions]]
+crate = "error-code@=3.4.0"
+allow = ["BSL-1.0"]
+
+[[licenses.exceptions]]
+crate = "cssparser@=0.37.0"
+allow = ["MPL-2.0"]
+
+[[licenses.exceptions]]
+crate = "cssparser-macros@=0.7.1"
+allow = ["MPL-2.0"]
+
+[[licenses.exceptions]]
+crate = "dtoa-short@=0.3.5"
+allow = ["MPL-2.0"]
+
+[[licenses.exceptions]]
+crate = "selectors@=0.38.0"
+allow = ["MPL-2.0"]
+
+[[licenses.exceptions]]
+crate = "option-ext@=0.2.0"
+allow = ["MPL-2.0"]
+
+[[licenses.exceptions]]
+crate = "libbz2-rs-sys@=0.2.5"
+allow = ["bzip2-1.0.6"]
+
+[[licenses.exceptions]]
+crate = "webpki-roots@=1.0.9"
 allow = ["CDLA-Permissive-2.0"]
 
 [bans]

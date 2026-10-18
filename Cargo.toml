@@ -55,6 +55,18 @@ itertools = "0.14"
 tokio = { version = "1.48", features = ["macros", "rt", "rt-multi-thread"] }
 uuid = { version = "1.18", features = ["v4"] }
 url = "2"
+tauri = { version = "=2.12.4", features = [] }
+tauri-build = { version = "=2.7.3", features = [] }
+tauri-plugin-shell = "=2.5.0"
+tauri-plugin-dialog = "2"
+tauri-plugin-clipboard-manager = "2"
+tauri-plugin-opener = "2"
+cef = { version = "=154.5.0", default-features = false, features = ["sandbox"] }
+objc2 = "0.6"
+objc2-app-kit = "0.3"
+objc2-foundation = "0.3"
+libc = "0.2"
+windows-sys = "0.61.2"
 
 [profile.release]
 lto = true

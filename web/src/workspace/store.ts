@@ -132,7 +132,9 @@ export function createWorkspaceStore(registry: ThreadStoreRegistry) {
         const newTurn = user?.id !== lastUserId
         if (!newTurn && view.status === lastStatus) return
         const completed =
-          (lastStatus === "submitted" || lastStatus === "streaming") &&
+          (lastStatus === "submitted" ||
+            lastStatus === "streaming" ||
+            lastStatus === "stopping") &&
           (view.status === "idle" || view.status === "failed")
         lastUserId = user?.id
         lastStatus = view.status

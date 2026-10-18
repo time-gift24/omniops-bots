@@ -26,6 +26,7 @@ export interface ThreadDraft {
   text: string;
   model?: string;
   attachments: readonly ThreadDraftAttachment[];
+  approval?: { id: string; reason: string; collapsed: boolean };
 }
 
 export interface ThreadStore {
@@ -57,7 +58,7 @@ export class ThreadStoreImpl implements ThreadStore {
   // ponytail: 草稿跟随内存会话；需要刷新恢复时再接持久化。
   private draft: ThreadDraft = { text: "", attachments: [] };
   private draftListeners = new Set<() => void>();
-  private activeRequest: { messageId: string } | undefined;
+  private activeRequest: { messageId: string; stopping?: boolean } | undefined;
   private gateway: ChatGateway;
   /** 重试保留运行态附件引用与模型；这些输入不进入消息视图或 snapshot。 */
   private requestInputs = new Map<
@@ -130,15 +131,30 @@ export class ThreadStoreImpl implements ThreadStore {
 
   stop = (): void => {
     const request = this.activeRequest;
-    if (!request) return;
-    this.activeRequest = undefined;
-    this.state = markStopped(this.state, request.messageId);
+    if (!request || request.stopping) return;
+    request.stopping = true;
+    this.state = { ...this.state, status: "stopping", error: undefined };
+    const stopped = () => {
+      if (this.activeRequest !== request) return;
+      this.activeRequest = undefined;
+      this.state = markStopped(this.state, request.messageId);
+      this.emit();
+    };
+    const failed = (cause: unknown) => {
+      if (this.activeRequest !== request) return;
+      request.stopping = false;
+      this.state = { ...this.state, status: "streaming", error: {
+        kind: "transport", message: cause instanceof Error ? cause.message : String(cause),
+      } };
+      this.emit();
+    };
     try {
-      this.gateway.abort();
-    } catch {
-      // 本地停止已生效，传输关闭失败不能阻止状态通知。
-    }
-    this.emit();
+      const confirmation = this.gateway.abort();
+      if (confirmation) {
+        this.emit();
+        void confirmation.then(stopped, failed);
+      } else stopped();
+    } catch (cause) { failed(cause); }
   };
 
   retry = (messageId?: string): void => {
@@ -173,7 +189,14 @@ export class ThreadStoreImpl implements ThreadStore {
     model: string | undefined,
     messageId = `m-${this.state.messages.length + 1}`,
   ): Promise<void> {
-    const active = { messageId };
+    const active: { messageId: string; stopping?: boolean } = { messageId };
+    const targetIndex = this.state.messages.findIndex((message) => message.id === messageId);
+    const preceding = targetIndex < 0 ? this.state.messages : this.state.messages.slice(0, targetIndex);
+    const currentUserIndex = preceding.findLastIndex((message) => message.role === "user");
+    const history = preceding.slice(0, currentUserIndex).map((message) => ({
+      role: message.role,
+      text: message.parts.filter((part) => part.kind === "text").map((part) => part.text).join(""),
+    }));
     this.activeRequest = active;
     this.requestInputs.set(messageId, { attachments, model });
     const reply: ChatMessageView = {
@@ -199,8 +222,9 @@ export class ThreadStoreImpl implements ThreadStore {
     };
     this.emit();
     try {
-      if (this.activeRequest !== active) return;
+      if (this.activeRequest !== active || active.stopping) return;
       const request = {
+        ...(history.length ? { history } : {}),
         messages: [
           {
             role: "user" as const,
@@ -218,14 +242,17 @@ export class ThreadStoreImpl implements ThreadStore {
       };
       for await (const event of this.gateway.stream(request)) {
         if (this.activeRequest !== active) return;
-        this.state = foldChatEvent(this.state, event, messageId);
+        if (active.stopping) continue;
+        this.state = event.type === "failed" && event.error.kind === "aborted"
+          ? markStopped(this.state, messageId)
+          : foldChatEvent(this.state, event, messageId);
         const terminal =
-          event.type === "completed" || this.state.status === "failed";
+          event.type === "completed" || event.type === "failed" || this.state.status === "failed";
         if (terminal) this.activeRequest = undefined;
         this.emit();
         if (terminal) break;
       }
-      if (this.activeRequest !== active) return;
+      if (this.activeRequest !== active || active.stopping) return;
       this.state = foldChatEvent(
         this.state,
         {
@@ -238,7 +265,7 @@ export class ThreadStoreImpl implements ThreadStore {
         messageId,
       );
     } catch (cause) {
-      if (this.activeRequest !== active) return;
+      if (this.activeRequest !== active || active.stopping) return;
       this.state = foldChatEvent(
         this.state,
         {
@@ -251,7 +278,7 @@ export class ThreadStoreImpl implements ThreadStore {
         messageId,
       );
     } finally {
-      if (this.activeRequest === active) {
+      if (this.activeRequest === active && !active.stopping) {
         this.activeRequest = undefined;
         this.emit();
       }

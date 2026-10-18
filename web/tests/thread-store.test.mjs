@@ -153,6 +153,66 @@ test("stop 后旧流的事件、异常和收尾不能改写新回合", async (t)
   }
 });
 
+test("async stop retains ownership until acknowledgement and ignores late stream events", async (t) => {
+  const { ThreadStoreImpl } = await loadModules(t);
+  const acknowledgement = Promise.withResolvers();
+  const oldEnd = Promise.withResolvers();
+  const newEnd = Promise.withResolvers();
+  let stops = 0;
+  t.after(() => { acknowledgement.resolve(); oldEnd.resolve(); newEnd.resolve(); });
+  const store = new ThreadStoreImpl("async-stop", {
+    abort() { stops += 1; return acknowledgement.promise; },
+    async *stream(input) {
+      const text = input.messages[0].text;
+      yield { type: "started", metadata };
+      yield { type: "part-started", partId: 0, kind: "text" };
+      yield { type: "delta", partId: 0, text };
+      await (text === "old" ? oldEnd.promise : newEnd.promise);
+      yield { type: "delta", partId: 0, text: "late" };
+      yield completed;
+    },
+  });
+  store.send("old");
+  await waitFor(() => store.getState().messages.at(-1)?.parts[0]?.text === "old");
+  store.stop();
+  store.stop();
+  assert.equal(stops, 1);
+  assert.equal(store.streaming, true);
+  assert.equal(store.getState().status, "stopping");
+  assert.equal(store.send("too early"), false);
+  acknowledgement.resolve();
+  await waitFor(() => !store.streaming);
+  assert.equal(store.getState().messages.at(-1).state, "stopped");
+  assert.equal(store.send("new"), true);
+  await waitFor(() => store.getState().messages.at(-1)?.parts[0]?.text === "new");
+  oldEnd.resolve();
+  await flush();
+  assert.equal(store.streaming, true);
+  assert.equal(store.getState().messages.at(-1).parts[0].text, "new");
+  newEnd.resolve();
+  await waitFor(() => !store.streaming);
+});
+
+test("a rejected stop retains the task and exposes its error for retry", async (t) => {
+  const { ThreadStoreImpl } = await loadModules(t);
+  const end = Promise.withResolvers();
+  let attempts = 0;
+  t.after(() => end.resolve());
+  const store = new ThreadStoreImpl("stop-failure", {
+    abort() { return ++attempts === 1 ? Promise.reject(new Error("stop failed")) : Promise.resolve(); },
+    async *stream() { yield { type: "started", metadata }; await end.promise; },
+  });
+  store.send("hello");
+  await waitFor(() => store.getState().status === "streaming");
+  store.stop();
+  await waitFor(() => store.getState().error?.message === "stop failed");
+  assert.equal(store.streaming, true);
+  assert.equal(store.send("new"), false);
+  store.stop();
+  await waitFor(() => !store.streaming);
+  assert.equal(store.getState().messages.at(-1).state, "stopped");
+});
+
 test("重试历史回复只更新目标，保留其他回合、ID 与原始附件", async (t) => {
   const { ThreadStoreImpl } = await loadModules(t);
   const requests = [];

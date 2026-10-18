@@ -1,7 +1,8 @@
 "use client";
 
-import { memo, useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
+import { useAppDependencies } from "@/app/dependencies";
 import type { ThreadStore } from "@/chat/thread-store.ts";
 import type { ChatMessageView } from "@/chat/fold.ts";
 import { useThreadState } from "@/chat/react.ts";
@@ -25,11 +26,13 @@ function AssistantSlot({
   busy,
   onRetry,
   onEdit,
+  retryDisabled,
 }: {
   message: ChatMessageView;
   busy: boolean;
   onRetry: () => void;
   onEdit?: (text: string) => void;
+  retryDisabled: boolean;
 }) {
   const waiting =
     busy && message.state === "streaming" && message.parts.length === 0;
@@ -55,6 +58,7 @@ function AssistantSlot({
             message={message}
             streaming={busy && message.state === "streaming"}
             onRetry={onRetry}
+            retryDisabled={retryDisabled}
             onEdit={onEdit}
           />
         )}
@@ -78,15 +82,17 @@ function AssistantSlot({
 const ThreadMessage = memo(function ThreadMessage({
   message,
   streaming,
-  store,
+  onRetry,
+  retryDisabled,
   onEdit,
 }: {
   message: ChatMessageView;
   streaming: boolean;
-  store: ThreadStore;
+  onRetry: (messageId: string) => void;
+  retryDisabled: boolean;
   onEdit?: (text: string) => void;
 }) {
-  const onRetry = () => store.retry(message.id);
+  const retry = () => onRetry(message.id);
   return (
     <MessageScrollerItem
       messageId={message.id}
@@ -96,14 +102,16 @@ const ThreadMessage = memo(function ThreadMessage({
         <AssistantSlot
           message={message}
           busy={streaming}
-          onRetry={onRetry}
+          onRetry={retry}
+          retryDisabled={retryDisabled}
           onEdit={onEdit}
         />
       ) : (
         <MessageView
           message={message}
           streaming={false}
-          onRetry={onRetry}
+          onRetry={retry}
+          retryDisabled={retryDisabled}
           onEdit={onEdit}
         />
       )}
@@ -118,8 +126,21 @@ export function ChatThread({
   store: ThreadStore;
   onEditMessage?: (text: string) => void;
 }) {
+  const { desktop } = useAppDependencies();
+  const desktopBusy = useSyncExternalStore(
+    desktop.subscribe,
+    () => desktop.getState().task !== null,
+    () => desktop.getState().task !== null,
+  );
+  const onRetry = useCallback((messageId: string) => {
+    if (desktop.getState().task) return;
+    store.retry(messageId);
+  }, [desktop, store]);
   const state = useThreadState(store);
-  const busy = state.status === "submitted" || state.status === "streaming";
+  const busy =
+    state.status === "submitted" ||
+    state.status === "streaming" ||
+    state.status === "stopping";
 
   return (
     <MessageScrollerProvider autoScroll scrollPreviousItemPeek={64}>
@@ -134,7 +155,8 @@ export function ChatThread({
                 key={message.id}
                 message={message}
                 streaming={busy && message.state === "streaming"}
-                store={store}
+                onRetry={onRetry}
+                retryDisabled={busy || desktopBusy}
                 onEdit={onEditMessage}
               />
             ))}

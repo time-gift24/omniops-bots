@@ -32,7 +32,7 @@ export function WorkspacePicker({
   addOnly: boolean
   fallbackFocusRef: RefObject<HTMLElement | null>
 }) {
-  const { workspaceAccess } = useAppDependencies()
+  const { workspaceAccess, desktop } = useAppDependencies()
   const directories = useBackendData(
     "directories",
     () => workspaceAccess.listDirectories(),
@@ -211,7 +211,9 @@ export function WorkspacePicker({
             </p>
           ) : null}
           <p className="text-xs leading-relaxed text-muted-foreground">
-            当前为演示环境，工作区与会话在刷新后重置。
+            {desktop.getState().simulated
+              ? "当前为演示环境，工作区与会话在刷新后重置。"
+              : "工作区与会话在重新打开应用后重置。"}
           </p>
           <div className="flex justify-end gap-2 pt-1">
             <Button

@@ -2,6 +2,7 @@ import { createContext, useContext, type ReactNode } from "react"
 import type { AgentSource } from "@/agents/source"
 import type { ChatGateway } from "@/chat/gateway"
 import type { ThreadId } from "@/chat/dto"
+import type { DesktopRuntime } from "@/desktop/runtime"
 import {
   createThreadStoreRegistry,
   type ThreadStoreRegistry,
@@ -18,6 +19,7 @@ import { createWorkspaceStore, type WorkspaceStore } from "@/workspace/store"
 export interface FrontendAdapters {
   readonly backendId: string
   readonly gatewayFor: (threadId: ThreadId) => ChatGateway
+  readonly desktop: DesktopRuntime
   readonly workbench: WorkbenchBackend
   readonly agents: AgentSource
   readonly skills: SkillSource

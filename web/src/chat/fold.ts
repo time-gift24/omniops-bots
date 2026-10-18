@@ -58,7 +58,7 @@ export interface ChatMessageView {
   attachments?: { name: string; mediaType: string }[];
 }
 
-export type ThreadStatus = "idle" | "submitted" | "streaming" | "failed";
+export type ThreadStatus = "idle" | "submitted" | "streaming" | "stopping" | "failed";
 
 export interface ThreadViewState {
   threadId: ThreadId;

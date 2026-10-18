@@ -2,10 +2,12 @@
 
 import {
   type Ref,
+  useCallback,
   useEffect,
   useImperativeHandle,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react"
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
 import { motion, useReducedMotion } from "motion/react"
@@ -52,6 +54,7 @@ import { useBackendData } from "./use-backend-data"
 import { useAppDependencies } from "@/app/dependencies"
 import type { ModelChoice } from "@/models/source"
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard"
+import { BrowserView, BrowserTaskStatus } from "./browser-view"
 
 const MIN_WIDTH = 320
 const DEFAULT_WIDTH = 400
@@ -69,7 +72,7 @@ function clampWidth(value: number): number {
 
 export type WorkbenchView =
   | { type: "start" }
-  | { type: "page"; url: string }
+  | { type: "browser" }
   | { type: "files" }
   | { type: "changes" }
   | { type: "file"; path: string }
@@ -77,6 +80,7 @@ export type WorkbenchView =
 
 export type WorkbenchTab = { id: string; view: WorkbenchView }
 export type WorkbenchHandle = {
+  openBrowser(): void
   openAgentDebug(agentId: string, name: string): void
 }
 
@@ -89,8 +93,8 @@ function viewTitle(view: WorkbenchView): string {
   switch (view.type) {
     case "start":
       return "新标签页"
-    case "page":
-      return view.url
+    case "browser":
+      return "浏览器"
     case "files":
       return "文件"
     case "changes":
@@ -105,7 +109,7 @@ function viewTitle(view: WorkbenchView): string {
 function viewIcon(view: WorkbenchView): IconSvgElement {
   switch (view.type) {
     case "start":
-    case "page":
+    case "browser":
       return Globe02Icon
     case "files":
       return FolderOpenIcon
@@ -129,8 +133,14 @@ function TabButton({
   onSelect: () => void
   onClose?: () => void
 }) {
+  const tabRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (active)
+      tabRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" })
+  }, [active])
   return (
     <div
+      ref={tabRef}
       role="tab"
       aria-selected={active}
       tabIndex={0}
@@ -174,34 +184,12 @@ function TabButton({
   )
 }
 
-function PageView({ url }: { url: string }) {
-  return (
-    <div className="flex h-full flex-col p-3">
-      <div className="grid min-h-0 flex-1 place-items-center rounded-xl border border-border bg-card">
-        <div className="flex max-w-64 flex-col items-center gap-2 p-6 text-center">
-          <span className="grid size-10 place-items-center rounded-full bg-accent text-accent-foreground">
-            <HugeiconsIcon
-              icon={Globe02Icon}
-              size={20}
-              strokeWidth={1.7}
-              aria-hidden="true"
-            />
-          </span>
-          <p className="max-w-full truncate text-sm font-medium">{url}</p>
-          <p className="text-xs leading-relaxed text-muted-foreground">
-            页面渲染区域。接入 WebView 后，这里会直接显示目标页面内容。
-          </p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export function WorkbenchPanel({
   ref,
   id,
   open,
   onClose,
+  onReturnToApproval,
   backend,
   scope,
   models,
@@ -210,13 +198,21 @@ export function WorkbenchPanel({
   id?: string
   open: boolean
   onClose: () => void
+  onReturnToApproval?: () => void
   backend: WorkbenchBackend
   scope: WorkbenchScope | null
   models: readonly ModelChoice[]
 }) {
-  const { host } = useAppDependencies()
+  const { host, desktop } = useAppDependencies()
+  const desktopState = useSyncExternalStore(
+    desktop.subscribe,
+    desktop.getState,
+    desktop.getState
+  )
+  const { browser, task } = desktopState
   const { copy } = useCopyToClipboard()
   const [hostError, setHostError] = useState("")
+  const [navigating, setNavigating] = useState(false)
   const reduce = useReducedMotion()
   const counter = useRef(1)
   const [width, setWidth] = useState(DEFAULT_WIDTH)
@@ -238,10 +234,25 @@ export function WorkbenchPanel({
     { id: "tab-1", view: { type: "start" } },
   ])
   const [activeId, setActiveId] = useState("tab-1")
-  const [draftUrl, setDraftUrl] = useState("")
+  const [addressDraft, setAddressDraft] = useState<{
+    tabId: string
+    url: string
+    value: string
+  } | null>(null)
+  const openBrowser = useCallback(() => {
+    setTabs((current) =>
+      current.some((tab) => tab.id === "browser")
+        ? current
+        : [...current, { id: "browser", view: { type: "browser" } }]
+    )
+    setActiveId("browser")
+    setAddressDraft(null)
+    setHostError("")
+  }, [])
   useImperativeHandle(
     ref,
     () => ({
+      openBrowser,
       openAgentDebug(agentId, name) {
         const id = `agent-debug:${agentId}`
         const view: WorkbenchView = { type: "agent-debug", agentId, name }
@@ -251,10 +262,10 @@ export function WorkbenchPanel({
             : [...current, { id, view }]
         )
         setActiveId(id)
-        setDraftUrl("")
+        setAddressDraft(null)
       },
     }),
-    []
+    [openBrowser]
   )
   // 推荐位在面板层级缓存一次，返回起始页不重新请求。
   const sites = useBackendData(
@@ -264,12 +275,19 @@ export function WorkbenchPanel({
   )
   const activeTab = tabs.find((tab) => tab.id === activeId) ?? tabs[0]
   const view = activeTab?.view ?? { type: "start" as const }
-  const browserView = view.type === "start" || view.type === "page"
+  const browserView = view.type === "start" || view.type === "browser"
+  const currentUrl = view.type === "browser" ? browser.url : ""
+  const draftUrl =
+    !task && addressDraft?.tabId === activeId && addressDraft.url === currentUrl
+      ? addressDraft.value
+      : currentUrl
+  const navigationDisabled =
+    task !== null || navigating || browser.status === "loading"
 
   function selectTab(id: string) {
-    const tab = tabs.find((entry) => entry.id === id)
     setActiveId(id)
-    setDraftUrl(tab?.view.type === "page" ? tab.view.url : "")
+    setAddressDraft(null)
+    setHostError("")
   }
 
   function updateActiveView(next: WorkbenchView) {
@@ -286,18 +304,21 @@ export function WorkbenchPanel({
     const id = `tab-${counter.current}`
     setTabs((current) => [...current, { id, view: { type: "start" } }])
     setActiveId(id)
-    setDraftUrl("")
+    setAddressDraft(null)
   }
 
   function closeTab(id: string) {
     setTabs((current) => {
       const index = current.findIndex((tab) => tab.id === id)
-      const next = current.filter((tab) => tab.id !== id)
+      const remaining = current.filter((tab) => tab.id !== id)
+      const next = remaining.length
+        ? remaining
+        : [{ id: "tab-1", view: { type: "start" as const } }]
       if (id === activeId) {
         const neighbor = next[Math.min(index, next.length - 1)]
         if (neighbor) {
           setActiveId(neighbor.id)
-          setDraftUrl(neighbor.view.type === "page" ? neighbor.view.url : "")
+          setAddressDraft(null)
         }
       }
       return next
@@ -306,9 +327,28 @@ export function WorkbenchPanel({
 
   function navigate(url: string) {
     const value = url.trim()
-    if (!value) return
-    updateActiveView({ type: "page", url: value })
-    setDraftUrl(value)
+    if (!value || navigationDisabled) return
+    openBrowser()
+    setAddressDraft({ tabId: "browser", url: browser.url, value })
+    void runBrowserAction(async () => {
+      await desktop.navigate(value)
+      setAddressDraft((current) => (current?.value === value ? null : current))
+    })
+  }
+
+  async function runBrowserAction(action: () => Promise<void>) {
+    if (navigationDisabled) return
+    setHostError("")
+    setNavigating(true)
+    try {
+      await action()
+    } catch (error) {
+      setHostError(
+        error instanceof Error ? error.message : "页面操作失败，请重试。"
+      )
+    } finally {
+      setNavigating(false)
+    }
   }
 
   function openSite(site: RecommendedSite) {
@@ -420,7 +460,11 @@ export function WorkbenchPanel({
                 tab={tab}
                 active={tab.id === activeId}
                 onSelect={() => selectTab(tab.id)}
-                onClose={tabs.length > 1 ? () => closeTab(tab.id) : undefined}
+                onClose={
+                  tabs.length > 1 || tab.view.type === "browser"
+                    ? () => closeTab(tab.id)
+                    : undefined
+                }
               />
             ))}
           </div>
@@ -443,7 +487,12 @@ export function WorkbenchPanel({
               variant="ghost"
               size="icon"
               aria-label="后退"
-              disabled
+              disabled={
+                view.type !== "browser" ||
+                navigationDisabled ||
+                !browser.canGoBack
+              }
+              onClick={() => void runBrowserAction(() => desktop.back())}
               className="size-9 rounded-full"
             >
               <HugeiconsIcon
@@ -456,7 +505,12 @@ export function WorkbenchPanel({
               variant="ghost"
               size="icon"
               aria-label="前进"
-              disabled
+              disabled={
+                view.type !== "browser" ||
+                navigationDisabled ||
+                !browser.canGoForward
+              }
+              onClick={() => void runBrowserAction(() => desktop.forward())}
               className="size-9 rounded-full"
             >
               <HugeiconsIcon
@@ -469,7 +523,10 @@ export function WorkbenchPanel({
               variant="ghost"
               size="icon"
               aria-label="重新加载"
-              disabled={view.type !== "page"}
+              disabled={
+                view.type !== "browser" || navigationDisabled || !browser.url
+              }
+              onClick={() => void runBrowserAction(() => desktop.reload())}
               className="size-9 rounded-full"
             >
               <HugeiconsIcon icon={ReloadIcon} size={16} aria-hidden="true" />
@@ -481,7 +538,7 @@ export function WorkbenchPanel({
                 navigate(draftUrl)
               }}
             >
-              <InputGroup className="h-8 rounded-full border-transparent bg-muted/70 has-[[data-slot=input-group-control]:focus-visible]:border-ring has-[[data-slot=input-group-control]:focus-visible]:bg-background">
+              <InputGroup className="h-8 rounded-full border-transparent bg-muted/70 has-disabled:opacity-100 has-[[data-slot=input-group-control]:focus-visible]:border-ring has-[[data-slot=input-group-control]:focus-visible]:bg-background">
                 <InputGroupAddon align="inline-start" className="pl-2.5">
                   <HugeiconsIcon
                     icon={Search01Icon}
@@ -491,10 +548,17 @@ export function WorkbenchPanel({
                 </InputGroupAddon>
                 <InputGroupInput
                   value={draftUrl}
-                  onChange={(event) => setDraftUrl(event.target.value)}
-                  placeholder="搜索或输入网址"
+                  onChange={(event) =>
+                    setAddressDraft({
+                      tabId: activeId,
+                      url: currentUrl,
+                      value: event.target.value,
+                    })
+                  }
+                  disabled={navigationDisabled}
+                  placeholder="输入网址"
                   aria-label="地址栏"
-                  className="text-xs"
+                  className="text-xs disabled:text-muted-foreground disabled:opacity-100"
                 />
               </InputGroup>
             </form>
@@ -517,20 +581,20 @@ export function WorkbenchPanel({
               </MorphicTooltip>
               <DropdownMenuContent align="end" className="w-44">
                 <DropdownMenuItem
-                  disabled={view.type !== "page"}
+                  disabled={view.type !== "browser" || !browser.url}
                   onSelect={() => {
-                    if (view.type === "page") void copy(view.url)
+                    if (view.type === "browser") void copy(browser.url)
                   }}
                 >
                   复制链接
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  disabled={view.type !== "page"}
+                  disabled={view.type !== "browser" || !browser.url}
                   onSelect={() => {
-                    if (view.type === "page") {
+                    if (view.type === "browser") {
                       setHostError("")
                       void host
-                        .openExternal(view.url)
+                        .openExternal(browser.url)
                         .catch(() =>
                           setHostError("无法打开链接，请检查权限后重试。")
                         )
@@ -571,6 +635,12 @@ export function WorkbenchPanel({
             {hostError}
           </p>
         ) : null}
+        {view.type === "browser" ? (
+          <BrowserTaskStatus
+            task={task}
+            onReturnToApproval={onReturnToApproval}
+          />
+        ) : null}
         <div className="@container min-h-0 flex-1 overflow-hidden">
           {view.type === "start" ? (
             <StartPage
@@ -580,8 +650,16 @@ export function WorkbenchPanel({
               onNewTab={addTab}
               onOpenSite={openSite}
             />
-          ) : view.type === "page" ? (
-            <PageView url={view.url} />
+          ) : view.type === "browser" ? (
+            <BrowserView
+              browser={browser}
+              simulated={desktopState.simulated}
+              visible={open}
+              interactive={!desktopState.task}
+              setBrowserViewport={desktop.setBrowserViewport}
+              canRetry={!navigationDisabled && Boolean(browser.url)}
+              onRetry={() => void runBrowserAction(() => desktop.reload())}
+            />
           ) : view.type === "files" ? (
             <FilesView
               backend={backend}

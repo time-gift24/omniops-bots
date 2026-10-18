@@ -1,0 +1,16 @@
+{
+  "build": {
+    "beforeBundleCommand": { "script": "python3 desktop/scripts/stage-macos.py", "cwd": "../.." }
+  },
+  "bundle": {
+    "macOS": {
+      "files": {
+        "Frameworks": "resources/Frameworks",
+        "Resources/CEF-LICENSE.txt": "resources/CEF-LICENSE.txt",
+        "Resources/CEF-CREDITS.html": "resources/CEF-CREDITS.html"
+      },
+      "entitlements": "cef-entitlements.plist",
+      "hardenedRuntime": true
+    }
+  }
+}

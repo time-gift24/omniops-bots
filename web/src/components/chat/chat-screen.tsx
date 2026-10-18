@@ -39,7 +39,12 @@ export function ChatScreen({
   onChooseWorkspace?: () => void
   suggestions?: readonly string[]
 }) {
-  const { threads } = useAppDependencies()
+  const { threads, desktop } = useAppDependencies()
+  const desktopTask = React.useSyncExternalStore(
+    desktop.subscribe,
+    () => desktop.getState().task,
+    () => desktop.getState().task
+  )
   const store = useThreadStore(threadId, threads)
   const empty = React.useSyncExternalStore(
     store.subscribe,
@@ -115,11 +120,12 @@ export function ChatScreen({
                   {suggestions.map((suggestion) => (
                     <Button
                       key={suggestion}
-                      disabled={!models.length}
+                      disabled={!models.length || Boolean(desktopTask)}
                       variant="outline"
                       size="sm"
                       className="rounded-full"
                       onClick={() => {
+                        if (desktop.getState().task) return
                         preloadChatThread()
                         store.send(
                           suggestion,

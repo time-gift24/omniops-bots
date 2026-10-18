@@ -1,16 +1,9 @@
 import type {
   ChangeSet,
-  RecommendedSite,
   WorkspaceFileEntry,
 } from "@/workbench/backend"
 
-/** 示例数据：推荐位在接入真实浏览历史后替换。 */
-export const RECOMMENDED_SITES: readonly RecommendedSite[] = [
-  { name: "Cognacta 运维端", url: "ops.cognacta.cn", initial: "C" },
-  { name: "Vite 开发服务", url: "127.0.0.1:5173", initial: "V" },
-  { name: "Microsoft 必应", url: "bing.com", initial: "必" },
-  { name: "Pydantic 文档", url: "docs.pydantic.dev", initial: "P" },
-]
+export { RECOMMENDED_SITES } from "../recommendations"
 
 /** 示例数据：文件列表在接入工作区目录后替换。 */
 export const WORKSPACE_FILES: readonly WorkspaceFileEntry[] = [

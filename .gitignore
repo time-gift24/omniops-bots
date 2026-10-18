@@ -63,3 +63,11 @@ desktop.ini
 
 # Local learning and research materials
 /references/
+
+# Generated native desktop payloads and local runtime data
+/desktop/.scratch/
+/desktop/runtime/node_modules/
+/crates/cognacta-desktop/binaries/
+/crates/cognacta-desktop/resources/
+/crates/cognacta-desktop/gen/
+**/model.env

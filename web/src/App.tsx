@@ -24,6 +24,7 @@ import type { Skill } from "@/skills/source"
 import type { ModelChoice } from "@/models/source"
 import { useBackendData } from "@/components/workbench/use-backend-data"
 import { ChatScreen } from "@/components/chat/chat-screen"
+import { TaskBanner } from "@/components/desktop/task-banner"
 import { MorphicTooltip } from "@/components/premium/morphic-tooltip/morphic-tooltip"
 import {
   defaultSections,
@@ -171,7 +172,14 @@ function WorkspaceApp({
     workspaces: store,
     workbench: workbenchBackend,
     agents: agentSource,
+    desktop,
+    threads,
   } = useAppDependencies()
+  const desktopState = useSyncExternalStore(
+    desktop.subscribe,
+    desktop.getState,
+    desktop.getState
+  )
   const state = useSyncExternalStore(
     store.subscribe,
     store.getState,
@@ -188,12 +196,35 @@ function WorkspaceApp({
     useState<HTMLDivElement | null>(null)
   const [openedSkillId, setOpenedSkillId] = useState<string | null>(null)
   const [workbenchOpen, setWorkbenchOpen] = useState(true)
+  const [navigationExpanded, setNavigationExpanded] = useState(true)
+  const [compactWindow, setCompactWindow] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(width < 1100px)").matches
+  )
   const workbenchId = useId()
   const workbenchRef = useRef<WorkbenchHandle>(null)
   const workbenchToggleRef = useRef<HTMLButtonElement>(null)
   const reduce = useReducedMotion()
   const contentRef = useRef<HTMLDivElement>(null)
   const lifetime = useRef({ version: 0 })
+  useEffect(() => {
+    const media = window.matchMedia("(width < 1100px)")
+    const onChange = () => setCompactWindow(media.matches)
+    media.addEventListener("change", onChange)
+    return () => media.removeEventListener("change", onChange)
+  }, [])
+  useEffect(() => {
+    let previous = desktop.getState().browserRequest
+    if (previous > 0) workbenchRef.current?.openBrowser()
+    return desktop.subscribe(() => {
+      const next = desktop.getState().browserRequest
+      if (next === previous) return
+      previous = next
+      workbenchRef.current?.openBrowser()
+      setWorkbenchOpen(true)
+    })
+  }, [desktop])
   useEffect(() => {
     const lifecycle = lifetime.current
     const current = ++lifecycle.version
@@ -386,6 +417,24 @@ function WorkspaceApp({
     if (!store.startSession(workspaceId)) setPicker("choose")
   }
 
+  function returnToTask() {
+    const task = desktop.getState().task
+    if (!task) return
+    if (task.threadId.startsWith("agent-test:")) {
+      const agentId = task.threadId.slice("agent-test:".length)
+      const agent = agents.find((entry) => entry.id === agentId)
+      if (!agent) return
+      setOpenedAgentId(agentId)
+      setView({ kind: "agent", agentId })
+      workbenchRef.current?.openAgentDebug(agentId, agent.configuration.name)
+      setWorkbenchOpen(true)
+    } else {
+      store.selectSession(task.threadId)
+      setView({ kind: "chat" })
+      if (compactWindow) setWorkbenchOpen(false)
+    }
+  }
+
   function selectItem(item: SidebarRailItem, section: SidebarRailSection) {
     if (section.id === "skills") {
       setOpenedSkillId(item.id.slice("skill:".length))
@@ -416,10 +465,16 @@ function WorkspaceApp({
     <>
       <SidebarRail
         workspaceName="Cognacta"
+        expanded={navigationExpanded && (!compactWindow || !workbenchOpen)}
+        onExpandedChange={(expanded) => {
+          setNavigationExpanded(expanded)
+          if (expanded && compactWindow) setWorkbenchOpen(false)
+        }}
         railActions={<ThemePicker />}
         activeSectionId={activeSectionId}
         activeItemId={activeItemId}
         onSectionSelect={(section) => {
+          if (compactWindow) setWorkbenchOpen(false)
           if (section.id === "workspace") setView({ kind: "chat" })
         }}
         onParentSelect={(section) => openSection(section.id)}
@@ -491,6 +546,7 @@ function WorkspaceApp({
             }
             models={models}
             onClose={() => setWorkbenchOpen(false)}
+            onReturnToApproval={returnToTask}
           />
         }
         headerOverlay={
@@ -533,11 +589,22 @@ function WorkspaceApp({
         onCreate={() => startSession()}
         onItemSelect={selectItem}
       >
-        <div className="h-full min-h-0">
+        <div className="flex h-full min-h-0 flex-col">
+          {desktopState.task && (
+            <TaskBanner
+              task={desktopState.task}
+              simulated={desktopState.simulated}
+              onReturn={returnToTask}
+              onStop={() => {
+                const task = desktop.getState().task
+                if (task) threads.get(task.threadId).stop()
+              }}
+            />
+          )}
           <div
             ref={contentRef}
             tabIndex={-1}
-            className="h-full min-h-0 outline-none"
+            className="min-h-0 flex-1 outline-none"
           >
             {openedSkillId ? (
               <div
@@ -678,6 +745,15 @@ function WorkspaceApp({
                 threadId={activeSession.id}
                 workspaceName={activeWorkspace.name}
                 onChooseWorkspace={() => setPicker("choose")}
+                suggestions={
+                  desktopState.simulated
+                    ? [
+                        "打开内置浏览器，访问必应并输入 abcd，不提交搜索",
+                        "帮我检查网页中的搜索框",
+                        "总结一下这个仓库本周的变更",
+                      ]
+                    : undefined
+                }
               />
             ) : (
               <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">

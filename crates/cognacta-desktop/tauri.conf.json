@@ -1,0 +1,27 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Cognacta",
+  "mainBinaryName": "cognacta-desktop",
+  "version": "0.1.0",
+  "identifier": "com.cognacta.desktop",
+  "build": {
+    "beforeBuildCommand": { "script": "node desktop/scripts/before-build.mjs", "cwd": "../.." },
+    "frontendDist": "../../web/dist"
+  },
+  "app": {
+    "windows": [{ "label": "main", "title": "Cognacta", "width": 1280, "height": 860, "minWidth": 390, "minHeight": 600 }],
+    "security": { "csp": "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src ipc: http://ipc.localhost" }
+  },
+  "bundle": {
+    "active": true,
+    "icon": ["icons/icon.png", "icons/icon.ico"],
+    "targets": ["app", "dmg"],
+    "externalBin": ["binaries/cognacta-node"],
+    "resources": {
+      "resources/runtime/": "runtime/",
+      "resources/THIRD_PARTY_NOTICES.txt": "THIRD_PARTY_NOTICES.txt",
+      "resources/runtime-manifest.json": "runtime-manifest.json"
+    },
+    "macOS": { "minimumSystemVersion": "15.0", "signingIdentity": "-", "hardenedRuntime": false }
+  }
+}

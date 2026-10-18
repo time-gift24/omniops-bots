@@ -103,6 +103,8 @@ export interface ChatRequestMessage {
 
 export interface ChatRequest {
   messages: ChatRequestMessage[];
+  /** Text context preceding the current user input, including historical retries. */
+  history?: { role: "user" | "assistant"; text: string }[];
   instructions?: string;
   model?: string;
 }

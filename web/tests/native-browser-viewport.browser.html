@@ -1,0 +1,76 @@
+<!doctype html>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Native browser viewport regression</title>
+<div id="fixture" style="width: 480px; height: 560px; margin: 40px"></div>
+<pre id="result">Running…</pre>
+<script type="module">
+  import React from "react"
+  import { createRoot } from "react-dom/client"
+  import { flushSync } from "react-dom"
+  import "/src/index.css"
+  import { BrowserView } from "/src/components/workbench/browser-view.tsx"
+
+  const fixture = document.querySelector("#fixture")
+  const root = createRoot(fixture)
+  const calls = []
+  const setBrowserViewport = async bounds => { calls.push(bounds) }
+  const browser = { url: "https://example.com/", title: "Actual page", status: "ready", canGoBack: false, canGoForward: false }
+  const render = (props = {}) => flushSync(() => root.render(React.createElement(BrowserView, { browser, simulated: false, visible: true, canRetry: true, onRetry() {}, setBrowserViewport, ...props })))
+  const wait = async predicate => {
+    for (let i = 0; i < 120; i++) { if (predicate()) return; await new Promise(resolve => setTimeout(resolve, 20)) }
+    throw new Error("Timed out waiting for viewport")
+  }
+  const assert = (value, message) => { if (!value) throw new Error(message) }
+  try {
+    render()
+    await wait(() => calls.at(-1)?.width > 0)
+    const rect = fixture.getBoundingClientRect()
+    assert(calls.at(-1).x === rect.x, "native content aligns with browser body")
+    assert(calls.at(-1).y > rect.y, "native content leaves the header visible")
+    assert(calls.at(-1).height < rect.height, "native content excludes header chrome")
+    assert(calls.at(-1).interactive === true, "idle browser accepts manual input")
+    render({ interactive: false })
+    await wait(() => calls.at(-1)?.interactive === false)
+    assert(calls.at(-1).width > 0, "task input lock keeps the live page visible")
+    render({ interactive: true })
+    await wait(() => calls.at(-1)?.interactive === true)
+    const dialog = document.createElement("div")
+    dialog.role = "dialog"
+    dialog.textContent = "Host dialog"
+    document.body.append(dialog)
+    await wait(() => calls.at(-1) === null)
+    dialog.remove()
+    await wait(() => calls.at(-1)?.width > 0)
+    const menu = document.createElement("div")
+    menu.role = "menu"
+    menu.textContent = "Menu"
+    document.body.append(menu)
+    await wait(() => calls.at(-1) === null)
+    menu.dataset.state = "closed"
+    await wait(() => calls.at(-1)?.width > 0)
+    menu.remove()
+    render({ visible: false })
+    await wait(() => calls.at(-1) === null)
+    render()
+    await wait(() => calls.at(-1)?.width > 0)
+    fixture.style.width = "360px"
+    await wait(() => calls.at(-1)?.width === 360)
+    render({ browser: { ...browser, status: "error", error: "Load failed" } })
+    await wait(() => calls.at(-1) === null)
+    assert(fixture.textContent.includes("Load failed"), "native failure retains existing browser error UI")
+    render({ simulated: true, browser: { ...browser, preview: { heading: "Preview", text: "Still simulated" } } })
+    const count = calls.length
+    await new Promise(resolve => setTimeout(resolve, 80))
+    assert(calls.length === count, "simulated mode never sends viewport commands")
+    assert(fixture.textContent.includes("Still simulated"), "simulated preview remains unchanged")
+    render()
+    await wait(() => calls.at(-1)?.width > 0)
+    flushSync(() => root.unmount())
+    await wait(() => calls.at(-1) === null)
+    document.querySelector("#result").textContent = "PASS: native bounds, dialogs/menus, hide/reopen, resize, error, simulated regression, cleanup"
+  } catch (error) {
+    document.querySelector("#result").textContent = `FAIL: ${error.stack}`
+    throw error
+  }
+</script>
