@@ -1,7 +1,7 @@
 import type { WorkspaceAccess } from "@/workspace/access"
 
 const DIRECTORIES = [
-  "/workspace/cognacta",
+  "/workspace/omniops-bots",
   "/workspace/客户支持",
   "/workspace/研发协作",
 ] as const

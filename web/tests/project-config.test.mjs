@@ -19,7 +19,7 @@ test("typecheck catches errors in both referenced projects", async (t) => {
   const { scripts } = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
   const [command, ...args] = scripts.typecheck.split(/\s+/);
   assert.equal(command, "tsc");
-  const directory = await mkdtemp(join(tmpdir(), "cognacta-typecheck-"));
+  const directory = await mkdtemp(join(tmpdir(), "omniops-bots-typecheck-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
   await writeFile(join(directory, "tsconfig.json"), JSON.stringify({
     files: [], references: [{ path: "app" }, { path: "node" }],

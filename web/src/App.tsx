@@ -464,7 +464,7 @@ function WorkspaceApp({
   return (
     <>
       <SidebarRail
-        workspaceName="Cognacta"
+        workspaceName="omniops-bots"
         expanded={navigationExpanded && (!compactWindow || !workbenchOpen)}
         onExpandedChange={(expanded) => {
           setNavigationExpanded(expanded)

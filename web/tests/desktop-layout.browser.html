@@ -33,8 +33,8 @@ Running…</pre>
   const runtime = createDemoDesktopRuntime({ delayMs: 20 })
   const dependencies = createTestDependencies(runtime)
   const workspace = dependencies.workspaces.addWorkspace({
-    name: "Cognacta",
-    path: "/demo/cognacta",
+    name: "omniops-bots",
+    path: "/demo/omniops-bots",
   })
   const session = dependencies.workspaces.startSession(workspace.id)
   const thread = dependencies.threads.get(session)

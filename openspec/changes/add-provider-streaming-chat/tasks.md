@@ -2,8 +2,8 @@
 
 - [x] 1.1 在现有 core 中落地流式文本所需的 Provider、Model、请求、响应、事件和 Protocol；沿用 dyn Trait + async_trait、私有字段和校验构造，保留 generate 签名但不扩展非流式实现。
 - [x] 1.2 用 thiserror 定义 core Error、ErrorKind 及来源/partial 访问，添加最小无网络 UT 验证构造校验、模型转发和错误来源保留。
-- [x] 1.3 新增承担实际工作的 cognacta-provider crate，并在 workspace 统一声明所需依赖；核对 Rust 工具链、SSE decoder 最小 features 和 deny 约束，不创建额外空层。
-- [x] 1.4 按 design 的完整定义实现并从 cognacta-provider 根导出自身 thiserror Error 和公开 API；明确配置/组装、RequestAuth/HttpAccess、core Protocol 三类出口的错误类型，保留来源并避免双向自动转换。
+- [x] 1.3 新增承担实际工作的 omniops-bots-provider crate，并在 workspace 统一声明所需依赖；核对 Rust 工具链、SSE decoder 最小 features 和 deny 约束，不创建额外空层。
+- [x] 1.4 按 design 的完整定义实现并从 omniops-bots-provider 根导出自身 thiserror Error 和公开 API；明确配置/组装、RequestAuth/HttpAccess、core Protocol 三类出口的错误类型，保留来源并避免双向自动转换。
 
 ## 2. TOML 配置与模型组装
 
@@ -20,7 +20,7 @@
 
 ## 4. Feature 门控交互 CLI
 
-- [x] 4.1 使用 clap 接管现有 CLI，添加默认关闭的 cognacta-test feature 与 chat 子命令；门控接入相关依赖，保留默认版本/帮助行为，要求 config/provider/model 参数。
+- [x] 4.1 使用 clap 接管现有 CLI，添加默认关闭的 omniops-bots-test feature 与 chat 子命令；门控接入相关依赖，保留默认版本/帮助行为，要求 config/provider/model 参数。
 - [x] 4.2 实现启动加载与固定模型选择、逐行输入、空行跳过、/exit 和输入 EOF 退出；输出文本 delta 后立即 flush，不增加 TUI 或会话持久化。
 - [x] 4.3 实现完整成功后一次提交 user/assistant 历史，任何失败安全报错并非零退出、不提交部分轮次；CLI Error 使用 thiserror，通过小型 Protocol fake 验证历史行为。
 
@@ -34,8 +34,8 @@
 
 ## 6. 验证与收尾
 
-- [x] 6.1 运行无网络 UT：SQLX_OFFLINE=true cargo test --workspace --lib --bins --all-features --locked；另以 --no-default-features 验证 cognacta-cli 的默认参数/帮助和 chat 不可用，确认默认依赖树不拉入 provider 接入。
-- [x] 6.2 分别运行本地网络集成目标：SQLX_OFFLINE=true cargo test -p cognacta-provider --test streaming --locked，以及 SQLX_OFFLINE=true cargo test -p cognacta-cli --features cognacta-test --test chat --locked。
+- [x] 6.1 运行无网络 UT：SQLX_OFFLINE=true cargo test --workspace --lib --bins --all-features --locked；另以 --no-default-features 验证 omniops-bots-cli 的默认参数/帮助和 chat 不可用，确认默认依赖树不拉入 provider 接入。
+- [x] 6.2 分别运行本地网络集成目标：SQLX_OFFLINE=true cargo test -p omniops-bots-provider --test streaming --locked，以及 SQLX_OFFLINE=true cargo test -p omniops-bots-cli --features omniops-bots-test --test chat --locked。
 - [x] 6.3 按 AGENTS.md 运行 cargo fmt --all -- --check、离线 workspace check/clippy（all-targets/all-features/locked，clippy -D warnings）与 cargo deny check --disable-fetch；同时检查默认 CLI 构建，通过后记录实际验证结果，不将未执行的真实服务测试列为通过。
 
 ## 实施验证（2026-10-15）
@@ -44,9 +44,9 @@
 - `SQLX_OFFLINE=true cargo check --workspace --all-targets --all-features --locked`：通过。
 - `SQLX_OFFLINE=true cargo clippy --workspace --all-targets --all-features --locked -- -D warnings`：通过。
 - `SQLX_OFFLINE=true cargo test --workspace --lib --bins --all-features --locked`：23 项通过，其中 6 项为已有 vendored 测试；无数据库或外部服务调用。
-- `SQLX_OFFLINE=true cargo test -p cognacta-provider --test streaming --locked`：10 项本地 HTTP 集成测试通过。
-- `SQLX_OFFLINE=true cargo test -p cognacta-cli --features cognacta-test --test chat --locked`：3 项子进程集成测试通过。修正 macOS 测试 socket 继承非阻塞模式后，连续 5 次定向复测通过。
-- 默认 feature 的 CLI 单元测试与构建通过；无参数、帮助、版本可用，chat 返回退出码 2；默认 normal 依赖树不包含 cognacta-provider 或 reqwest。
+- `SQLX_OFFLINE=true cargo test -p omniops-bots-provider --test streaming --locked`：10 项本地 HTTP 集成测试通过。
+- `SQLX_OFFLINE=true cargo test -p omniops-bots-cli --features omniops-bots-test --test chat --locked`：3 项子进程集成测试通过。修正 macOS 测试 socket 继承非阻塞模式后，连续 5 次定向复测通过。
+- 默认 feature 的 CLI 单元测试与构建通过；无参数、帮助、版本可用，chat 返回退出码 2；默认 normal 依赖树不包含 omniops-bots-provider 或 reqwest。
 - `cargo deny check --disable-fetch`：advisories、bans、licenses、sources 通过（现有允许的重复版本等警告仍保留）。reqwest 使用 native-tls，满足当前许可证白名单，未修改 deny.toml。
 - 实际 CLI 经 providers.example.toml 连接 ChatAnywhere 的 gpt-4.1-nano，完成两轮流式对话，第二轮正确读取第一轮暗号，退出码 0、stderr 为空。两轮首个 stdout 文本延迟约 6.196 秒和 5.994 秒；第一轮分批输出。延迟仅代表此次端到端实测。
 - 联调发现网关会在 finish 后追加无 usage 的空 choices 元数据事件，已修复并增加人工构造的回归 fixture；仍要求合法 finish 与 [DONE]，不将空 choices 当作完成信号。

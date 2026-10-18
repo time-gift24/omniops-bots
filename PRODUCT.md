@@ -14,7 +14,7 @@ web
 
 ## Product Purpose
 
-Cognacta 是企业级 agent 运行底座。agent 运行在服务端，数据在服务端；客户端是"服务侧伸到用户机器上的手"——既是 agent 的管理/开发入口，也是服务端 agent 触达用户本地环境的执行末端（典型场景：服务端 agent 通过客户端以 CDP 操作用户的 Chrome）。
+omniops-bots 是企业级 agent 运行底座。agent 运行在服务端，数据在服务端；客户端是"服务侧伸到用户机器上的手"——既是 agent 的管理/开发入口，也是服务端 agent 触达用户本地环境的执行末端（典型场景：服务端 agent 通过客户端以 CDP 操作用户的 Chrome）。
 
 成功意味着：业务构建者敢用、能建成；agent 的运行对运维完全可观测；客户端的本地执行能力可靠且可控。
 

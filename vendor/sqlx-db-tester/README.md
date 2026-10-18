@@ -2,8 +2,8 @@
 
 # sqlx-db-tester
 
-Version `0.7.1-cognacta.1` is based on upstream `0.7.1`, supports PostgreSQL only,
-and is adapted to SQLx 0.9 for Cognacta development and tests.
+Version `0.7.1-omniops-bots.1` is based on upstream `0.7.1`, supports PostgreSQL only,
+and is adapted to SQLx 0.9 for omniops-bots development and tests.
 See [UPSTREAM.md](UPSTREAM.md) for provenance, local changes, and test commands.
 
 This a tool to test sqlx with postgres. It only supports tokio runtime at this moment.

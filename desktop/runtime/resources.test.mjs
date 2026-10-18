@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import { createResources } from './resources.mjs';
 
 test('real workspace scopes, session baselines and source skills stay isolated', async () => {
-  const root = await mkdtemp(path.join(tmpdir(), 'cognacta-resources-'));
+  const root = await mkdtemp(path.join(tmpdir(), 'omniops-bots-resources-'));
   try {
     const workspace = path.join(root, 'project');
     const skillsDir = path.join(root, 'skills');
@@ -57,7 +57,7 @@ test('real workspace scopes, session baselines and source skills stay isolated',
 });
 
 test('concurrent session captures share a bounded baseline budget', async () => {
-  const root = await mkdtemp(path.join(tmpdir(), 'cognacta-baselines-'));
+  const root = await mkdtemp(path.join(tmpdir(), 'omniops-bots-baselines-'));
   try {
     await writeFile(path.join(root, 'data.txt'), Buffer.alloc(2 * 1024 * 1024, 97));
     const resources = createResources({ homeDir: root, skillsDir: path.join(root, 'missing-skills') });

@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main-capability",
+  "description": "omniops-bots UI; process, directory, clipboard and browser operations are host commands.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

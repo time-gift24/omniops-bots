@@ -2,7 +2,7 @@
 
 - 上游：<https://github.com/tyrchen/sqlx-db-tester>
 - 来源：crates.io `sqlx-db-tester 0.7.1` 发布包（2025-10-23）。
-- 本地版本：`0.7.1-cognacta.1`，基于上游 0.7.1，只支持 PostgreSQL，适配 SQLx 0.9。
+- 本地版本：`0.7.1-omniops-bots.1`，基于上游 0.7.1，只支持 PostgreSQL，适配 SQLx 0.9。
 - 发布包内记录的 Git commit：`24023a5d62aaa1fa3c93546075f6a25b1ffa6f61`。
 - 发布包 SHA-256：`6c9798003effe0e77b1d77d41160c198fb01622eb9c96aaf699dfb54a9854670`。
 - 许可证：原样保留于 `LICENSE.md`；原始 manifest 保留于 `Cargo.toml.orig`。

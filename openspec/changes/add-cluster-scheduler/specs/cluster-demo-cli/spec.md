@@ -8,11 +8,11 @@
 
 ### Requirement: Cluster demos are explicitly feature gated
 
-CLI SHALL 在启用 cognacta-test feature 时提供 `cluster-demo <SCENARIO>` 命令，支持 chain、branch-even、branch-odd、react-loop、node-error、delta-error、input-error 七个案例。默认构建 SHALL 不暴露该命令；已有 chat、帮助与版本行为 SHALL 保持兼容。
+CLI SHALL 在启用 omniops-bots-test feature 时提供 `cluster-demo <SCENARIO>` 命令，支持 chain、branch-even、branch-odd、react-loop、node-error、delta-error、input-error 七个案例。默认构建 SHALL 不暴露该命令；已有 chat、帮助与版本行为 SHALL 保持兼容。
 
 #### Scenario: Enabled help lists available scenarios
 
-- **WHEN** 用户运行启用该 feature 的 `cognacta-cli cluster-demo --help`
+- **WHEN** 用户运行启用该 feature 的 `omniops-bots-cli cluster-demo --help`
 - **THEN** 帮助展示七个合法场景名称，正常退出 0
 
 #### Scenario: The feature is disabled
@@ -49,7 +49,7 @@ chain SHALL 把 String("hello") 交给 count，将 usize(5) 路由给 render。c
 
 #### Scenario: Run the successful chain
 
-- **WHEN** 用户运行 `cognacta-cli cluster-demo chain`
+- **WHEN** 用户运行 `omniops-bots-cli cluster-demo chain`
 - **THEN** 顺序为 count、render，stdout 为 `status=completed length=5 output=len=5` 加换行，退出 0
 
 ### Requirement: The branch demonstrates exclusive Outcome routing
@@ -58,12 +58,12 @@ chain SHALL 把 String("hello") 交给 count，将 usize(5) 路由给 render。c
 
 #### Scenario: An even input selects even
 
-- **WHEN** 用户运行 `cognacta-cli cluster-demo branch-even`
+- **WHEN** 用户运行 `omniops-bots-cli cluster-demo branch-even`
 - **THEN** 顺序为 route、even，stdout 为 `status=completed branch=even` 加换行，退出 0
 
 #### Scenario: An odd input selects odd
 
-- **WHEN** 用户运行 `cognacta-cli cluster-demo branch-odd`
+- **WHEN** 用户运行 `omniops-bots-cli cluster-demo branch-odd`
 - **THEN** 顺序为 route、odd，stdout 为 `status=completed branch=odd` 加换行，退出 0
 
 ### Requirement: The loop demonstrates model tool model orchestration
@@ -72,7 +72,7 @@ react-loop SHALL 由两个普通确定性节点表达 model → tool → model �
 
 #### Scenario: The second model call sees the tool update
 
-- **WHEN** 用户运行 `cognacta-cli cluster-demo react-loop`
+- **WHEN** 用户运行 `omniops-bots-cli cluster-demo react-loop`
 - **THEN** 第二次 model 调用看到 model_calls=1、tool_calls=1 和工具结果 5，最终 stdout 为 `status=completed model_calls=2 tool_calls=1 answer=5` 加换行，退出 0
 
 ### Requirement: A node error retains prior state and fails the command
@@ -81,7 +81,7 @@ node-error SHALL 先通过 seed 的成功 Delta 把 State.value 从 0 变为 1�
 
 #### Scenario: Run the node failure graph
 
-- **WHEN** 用户运行 `cognacta-cli cluster-demo node-error`
+- **WHEN** 用户运行 `omniops-bots-cli cluster-demo node-error`
 - **THEN** stdout 为 `status=failed node=fail value=1` 加换行，stderr 包含受控分类 NodeExecution，退出 1
 
 ### Requirement: A rejected Delta prevents the next node
@@ -90,7 +90,7 @@ delta-error SHALL 先通过 seed 把 State.value 置为 1，再调用 reject 返
 
 #### Scenario: Run the Delta failure graph
 
-- **WHEN** 用户运行 `cognacta-cli cluster-demo delta-error`
+- **WHEN** 用户运行 `omniops-bots-cli cluster-demo delta-error`
 - **THEN** stdout 为 `status=failed node=reject value=1` 加换行，stderr 包含 StateDeltaRejected，退出 1，sentinel 没有业务副作用
 
 ### Requirement: A type mismatch prevents the target body
@@ -99,7 +99,7 @@ input-error SHALL 让 seed 成功应用 value=1 后向期待 usize 的 typed_tar
 
 #### Scenario: Run the input failure graph
 
-- **WHEN** 用户运行 `cognacta-cli cluster-demo input-error`
+- **WHEN** 用户运行 `omniops-bots-cli cluster-demo input-error`
 - **THEN** stdout 为 `status=failed node=typed_target value=1` 加换行，stderr 包含 InputTypeMismatch，退出 1，目标 body 不被调用
 
 ### Requirement: Summaries and diagnostics preserve process semantics

@@ -6,7 +6,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const desktop = join(root, 'desktop');
-const hostCrate = join(root, 'crates/cognacta-desktop');
+const hostCrate = join(root, 'crates/omniops-bots-desktop');
 const macTarget = 'aarch64-apple-darwin';
 const windowsTarget = 'x86_64-pc-windows-msvc';
 
@@ -83,7 +83,7 @@ async function main() {
   const binaries = join(hostCrate, 'binaries');
   await mkdir(binaries, { recursive: true });
   await mkdir(resources, { recursive: true });
-  const sidecar = join(binaries, `cognacta-node-${plan.target}${plan.windows ? '.exe' : ''}`);
+  const sidecar = join(binaries, `omniops-bots-node-${plan.target}${plan.windows ? '.exe' : ''}`);
   await cp(executable, sidecar);
 
   const staged = join(resources, 'runtime');

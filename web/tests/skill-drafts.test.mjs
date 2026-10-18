@@ -41,14 +41,14 @@ test("草稿按技能和文件隔离，完整源码与空内容重新加载后�
     }
   }
   assert.notEqual(fileKey("a/b", "c"), fileKey("a", "b/c"))
-  assert.ok([...values.keys()].every(key => key.startsWith("cognacta:skill-draft:v1:")))
+  assert.ok([...values.keys()].every(key => key.startsWith("omniops-bots:skill-draft:v1:")))
 })
 
 test("恢复原始内容只删除目标草稿，demo兼容已有数据且删除后不复活", async (t) => {
   const { fileKey, DEMO_SKILLS, cache, values, create } = await setup(t)
   const skill = DEMO_SKILLS[0]
   const file = skill.files[0]
-  const legacyKey = `cognacta:skill-draft:v1:${fileKey(skill.id, file.path)}`
+  const legacyKey = `omniops-bots:skill-draft:v1:${fileKey(skill.id, file.path)}`
   values.set(legacyKey, "旧版草稿")
   assert.equal((await cache.load(DEMO_SKILLS))[fileKey(skill.id, file.path)], "旧版草稿")
   await cache.save(skill.id, skill.files[1].path, "保留另一个文件")

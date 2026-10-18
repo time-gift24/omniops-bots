@@ -67,7 +67,7 @@ desktop.ini
 # Generated native desktop payloads and local runtime data
 /desktop/.scratch/
 /desktop/runtime/node_modules/
-/crates/cognacta-desktop/binaries/
-/crates/cognacta-desktop/resources/
-/crates/cognacta-desktop/gen/
+/crates/omniops-bots-desktop/binaries/
+/crates/omniops-bots-desktop/resources/
+/crates/omniops-bots-desktop/gen/
 **/model.env

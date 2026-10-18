@@ -32,10 +32,10 @@
 
 | crate | 公开能力及本次内部调整 | 依赖边界 |
 | --- | --- | --- |
-| `cognacta-collector` | 新增 Collector 生命周期 API 和统一 Error；私有配置、Layer、SDK、writer、exporter 组装 | 不依赖 core 或 provider；业务语义、Generation 状态和 token 规则不放入本库 |
-| `cognacta-core` | 保持现有根导出、签名、构造校验及 core Error；在 Model 调用边界增加私有观测状态 | 只依赖 `tracing`、`opentelemetry` 的埋点 API，不依赖 Collector、SDK、exporter、HTTP 客户端或存储 |
-| `cognacta-provider` | 既有 HTTP 子阶段 span 与安全协议元数据；原有统一 Error 和 Protocol 错误转换不变 | 只为埋点直接增加 tracing；不重复统计 Generation |
-| `cognacta-cli` | 程序入口初始化、错误展示、停止业务后统一收尾；现有 stdout 和业务退出码保持 | 依赖 Collector；不自己组装 OTel 后端 |
+| `omniops-bots-collector` | 新增 Collector 生命周期 API 和统一 Error；私有配置、Layer、SDK、writer、exporter 组装 | 不依赖 core 或 provider；业务语义、Generation 状态和 token 规则不放入本库 |
+| `omniops-bots-core` | 保持现有根导出、签名、构造校验及 core Error；在 Model 调用边界增加私有观测状态 | 只依赖 `tracing`、`opentelemetry` 的埋点 API，不依赖 Collector、SDK、exporter、HTTP 客户端或存储 |
+| `omniops-bots-provider` | 既有 HTTP 子阶段 span 与安全协议元数据；原有统一 Error 和 Protocol 错误转换不变 | 只为埋点直接增加 tracing；不重复统计 Generation |
+| `omniops-bots-cli` | 程序入口初始化、错误展示、停止业务后统一收尾；现有 stdout 和业务退出码保持 | 依赖 Collector；不自己组装 OTel 后端 |
 
 此次新增库有实际职责：同时封装三信号后端、stderr writer 和进程生命周期；不是预建空 crate。跨入口可复用的 Generation 观测放在现有 Model 边界，协议与终端细节留在使用方。直接调用底层 Protocol 不构成新的统一 Model 观测入口；只保证经 Model 的统一统计，避免两层同时加计数。
 
@@ -59,7 +59,7 @@
 
 本版只启用 HTTP Protobuf 传输，不引入 gRPC/tonic。后台导出使用可在独立工作线程运行的 HTTP 客户端，避免要求调用方 Tokio runtime 常驻，或在 current-thread runtime 上阻塞等待自身任务。遥测 HTTP 客户端与模型服务的客户端、认证、超时和重试策略分别配置，不能把 Provider 凭据带到监控请求。
 
-### 3. cognacta-collector 完整公开接口
+### 3. omniops-bots-collector 完整公开接口
 
 crate 根只导出 `Collector` 与 `Error`；内部模块保持私有。Collector 为字段私有的生命周期对象，不提供可绕过初始化的字面量、Default 或 Clone，不暴露 SDK provider、worker、writer、exporter 或其配置类型。
 
@@ -130,7 +130,7 @@ CLI 在自己的统一 Error 中增加带 source 的可观测包装分类，专�
 
 ```rust
 use std::time::Duration;
-use cognacta_collector::{Collector, Error};
+use omniops_bots_collector::{Collector, Error};
 
 fn main() -> Result<(), Error> {
     let collector = Collector::init_from_env("collector-example")?;
@@ -214,13 +214,13 @@ core 的 Model 保持原公开签名，在首次 poll 时建立私有观测状�
 
 | 指标 | 类型 / 单位 | 记录规则与额外维度 |
 | --- | --- | --- |
-| `cognacta.generation.started` | u64 Counter / `{generation}` | 首次执行加一 |
-| `cognacta.generation.finished` | u64 Counter / `{generation}` | 终态加一；outcome=success/error/cancelled；error.kind 只在 error 时有值 |
-| `cognacta.generation.in_flight` | i64 UpDownCounter / `{generation}` | 开始 +1，终态 -1 |
-| `cognacta.generation.duration` | f64 Histogram / `s` | 各终态一份；outcome 维度 |
-| `cognacta.generation.time_to_first_text` | f64 Histogram / `s` | 首个非空文本一次，没有则缺失 |
-| `cognacta.generation.tokens` | u64 Counter / `{token}` | 终态按最新已知值结算；token.type=input/output |
-| `cognacta.generation.usage_reports` | u64 Counter / `{report}` | 每次结算已知 token 字段加一；token.type=input/output，用于区分缺报与真零 |
+| `omniops-bots.generation.started` | u64 Counter / `{generation}` | 首次执行加一 |
+| `omniops-bots.generation.finished` | u64 Counter / `{generation}` | 终态加一；outcome=success/error/cancelled；error.kind 只在 error 时有值 |
+| `omniops-bots.generation.in_flight` | i64 UpDownCounter / `{generation}` | 开始 +1，终态 -1 |
+| `omniops-bots.generation.duration` | f64 Histogram / `s` | 各终态一份；outcome 维度 |
+| `omniops-bots.generation.time_to_first_text` | f64 Histogram / `s` | 首个非空文本一次，没有则缺失 |
+| `omniops-bots.generation.tokens` | u64 Counter / `{token}` | 终态按最新已知值结算；token.type=input/output |
+| `omniops-bots.generation.usage_reports` | u64 Counter / `{report}` | 每次结算已知 token 字段加一；token.type=input/output，用于区分缺报与真零 |
 
 共享维度为 provider、model、protocol、operation=generate/stream，来自已校验的对象绑定。不把 resolved_model 等上游任意值增加为动态指标标签。SDK 每个 instrument 的属性组合容量显式限制为 2000，超出使用 SDK 溢出聚合；若实际选定版本不能满足，则实现等价有限丢弃行为并验收，不无限建序列。请求 ID、trace ID、响应 ID、完整 URL、用户输入和任意错误文本不进入标签。
 
@@ -244,7 +244,7 @@ Usage 是累计快照。按字段保存最新已知值，不把 5→10→最终1
 - 用通道/握手控制模型延迟与监控接收端阻塞，证明监控未响应时业务已经推进；不要依靠精确毫秒阈值验证性能。
 - 用收集到的 started/finished/in-flight 及输出验证成功、请求阶段失败、流中错误、future/stream drop、Completed 后 drop、缺失 Completed、无文本、重复 usage、缺报与真零。
 - 分别验证日志过滤和 trace 采样不影响指标、配置降级、认证隔离、三信号 OTLP、短进程尾部发送、网络和 stderr 同时阻塞下的共享关闭预算，以及 deadline 后没有二次 Drop 阻塞。
-- 默认 CLI 与 cognacta-test 模式均回归；业务 stdout、退出码、历史提交和协议事件与启用前一致。
+- 默认 CLI 与 omniops-bots-test 模式均回归；业务 stdout、退出码、历史提交和协议事件与启用前一致。
 
 ## Risks / Trade-offs
 

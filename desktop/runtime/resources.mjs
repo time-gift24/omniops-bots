@@ -114,7 +114,7 @@ async function snapshot(root, budget = MAX_TOTAL) {
 
 async function changedLines(before, after) {
   if (before.includes(0) || after.includes(0)) return { added: 0, removed: 0 };
-  const directory = await mkdtemp(path.join(tmpdir(), 'cognacta-diff-'));
+  const directory = await mkdtemp(path.join(tmpdir(), 'omniops-bots-diff-'));
   try {
     const oldFile = path.join(directory, 'before');
     const newFile = path.join(directory, 'after');
@@ -130,7 +130,7 @@ async function changedLines(before, after) {
   } finally { await rm(directory, { recursive: true, force: true }); }
 }
 
-export function createResources({ homeDir = homedir(), skillsDir = process.env.COGNACTA_SKILLS_DIR || path.join(homeDir, '.agents', 'skills') } = {}) {
+export function createResources({ homeDir = homedir(), skillsDir = process.env.OMNIOPS_BOTS_SKILLS_DIR || path.join(homeDir, '.agents', 'skills') } = {}) {
   const roots = new Set();
   const sessions = new Map();
   let baselineBytes = 0;
@@ -152,7 +152,7 @@ export function createResources({ homeDir = homedir(), skillsDir = process.env.C
         if (entry.name.startsWith('.') || (!entry.isDirectory() && !entry.isSymbolicLink())) continue;
         const root = await realpath(path.join(skillsDir, entry.name));
         try { await access(path.join(root, 'SKILL.md')); } catch { continue; }
-        if (result.length >= 256) throw new RuntimeError('resource-limit', '技能数量超过读取上限，请通过 COGNACTA_SKILLS_DIR 选择较小的目录。');
+        if (result.length >= 256) throw new RuntimeError('resource-limit', '技能数量超过读取上限，请通过 OMNIOPS_BOTS_SKILLS_DIR 选择较小的目录。');
         const sourceBytes = await readBounded(root, 'SKILL.md', Math.min(256 * 1024, MAX_TOTAL - total));
         total += sourceBytes.length;
         const source = sourceBytes.toString('utf8');
@@ -161,11 +161,11 @@ export function createResources({ homeDir = homedir(), skillsDir = process.env.C
         const files = [{ path: 'SKILL.md', content: source }];
         for (const file of await filesIn(root)) {
           if (file.path === 'SKILL.md' || file.bytes > 256 * 1024 || !/\.(?:md|txt|json|ya?ml|toml|m?[jt]s|tsx?|py|sh|css|html)$/iu.test(file.path)) continue;
-          if (total + file.bytes > MAX_TOTAL) throw new RuntimeError('resource-limit', '技能目录超过读取上限，请通过 COGNACTA_SKILLS_DIR 选择较小的目录。');
+          if (total + file.bytes > MAX_TOTAL) throw new RuntimeError('resource-limit', '技能目录超过读取上限，请通过 OMNIOPS_BOTS_SKILLS_DIR 选择较小的目录。');
           const content = await readBounded(root, file.path, 256 * 1024);
           if (!content.includes(0)) {
             total += content.length;
-            if (total > MAX_TOTAL) throw new RuntimeError('resource-limit', '技能目录超过读取上限，请通过 COGNACTA_SKILLS_DIR 选择较小的目录。');
+            if (total > MAX_TOTAL) throw new RuntimeError('resource-limit', '技能目录超过读取上限，请通过 OMNIOPS_BOTS_SKILLS_DIR 选择较小的目录。');
             files.push({ path: file.path, content: content.toString('utf8') });
           }
         }

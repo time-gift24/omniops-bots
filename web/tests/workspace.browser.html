@@ -146,9 +146,9 @@
 
       await newSession();
       await until(() => dialog()?.querySelector("input"), "New conversation without a workspace must open the picker");
-      await addDirectory("/workspace/cognacta");
+      await addDirectory("/workspace/omniops-bots");
       assert(created.length === 1, `Adding one directory must create one thread, received ${created.length}: ${created.join(", ")}`);
-      assert(row("cognacta", "新会话")?.getAttribute("aria-current") === "page", "Adding a directory must select its empty conversation row");
+      assert(row("omniops-bots", "新会话")?.getAttribute("aria-current") === "page", "Adding a directory must select its empty conversation row");
       const first = dependencies.threads.get(created[0]);
       write("first workspace draft");
       await selectModel("GPT 5.6");
@@ -164,7 +164,7 @@
       const selectedFile = first.getDraft().attachments[0].file;
       assert(selectedFile?.name === "notes.txt" && await selectedFile.text() === "keep this file", "The selected attachment must retain its actual file contents");
       await newSession();
-      await newSession("cognacta");
+      await newSession("omniops-bots");
       assert(created.length === 1 && editor().textContent === "first workspace draft", "Both new-conversation entries must reuse the same blank draft");
       assert(first.getDraft().attachments[0]?.file === selectedFile, "Reusing a blank conversation must retain its attachment");
       passed.push("StrictMode mount, directory add and blank conversation reuse");
@@ -174,7 +174,7 @@
       assert(created.length === 2 && editor().textContent === "" && model().textContent.trim() === "Pine 1", "A second workspace must start with an independent draft and model");
       const second = dependencies.threads.get(created[1]);
       write("support workspace draft");
-      await newSession("cognacta");
+      await newSession("omniops-bots");
       assert(editor().textContent === "first workspace draft" && model().textContent.trim() === "GPT 5.6", "Returning to a workspace must restore its text and model");
       assert(labeled("移除附件 notes.txt") && second.getDraft().attachments.length === 0, "Attachments must remain visible only in their own conversation");
       assert(second.getDraft().text === "support workspace draft", "Switching away must preserve the other workspace draft");
@@ -183,12 +183,12 @@
       const title = "侧边栏回归：工作区会话";
       write(title);
       click(labeled("发送"));
-      await until(() => held && first.streaming && row("cognacta", title), "Starting generation must turn the blank row into a titled history entry");
+      await until(() => held && first.streaming && row("omniops-bots", title), "Starting generation must turn the blank row into a titled history entry");
       assert(requests[0]?.id === created[0] && requests[0].request.model === "gpt-5.6", "The request must use the selected thread and model");
       assert(requests[0].request.messages[0].attachments?.[0]?.name === "notes.txt", "The request must include the selected thread's attachment");
       assert(editor().textContent === "" && first.getDraft().attachments.length === 0, "Accepted send must clear only its submitted draft");
       await newSession();
-      assert(created.length === 3 && row("cognacta", "新会话")?.getAttribute("aria-current") === "page", "New conversation must inherit the active workspace after the old draft starts executing");
+      assert(created.length === 3 && row("omniops-bots", "新会话")?.getAttribute("aria-current") === "page", "New conversation must inherit the active workspace after the old draft starts executing");
       write("next conversation draft");
       await newSession("客户支持");
       assert(editor().textContent === "support workspace draft" && first.streaming && aborted === 0, "Switching during generation must retain the other draft without aborting");
@@ -200,7 +200,7 @@
       passed.push("history title, inherited workspace and uninterrupted background generation");
 
       await searchSession(title);
-      assert(row("cognacta", title)?.getAttribute("aria-current") === "page", "Search must select the existing conversation rather than create one");
+      assert(row("omniops-bots", title)?.getAttribute("aria-current") === "page", "Search must select the existing conversation rather than create one");
       assert(fixture.textContent.includes(title) && fixture.textContent.includes("缓存键") && created.length === 3, "Search must restore the completed conversation content");
       click(labeled("编辑"));
       assert(editor().textContent === title && model().textContent.trim() === "GPT 5.6", "Editing must restore the user's text without changing models");

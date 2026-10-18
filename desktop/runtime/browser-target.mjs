@@ -1,7 +1,7 @@
 export function embeddedBrowserConfig(env) {
-  const endpoint = env.COGNACTA_BROWSER_CDP_ENDPOINT;
-  const targetId = env.COGNACTA_BROWSER_TARGET_ID;
-  if (!endpoint || !targetId) throw new Error('COGNACTA_BROWSER_CDP_ENDPOINT and COGNACTA_BROWSER_TARGET_ID must be provided together');
+  const endpoint = env.OMNIOPS_BOTS_BROWSER_CDP_ENDPOINT;
+  const targetId = env.OMNIOPS_BOTS_BROWSER_TARGET_ID;
+  if (!endpoint || !targetId) throw new Error('OMNIOPS_BOTS_BROWSER_CDP_ENDPOINT and OMNIOPS_BOTS_BROWSER_TARGET_ID must be provided together');
   const url = new URL(endpoint);
   const loopback = url.hostname === 'localhost' || url.hostname === '[::1]'
     || /^127\.\d+\.\d+\.\d+$/.test(url.hostname);

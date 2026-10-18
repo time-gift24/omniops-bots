@@ -7,20 +7,20 @@ import { delimiter, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const hostCrate = join(root, 'crates/cognacta-desktop');
+const hostCrate = join(root, 'crates/omniops-bots-desktop');
 const target = 'x86_64-pc-windows-msvc';
 const targetDir = join(root, 'desktop/.scratch/native-windows-target');
 const release = join(targetDir, target, 'release');
-const resources = join(root, 'crates/cognacta-desktop/resources');
+const resources = join(root, 'crates/omniops-bots-desktop/resources');
 const cefVersion = '154.0.34+g14c5a08+chromium-154.0.8037.98';
 const archiveName = `cef_binary_${cefVersion}_windows64_minimal.tar.bz2`;
 const archiveSHA1 = 'be54bbaf3222191dec59ffd9c9ec7e8a7f44a26d';
 const archiveURL = `https://cef-builds.spotifycdn.com/${archiveName}`;
 const cache = join(root, 'desktop/.scratch/windows-cache/cef');
 const cefPath = join(cache, '154.0.34/cef_windows_x86_64');
-const configPath = join(root, 'crates/cognacta-desktop/tauri.windows.conf.json');
+const configPath = join(root, 'crates/omniops-bots-desktop/tauri.windows.conf.json');
 const config = JSON.parse(await readFile(configPath, 'utf8'));
-const installerPath = join(release, 'bundle/nsis', `cognacta-desktop_${config.version}_native_x64-setup.exe`);
+const installerPath = join(release, 'bundle/nsis', `omniops-bots-desktop_${config.version}_native_x64-setup.exe`);
 const env = { ...process.env, CEF_PATH: cefPath, CARGO_TARGET_DIR: targetDir, TAURI_FRONTEND_PATH: join(root, 'web') };
 env.NODE_USE_ENV_PROXY ||= '1';
 env.XWIN_ARCH ||= 'x86_64';
@@ -103,7 +103,7 @@ async function prepareCEF() {
   const manifestPath = join(resources, 'runtime-manifest.json');
   const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
   manifest.chromium = { cef: '154.0.34', version: '154.0.8037.98', archiveURL, archiveSHA1, archiveSHA256: await digest(archive) };
-  manifest.sandbox = { enabled: true, launcher: 'CEF bootstrap.exe', applicationDLL: 'cognacta-desktop.dll', sameExecutableForSubprocesses: true, windowsTokenValidation: 'not_run: requires Windows host or VM' };
+  manifest.sandbox = { enabled: true, launcher: 'CEF bootstrap.exe', applicationDLL: 'omniops-bots-desktop.dll', sameExecutableForSubprocesses: true, windowsTokenValidation: 'not_run: requires Windows host or VM' };
   await writeFile(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
   console.log(`Verified and staged CEF ${cefVersion} with its sandbox bootstrap, DLLs, resources and locales.`);
 }
@@ -117,9 +117,9 @@ function configureTools() {
 }
 
 async function verifyPackage() {
-  const executable = join(release, 'cognacta-desktop.exe');
-  const applicationDLL = join(resources, 'cef/cognacta-desktop.dll');
-  const node = join(root, 'crates/cognacta-desktop/binaries', `cognacta-node-${target}.exe`);
+  const executable = join(release, 'omniops-bots-desktop.exe');
+  const applicationDLL = join(resources, 'cef/omniops-bots-desktop.dll');
+  const node = join(root, 'crates/omniops-bots-desktop/binaries', `omniops-bots-node-${target}.exe`);
   const manifest = JSON.parse(await readFile(join(resources, 'runtime-manifest.json'), 'utf8'));
   assert.equal(manifest.browserMode, 'embedded');
   assert.equal(manifest.target, target);
@@ -156,7 +156,7 @@ async function verifyPackage() {
   const nsis = await readFile(join(release, 'nsis/x64/installer.nsi'), 'utf8');
   const bundledFiles = [...nsis.matchAll(/File \/a "\/oname=([^"]+)" "([^"]+)"/g)].map(match => ({ target: match[1], source: match[2] }));
   assert.ok(bundledFiles.length > 1_000, 'NSIS resource file manifest is missing');
-  for (const name of ['libcef.dll', 'cognacta-desktop.dll', 'icudtl.dat', 'CEF-LICENSE.txt', 'CEF-CREDITS.html']) assert.ok(bundledFiles.some(file => file.target === name), `NSIS must put ${name} beside the launch EXE`);
+  for (const name of ['libcef.dll', 'omniops-bots-desktop.dll', 'icudtl.dat', 'CEF-LICENSE.txt', 'CEF-CREDITS.html']) assert.ok(bundledFiles.some(file => file.target === name), `NSIS must put ${name} beside the launch EXE`);
   assert.ok(bundledFiles.some(file => file.target === 'locales\\en-US.pak'));
   assert.ok(bundledFiles.some(file => file.target === 'runtime\\main.mjs'));
   assert.ok(bundledFiles.every(file => !/^browsers[\\/]/.test(file.target) && !/\.framework[\\/]|resources[\\/]windows[\\/]/.test(file.source)), 'Native installer contains an external Chromium or macOS payload');
@@ -202,18 +202,18 @@ async function main() {
   if (mode === '--verify-only') { await verifyPackage(); return; }
   execFileSync(process.execPath, ['desktop/scripts/prepare.mjs', '--embedded', '--target', target], { stdio: 'inherit', env });
   await prepareCEF();
-  env.COGNACTA_RUNTIME_PREPARED = '1';
+  env.OMNIOPS_BOTS_RUNTIME_PREPARED = '1';
   if (mode === '--prepare-only') return;
 
   const cli = [join(root, 'web/node_modules/@tauri-apps/cli/tauri.js')];
   const common = ['--target', target, '--features', 'native-browser', '--config', configPath];
   // CEF's sandbox bootstrap loads the application's RunWinMain DLL. Cargo still builds a bin for Tauri metadata.
-  execFileSync(process.execPath, [...cli, 'build', ...common, '--no-bundle', ...(process.platform === 'win32' ? [] : ['--runner', 'cargo-xwin']), '--', '--lib', '--bin', 'cognacta-desktop'], { stdio: 'inherit', env, cwd: hostCrate });
-  await cp(join(release, 'cognacta_desktop_native.dll'), join(resources, 'cef/cognacta-desktop.dll'));
-  await cp(join(release, 'cognacta_desktop_native.dll'), join(release, 'cognacta-desktop.dll'));
-  await cp(join(cefPath, 'bootstrap.exe'), join(release, 'cognacta-desktop.exe'));
+  execFileSync(process.execPath, [...cli, 'build', ...common, '--no-bundle', ...(process.platform === 'win32' ? [] : ['--runner', 'cargo-xwin']), '--', '--lib', '--bin', 'omniops-bots-desktop'], { stdio: 'inherit', env, cwd: hostCrate });
+  await cp(join(release, 'omniops_bots_desktop_native.dll'), join(resources, 'cef/omniops-bots-desktop.dll'));
+  await cp(join(release, 'omniops_bots_desktop_native.dll'), join(release, 'omniops-bots-desktop.dll'));
+  await cp(join(cefPath, 'bootstrap.exe'), join(release, 'omniops-bots-desktop.exe'));
   execFileSync(process.execPath, [...cli, 'bundle', ...common, '--no-binary-patching'], { stdio: 'inherit', env, cwd: hostCrate });
-  const generated = join(release, 'bundle/nsis', `Cognacta_${config.version}_x64-setup.exe`);
+  const generated = join(release, 'bundle/nsis', `omniops-bots_${config.version}_x64-setup.exe`);
   await rename(generated, installerPath);
   await verifyPackage();
 }

@@ -58,7 +58,7 @@ function attachmentContent(file, budget) {
 export function chatInput(request, configuredModel) {
   if (!request || typeof request !== 'object' || !Array.isArray(request.messages) || !request.messages.length || request.messages.length > 20) throw invalid('消息格式无效。');
   const model = request.model === undefined ? configuredModel : identifier(request.model, 'model');
-  if (!configuredModel) throw new RuntimeError('unavailable', '请在本地 model.env 中配置 COGNACTA_MODEL 和 OPENAI_API_KEY 后重启。');
+  if (!configuredModel) throw new RuntimeError('unavailable', '请在本地 model.env 中配置 OMNIOPS_BOTS_MODEL 和 OPENAI_API_KEY 后重启。');
   if (model !== configuredModel) throw new RuntimeError('unsupported', '所选模型未配置，请选择当前可用模型。');
   const instructions = request.instructions === undefined ? '' : text(request.instructions, 'Agent 指令', 256 * 1024);
   const history = request.history ?? [];

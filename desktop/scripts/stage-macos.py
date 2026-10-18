@@ -8,7 +8,7 @@ import subprocess
 from pathlib import Path
 
 root = Path(__file__).resolve().parents[2]
-crate = root / 'crates/cognacta-desktop'
+crate = root / 'crates/omniops-bots-desktop'
 debug = os.environ.get('TAURI_ENV_DEBUG') == 'true'
 profile = 'debug' if debug else 'release'
 target = Path(os.environ.get('CARGO_TARGET_DIR', root / 'target')).resolve()
@@ -18,7 +18,7 @@ env = {**os.environ, 'CEF_PATH': str(cef_path), 'CARGO_TARGET_DIR': str(target)}
 def run(*args):
     subprocess.run(args, cwd=root, env=env, check=True)
 
-run('cargo', 'build', '-p', 'cognacta-desktop-helper', *([] if debug else ['--release']))
+run('cargo', 'build', '-p', 'omniops-bots-desktop-helper', *([] if debug else ['--release']))
 config = json.loads((crate / 'tauri.conf.json').read_text())
 cef = cef_path if (cef_path / 'Chromium Embedded Framework.framework').is_dir() else cef_path / '154.0.34/cef_macos_aarch64'
 framework = cef / 'Chromium Embedded Framework.framework'
@@ -28,7 +28,7 @@ dest = crate / 'resources/Frameworks'
 dest.mkdir(exist_ok=True)
 run('ditto', str(framework), str(dest / framework.name))
 shutil.copy2(cef / 'CREDITS.html', crate / 'resources/CEF-CREDITS.html')
-shutil.copy2(root / 'crates/cognacta-desktop-helper/CEF-LICENSE.txt', crate / 'resources/CEF-LICENSE.txt')
+shutil.copy2(root / 'crates/omniops-bots-desktop-helper/CEF-LICENSE.txt', crate / 'resources/CEF-LICENSE.txt')
 entitlements = target / 'cef-entitlements.plist'
 with entitlements.open('wb') as file:
     plistlib.dump({f'com.apple.security.cs.{key}': True for key in (
@@ -44,7 +44,7 @@ for suffix in ('', ' (Alerts)', ' (GPU)', ' (Plugin)', ' (Renderer)'):
     helper = dest / (name + '.app')
     contents = helper / 'Contents'
     (contents / 'MacOS').mkdir(parents=True, exist_ok=True)
-    shutil.copy2(target / profile / 'cognacta-desktop-helper', contents / 'MacOS' / name)
+    shutil.copy2(target / profile / 'omniops-bots-desktop-helper', contents / 'MacOS' / name)
     with (contents / 'Info.plist').open('wb') as file:
         plistlib.dump({
             'CFBundleExecutable': name, 'CFBundleName': name,

@@ -1,4 +1,4 @@
-# Cognacta LLM 领域术语
+# omniops-bots LLM 领域术语
 
 系统用统一术语描述对话和模型调用。
 

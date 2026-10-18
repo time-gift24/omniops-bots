@@ -3,7 +3,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-if (process.env.COGNACTA_RUNTIME_PREPARED !== '1') {
+if (process.env.OMNIOPS_BOTS_RUNTIME_PREPARED !== '1') {
   const target = process.env.TAURI_ENV_TARGET_TRIPLE;
   execFileSync(process.execPath, ['desktop/scripts/prepare.mjs', ...(target ? ['--target', target] : [])], { cwd: root, stdio: 'inherit' });
 }

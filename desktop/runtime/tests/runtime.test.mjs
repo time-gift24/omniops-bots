@@ -161,7 +161,7 @@ test('input history/instructions/model and supported attachments survive without
 
 test('browser configuration and target selection never fall back to another page', async () => {
   assert.throws(() => embeddedBrowserConfig({}), /provided together/);
-  assert.throws(() => embeddedBrowserConfig({ COGNACTA_BROWSER_CDP_ENDPOINT: 'https://remote.test', COGNACTA_BROWSER_TARGET_ID: 'x' }), /loopback/);
+  assert.throws(() => embeddedBrowserConfig({ OMNIOPS_BOTS_BROWSER_CDP_ENDPOINT: 'https://remote.test', OMNIOPS_BOTS_BROWSER_TARGET_ID: 'x' }), /loopback/);
   const page = { isClosed: () => false };
   const browser = { contexts: () => [{ pages: () => [page], newCDPSession: async () => ({ send: async () => ({ targetInfo: { targetId: 'real' } }), detach: async () => {} }) }] };
   await assert.rejects(selectBrowserTarget(browser, 'wrong'), /refusing to select another page/);

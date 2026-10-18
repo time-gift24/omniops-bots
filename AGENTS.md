@@ -22,7 +22,7 @@
 | `opentelemetry` | 业务指标的标准 Metrics API |
 | `tracing-subscriber`、`tracing-appender` | Collector 内组合输出 Layer，以及有界、允许丢弃的后台 stderr 写入 |
 | `opentelemetry_sdk`、`opentelemetry-otlp`、`tracing-opentelemetry`、`opentelemetry-appender-tracing` | Collector 内的 SDK、三信号 OTLP 导出及 tracing 桥接 |
-| `cognacta-collector` | 进程内可观测库，封装后端配置和初始化／关闭；按已确认的 OpenSpec 设计引入 |
+| `omniops-bots-collector` | 进程内可观测库，封装后端配置和初始化／关闭；按已确认的 OpenSpec 设计引入 |
 | `sqlx` | PostgreSQL 访问、手写 SQL 的编译期校验 |
 | SQLx CLI | 创建和执行迁移、生成与检查离线查询缓存 |
 | 本地 `sqlx-db-tester` | SQLx 0.9 的开发／测试数据库生命周期工具，仅通过 `dev-dependencies` 使用 |
@@ -38,7 +38,7 @@
 
 ## core 的职责与持续审视
 
-- `cognacta-core` 是全项目公共依赖，承载可共享的业务对象、业务逻辑和边界 trait。
+- `omniops-bots-core` 是全项目公共依赖，承载可共享的业务对象、业务逻辑和边界 trait。
 - core 不依赖 `axum`、`clap` 或 `sqlx`，公共接口不暴露 HTTP、CLI 或数据库实现类型。
 - HTTP、CLI、PostgreSQL 实现依赖 core，由入口组装具体依赖。
 - 按实际功能增加 crate，先复用现有模块，不预建空层或空 crate。
@@ -73,7 +73,7 @@
 
 - 功能设计时必须向用户确认要增加哪些关键日志、span 和监控指标：分别解决什么问题，在哪些开始／完成／失败／取消边界记录，使用什么级别、字段、标签、单位及统计口径。复用本次会话已确认的决定，不重复询问；确实不需要新增时，在设计中明确理由，不机械地为每个函数加埋点。
 - 日志与 span 使用 `tracing`，指标直接使用 `opentelemetry` Metrics API。不要自建日志宏或指标门面，也不要通过解析日志统计业务指标。
-- SDK、exporter、后端配置和输出生命周期集中在进程内 `cognacta-collector`。core 只依赖标准埋点 API，不依赖 Collector、SDK 或具体监控平台；业务接口不暴露这些实现类型。初版通过 OTLP/HTTP Protobuf 导出日志、链路和指标，独立 Collector 服务是否部署另行决定。
+- SDK、exporter、后端配置和输出生命周期集中在进程内 `omniops-bots-collector`。core 只依赖标准埋点 API，不依赖 Collector、SDK 或具体监控平台；业务接口不暴露这些实现类型。初版通过 OTLP/HTTP Protobuf 导出日志、链路和指标，独立 Collector 服务是否部署另行决定。
 - 由程序入口显式初始化一次，一个 Subscriber 组合多个 Layer；库和业务方法不得隐式初始化或覆盖宿主配置。未初始化且宿主未另行配置时为空操作；初始化后没有显式遥测端点时只启用本地 stderr，不采用隐式 localhost 端点。先初始化再创建复用指标句柄，不承诺热启用或补发历史数据。
 - 埋点是轻量同步调用；网络发送和 stderr 写入均在后台完成。队列和指标属性组合容量必须有界，队列满允许丢弃，不等待容量，不以同步 stderr 或无限重试兜底，不为每条记录创建任务。
 - 遥测配置、导出和关闭失败不得改变业务结果、业务错误、stdout 或退出码，不得触发模型请求重试。远程配置无效时明确诊断并降级到本地；诊断本身也须安全、限频、后台输出，避免导出器故障日志递归进入同一远程管线。
@@ -154,6 +154,6 @@ SQLX_OFFLINE=true cargo test -p <postgres-crate> --test postgres --all-features 
 
 ## Vendored 依赖
 
-- `vendor/sqlx-db-tester` 的本地版本为 `0.7.1-cognacta.1`，基于上游 0.7.1 适配 SQLx 0.9，仅支持 PostgreSQL，作为 workspace member 使用根 `Cargo.lock`。
+- `vendor/sqlx-db-tester` 的本地版本为 `0.7.1-omniops-bots.1`，基于上游 0.7.1 适配 SQLx 0.9，仅支持 PostgreSQL，作为 workspace member 使用根 `Cargo.lock`。
 - 保留上游许可证和来源版本；本地变更及运行测试的方法见 `vendor/sqlx-db-tester/UPSTREAM.md`。
 - 修改优先保持上游 PostgreSQL 接口；只为实际开发／测试需求适配，不将测试辅助工具引入产品运行路径。

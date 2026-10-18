@@ -6,7 +6,7 @@
 
 ## What Changes
 
-- 新增进程内 `cognacta-collector` 库，封装可观测 SDK、后端组装及进程生命周期；本版使用 OTLP/HTTP Protobuf 导出日志、链路和指标。
+- 新增进程内 `omniops-bots-collector` 库，封装可观测 SDK、后端组装及进程生命周期；本版使用 OTLP/HTTP Protobuf 导出日志、链路和指标。
 - 日志与 span 使用 `tracing`，指标直接使用 OpenTelemetry Metrics API；单个 Subscriber 组合多个 Layer，保留后台写入的本地 stderr 日志。
 - 明确未初始化时为空操作、运行期间后台批量导出、有界队列满时允许丢弃、导出故障不改变业务结果，以及退出时共享时间预算的收尾行为。
 - 统一记录 Generation 的调用、成功、失败、取消、进行中数量、总耗时、首段文本耗时和上游报告的 token 用量；覆盖请求阶段和整个流消费阶段。
@@ -26,9 +26,9 @@
 
 ## Impact
 
-- 后续实现涉及新库 `cognacta-collector`，以及 `cognacta-core`、`cognacta-provider`、`cognacta-cli` 的埋点和入口组装。
+- 后续实现涉及新库 `omniops-bots-collector`，以及 `omniops-bots-core`、`omniops-bots-provider`、`omniops-bots-cli` 的埋点和入口组装。
 - core 仅增加标准埋点 API 依赖，不依赖 Collector、SDK 或 exporter；Collector 不依赖 core，不接管领域错误和 Provider 协议。
 - 依赖选用 `tracing`、`tracing-subscriber`、`tracing-appender`、`opentelemetry`、`opentelemetry_sdk`、`tracing-opentelemetry`、`opentelemetry-appender-tracing`、`opentelemetry-otlp`，版本在 workspace 统一声明并由锁文件固定。
 - 无数据库迁移、独立 Collector 进程、ClickHouse 接入、看板或告警部署。以后替换后端可调整 Collector crate 内部接入或配置，不修改业务埋点。
 - 完整需求叙述见同目录 `brief.md`，精确 API、错误和统计契约见 `design.md`，验收行为见 `specs/`。
-- 需求跟踪：[GitHub Issue #1](https://github.com/time-gift24/cognacta/issues/1)，标签 `ready-for-agent`。
+- 需求跟踪：[GitHub Issue #1](https://github.com/time-gift24/omniops-bots/issues/1)，标签 `ready-for-agent`。

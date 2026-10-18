@@ -58,7 +58,7 @@ Model SHALL 绑定 Provider、实际模型名和 `Arc<dyn Protocol>`，通过 st
 
 每个参与 crate SHALL 使用 thiserror 定义并导出自己的统一 Error，提供 Display、Debug 和标准 Error；core Error SHALL 保留 ErrorKind、可用请求诊断、partial 和 source。协议边界 SHALL 将接入错误转换为 core 分类并保留来源；CLI SHALL 使用安全错误描述，不输出原始凭据。
 
-cognacta_provider::Error SHALL 明确定义 ConfigRead、ConfigParse、InvalidConfig、UnsupportedProtocol、Environment、InvalidHeader、Authentication、Transport、Http、InvalidResponse、Truncated 和 Domain 分类，字段与 source 遵循 design 中的完整定义。配置、组装、RequestAuth 与 HttpAccess 的可失败 API SHALL 返回本 crate Error；实现 core Protocol 的方法及流中错误 SHALL 返回 core Error，不以类型别名替代 provider 自己的 Error，不提供无上下文的双向自动转换。
+omniops_bots_provider::Error SHALL 明确定义 ConfigRead、ConfigParse、InvalidConfig、UnsupportedProtocol、Environment、InvalidHeader、Authentication、Transport、Http、InvalidResponse、Truncated 和 Domain 分类，字段与 source 遵循 design 中的完整定义。配置、组装、RequestAuth 与 HttpAccess 的可失败 API SHALL 返回本 crate Error；实现 core Protocol 的方法及流中错误 SHALL 返回 core Error，不以类型别名替代 provider 自己的 Error，不提供无上下文的双向自动转换。
 
 #### Scenario: Preserve error classification and source
 - **WHEN** HTTP 鉴权失败、限流、服务不可用、网络失败、超时或 JSON 解码失败经过协议边界
@@ -68,8 +68,8 @@ cognacta_provider::Error SHALL 明确定义 ConfigRead、ConfigParse、InvalidCo
 #### Scenario: Match provider errors outside the crate
 
 - **WHEN** 外部调用方收到配置读取、解析或未知协议错误
-- **THEN** 能从 cognacta_provider 根导入 Error 并匹配具体变体，在有底层错误时读取标准 source
-- **AND** 错误类型是 cognacta_provider::Error，而非 core Error 的别名
+- **THEN** 能从 omniops_bots_provider 根导入 Error 并匹配具体变体，在有底层错误时读取标准 source
+- **AND** 错误类型是 omniops_bots_provider::Error，而非 core Error 的别名
 
 #### Scenario: Convert custom authentication failure at Protocol boundary
 

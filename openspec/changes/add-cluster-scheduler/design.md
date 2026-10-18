@@ -4,7 +4,7 @@
 
 本设计落实已确认的最小执行框架：节点返回 Outcome，Scheduler 执行节点、应用 Delta 并路由。`Cluster` 是可复用的节点集合与查找入口，替代讨论中的 Plan；它不表示并行集群，也不保存静态边。Generation 完成不等于 Run 完成。
 
-现有 `cognacta-core` 已承载公共业务对象、`Protocol` 和统一 `Error`，并依赖 `async-trait`、`bon`、`thiserror`、`tracing`。通用调度模块放在 core；CLI 专用图与节点留在 `cognacta-cli` 的私有 `cluster_demo` 模块。复用现有 Collector 与 Tokio 入口，无须新 crate 或运行时依赖。
+现有 `omniops-bots-core` 已承载公共业务对象、`Protocol` 和统一 `Error`，并依赖 `async-trait`、`bon`、`thiserror`、`tracing`。通用调度模块放在 core；CLI 专用图与节点留在 `omniops-bots-cli` 的私有 `cluster_demo` 模块。复用现有 Collector 与 Tokio 入口，无须新 crate 或运行时依赖。
 
 ## Goals / Non-Goals
 
@@ -101,7 +101,7 @@ impl Scheduler {
 
 ```rust
 use async_trait::async_trait;
-use cognacta_core::{Cluster, Control, Error, ErrorKind, Node, NodeInstance,
+use omniops_bots_core::{Cluster, Control, Error, ErrorKind, Node, NodeInstance,
     NodeContext, Outcome, RunStatus, Scheduler, State};
 
 struct Total(u32);
@@ -178,13 +178,13 @@ Goto 目标与其 Input 在下一轮检查。A 的 Delta 已提交后，B 不存
 | NodeExecution | body 返回 Err，调用节点 | 外层 Error 的 source 保存完整原 Error |
 | StateDeltaRejected | apply_delta 返回 Err，当前节点 | 外层 source 保存完整原 Error；State 原样 |
 
-适配层仅包装 body 的错误为 NodeExecution，不能把查找/类型错误一起包装，否则分类丢失。Cluster 的内部调用入口追加节点上下文；Scheduler 为 Delta 错误追加分类和节点。未知、重复、类型不匹配等框架校验错误没有虚构来源。统一 Error 的 message 是安全诊断，不写 Input、State、Delta 或原始外部错误文本。所有自有可失败 API 返回 `cognacta_core::Error`；State/NodeInstance 的实现也遵守该契约。
+适配层仅包装 body 的错误为 NodeExecution，不能把查找/类型错误一起包装，否则分类丢失。Cluster 的内部调用入口追加节点上下文；Scheduler 为 Delta 错误追加分类和节点。未知、重复、类型不匹配等框架校验错误没有虚构来源。统一 Error 的 message 是安全诊断，不写 Input、State、Delta 或原始外部错误文本。所有自有可失败 API 返回 `omniops_bots_core::Error`；State/NodeInstance 的实现也遵守该契约。
 
-CLI 将既有 `Error::Generation(#[from] cognacta_core::Error)` 改为 `Core`，不增加第二个相同来源的自动转换。CLI 统一错误出口对新增调度分类输出固定分类名（例如 NodeExecution）和安全编码后的 node_id，禁止打印 body/Delta 原始错误正文与 source；其余 core 错误沿用现有展示方式，保持 chat 契约。CLI 是展示与退出码边界；不得把 Core 错误反向转换成 Provider 错误。保留 source 不授权 Debug 或完整来源链进入日志。现有 Generation `error_kind` 穷尽映射须为新分类补充固定字符串，并保持原分类语义不变。
+CLI 将既有 `Error::Generation(#[from] omniops_bots_core::Error)` 改为 `Core`，不增加第二个相同来源的自动转换。CLI 统一错误出口对新增调度分类输出固定分类名（例如 NodeExecution）和安全编码后的 node_id，禁止打印 body/Delta 原始错误正文与 source；其余 core 错误沿用现有展示方式，保持 chat 契约。CLI 是展示与退出码边界；不得把 Core 错误反向转换成 Provider 错误。保留 source 不授权 Debug 或完整来源链进入日志。现有 Generation `error_kind` 穷尽映射须为新分类补充固定字符串，并保持原分类语义不变。
 
 ### 5. CLI 装配六张图、运行七个案例
 
-命令为 `cargo run -p cognacta-cli --features cognacta-test -- cluster-demo <SCENARIO>`；clap 值枚举接受下表七项。图、业务 State/Delta、普通测试 body 与装配逻辑都在 CLI 私有 `cluster_demo.rs`，只使用 core 公开 API；没有 JSON/YAML 图加载器、真实网络请求或生产工具协议承诺。
+命令为 `cargo run -p omniops-bots-cli --features omniops-bots-test -- cluster-demo <SCENARIO>`；clap 值枚举接受下表七项。图、业务 State/Delta、普通测试 body 与装配逻辑都在 CLI 私有 `cluster_demo.rs`，只使用 core 公开 API；没有 JSON/YAML 图加载器、真实网络请求或生产工具协议承诺。
 
 下图是 body 返回 Goto 的路径示意，不是静态 edge API：
 
@@ -236,7 +236,7 @@ status=failed node=reject value=1
 status=failed node=typed_target value=1
 ```
 
-预期失败图也返回 CLI Core 错误以获得退出码 1；先依据 Run 的公开读取入口输出上述摘要。stderr 分别包含受控分类 NodeExecution、StateDeltaRejected、InputTypeMismatch 及安全的失败节点，不打印原始业务错误内容或 source，不混入 stdout，不将“预期失败”冒充命令成功。摘要或诊断输出失败时退出 1，不承诺摘要已交付，也不重新执行图。非法/缺失场景参数由 clap 返回 2，help/version 为 0。复用现有 Collector 生命周期与 Tokio runtime；将 CLI `async-trait` 增为 workspace 管理、受 `cognacta-test` 门控的正常依赖。feature 关闭时无 cluster-demo 子命令，不引入网络依赖。
+预期失败图也返回 CLI Core 错误以获得退出码 1；先依据 Run 的公开读取入口输出上述摘要。stderr 分别包含受控分类 NodeExecution、StateDeltaRejected、InputTypeMismatch 及安全的失败节点，不打印原始业务错误内容或 source，不混入 stdout，不将“预期失败”冒充命令成功。摘要或诊断输出失败时退出 1，不承诺摘要已交付，也不重新执行图。非法/缺失场景参数由 clap 返回 2，help/version 为 0。复用现有 Collector 生命周期与 Tokio runtime；将 CLI `async-trait` 增为 workspace 管理、受 `omniops-bots-test` 门控的正常依赖。feature 关闭时无 cluster-demo 子命令，不引入网络依赖。
 
 ### 6. 用户已确认的最小观测
 

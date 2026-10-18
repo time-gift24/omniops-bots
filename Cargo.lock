@@ -728,127 +728,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c9ea0ac24bc397ab3c98583a3c9ba74fa56b09a4449bbe172b9b1ddb016027a"
 
 [[package]]
-name = "cognacta-cli"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "clap",
- "cognacta-collector",
- "cognacta-core",
- "cognacta-provider",
- "futures-util",
- "opentelemetry-proto",
- "prost",
- "reqwest",
- "rustls",
- "rustls-platform-verifier",
- "serde_json",
- "thiserror 2.0.21",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "cognacta-collector"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "bytes",
- "cognacta-core",
- "futures-util",
- "http",
- "opentelemetry",
- "opentelemetry-appender-tracing",
- "opentelemetry-http",
- "opentelemetry-otlp",
- "opentelemetry-proto",
- "opentelemetry_sdk",
- "percent-encoding",
- "prost",
- "reqwest",
- "rustls",
- "rustls-platform-verifier",
- "thiserror 2.0.21",
- "tokio",
- "tracing",
- "tracing-appender",
- "tracing-opentelemetry",
- "tracing-subscriber",
- "url",
- "uuid",
-]
-
-[[package]]
-name = "cognacta-core"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "bon",
- "futures-core",
- "futures-util",
- "opentelemetry",
- "opentelemetry_sdk",
- "thiserror 2.0.21",
- "tokio",
- "tracing",
- "url",
-]
-
-[[package]]
-name = "cognacta-desktop"
-version = "0.1.0"
-dependencies = [
- "cef",
- "cognacta-collector",
- "libc",
- "objc2",
- "objc2-app-kit",
- "objc2-foundation",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-clipboard-manager",
- "tauri-plugin-dialog",
- "tauri-plugin-opener",
- "tauri-plugin-shell",
- "thiserror 2.0.21",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "url",
- "windows-sys 0.61.2",
-]
-
-[[package]]
-name = "cognacta-desktop-helper"
-version = "0.1.0"
-dependencies = [
- "cef",
-]
-
-[[package]]
-name = "cognacta-provider"
-version = "0.1.0"
-dependencies = [
- "async-stream",
- "async-trait",
- "bon",
- "cognacta-core",
- "futures-util",
- "reqwest",
- "rustls",
- "serde",
- "serde_json",
- "sha2 0.11.1",
- "sse-core",
- "thiserror 2.0.21",
- "tokio",
- "toml 1.1.8+spec-1.1.0",
- "tracing",
-]
-
-[[package]]
 name = "colorchoice"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3322,6 +3201,127 @@ dependencies = [
 ]
 
 [[package]]
+name = "omniops-bots-cli"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "clap",
+ "futures-util",
+ "omniops-bots-collector",
+ "omniops-bots-core",
+ "omniops-bots-provider",
+ "opentelemetry-proto",
+ "prost",
+ "reqwest",
+ "rustls",
+ "rustls-platform-verifier",
+ "serde_json",
+ "thiserror 2.0.21",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "omniops-bots-collector"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "bytes",
+ "futures-util",
+ "http",
+ "omniops-bots-core",
+ "opentelemetry",
+ "opentelemetry-appender-tracing",
+ "opentelemetry-http",
+ "opentelemetry-otlp",
+ "opentelemetry-proto",
+ "opentelemetry_sdk",
+ "percent-encoding",
+ "prost",
+ "reqwest",
+ "rustls",
+ "rustls-platform-verifier",
+ "thiserror 2.0.21",
+ "tokio",
+ "tracing",
+ "tracing-appender",
+ "tracing-opentelemetry",
+ "tracing-subscriber",
+ "url",
+ "uuid",
+]
+
+[[package]]
+name = "omniops-bots-core"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "bon",
+ "futures-core",
+ "futures-util",
+ "opentelemetry",
+ "opentelemetry_sdk",
+ "thiserror 2.0.21",
+ "tokio",
+ "tracing",
+ "url",
+]
+
+[[package]]
+name = "omniops-bots-desktop"
+version = "0.1.0"
+dependencies = [
+ "cef",
+ "libc",
+ "objc2",
+ "objc2-app-kit",
+ "objc2-foundation",
+ "omniops-bots-collector",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-clipboard-manager",
+ "tauri-plugin-dialog",
+ "tauri-plugin-opener",
+ "tauri-plugin-shell",
+ "thiserror 2.0.21",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "url",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "omniops-bots-desktop-helper"
+version = "0.1.0"
+dependencies = [
+ "cef",
+]
+
+[[package]]
+name = "omniops-bots-provider"
+version = "0.1.0"
+dependencies = [
+ "async-stream",
+ "async-trait",
+ "bon",
+ "futures-util",
+ "omniops-bots-core",
+ "reqwest",
+ "rustls",
+ "serde",
+ "serde_json",
+ "sha2 0.11.1",
+ "sse-core",
+ "thiserror 2.0.21",
+ "tokio",
+ "toml 1.1.8+spec-1.1.0",
+ "tracing",
+]
+
+[[package]]
 name = "once_cell"
 version = "1.21.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4693,7 +4693,7 @@ dependencies = [
 
 [[package]]
 name = "sqlx-db-tester"
-version = "0.7.1-cognacta.1"
+version = "0.7.1-omniops-bots.1"
 dependencies = [
  "anyhow",
  "csv",

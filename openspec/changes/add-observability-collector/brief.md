@@ -6,7 +6,7 @@
 
 ## Solution
 
-引入进程内 Rust 库 `cognacta-collector`，集中管理可观测运行资源和后端接入。业务使用标准 tracing 日志／span 和 OpenTelemetry Metrics API，初版经 OTLP/HTTP Protobuf 导出日志、链路和指标，同时以后台 writer 输出本地 stderr。
+引入进程内 Rust 库 `omniops-bots-collector`，集中管理可观测运行资源和后端接入。业务使用标准 tracing 日志／span 和 OpenTelemetry Metrics API，初版经 OTLP/HTTP Protobuf 导出日志、链路和指标，同时以后台 writer 输出本地 stderr。
 
 入口初始化一次供整个进程使用，业务结束后在共享时间预算内收尾。未初始化时埋点为空操作；初始化但没有显式端点时仅输出本地日志。所有网络和 stderr I/O 均在后台进行，队列有界，满时允许丢弃。换兼容平台可改配置；不兼容平台的适配留在 Collector 内部或未来可选的独立网关。
 

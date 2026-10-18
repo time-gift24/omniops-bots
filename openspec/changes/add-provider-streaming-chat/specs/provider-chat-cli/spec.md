@@ -2,14 +2,14 @@
 
 ### Requirement: Feature-gated clap command
 
-现有 cognacta-cli SHALL 使用 clap 处理帮助、版本和命令参数。默认关闭的 Cargo feature `cognacta-test` SHALL 控制 chat 子命令及接入所需可选依赖，不控制整个 binary。启用后 chat SHALL 要求 --config、--provider 和 --model 三个参数；模型选择只在启动时完成。
+现有 omniops-bots-cli SHALL 使用 clap 处理帮助、版本和命令参数。默认关闭的 Cargo feature `omniops-bots-test` SHALL 控制 chat 子命令及接入所需可选依赖，不控制整个 binary。启用后 chat SHALL 要求 --config、--provider 和 --model 三个参数；模型选择只在启动时完成。
 
 #### Scenario: Default CLI remains available
-- **WHEN** 未启用 cognacta-test 构建并运行 CLI
+- **WHEN** 未启用 omniops-bots-test 构建并运行 CLI
 - **THEN** 无参数版本输出、--help 和 --version 可用，帮助中不包含 chat，调用 chat 以未知命令失败
 
 #### Scenario: Launch configured chat
-- **WHEN** 启用 cognacta-test 并传入合法的 chat --config providers.toml --provider company-gateway --model model-a
+- **WHEN** 启用 omniops-bots-test 并传入合法的 chat --config providers.toml --provider company-gateway --model model-a
 - **THEN** 加载并校验 TOML，选择该 Model 后进入逐行交互
 
 #### Scenario: Missing argument or unknown model

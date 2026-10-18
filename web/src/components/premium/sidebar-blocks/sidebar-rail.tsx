@@ -238,7 +238,7 @@ export function SidebarRail({
 }
 
 function SidebarRailShell({
-  workspaceName = "Cognacta",
+  workspaceName = "omniops-bots",
   sections = defaultSections,
   defaultItemId = "launch-direction",
   activeSectionId,

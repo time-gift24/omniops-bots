@@ -17,7 +17,7 @@ async function until(check) {
 }
 
 test('real CDP scripts retain source/hash, filesystem/process/network permissions, cancellation and target isolation', { timeout: 60_000 }, async () => {
-  const directory = await realpath(await mkdtemp(join(tmpdir(), 'cognacta-runtime-')));
+  const directory = await realpath(await mkdtemp(join(tmpdir(), 'omniops-bots-runtime-')));
   const fixture = await createModelFixture();
   let server, control, service, runtime;
   try {

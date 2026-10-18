@@ -1,6 +1,6 @@
 ## Context
 
-当前 `cognacta-core` 只有基础函数，`cognacta-cli` 只打印版本。`docs/design/llm-provider-interface.md` 已约定 Provider / Model / Protocol、`dyn Trait + async_trait`、reqwest 和鉴权注入，但尚无实现。本 change 按最新要求修正错误及配置契约，并规划一个可交互验证的流式文本切片。
+当前 `omniops-bots-core` 只有基础函数，`omniops-bots-cli` 只打印版本。`docs/design/llm-provider-interface.md` 已约定 Provider / Model / Protocol、`dyn Trait + async_trait`、reqwest 和鉴权注入，但尚无实现。本 change 按最新要求修正错误及配置契约，并规划一个可交互验证的流式文本切片。
 
 本轮只更新 OpenSpec 产物，并按用户明确授权在 `AGENTS.md` 增加 crate 对外接口设计准则，不写 Rust 实现。后续实现以本 change 的规格为验收边界，既有文档中的工具、图像、推理、原生回放与非流式验收不自动并入本 change；已有设计目标也不因此被删除。`CONTEXT.md` 和既有设计文档保持不变。
 
@@ -11,7 +11,7 @@
 - 使用 TOML 和专用配置类型，校验后构造 Provider、鉴权与运行时 Model 绑定。
 - 用 `thiserror` 实现各 crate 的错误，保留分类和底层来源。
 - 通过 reqwest 与纯 SSE decoder 接入 `openai.chat-completions` 的流式文本输出。
-- 在现有 clap CLI 中用 `cognacta-test` feature 开启简单交互命令，支持多轮文本上下文。
+- 在现有 clap CLI 中用 `omniops-bots-test` feature 开启简单交互命令，支持多轮文本上下文。
 - 用本地 HTTP 服务与 CLI 子进程验证真实组装、增量输出、历史和错误，不依赖外部密钥。
 
 **Non-Goals:**
@@ -27,9 +27,9 @@
 
 | 位置 | 职责 |
 | --- | --- |
-| `cognacta-core` | Provider、Model、统一请求/响应/流事件、Protocol 边界及领域 Error |
-| `cognacta-provider` | 专用配置 DTO、TOML 解析、TryFrom 适配、HttpAccess、RequestAuth、Chat Completions 与 SSE 解码 |
-| `cognacta-cli` | clap 参数、依赖组装调用、逐行输入、增量输出和退出码 |
+| `omniops-bots-core` | Provider、Model、统一请求/响应/流事件、Protocol 边界及领域 Error |
+| `omniops-bots-provider` | 专用配置 DTO、TOML 解析、TryFrom 适配、HttpAccess、RequestAuth、Chat Completions 与 SSE 解码 |
+| `omniops-bots-cli` | clap 参数、依赖组装调用、逐行输入、增量输出和退出码 |
 
 core 不依赖 reqwest、toml 或 clap，也不为了配置格式派生 Deserialize。仅有一个实际协议时，将 HTTP 和协议实现放在同一个接入 crate；出现真实复用再拆分，避免提前新增多个空 crate。继续使用 `Arc<dyn Protocol>` 与 `#[async_trait]`，不用泛型 Model 或选择枚举替代用户已确定的运行时分派。
 
@@ -108,7 +108,7 @@ protocol = "openai.chat-completions"
 
 ### 3. Provider 通过 TryFrom 适配配置，保留领域校验入口
 
-定义转换契约 `TryFrom<&ProviderConfig> for cognacta_core::Provider`，关联 `Error` 为 `cognacta_provider::Error`；实现在拥有 ProviderConfig 的接入 crate 中，core 不反向依赖配置 crate。转换调用 core 中已有设计的校验构造入口 `Provider::new(name, base_url)`，不直接开放字段或绕过不变量。
+定义转换契约 `TryFrom<&ProviderConfig> for omniops_bots_core::Provider`，关联 `Error` 为 `omniops_bots_provider::Error`；实现在拥有 ProviderConfig 的接入 crate 中，core 不反向依赖配置 crate。转换调用 core 中已有设计的校验构造入口 `Provider::new(name, base_url)`，不直接开放字段或绕过不变量。
 
 借用输入可以让后续组装继续读取 headers/auth/models，无需把这些接入配置塞进领域 Provider。TryFrom 只创建名称和地址元数据，不读取环境变量、不发网络请求，也不声称已经校验整个模型目录。URL 必须是无内嵌凭据、查询和 fragment 的绝对 HTTP(S) 接入地址；拼接 `chat/completions` 时保留配置路径前缀，`/v1` 和 `/v1/` 都指向 `/v1/chat/completions`。
 
@@ -116,9 +116,9 @@ protocol = "openai.chat-completions"
 
 组装顺序为 Provider::try_from → 头与鉴权 → 共享 HttpAccess → Arc<dyn Protocol> → Model。所有模型共用调用方提供的连接池，同一 Provider 共享其接入配置；请求期间不重新读取配置或环境变量。
 
-### 3.1 cognacta-provider 的完整公开入口
+### 3.1 omniops-bots-provider 的完整公开入口
 
-crate 根的导出契约如下。模块本身私有，调用方从 `cognacta_provider` 根导入；core 的 Provider、Model、Protocol 和消息类型仍从 `cognacta_core` 导入，不复制领域类型。
+crate 根的导出契约如下。模块本身私有，调用方从 `omniops_bots_provider` 根导入；core 的 Provider、Model、Protocol 和消息类型仍从 `omniops_bots_core` 导入，不复制领域类型。
 
 ```rust
 pub use config::{AuthConfig, ModelConfig, ProviderConfig, ProvidersConfig};
@@ -137,7 +137,7 @@ impl ProvidersConfig {
     pub fn from_toml(text: &str) -> Result<Self, Error>;
 }
 
-impl TryFrom<&ProviderConfig> for cognacta_core::Provider {
+impl TryFrom<&ProviderConfig> for omniops_bots_core::Provider {
     type Error = Error;
     fn try_from(config: &ProviderConfig) -> Result<Self, Self::Error>;
 }
@@ -146,7 +146,7 @@ pub fn build_models(
     config: ProvidersConfig,
     client: reqwest::Client,
 ) -> Result<
-    std::collections::HashMap<(String, String), cognacta_core::Model>,
+    std::collections::HashMap<(String, String), omniops_bots_core::Model>,
     Error,
 >;
 
@@ -184,7 +184,7 @@ impl OpenAiChatCompletions {
 }
 ```
 
-`OpenAiChatCompletions` 实现 core 的 Protocol，而不是再定义另一套生成 trait。它的 generate/stream 方法遵守 core trait 的 `cognacta_core::Error` 返回契约，不返回接入层 Error。SSE decoder、原生 JSON 类型及错误转换函数保持私有，不作为公共扩展接口。
+`OpenAiChatCompletions` 实现 core 的 Protocol，而不是再定义另一套生成 trait。它的 generate/stream 方法遵守 core trait 的 `omniops_bots_core::Error` 返回契约，不返回接入层 Error。SSE decoder、原生 JSON 类型及错误转换函数保持私有，不作为公共扩展接口。
 
 | 入口 | 校验、副作用与失败边界 |
 | --- | --- |
@@ -205,7 +205,7 @@ impl OpenAiChatCompletions {
 仅使用公开 API 的配置调用示范（错误由 CLI 自己的 Error 接收和转换）：
 
 ```rust
-use cognacta_provider::{ProvidersConfig, build_models};
+use omniops_bots_provider::{ProvidersConfig, build_models};
 
 let config = ProvidersConfig::load("providers.toml")?;
 let client = reqwest::Client::builder()
@@ -226,11 +226,11 @@ let events = model.stream(request).await?;
 
 ```rust
 use std::sync::Arc;
-use cognacta_core::{Model, Protocol, Provider};
-use cognacta_provider::{HttpAccess, OpenAiChatCompletions, RequestAuth};
+use omniops_bots_core::{Model, Protocol, Provider};
+use omniops_bots_provider::{HttpAccess, OpenAiChatCompletions, RequestAuth};
 
 let provider_config = config.providers.first().ok_or_else(|| {
-    cognacta_provider::Error::InvalidConfig {
+    omniops_bots_provider::Error::InvalidConfig {
         field: "providers".into(),
         message: "至少需要一个 Provider".into(),
     }
@@ -271,9 +271,9 @@ pub struct Error {
 
 错误显示只包含安全诊断，不输出凭据、完整配置或原始请求头。未授权/无权限映射 Authentication，限流映射 RateLimited，服务不可用映射 Unavailable，连接/读取和超时分别映射 Transport/Timeout，语义/JSON 解析错误映射 InvalidResponse，缺少原生终止标志映射 Truncated。HTTP 层不能先丢掉错误响应体再解释错误。
 
-### 4.1 cognacta_provider::Error 的具体定义
+### 4.1 omniops_bots_provider::Error 的具体定义
 
-以下 Error 由 `cognacta_provider` 根公开导出，与上文 `cognacta_core::Error` 是不同类型。枚举本身提供可匹配的分类，不再增加一套重复 ErrorKind；外部鉴权实现可以构造 Authentication 并保留自己的源错误。
+以下 Error 由 `omniops_bots_provider` 根公开导出，与上文 `omniops_bots_core::Error` 是不同类型。枚举本身提供可匹配的分类，不再增加一套重复 ErrorKind；外部鉴权实现可以构造 Authentication 并保留自己的源错误。
 
 ```rust
 #[derive(Debug, thiserror::Error)]
@@ -340,7 +340,7 @@ pub enum Error {
     Truncated,
 
     #[error("领域对象校验失败: {0}")]
-    Domain(#[source] cognacta_core::Error),
+    Domain(#[source] omniops_bots_core::Error),
 }
 ```
 
@@ -348,11 +348,11 @@ Error 的 message 只能放经过处理的安全摘要；InvalidHeader 不携带
 
 | 失败入口 | 对外返回的错误 |
 | --- | --- |
-| load / from_toml / build_models / Provider::try_from | `cognacta_provider::Error`，配置和组装错误直接交给调用方，不先转成生成错误 |
-| HttpAccess::new / builder.build / send、RequestAuth::apply | `cognacta_provider::Error` |
-| OpenAiChatCompletions 实现的 Protocol::generate / stream | `cognacta_core::Error`，遵守外部 trait 契约 |
-| Model::generate / stream 及 EventStream 中的 Err | `cognacta_core::Error` |
-| CLI 命令执行 | `cognacta_cli` 自己汇总的 Error，区分 Provider 接入错误、core 调用错误及终端 I/O |
+| load / from_toml / build_models / Provider::try_from | `omniops_bots_provider::Error`，配置和组装错误直接交给调用方，不先转成生成错误 |
+| HttpAccess::new / builder.build / send、RequestAuth::apply | `omniops_bots_provider::Error` |
+| OpenAiChatCompletions 实现的 Protocol::generate / stream | `omniops_bots_core::Error`，遵守外部 trait 契约 |
+| Model::generate / stream 及 EventStream 中的 Err | `omniops_bots_core::Error` |
+| CLI 命令执行 | `omniops_bots_cli` 自己汇总的 Error，区分 Provider 接入错误、core 调用错误及终端 I/O |
 
 协议边界按下表显式转换，并附加当前调用的 request_id、retry_after、partial；存在接入错误时将原 Error 放进 core 的 source。配置失败不会正常走到该边界；表中的配置映射只用于保证内部转换完整。不存在无上下文的公开双向 From 转换。
 
@@ -383,14 +383,14 @@ reqwest 负责单次 POST，CLI 在构造 Client 时关闭自动重试和重定�
 
 ### 6. CLI 使用默认关闭的 Cargo feature
 
-`cognacta-test` 是 `cognacta-cli` 的 Cargo feature，不是命令行布尔参数、`cfg(test)` 或新 binary 名称。默认关闭，只条件编译 chat 子命令和接入所需可选依赖；整个现有 CLI 仍能执行版本和帮助命令。clap 使用 derive 定义 Parser / Subcommand / Args，feature 开启后提供：
+`omniops-bots-test` 是 `omniops-bots-cli` 的 Cargo feature，不是命令行布尔参数、`cfg(test)` 或新 binary 名称。默认关闭，只条件编译 chat 子命令和接入所需可选依赖；整个现有 CLI 仍能执行版本和帮助命令。clap 使用 derive 定义 Parser / Subcommand / Args，feature 开启后提供：
 
 ```sh
-cargo run -p cognacta-cli --features cognacta-test -- \
+cargo run -p omniops-bots-cli --features omniops-bots-test -- \
   chat --config providers.toml --provider company-gateway --model model-a
 ```
 
-三个参数均显式必填；不猜默认文件、默认 Provider 或默认模型。当前 binary 名称保留 cognacta-cli。未指定子命令保留现有版本输出；`--help` / `--version` 由 clap 处理；feature 关闭时帮助中没有 chat，调用 chat 按未知命令失败。参考 [clap derive 教程](https://docs.rs/clap/latest/clap/_derive/_tutorial/index.html)与 [Cargo feature 文档](https://doc.rust-lang.org/cargo/reference/features.html)。
+三个参数均显式必填；不猜默认文件、默认 Provider 或默认模型。当前 binary 名称保留 omniops-bots-cli。未指定子命令保留现有版本输出；`--help` / `--version` 由 clap 处理；feature 关闭时帮助中没有 chat，调用 chat 按未知命令失败。参考 [clap derive 教程](https://docs.rs/clap/latest/clap/_derive/_tutorial/index.html)与 [Cargo feature 文档](https://doc.rust-lang.org/cargo/reference/features.html)。
 
 ### 7. 逐行交互，成功后原子提交一轮历史
 
@@ -414,13 +414,13 @@ cargo run -p cognacta-cli --features cognacta-test -- \
 
 - [兼容网关不完全遵循协议] → 未支持协议或响应形态明确失败，仅承诺本规格定义的 Chat Completions 文本流子集。
 - [TOML 从键式示范改成数组表] → name 在对象中只声明一次，补充重名校验；既有 JSON 从未作为已实现配置发布，无需双格式迁移。
-- [只测全 features 会漏掉默认构建问题] → 分别验收默认 CLI 与启用 cognacta-test 的 CLI。
+- [只测全 features 会漏掉默认构建问题] → 分别验收默认 CLI 与启用 omniops-bots-test 的 CLI。
 - [历史设计范围大于本次交付] → tasks 与 specs 只安排文本流必需部分；非流式、工具、图像、推理、回放不作为本次完成条件。
 - [控制台看到了部分文字容易被误认为成功] → 失败显式报错并退出，只有 Completed 后的完整轮次进入历史。
 
 ## Migration Plan
 
-当前没有已发布配置或 LLM 调用数据，无数据迁移。实施时先建立公共类型和配置校验，再接通单个协议，最后启用 CLI 与集成验收；所有依赖版本统一写入 workspace 并检查 deny 约束。交付时新增一个不含密钥的 TOML 示例。需要撤回 CLI 时使用不启用 cognacta-test 的构建，不影响默认版本/帮助入口。
+当前没有已发布配置或 LLM 调用数据，无数据迁移。实施时先建立公共类型和配置校验，再接通单个协议，最后启用 CLI 与集成验收；所有依赖版本统一写入 workspace 并检查 deny 约束。交付时新增一个不含密钥的 TOML 示例。需要撤回 CLI 时使用不启用 omniops-bots-test 的构建，不影响默认版本/帮助入口。
 
 ## Open Questions
 

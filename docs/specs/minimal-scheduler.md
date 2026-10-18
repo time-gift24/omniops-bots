@@ -4,7 +4,7 @@
 
 ## Problem Statement
 
-Cognacta 需要一个可复用的执行框架，把“执行节点、结算结果、安排下一次调用”与模型、工具等业务行为分开。一次 Generation 完成后仍可能执行工具并开始新的 Generation，因此 Generation 的 Completed 不能充当整个 Run 的结束条件。
+omniops-bots 需要一个可复用的执行框架，把“执行节点、结算结果、安排下一次调用”与模型、工具等业务行为分开。一次 Generation 完成后仍可能执行工具并开始新的 Generation，因此 Generation 的 Completed 不能充当整个 Run 的结束条件。
 
 节点需要同时使用共享业务 State 和本次调用的 Input。不同节点的 Input、路由 Payload 可以不同；框架必须保留节点内部的明确类型，又能把这些节点放进同一个 Plan 统一调用。状态修改还需要一个明确的结算位置，避免每个 body 自行改变调度中的共享业务状态。
 
@@ -115,7 +115,7 @@ State 使用泛型 S，每种 S 通过关联类型 S::Delta 声明自己的增�
 
 本次是接口讨论记录，不是完整实施规格。测试边界按用户决定留待后续讨论，不能根据本文自行扩展为已批准的验收清单。
 
-本规格借鉴 prodagent 的职责划分，包含 Cognacta 本次讨论选定的 Rust 类型与失败策略；它不是 prodagent API 的逐项翻译。axum 调研只支持泛型状态注入的理解，不替我们决定 Run 的业务状态更新和生命周期。
+本规格借鉴 prodagent 的职责划分，包含 omniops-bots 本次讨论选定的 Rust 类型与失败策略；它不是 prodagent API 的逐项翻译。axum 调研只支持泛型状态注入的理解，不替我们决定 Run 的业务状态更新和生命周期。
 
 本文中的 Run Completed 指整次框架执行结束，与领域术语中 Generation 的 Completed 分属不同层次。业务状态 State 与运行阶段 phase 也应保持区分。
 

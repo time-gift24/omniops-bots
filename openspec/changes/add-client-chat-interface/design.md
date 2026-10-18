@@ -2,13 +2,13 @@
 
 ## Context
 
-`web/` 是 Vite + React 19 + Tailwind 4 的 shadcn 工程（radix-nova 风格），现有界面只有 `SidebarRail` 外壳；设计令牌已按 DESIGN.md 落到 `src/index.css` 的 CSS 变量，动效弹簧在 `src/lib/ease.ts`。shadcn 注册表已配置官方源与 beui-pro 付费源（令牌在 `web/.env.local`）。后端侧，`cognacta-core` 已定义流式契约 `GenerationEvent`（Started / PartStarted / Delta / PartCompleted / Usage / Completed，错误以 `Err` 终止流），但当前 `PartKind` 仅有 `Text`，尚无推理与工具调用事件；`add-provider-streaming-chat` 也只交付文本流。动机见 proposal.md。
+`web/` 是 Vite + React 19 + Tailwind 4 的 shadcn 工程（radix-nova 风格），现有界面只有 `SidebarRail` 外壳；设计令牌已按 DESIGN.md 落到 `src/index.css` 的 CSS 变量，动效弹簧在 `src/lib/ease.ts`。shadcn 注册表已配置官方源与 beui-pro 付费源（令牌在 `web/.env.local`）。后端侧，`omniops-bots-core` 已定义流式契约 `GenerationEvent`（Started / PartStarted / Delta / PartCompleted / Usage / Completed，错误以 `Err` 终止流），但当前 `PartKind` 仅有 `Text`，尚无推理与工具调用事件；`add-provider-streaming-chat` 也只交付文本流。动机见 proposal.md。
 
 ## Goals / Non-Goals
 
 **Goals:**
 
-- 对话界面三件套（线程 / 输入区 / 数据网关）一次组装到位，视觉完全符合 Cognacta Pine 令牌。
+- 对话界面三件套（线程 / 输入区 / 数据网关）一次组装到位，视觉完全符合 omniops-bots Pine 令牌。
 - 网关接口与 DTO 是前端自有契约：mock → Tauri IPC / Web 接口的切换只改实现绑定，不改调用方。
 - 事件流折叠逻辑与渲染分离，可无浏览器单测。
 

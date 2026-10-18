@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 root = Path(__file__).resolve().parents[2]
-crate = root / 'crates/cognacta-desktop'
+crate = root / 'crates/omniops-bots-desktop'
 debug = '--debug' in sys.argv
 if any(arg not in ('--debug', '--no-dmg') for arg in sys.argv[1:]):
     raise SystemExit('Usage: build-native-macos.py [--debug] [--no-dmg]')

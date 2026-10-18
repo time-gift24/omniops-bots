@@ -29,12 +29,12 @@ test("主题预读的两项失败独立回退，访问被拒绝不阻止订阅�
   const { create, values, storage, loadInitialThemePreferences } = await setup(t)
   const fail = () => { throw new Error("denied") }
   values.set("theme", "dark")
-  values.set("cognacta-palette", "claude")
-  for (const blocked of ["theme", "cognacta-palette"]) {
+  values.set("omniops-bots-palette", "claude")
+  for (const blocked of ["theme", "omniops-bots-palette"]) {
     const preferences = create("demo", () => ({ ...storage, getItem: key => key === blocked ? fail() : storage.getItem(key) }))
     assert.deepEqual(await loadInitialThemePreferences(preferences, "light"), {
       theme: blocked === "theme" ? "light" : "dark",
-      palette: blocked === "cognacta-palette" ? "official" : "claude",
+      palette: blocked === "omniops-bots-palette" ? "official" : "claude",
     })
   }
   const denied = create("demo", fail)
@@ -46,7 +46,7 @@ test("主题预读的两项失败独立回退，访问被拒绝不阻止订阅�
 test("主题与配色隔离后端身份，只有demo读取legacy", async t => {
   const { create, values, loadInitialThemePreferences } = await setup(t)
   values.set("theme", "dark")
-  values.set("cognacta-palette", "claude")
+  values.set("omniops-bots-palette", "claude")
   const demo = create()
   const web = create("web")
   const desktop = create("desktop")
@@ -67,7 +67,7 @@ test("浏览器storage事件转换为同身份平台无关通知，含无效值�
   await preferences.writeTheme("dark")
   await preferences.writePalette("claude")
   const themeKey = [...values.keys()].find(key => key.endsWith(":theme"))
-  const paletteKey = [...values.keys()].find(key => key.endsWith(":cognacta-palette"))
+  const paletteKey = [...values.keys()].find(key => key.endsWith(":omniops-bots-palette"))
   const stop = preferences.subscribe(change => changes.push(change))
   notify("theme", "light")
   notify(themeKey, "light", {})

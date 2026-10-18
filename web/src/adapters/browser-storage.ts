@@ -23,11 +23,11 @@ export function createBrowserStorage(
   const key = (legacyKey: string) =>
     backendId === "demo"
       ? legacyKey
-      : `cognacta:backend:${encodeURIComponent(backendId)}:${legacyKey}`
+      : `omniops-bots:backend:${encodeURIComponent(backendId)}:${legacyKey}`
   const draftKey = (skillId: string, path: string) =>
-    key(`cognacta:skill-draft:v1:${fileKey(skillId, path)}`)
+    key(`omniops-bots:skill-draft:v1:${fileKey(skillId, path)}`)
   const themeKey = key("theme")
-  const paletteKey = key("cognacta-palette")
+  const paletteKey = key("omniops-bots-palette")
 
   return {
     skillDrafts: {

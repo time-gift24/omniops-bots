@@ -5,11 +5,11 @@
 - [x] 1.1 安装 shadcn base 组件 `message-scroller message bubble trace badge code-block input-group tooltip dropdown-menu empty`，确认文件落在 `web/src/components/ui/` 且 `npm run typecheck` 通过
 - [x] 1.2 用 `bunx --bun shadcn add @beui-pro/agent-chat-creative @beui-pro/ai-thinking-loader`（env 读取 `web/.env.local` 的令牌）装入两个付费组件，审计其结构与样式入口并记录覆盖点，确认 `npm run typecheck` 通过
 - [x] 1.3 对全部装入组件做令牌覆盖（签名色、字体栈、圆角档位、浮层磨砂、实色气泡），对照 DESIGN.md 逐组件核对亮暗两主题，确认无残留默认色值
-- [x] 1.4 安装并封装 Markdown 渲染层：Streamdown + fenced 代码路由到 `code-block`，统一覆盖排版与代码块主题为 Cognacta Pine（正文 16px/1.7、代码 13px 等宽、ghost 复制按钮），用一个含标题 / 列表 / 代码的示例页面肉眼验收两主题
+- [x] 1.4 安装并封装 Markdown 渲染层：Streamdown + fenced 代码路由到 `code-block`，统一覆盖排版与代码块主题为 omniops-bots Pine（正文 16px/1.7、代码 13px 等宽、ghost 复制按钮），用一个含标题 / 列表 / 代码的示例页面肉眼验收两主题
 
 ## 2. 对话数据网关与 DTO
 
-- [x] 2.1 定义 DTO：`ChatEvent`、`ChatRequest`、消息 / 输出部分 / 用量 / 元信息类型，为 `reasoning` 与 `tool-call` / `tool-result` 预留扩展位，逐变体注释与 `cognacta-core` `GenerationEvent` 的等价映射，确认 typecheck 通过
+- [x] 2.1 定义 DTO：`ChatEvent`、`ChatRequest`、消息 / 输出部分 / 用量 / 元信息类型，为 `reasoning` 与 `tool-call` / `tool-result` 预留扩展位，逐变体注释与 `omniops-bots-core` `GenerationEvent` 的等价映射，确认 typecheck 通过
 - [x] 2.2 定义 `ChatGateway` 接口（`stream(request): AsyncIterable<ChatEvent>` + `abort()`）与实现绑定入口，确认界面侧只 import 接口与 DTO
 - [x] 2.3 实现 mock 网关：脚本化事件序列、可配置逐段延迟、故障注入（步骤失败 / 发送失败 / 停止），覆盖 spec `client-chat-gateway` 的全部 mock 场景
 - [x] 2.4 实现 `foldChatEvent` 纯函数（事件流 → 线程视图模型：消息、输出部分、思维链步骤状态、运行 / 错误态），用 `node --test` 覆盖完整流、流中错误、停止截断三类场景并全部通过

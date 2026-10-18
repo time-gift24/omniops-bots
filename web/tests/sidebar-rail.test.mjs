@@ -12,8 +12,8 @@ test("SidebarRail renders on the server without mounting browser portals", async
   const { SidebarRail } = await server.ssrLoadModule(
     "/src/components/premium/sidebar-blocks/sidebar-rail.tsx",
   );
-  const html = renderToString(createElement(SidebarRail, { workspaceName: "Cognacta" }));
-  assert.match(html, /Cognacta/);
+  const html = renderToString(createElement(SidebarRail, { workspaceName: "omniops-bots" }));
+  assert.match(html, /omniops-bots/);
   assert.match(html, /aria-label="工作区导航区域"/);
   assert.match(html, /aria-label="面包屑"/);
   assert.doesNotMatch(html, /role="tooltip"/);

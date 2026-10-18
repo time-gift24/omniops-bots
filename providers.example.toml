@@ -1,5 +1,5 @@
 # Set LLM_API_KEY in your environment; never put the real key in this file.
-# cargo run -p cognacta-cli --features cognacta-test -- chat \
+# cargo run -p omniops-bots-cli --features omniops-bots-test -- chat \
 #   --config providers.example.toml --provider chatanywhere --model gpt-4.1-nano
 # Enter one message per line. Blank lines are ignored; /exit or input EOF exits.
 

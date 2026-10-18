@@ -7,7 +7,7 @@ export async function createModelFixture() {
   const server = createServer(async (request, response) => {
     if (request.url?.split('?')[0] === '/page') {
       response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      response.end('<!doctype html><title>Cognacta 本地浏览器验证</title><label>搜索<input type="search" aria-label="搜索"></label><p>本地测试页面；填写不会提交。</p>');
+      response.end('<!doctype html><title>omniops-bots 本地浏览器验证</title><label>搜索<input type="search" aria-label="搜索"></label><p>本地测试页面；填写不会提交。</p>');
       return;
     }
     if (request.url === '/health') { response.end('ok'); return; }
@@ -46,7 +46,7 @@ export async function createModelFixture() {
       if (action && !body.tools?.some(tool => tool.function?.name === action.name)) action = undefined;
       const id = `fixture-${tools.length}`;
       response.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' });
-      const chunk = (delta, finish_reason = null) => response.write(`data: ${JSON.stringify({ id: `chatcmpl-${id}`, object: 'chat.completion.chunk', created: 1, model: 'cognacta-fixture', choices: [{ index: 0, delta, finish_reason }] })}\n\n`);
+      const chunk = (delta, finish_reason = null) => response.write(`data: ${JSON.stringify({ id: `chatcmpl-${id}`, object: 'chat.completion.chunk', created: 1, model: 'omniops-bots-fixture', choices: [{ index: 0, delta, finish_reason }] })}\n\n`);
       chunk({ role: 'assistant' });
       if (action) chunk({ tool_calls: [{ index: 0, id, type: 'function', function: { name: action.name, arguments: JSON.stringify(action.args) } }] });
       else chunk({ content: '本地验证完成：已检查真实工具结果；未提交搜索。' });
@@ -56,7 +56,7 @@ export async function createModelFixture() {
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   baseURL = `http://127.0.0.1:${server.address().port}`;
-  return { baseURL: `${baseURL}/v1`, pageURL: `${baseURL}/page`, model: 'cognacta-fixture', close: () => new Promise(resolve => { server.closeAllConnections(); server.close(resolve); }) };
+  return { baseURL: `${baseURL}/v1`, pageURL: `${baseURL}/page`, model: 'omniops-bots-fixture', close: () => new Promise(resolve => { server.closeAllConnections(); server.close(resolve); }) };
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] || '').href) {

@@ -28,7 +28,7 @@ test("adapter 的规范目录按路径去重，保留 Windows 与虚拟路径；
   assert.deepEqual(store.getState().workspaces, []);
   assert.deepEqual(store.getState().sessions, []);
   assert.equal(store.startSession(), null);
-  const directory = { path: "/Users/me/Projects/cognacta", name: "项目名称由 adapter 提供" };
+  const directory = { path: "/Users/me/Projects/omniops-bots", name: "项目名称由 adapter 提供" };
   const workspace = store.addWorkspace(directory);
   assert.equal(workspace.path, directory.path);
   assert.equal(workspace.name, directory.name);
@@ -46,7 +46,7 @@ test("adapter 的规范目录按路径去重，保留 Windows 与虚拟路径；
     assert.equal(store.getState(), before);
   }
   for (const directory of [
-    { path: "C:\\Users\\me\\Projects\\cognacta", name: "Windows 项目" },
+    { path: "C:\\Users\\me\\Projects\\omniops-bots", name: "Windows 项目" },
     { path: "workspace://tenant/project", name: "虚拟项目" },
   ]) {
     const saved = store.addWorkspace(directory);
@@ -61,9 +61,9 @@ test("demo 目录 adapter 返回显示名称与规范路径，拒绝取消和不
   const { createDemoWorkspaceAccess } = await server.ssrLoadModule("/src/adapters/demo/workspace.ts");
   const access = createDemoWorkspaceAccess();
   const directories = await access.listDirectories();
-  assert.deepEqual(directories[0], { path: "/workspace/cognacta", name: "cognacta" });
-  assert.deepEqual(await access.resolveDirectory(" /workspace/cognacta/// "), directories[0]);
-  await Promise.all(["", "   ", "/missing", "/workspace/cognacta\nbad"].map(path =>
+  assert.deepEqual(directories[0], { path: "/workspace/omniops-bots", name: "omniops-bots" });
+  assert.deepEqual(await access.resolveDirectory(" /workspace/omniops-bots/// "), directories[0]);
+  await Promise.all(["", "   ", "/missing", "/workspace/omniops-bots\nbad"].map(path =>
     assert.rejects(access.resolveDirectory(path)),
   ));
 });

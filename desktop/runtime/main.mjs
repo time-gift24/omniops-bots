@@ -11,13 +11,13 @@ import { createResources } from './resources.mjs';
 import { httpUrl } from './input.mjs';
 import { invalid, RuntimeError, safeError } from './errors.mjs';
 
-const dataDir = process.env.COGNACTA_DATA_DIR;
-if (!dataDir) throw new Error('COGNACTA_DATA_DIR is required');
+const dataDir = process.env.OMNIOPS_BOTS_DATA_DIR;
+if (!dataDir) throw new Error('OMNIOPS_BOTS_DATA_DIR is required');
 await mkdir(dataDir, { recursive: true, mode: 0o700 });
 const modelFile = join(dataDir, 'model.env');
 if (existsSync(modelFile)) process.loadEnvFile(modelFile);
 const key = process.env.OPENAI_API_KEY;
-const modelName = key && process.env.COGNACTA_MODEL || undefined;
+const modelName = key && process.env.OMNIOPS_BOTS_MODEL || undefined;
 const redact = value => String(value).replaceAll(key || '\0', '[redacted]');
 const send = message => process.stdout.write(`${JSON.stringify(message)}\n`);
 const browser = createBrowserService(embeddedBrowserConfig(process.env));
