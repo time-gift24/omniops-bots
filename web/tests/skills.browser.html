@@ -116,6 +116,9 @@
   const header = () => fixture.querySelector("header")
   const checkHeader = () => {
     assert(!fixture.querySelector(".skill-doc-bar"), "Skill content must not retain the old document toolbar")
+    for (const name of ["编辑", "撤销", "保存草稿", "恢复原始内容"]) {
+      assert(!button(name, header()), "Document actions must float in the body, outside the Header")
+    }
     const controls = [...header().querySelectorAll("button")].filter(visible)
     const bounds = header().getBoundingClientRect()
     for (let index = 0; index < controls.length; index++) {
@@ -156,11 +159,13 @@
     )
   }
   const startEditing = async (path) => {
-    await until(() => button("编辑", header()) && !button("编辑", header()).disabled, "Draft initialization must finish before editing")
-    click(button("编辑", header()))
+    await until(() => button("编辑", fixture) && !button("编辑", fixture).disabled, "Draft initialization must finish before editing")
+    click(button("编辑", fixture))
     await until(() => editor(path), `Expected source editor for ${path}`)
-    assert(button("完成编辑", header()) && button("保存草稿", header()),
-      "Finish and save must live in the shared Header with accessible names")
+    assert(button("撤销", fixture) && button("保存草稿", fixture),
+      "Editing must expand into accessible undo and save icons")
+    assert(!button("编辑", fixture) && !button("恢复原始内容", fixture),
+      "Editing must hide read-mode actions")
     checkHeader()
   }
   function Probe() {
@@ -205,7 +210,8 @@
       !fixture.querySelector("textarea"),
       "Default reading view must not expose a source editor"
     )
-    assert(button("编辑", header()), "Reading mode must expose Edit in the shared Header")
+    assert(button("编辑", fixture) && !button("编辑", header()), "Reading mode must expose Edit in the body")
+    assert(!button("保存草稿") && !button("撤销"), "Reading mode must hide save and undo")
     checkHeader()
     checks.push("Markdown reading and collapsed frontmatter")
 
@@ -214,6 +220,13 @@
       editor("SKILL.md").value === skillSource,
       "Editing must expose the complete original source including frontmatter"
     )
+    click(button("撤销"))
+    assert(!editor("SKILL.md") && button("编辑"), "Undo must exit clean editing too")
+    await startEditing("SKILL.md")
+    click(button("保存草稿"))
+    assert(!editor("SKILL.md") && button("编辑"), "Saving unchanged content must return to reading")
+    assert(values.size === 0, "Unchanged content must not create a draft")
+    await startEditing("SKILL.md")
     fixture.style.width = "1200px"
     await until(() => button("分栏"), "Wide container must expose split mode")
     click(button("分栏"))
@@ -253,7 +266,7 @@
       "Switching files must retain unsaved source"
     )
     saveShortcut()
-    await until(saved, "Ctrl+S must save the current draft")
+    await until(() => saved() && !editor("SKILL.md") && button("编辑"), "Ctrl+S must save the current draft and return to reading")
     render("restored")
     await startEditing("SKILL.md")
     assert(
@@ -263,10 +276,17 @@
     checks.push(
       "complete source, unsaved file switching and Ctrl+S persistence"
     )
+    write("SKILL.md", "discard only this unsaved edit")
+    click(button("撤销"))
+    assert(!editor("SKILL.md") && content().textContent.includes("保留这条尚未保存的编辑。"), "Undo must return to the saved source in reading mode")
+    assert(values.get(fileKey("weekly-report", "SKILL.md")) === edited, "Undo must preserve the saved draft overlay")
+    await startEditing("SKILL.md")
+    assert(editor("SKILL.md").value === edited, "Reopening after undo must use the last saved source")
+    checks.push("undo restores the last saved draft without deleting it")
 
     write("SKILL.md", "")
     saveShortcut()
-    await until(saved, "An empty draft must be saveable")
+    await until(() => saved() && !editor("SKILL.md"), "An empty draft must be saveable and return to reading")
     render("empty-restored")
     await startEditing("SKILL.md")
     assert(
@@ -287,7 +307,9 @@
     saveGate = undefined
     checks.push("async save captures input without clearing newer edits")
 
-    click(button("完成编辑"))
+    await selectFile("reference/template.md")
+    await selectFile("SKILL.md")
+    assert(!editor("SKILL.md"), "Returning to a file must show its unsaved content in reading mode")
     removeGate = Promise.withResolvers()
     failRemoves = true
     click(button("恢复原始内容"))

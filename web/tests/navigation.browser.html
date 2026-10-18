@@ -57,6 +57,7 @@
   const dialog = () => document.querySelector('[data-slot="dialog-content"]');
   const breadcrumb = () => [...fixture.querySelectorAll('nav[aria-label="面包屑"]')].find(visible);
   const overview = () => fixture.querySelector('[data-slot="navigation-overview"]');
+  const documentActions = () => [...fixture.querySelectorAll('[data-slot="document-actions"]')].find(visible);
   const path = () => [...(breadcrumb()?.querySelectorAll("ol > li") ?? [])]
     .filter(element => element.getAttribute("aria-hidden") !== "true").map(label);
   const checkPath = async (...expected) => {
@@ -87,19 +88,29 @@
       .filter(visible).concat(toggle ? [toggle] : []);
     const skillVisible = visible(fixture.querySelector('[data-slot="skill-screen"]'));
     assert(!fixture.querySelector(".skill-doc-bar"), "Skill content must not retain its old document toolbar");
-    if (skillVisible) {
-      const action = button("完成编辑", fixture.querySelector("header")) ?? button("编辑", fixture.querySelector("header"));
-      assert(action, "The visible skill page must expose its editing controls in the shared Header");
-      assert(breadcrumb().getBoundingClientRect().right <= action.getBoundingClientRect().left + 1,
-        "Skill editing controls must stay to the right of the shared breadcrumb");
-      if (button("完成编辑", fixture.querySelector("header"))) assert(button("保存草稿", fixture.querySelector("header")),
-        "Skill editing must expose both finish and save controls in the shared Header");
-      for (const control of controls) assert(control.getBoundingClientRect().left >= -1 && control.getBoundingClientRect().right <= innerWidth + 1,
-        "Skill Header controls must fit the viewport");
-    } else {
+    if (!skillVisible) {
       assert(!fixture.querySelector('header [data-slot="skill-toolbar"]'),
         "Leaving the skill page must remove its Header controls");
     }
+    for (const name of ["编辑", "调试", "保存", "保存草稿", "撤销", "完成编辑"]) assert(!button(name, fixture.querySelector("header")),
+      `${name} document action must not appear in the shared Header`);
+    const dock = documentActions();
+    if ((expected[0] === "Agent" || expected[0] === "技能") && expected.length > 1) {
+      assert(dock && !dock.closest("header"), "Document actions must float in the visible page body");
+      const bounds = dock.getBoundingClientRect();
+      assert(bounds.top >= fixture.querySelector("header").getBoundingClientRect().bottom - 1 && bounds.right <= innerWidth + 1 && bounds.left >= -1,
+        "The document action dock must remain below the Header and inside the viewport");
+      const actions = [...dock.querySelectorAll("button")].filter(visible);
+      for (const action of actions) assert(action.getAttribute("aria-label") && action.textContent.trim() === "",
+        "Document action buttons must expose accessible names without visible text labels");
+      if (button("撤销", dock)) {
+        assert(button(skillVisible ? "保存草稿" : "保存", dock) && !button("调试", dock) && !button("编辑", dock),
+          "Editing must expose save and undo without reading-mode actions");
+      } else assert(button("编辑", dock) && (skillVisible || button("调试", dock)),
+        "Reading mode must expose Edit and the Agent debug action");
+      for (let index = 1; index < actions.length; index++) assert(actions[index - 1].getBoundingClientRect().right <= actions[index].getBoundingClientRect().left + 1,
+        "Document action buttons must not overlap");
+    } else assert(!dock, "Leaving a document must hide its floating action dock");
     for (let index = 0; index < controls.length; index++) {
       const left = controls[index].getBoundingClientRect();
       for (const control of controls.slice(index + 1)) {
@@ -194,7 +205,7 @@
       };
       const agentPrompt = () => fixture.querySelector('textarea[aria-label="系统提示词"]');
       const editAgentPrompt = async () => {
-        if (!visible(agentPrompt())) click(button("编辑", fixture.querySelector("header")));
+        if (!visible(agentPrompt())) click(button("编辑", documentActions()));
         await until(() => visible(agentPrompt()), "Agent system prompt editor did not open");
         return agentPrompt();
       };
@@ -204,7 +215,12 @@
       assert(moduleRequested(agentModule) && !moduleRequested(skillModule),
         "Visiting Agent must load its page without loading the skill page");
       await checkPath("Agent", DEFAULT_AGENT.name);
+      assert(!button("编辑", fixture.querySelector("header")) && !button("调试", fixture.querySelector("header")),
+        "Agent editing and debugging actions must leave the shared Header for the floating document dock");
       let nameField = agentName();
+      assert(nameField.readOnly, "Agent configuration must be read-only until editing starts");
+      await editAgentPrompt();
+      nameField = agentName();
       setInput(nameField, "导航回归助手");
       const firstAgentPrompt = `${DEFAULT_AGENT.instructions}\n\n保留客户支持助手的未保存提示词。`;
       setInput(await editAgentPrompt(), firstAgentPrompt);
@@ -224,6 +240,7 @@
       await checkPath("Agent", "数据周报");
       passed.push("Agent parent navigation preserves its unsaved draft and live name");
 
+      await editAgentPrompt();
       setInput(agentName(), "周报草稿助手");
       const secondAgentPrompt = "保留数据周报助手的独立草稿，不能被其他 Agent 的编辑或撤销覆盖。";
       setInput(await editAgentPrompt(), secondAgentPrompt);
@@ -233,12 +250,14 @@
         "Switching A to B to A must restore A's name, system prompt and dirty state");
       click(button("撤销"));
       await checkPath("Agent", DEFAULT_AGENT.name);
-      assert(agentName().value === DEFAULT_AGENT.name && agentPrompt().value === DEFAULT_AGENT.instructions && button("保存").disabled,
-        "Undo must restore A's saved configuration and clean state");
+      assert(agentName().value === DEFAULT_AGENT.name && agentName().readOnly && !visible(agentPrompt()) && button("编辑", documentActions()),
+        "Undo must restore A's saved configuration and return to reading");
+      assert((await editAgentPrompt()).value === DEFAULT_AGENT.instructions,
+        "Editing again after undo must expose the saved instructions");
       const savedAgentPrompt = `${DEFAULT_AGENT.instructions}\n\n保存后切换仍使用新的保存基线。`;
       setInput(agentPrompt(), savedAgentPrompt);
       click(button("保存"));
-      await until(() => button("已保存"), "Agent save did not finish");
+      await until(() => button("编辑", documentActions()) && !visible(agentPrompt()), "Agent save must return to reading");
       await selectItem("Agent", "数据周报");
       await checkPath("Agent", "周报草稿助手");
       assert(agentName().value === "周报草稿助手" && (await editAgentPrompt()).value === secondAgentPrompt && !button("保存").disabled,
@@ -251,11 +270,14 @@
       assert(agentName().value === "周报草稿助手" && (await editAgentPrompt()).value === secondAgentPrompt && !button("保存").disabled,
         "Switching sections must preserve the unsaved Agent configuration");
       await selectItem("Agent", DEFAULT_AGENT.name);
-      assert((await editAgentPrompt()).value === savedAgentPrompt && button("保存").disabled,
-        "Returning to a saved Agent must restore its saved content without a dirty draft");
+      assert(agentName().readOnly && button("编辑", documentActions()),
+        "Returning to a saved Agent must start in reading mode");
+      assert((await editAgentPrompt()).value === savedAgentPrompt,
+        "Returning to a saved Agent must restore its saved content");
       setInput(agentPrompt(), "随后未保存的修改");
       click(button("撤销"));
-      assert(agentPrompt().value === savedAgentPrompt && button("保存").disabled,
+      assert(!visible(agentPrompt()) && agentName().readOnly, "Undo after switching must return to reading");
+      assert((await editAgentPrompt()).value === savedAgentPrompt,
         "Undo after switching must use the most recently saved baseline");
       await selectItem("Agent", "数据周报");
       setInput(agentName(), "");
@@ -296,7 +318,7 @@
       await dismissNavigation();
       passed.push("skill selection and search share the header and sidebar state");
 
-      click(button("编辑", fixture.querySelector("header")));
+      click(button("编辑", documentActions()));
       const skillDraft = () => fixture.querySelector('[data-slot="skill-screen"] textarea[aria-label="编辑 SKILL.md"]');
       await until(() => visible(skillDraft()), "Skill source editor did not open");
       const draft = `${skillDraft().value}\n\n导航保留未保存的草稿`;

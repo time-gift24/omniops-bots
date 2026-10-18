@@ -11,14 +11,11 @@ import { createPortal } from "react-dom"
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
 import {
   BookOpen01Icon,
-  CheckmarkCircle02Icon,
-  Edit02Icon,
   FileTextIcon,
   Files01Icon,
-  FloppyDiskIcon,
-  RefreshIcon,
   SourceCodeIcon,
 } from "@hugeicons-pro/core-stroke-rounded"
+import { DocumentActions } from "@/components/markdown/document-actions"
 import {
   MarkdownEditor,
   type MarkdownEditorMode,
@@ -156,9 +153,6 @@ export function SkillScreen({
   const file = skill?.files.find((entry) => entry.path === path)
   const key = fileKey(skill?.id ?? "", path)
   const selectedKey = useRef(key)
-  useLayoutEffect(() => {
-    selectedKey.current = key
-  }, [key])
   useEffect(() => {
     mounted.current = true
     return () => {
@@ -190,6 +184,11 @@ export function SkillScreen({
     }
   }, [skillDrafts, skills])
   const source = contents[key] ?? file?.content ?? ""
+  const currentSource = useRef(source)
+  useLayoutEffect(() => {
+    selectedKey.current = key
+    currentSource.current = source
+  }, [key, source])
   const original = file?.content ?? ""
   const dirty = source !== (saved[key] ?? original)
   const markdown = path.toLowerCase().endsWith(".md")
@@ -221,7 +220,11 @@ export function SkillScreen({
   )
 
   async function save() {
-    if (!skill || !file || !dirty || loading || operation.current) return
+    if (!skill || !file || !editing || loading || operation.current) return
+    if (!dirty) {
+      setEditing(false)
+      return
+    }
     operation.current = true
     setBusy(true)
     try {
@@ -230,7 +233,10 @@ export function SkillScreen({
       setSaved((current) => ({ ...current, [key]: source }))
       if (selectedKey.current === key) {
         setError("")
-        setMessage("草稿已保存")
+        if (currentSource.current === source) {
+          setMessage("草稿已保存")
+          setEditing(false)
+        }
       }
     } catch {
       if (mounted.current && selectedKey.current === key)
@@ -457,80 +463,6 @@ export function SkillScreen({
               >
                 {message}
               </div>
-              {editing ? (
-                <>
-                  <Button
-                    variant="ghost"
-                    className="rounded-full"
-                    aria-label="完成编辑"
-                    title="完成编辑"
-                    onClick={() => setEditing(false)}
-                  >
-                    <HugeiconsIcon
-                      icon={CheckmarkCircle02Icon}
-                      size={15}
-                      aria-hidden="true"
-                    />
-                    <span className="hidden @min-[400px]/skill-header:inline">
-                      完成编辑
-                    </span>
-                  </Button>
-                  <Button
-                    className="rounded-full"
-                    aria-label="保存草稿"
-                    disabled={!dirty || loading || busy}
-                    onClick={save}
-                    title="保存草稿（⌘/Ctrl+S）"
-                  >
-                    <HugeiconsIcon
-                      icon={FloppyDiskIcon}
-                      size={15}
-                      aria-hidden="true"
-                    />
-                    <span className="hidden @min-[400px]/skill-header:inline">
-                      保存草稿
-                    </span>
-                  </Button>
-                </>
-              ) : (
-                <>
-                  {saved[key] !== undefined || source !== original ? (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="rounded-full"
-                      aria-label="恢复原始内容"
-                      title="恢复原始内容"
-                      disabled={loading || busy}
-                      onClick={restore}
-                    >
-                      <HugeiconsIcon
-                        icon={RefreshIcon}
-                        size={17}
-                        aria-hidden="true"
-                      />
-                    </Button>
-                  ) : null}
-                  <Button
-                    className="rounded-full"
-                    aria-label="编辑"
-                    title="编辑"
-                    disabled={loading || busy || !skill}
-                    onClick={() => {
-                      setEditing(true)
-                      setMode("source")
-                      setMessage("")
-                    }}
-                  >
-                    <HugeiconsIcon
-                      icon={Edit02Icon}
-                      size={15}
-                      aria-hidden="true"
-                    />
-                    编辑
-                  </Button>
-                </>
-              )}
             </div>,
             toolbarTarget
           )
@@ -561,62 +493,91 @@ export function SkillScreen({
             />
           </div>
         </aside>
-        <div
-          ref={scrollRef}
-          className={cn(
-            "doc-reading-scroll skill-docs-scroll min-w-0 flex-1 overflow-y-auto overscroll-contain",
-            editing && "overflow-hidden"
-          )}
-          tabIndex={0}
-          aria-label="文件内容"
-        >
+        <div className="relative flex min-h-0 min-w-0 flex-1 pt-20">
+          <DocumentActions
+            editing={editing}
+            busy={busy}
+            disabled={loading || !skill || !file}
+            dirty={dirty}
+            saveLabel="保存草稿"
+            onEdit={() => {
+              setEditing(true)
+              setMode("source")
+              setMessage("")
+            }}
+            onSave={() => void save()}
+            onUndo={() => {
+              setContents((current) => ({
+                ...current,
+                [key]: saved[key] ?? original,
+              }))
+              setEditing(false)
+              setError("")
+              setMessage("")
+            }}
+            onRestore={
+              saved[key] !== undefined || source !== original
+                ? () => void restore()
+                : undefined
+            }
+          />
           <div
-            className={cn("doc-reading-layout", wide && "doc-reading-wide")}
-            style={editing ? { height: "100%", maxWidth: "none" } : undefined}
+            ref={scrollRef}
+            className={cn(
+              "doc-reading-scroll skill-docs-scroll min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain",
+              editing && "overflow-hidden"
+            )}
+            tabIndex={0}
+            aria-label="文件内容"
           >
-            <article
-              className={cn(
-                "doc-article min-w-0",
-                editing && "flex h-full min-h-0 flex-col p-3!"
-              )}
+            <div
+              className={cn("doc-reading-layout", wide && "doc-reading-wide")}
+              style={editing ? { height: "100%", maxWidth: "none" } : undefined}
             >
-              {!file ? (
-                <p role="alert">文件不存在，请从左侧导航选择文件。</p>
-              ) : editing ? (
-                <MarkdownEditor
-                  value={source}
-                  ariaLabel={`编辑 ${path}`}
-                  autoFocus
-                  markdown={markdown}
-                  preview={preview}
-                  previewScrollRef={editorPreviewRef}
-                  onModeChange={setMode}
-                  onChange={(value) => {
-                    setContents((current) => ({ ...current, [key]: value }))
-                    setMessage("")
+              <article
+                className={cn(
+                  "doc-article min-w-0 pt-2!",
+                  editing && "flex h-full min-h-0 flex-col p-3!"
+                )}
+              >
+                {!file ? (
+                  <p role="alert">文件不存在，请从左侧导航选择文件。</p>
+                ) : editing ? (
+                  <MarkdownEditor
+                    value={source}
+                    ariaLabel={`编辑 ${path}`}
+                    autoFocus
+                    markdown={markdown}
+                    preview={preview}
+                    previewScrollRef={editorPreviewRef}
+                    onModeChange={setMode}
+                    onChange={(value) => {
+                      setContents((current) => ({ ...current, [key]: value }))
+                      setMessage("")
+                    }}
+                  />
+                ) : markdown ? (
+                  preview
+                ) : (
+                  <>
+                    <h1 className="mb-6 text-2xl font-semibold tracking-tight">
+                      {path.split("/").at(-1)}
+                    </h1>
+                    <SourceView source={source} path={path} />
+                  </>
+                )}
+              </article>
+              {!wide && outlineSections.length > 0 ? (
+                <MarkdownOutline
+                  sections={outlineSections}
+                  active={activeSection ?? ""}
+                  onSelect={(id) => {
+                    const node = findDocsHeading(resolveScroll(), id)
+                    if (node) scrollToHeading(node)
                   }}
                 />
-              ) : markdown ? (
-                preview
-              ) : (
-                <>
-                  <h1 className="mb-6 text-2xl font-semibold tracking-tight">
-                    {path.split("/").at(-1)}
-                  </h1>
-                  <SourceView source={source} path={path} />
-                </>
-              )}
-            </article>
-            {!wide && outlineSections.length > 0 ? (
-              <MarkdownOutline
-                sections={outlineSections}
-                active={activeSection ?? ""}
-                onSelect={(id) => {
-                  const node = findDocsHeading(resolveScroll(), id)
-                  if (node) scrollToHeading(node)
-                }}
-              />
-            ) : null}
+              ) : null}
+            </div>
           </div>
         </div>
       </div>

@@ -24,6 +24,7 @@
   const checks = []
   const saved = []
   let finishSave
+  let failSave = false
   const assert = (condition, message) => {
     if (!condition) throw new Error(message)
   }
@@ -58,6 +59,22 @@
     flushSync(() => element.click())
   }
   const editor = () => fixture.querySelector("#agent-editor")
+  const actions = () => editor().querySelector('[data-slot="document-actions"]')
+  const resourceSwitches = () => [...editor().querySelectorAll('[role="switch"]')].filter(visible)
+  const checkActions = (editing) => {
+    const dock = actions()
+    assert(visible(dock) && !dock.closest("header"), "Agent actions must float in the document body")
+    const controls = [...dock.querySelectorAll("button")].filter(visible)
+    const names = controls.map(accessibleLabel).sort()
+    assert(JSON.stringify(names) === JSON.stringify((editing ? ["保存", "撤销"] : ["编辑", "调试"]).sort()),
+      "Agent actions must match the current reading or editing mode")
+    for (const control of controls) assert(control.getAttribute("aria-label") && control.textContent.trim() === "",
+      "Agent actions must be icon-only controls with accessible names")
+    const bounds = dock.getBoundingClientRect()
+    assert(bounds.left >= -1 && bounds.right <= innerWidth + 1, "Agent action dock must fit the viewport")
+    for (let index = 1; index < controls.length; index++) assert(controls[index - 1].getBoundingClientRect().right <= controls[index].getBoundingClientRect().left + 1,
+      "Agent action controls must not overlap")
+  }
   const field = (name) => {
     const label = [...editor().querySelectorAll("label[for]")].find((element) =>
       element.textContent.includes(name)
@@ -147,6 +164,7 @@
               await new Promise((resolve) => {
                 finishSave = resolve
               })
+              if (failSave) throw new Error("save failed")
               setAgents((current) =>
                 current.map((agent, index) =>
                   index === selected ? configuration : agent
@@ -182,6 +200,11 @@
       !visible(debugInput()),
       "Agent debugging must stay collapsed until requested"
     )
+    assert(field("名称").readOnly && field("简介").readOnly,
+      "Reading mode must keep configuration text read-only")
+    assert(resourceSwitches().length > 0 && resourceSwitches().every(control => control.matches(":disabled")),
+      "Reading mode must disable resource switches")
+    checkActions(false)
     checks.push(
       "summary textarea, model removal and debugging collapsed by default"
     )
@@ -199,13 +222,20 @@
       field("系统提示词") instanceof HTMLTextAreaElement,
       "Edit action must open the source editor"
     )
-    click(button("完成编辑", editor()))
+    assert(!field("名称").readOnly && !field("简介").readOnly,
+      "Editing must unlock configuration fields")
+    assert(resourceSwitches().length > 0 && resourceSwitches().every(control => !control.matches(":disabled")),
+      "Editing must enable resource switches")
+    checkActions(true)
+    assert(!button("撤销", actions()).disabled, "Undo must remain available when editing without changes")
+    click(button("撤销", actions()))
     assert(
-      !field("系统提示词"),
-      "完成编辑 must return to the reading view"
+      !field("系统提示词") && field("名称").readOnly,
+      "Undo without changes must return to the reading view"
     )
+    checkActions(false)
     click(button("编辑", editor()))
-    checks.push("instructions default to reading view; edit toggling")
+    checks.push("floating icon actions; reading configuration is read-only; unchanged editing can be discarded")
 
     write(field("名称"), "")
     click(button("保存", editor()))
@@ -268,18 +298,54 @@
     )
     finishSave()
     await until(
-      () => !field("名称").matches(":disabled"),
-      "Save completion must unlock the editor"
+      () => button("编辑", actions()) && !field("系统提示词"),
+      "Successful saving must return to the reading view"
     )
+    await until(() => document.activeElement === button("编辑", actions()),
+      "Successful saving must return keyboard focus to Edit")
+    assert(field("名称").readOnly && editor().querySelector(".doc-preview")?.textContent.includes("回归策略"),
+      "Saved configuration must appear in the read-only view")
+    checkActions(false)
+    click(button("编辑", actions()))
     write(field("系统提示词"), "# 未保存的替换")
     click(button("撤销", editor()))
+    assert(!field("系统提示词") && button("编辑", actions()), "Discard must return to reading")
+    click(button("编辑", actions()))
     assert(
       field("系统提示词").value === instructions,
       "Discard must restore the last saved instructions"
     )
+    click(button("撤销", actions()))
     checks.push(
       "save locking and payload preservation; discard restores saved Markdown"
     )
+
+    click(button("编辑", actions()))
+    const retryInstructions = "# 保存重试\n\n失败后保留这段内容。"
+    write(field("系统提示词"), retryInstructions)
+    write(field("名称"), "失败重试助手")
+    failSave = true
+    click(button("保存", actions()))
+    await until(() => saved.length === 2, "The failing save must reach its callback")
+    finishSave()
+    await until(() => editor().querySelector('[role="alert"]')?.textContent.includes("保存失败"),
+      "Failed saving must expose a recoverable error")
+    assert(field("系统提示词").value === retryInstructions && field("名称").value === "失败重试助手" && !field("名称").readOnly,
+      "Failed saving must preserve all editable input")
+    assert(!button("保存", actions()).disabled, "Failed saving must allow retry")
+    checkActions(true)
+    failSave = false
+    click(button("保存", actions()))
+    await until(() => saved.length === 3, "Retry must call save again")
+    assert(saved[2].instructions === retryInstructions && saved[2].name === "失败重试助手",
+      "Retry must submit the retained configuration")
+    const outsideAction = button("编辑第二个 Agent")
+    outsideAction.focus()
+    finishSave()
+    await until(() => button("编辑", actions()) && !field("系统提示词"), "Successful retry must return to reading")
+    assert(document.activeElement === outsideAction, "Async save completion must preserve focus moved outside the editor")
+    checkActions(false)
+    checks.push("failed saving preserves editing without Debug; successful retry returns to reading")
 
     click(button("调试", editor()))
     await until(

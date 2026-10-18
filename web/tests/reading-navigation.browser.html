@@ -103,8 +103,10 @@
 
     render("skill", skills[1].id);
     await until(() => page("skill").querySelector(".doc-preview")?.textContent.includes("SECOND_MAIN"), "Switching Skill must render its current file");
-    await until(() => [...fixture.querySelectorAll("header button")].some(button => (button.getAttribute("aria-label") ?? button.textContent).trim() === "编辑"),
-      "The active Skill page must render Edit in the shared Header");
+    await until(() => fixture.querySelector('header button[aria-label="浏览技能文件"]') && page("skill").querySelector('[data-slot="document-actions"] button[aria-label="编辑"]'),
+      "The active Skill page must keep file navigation in the Header and Edit in its body dock");
+    assert(!fixture.querySelector('header [data-slot="document-actions"]') && !fixture.querySelector('header button[aria-label="编辑"]'),
+      "Skill editing actions must stay outside the shared Header");
     uniqueIds();
     const hiddenAgentScroll = scroll("agent").scrollTop;
     click(link("本页定位"));

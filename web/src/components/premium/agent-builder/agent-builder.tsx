@@ -1,12 +1,8 @@
 "use client"
 
 import { HugeiconsIcon } from "@hugeicons/react"
-import {
-  BotIcon,
-  Edit02Icon,
-  Settings02Icon,
-} from "@hugeicons-pro/core-stroke-rounded"
-import { useCallback, useEffect, useId, useRef, useState } from "react"
+import { BotIcon, Settings02Icon } from "@hugeicons-pro/core-stroke-rounded"
+import { useCallback, useId, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import {
   MarkdownEditor,
@@ -23,11 +19,8 @@ import {
 } from "@/components/premium/docs-pages/docs-data"
 import { useScrollspy } from "@/components/premium/docs-pages/use-scrollspy"
 import { Breadcrumbs } from "@/components/ui/breadcrumbs"
-import {
-  Button,
-  type ButtonState,
-  StatefulButton,
-} from "@/components/motion/button"
+import { Button } from "@/components/motion/button"
+import { DocumentActions } from "@/components/markdown/document-actions"
 import { cn } from "@/lib/utils"
 import "@/components/premium/docs-pages/docs-article.css"
 import type {
@@ -66,20 +59,19 @@ export function AgentBuilder({
 }: AgentBuilderProps) {
   const [configuration, setConfiguration] = useState(initialDraft)
   const [saved, setSaved] = useState(initialConfiguration)
-  const [saveState, setSaveState] = useState<ButtonState>("idle")
+  const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
   const [settingsOpen, setSettingsOpen] = useState(false)
-  // 与 SKILL 页面同一逻辑：默认查看渲染后的 Markdown，点「编辑」进入编辑态。
-  const [editing, setEditing] = useState(false)
+  const [editing, setEditing] = useState(
+    JSON.stringify(initialDraft) !== JSON.stringify(initialConfiguration)
+  )
   const [mode, setMode] = useState<MarkdownEditorMode>("source")
   const [outline, setOutline] = useState<DocsSection[]>([])
   const scrollRef = useRef<HTMLDivElement>(null)
   const editorPreviewRef = useRef<HTMLDivElement>(null)
   const settingsId = useId()
   const lock = useRef(false)
-  const resetTimer = useRef<number | undefined>(undefined)
   const dirty = JSON.stringify(configuration) !== JSON.stringify(saved)
-  const saving = saveState === "loading"
 
   const updateSections = useCallback(
     (sections: DocsSection[]) => setOutline(sections),
@@ -100,47 +92,41 @@ export function AgentBuilder({
   )
   const wide = editing && mode !== "preview"
 
-  useEffect(() => () => window.clearTimeout(resetTimer.current), [])
-
-  function settle(state: ButtonState) {
-    setSaveState(state)
-    window.clearTimeout(resetTimer.current)
-    resetTimer.current = window.setTimeout(() => setSaveState("idle"), 1800)
-  }
-
   function change(next: AgentConfiguration) {
     setConfiguration(next)
     onDraftChange?.(next)
     setError("")
-    window.clearTimeout(resetTimer.current)
-    setSaveState("idle")
   }
 
   async function save() {
-    if (lock.current || !dirty) return
+    if (lock.current) return
+    if (!dirty) {
+      setEditing(false)
+      return
+    }
     if (!configuration.name.trim() || !configuration.instructions.trim()) {
       setError("请先填写名称和系统提示词，再保存。")
       setSettingsOpen(true)
       return
     }
     lock.current = true
-    setSaveState("loading")
+    setSaving(true)
     setError("")
     try {
       await onSave(configuration)
       setSaved(configuration)
-      settle("success")
+      setEditing(false)
     } catch {
       setError("保存失败，请重试。")
-      settle("error")
     } finally {
       lock.current = false
+      setSaving(false)
     }
   }
 
   const toolbar = (
-    <div className="flex min-h-11 min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 py-1 @min-[400px]/agent-header:flex-nowrap">
-      <div className="flex min-w-0 flex-1 basis-full items-center gap-2 @min-[400px]/agent-header:basis-auto">
+    <div className="flex min-h-11 min-w-0 flex-1 items-center gap-2 py-1">
+      <div className="flex min-w-0 flex-1 items-center gap-2">
         <Breadcrumbs
           items={[
             { label: "Agent", onSelect: onBack },
@@ -171,86 +157,18 @@ export function AgentBuilder({
           {dirty ? "未保存" : ""}
         </span>
       </div>
-      <div className="ml-auto flex shrink-0 items-center gap-1">
-        <Button
-          size="sm"
-          variant="ghost"
-          aria-label="Agent 配置"
-          aria-controls={settingsId}
-          aria-expanded={settingsOpen}
-          onClick={() => setSettingsOpen((open) => !open)}
-          className="px-2.5 @min-[480px]/agent-header:hidden"
-        >
-          <HugeiconsIcon icon={Settings02Icon} size={14} aria-hidden="true" />
-          配置
-        </Button>
-        <Button
-          disabled={!dirty || saving}
-          onClick={() => change(saved)}
-          size="sm"
-          variant="ghost"
-          className={cn(
-            "px-2.5",
-            !dirty && "hidden @min-[400px]/agent-header:inline-flex"
-          )}
-        >
-          撤销
-        </Button>
-        {onDebug ? (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={onDebug}
-            aria-label="调试"
-            title="调试"
-            className="px-2.5"
-          >
-            <HugeiconsIcon icon={BotIcon} size={14} aria-hidden="true" />
-            <span className="hidden @min-[400px]/agent-header:inline">
-              调试
-            </span>
-          </Button>
-        ) : null}
-        {editing ? (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setEditing(false)}
-            className="px-2.5"
-          >
-            完成编辑
-          </Button>
-        ) : (
-          <Button
-            size="sm"
-            variant="outline"
-            aria-label="编辑"
-            title="编辑系统提示词"
-            onClick={() => {
-              setEditing(true)
-              setMode("source")
-            }}
-            className="px-2.5"
-          >
-            <HugeiconsIcon icon={Edit02Icon} size={14} aria-hidden="true" />
-            <span className="hidden @min-[400px]/agent-header:inline">
-              编辑
-            </span>
-          </Button>
-        )}
-        <StatefulButton
-          disabled={(!dirty && saveState === "idle") || saving}
-          errorText="重试"
-          loadingText="保存中"
-          onClick={() => void save()}
-          size="sm"
-          state={saveState}
-          successText="已保存"
-          className="min-w-14 px-3"
-        >
-          保存
-        </StatefulButton>
-      </div>
+      <Button
+        size="icon"
+        variant="ghost"
+        aria-label="Agent 配置"
+        title="Agent 配置"
+        aria-controls={settingsId}
+        aria-expanded={settingsOpen}
+        onClick={() => setSettingsOpen((open) => !open)}
+        className="ml-auto shrink-0 @min-[480px]/agent-header:hidden"
+      >
+        <HugeiconsIcon icon={Settings02Icon} size={18} aria-hidden="true" />
+      </Button>
     </div>
   )
 
@@ -278,7 +196,7 @@ export function AgentBuilder({
           event.key.toLowerCase() === "s"
         ) {
           event.preventDefault()
-          if (!saving) void save()
+          if (editing && !saving) void save()
         }
       }}
     >
@@ -308,6 +226,7 @@ export function AgentBuilder({
         >
           <AgentConfigurationPanel
             disabled={saving}
+            readOnly={!editing}
             mcpServers={mcpServers}
             onChange={change}
             tools={tools}
@@ -315,56 +234,73 @@ export function AgentBuilder({
             value={configuration}
           />
         </aside>
-        <div
-          ref={scrollRef}
-          className={cn(
-            "doc-reading-scroll min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain",
-            editing && "overflow-hidden"
-          )}
-          tabIndex={0}
-          aria-label="系统提示词"
-        >
+        <div className="relative flex min-h-0 min-w-0 flex-1 pt-20">
+          <DocumentActions
+            editing={editing}
+            busy={saving}
+            dirty={dirty}
+            onEdit={() => {
+              setEditing(true)
+              setMode("source")
+            }}
+            onSave={() => void save()}
+            onUndo={() => {
+              change(saved)
+              setEditing(false)
+            }}
+            onDebug={onDebug}
+          />
           <div
-            className={cn("doc-reading-layout", wide && "doc-reading-wide")}
-            style={editing ? { height: "100%", maxWidth: "none" } : undefined}
+            ref={scrollRef}
+            className={cn(
+              "doc-reading-scroll min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain",
+              editing && "overflow-hidden"
+            )}
+            tabIndex={0}
+            aria-label="系统提示词"
           >
-            <article
-              className={cn(
-                "doc-article min-w-0",
-                editing && "flex h-full min-h-0 flex-col p-3!"
-              )}
+            <div
+              className={cn("doc-reading-layout", wide && "doc-reading-wide")}
+              style={editing ? { height: "100%", maxWidth: "none" } : undefined}
             >
-              {editing ? (
-                <MarkdownEditor
-                  title="系统提示词"
-                  ariaLabel="系统提示词"
-                  className="min-h-0 min-w-0 flex-1"
-                  value={configuration.instructions}
-                  maxLength={12000}
-                  placeholder="定义这个 Agent 的身份、职责、工作方式与边界。例如：你是客户支持助手，回答时优先使用已连接的工具核实信息……"
-                  disabled={saving}
-                  autoFocus
-                  preview={preview}
-                  previewScrollRef={editorPreviewRef}
-                  onModeChange={setMode}
-                  onChange={(instructions) =>
-                    change({ ...configuration, instructions })
-                  }
+              <article
+                className={cn(
+                  "doc-article min-w-0 pt-2!",
+                  editing && "flex h-full min-h-0 flex-col p-3!"
+                )}
+              >
+                {editing ? (
+                  <MarkdownEditor
+                    title="系统提示词"
+                    ariaLabel="系统提示词"
+                    className="min-h-0 min-w-0 flex-1"
+                    value={configuration.instructions}
+                    maxLength={12000}
+                    placeholder="定义这个 Agent 的身份、职责、工作方式与边界。例如：你是客户支持助手，回答时优先使用已连接的工具核实信息……"
+                    disabled={saving}
+                    autoFocus
+                    preview={preview}
+                    previewScrollRef={editorPreviewRef}
+                    onModeChange={setMode}
+                    onChange={(instructions) =>
+                      change({ ...configuration, instructions })
+                    }
+                  />
+                ) : (
+                  preview
+                )}
+              </article>
+              {!wide && outlineSections.length > 0 ? (
+                <MarkdownOutline
+                  sections={outlineSections}
+                  active={activeSection ?? ""}
+                  onSelect={(id) => {
+                    const node = findDocsHeading(resolveScroll(), id)
+                    if (node) scrollToHeading(node)
+                  }}
                 />
-              ) : (
-                preview
-              )}
-            </article>
-            {!wide && outlineSections.length > 0 ? (
-              <MarkdownOutline
-                sections={outlineSections}
-                active={activeSection ?? ""}
-                onSelect={(id) => {
-                  const node = findDocsHeading(resolveScroll(), id)
-                  if (node) scrollToHeading(node)
-                }}
-              />
-            ) : null}
+              ) : null}
+            </div>
           </div>
         </div>
       </div>

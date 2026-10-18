@@ -30,6 +30,7 @@ export function AgentConfigurationPanel({
   tools,
   skills,
   disabled,
+  readOnly,
 }: {
   value: AgentConfiguration
   onChange: (value: AgentConfiguration) => void
@@ -37,6 +38,7 @@ export function AgentConfigurationPanel({
   tools: readonly AgentResource[]
   skills: readonly AgentResource[]
   disabled: boolean
+  readOnly: boolean
 }) {
   const [tab, setTab] = useState("mcp")
   const [inspectedMcpId, setInspectedMcpId] = useState<string | null>(null)
@@ -61,6 +63,7 @@ export function AgentConfigurationPanel({
           <Input
             label="名称"
             value={value.name}
+            readOnly={readOnly}
             maxLength={80}
             onChange={(name) => onChange({ ...value, name })}
             classNames={{
@@ -79,6 +82,7 @@ export function AgentConfigurationPanel({
             <Textarea
               id={`${id}-description`}
               value={value.description}
+              readOnly={readOnly}
               maxLength={160}
               rows={3}
               onChange={(event) =>
@@ -154,7 +158,7 @@ export function AgentConfigurationPanel({
                       : skills
                 }
                 selected={value[section.key]}
-                disabled={disabled}
+                disabled={disabled || readOnly}
                 emptyLabel={section.empty}
                 onToggle={(itemId, enabled) => toggle(section, itemId, enabled)}
                 onInspect={section.id === "mcp" ? setInspectedMcpId : undefined}
@@ -171,7 +175,7 @@ export function AgentConfigurationPanel({
                   <Switch
                     ariaLabel="变更数据的操作需要批准"
                     checked={value.requireApproval}
-                    disabled={disabled}
+                    disabled={disabled || readOnly}
                     onCheckedChange={(requireApproval) =>
                       onChange({ ...value, requireApproval })
                     }
