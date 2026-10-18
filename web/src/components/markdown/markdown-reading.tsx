@@ -52,7 +52,7 @@ function ReadingLink({
 const readingMarkdownComponents = { a: ReadingLink }
 
 /**
- * 渲染一份 Markdown 文档的查看态：为标题分配锚点 id 并上报一二级标题，
+ * 渲染一份 Markdown 文档的查看态：为标题分配锚点 id 并保留完整标题层级，
  * 供右侧「本页目录」使用。frontmatter 收进折叠的元数据块。
  */
 export function MarkdownReading({
@@ -85,7 +85,7 @@ export function MarkdownReading({
       heading.dataset.docsSection = id
       return { id, label, level: Number(heading.tagName.slice(1)) }
     })
-    onSections(sections.filter((section) => section.level <= 2))
+    onSections(sections)
   }, [body, instanceId, onSections])
   return (
     <div ref={root} className="doc-preview" onClickCapture={onLink}>
@@ -123,6 +123,10 @@ export function MarkdownOutline({
   active: string
   onSelect: (id: string) => void
 }) {
+  const baseLevel = sections.reduce(
+    (level, section) => Math.min(level, section.level),
+    6
+  )
   return (
     <aside className="doc-outline">
       <div className="doc-outline-sticky">
@@ -134,6 +138,7 @@ export function MarkdownOutline({
           items={sections.map((section) => ({
             label: section.label,
             value: section.id,
+            depth: section.level - baseLevel,
           }))}
           active={active}
           onSelect={onSelect}

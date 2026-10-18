@@ -25,6 +25,8 @@ export type BranchedMenuChild = {
 export type BranchedMenuItem = {
   label: string
   value?: string
+  /** Indentation depth for flat document outlines; does not add folding. */
+  depth?: number
   icon?: IconSvgElement | ReactNode
   badge?: ReactNode
   children?: readonly BranchedMenuChild[]
@@ -218,6 +220,9 @@ export function BranchedMenu({
           <div
             key={item.value ?? item.label}
             className="branched-menu__section"
+            style={
+              item.depth ? { marginInlineStart: item.depth * 12 } : undefined
+            }
             data-open={isOpen ? "" : undefined}
           >
             <button

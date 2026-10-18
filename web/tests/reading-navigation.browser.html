@@ -29,10 +29,15 @@
     while (!condition() && performance.now() < deadline) await wait();
     assert(condition(), message);
   };
-  const paragraphs = label => Array.from({ length: 20 }, (_, index) => `${label} 阅读段落 ${index + 1}。`).join("\n\n");
+  const paragraphs = (label, count = 20) => Array.from({ length: count }, (_, index) => `${label} 阅读段落 ${index + 1}。`).join("\n\n");
+  const outlineHeadings = [
+    ["总览", 1], ["共享章节", 2], ["三级章节", 3], ["四级章节", 4],
+    ["五级章节", 5], ["六级章节", 6], ["返回三级", 3], ["尾部章节", 2],
+    ["跳级四级", 4], ["第二总览", 1],
+  ];
   const markdown = (label, guide = false) => `# 总览\n\n${guide
     ? "[回到主文件](../SKILL.md#共享章节)"
-    : "[本页定位](#共享章节)\n\n[跨文件定位](reference/guide.md#共享章节)"}\n\n${paragraphs(label)}\n\n## 共享章节\n\n${paragraphs(label)}\n\n## 尾部章节\n\n${paragraphs(label)}`;
+    : "[本页定位](#共享章节)\n\n[跨文件定位](reference/guide.md#共享章节)"}\n\n${paragraphs(label)}\n\n${outlineHeadings.slice(1).map(([heading, level]) => `${"#".repeat(level)} ${heading}\n\n${paragraphs(label, level > 2 ? 4 : 20)}`).join("\n\n")}`;
   const skills = ["FIRST", "SECOND"].map((label, index) => ({
     id: `reading-${index}`, name: `${label} skill`, description: "Reading navigation fixture",
     files: [
@@ -60,16 +65,36 @@
   const render = (visible, skillId = skills[0].id) => flushSync(() => root.render(withDependencies(h(Pages, { visible, skillId }), dependencies)));
   const page = name => fixture.querySelector(`#${name}-page`);
   const scroll = name => page(name).querySelector(".doc-reading-scroll");
-  const heading = name => page(name).querySelector('[data-docs-section="共享章节"]');
+  const heading = (name, label = "共享章节") => page(name).querySelector(`[data-docs-section="${label}"]`);
   const outline = name => page(name).querySelector('nav[aria-label="本页目录"]');
   const outlineButton = (name, label) => [...outline(name).querySelectorAll("button")].find(button => button.textContent.trim() === label);
   const activeHeading = name => outline(name)?.querySelector('[aria-current="true"]')?.textContent.trim();
   const click = element => { assert(element, "Expected navigation control is missing"); flushSync(() => element.click()); };
   const link = label => [...page("skill").querySelectorAll(".doc-preview a")].find(anchor => anchor.textContent === label);
-  const aligned = name => {
+  const aligned = (name, label = "共享章节") => {
     const container = scroll(name);
-    const target = heading(name);
+    const target = heading(name, label);
     return container.scrollTop > 100 && Math.abs(target.getBoundingClientRect().top - container.getBoundingClientRect().top - 32) < 3;
+  };
+  const checkOutlineHierarchy = name => {
+    const buttons = [...outline(name).querySelectorAll("button")];
+    assert(JSON.stringify(buttons.map(button => button.textContent.trim())) === JSON.stringify(outlineHeadings.map(([label]) => label)),
+      `${name} outline must include h1–h6 in document order without invented headings`);
+    const textLeft = label => {
+      const walker = document.createTreeWalker(outlineButton(name, label), NodeFilter.SHOW_TEXT);
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        if (node.textContent.trim() !== label) continue;
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        return range.getBoundingClientRect().left;
+      }
+      throw new Error(`Missing outline text: ${label}`);
+    };
+    const base = textLeft("总览");
+    const indent = textLeft("共享章节") - base;
+    assert(indent > 0, `${name} outline must indent child headings`);
+    for (const [label, level] of outlineHeadings) assert(Math.abs(textLeft(label) - (base + (level - 1) * indent)) <= 1,
+      `${name} outline must align level ${level} for ${label}, including returning to parents and skipped levels`);
   };
   const uniqueIds = () => {
     const ids = [...fixture.querySelectorAll("[id]")].map(element => element.id);
@@ -95,10 +120,14 @@
     assert(!fixture.querySelector("header button"), "An inactive Skill page must not render Header controls");
     uniqueIds();
     assert(heading("skill").id !== heading("agent").id, "Matching Chinese headings must have distinct document IDs");
+    checkOutlineHierarchy("agent");
     const hiddenSkillScroll = scroll("skill").scrollTop;
     click(outlineButton("agent", "共享章节"));
     await until(() => aligned("agent"), "Agent outline must scroll its own heading past the hidden Skill page");
     await until(() => activeHeading("agent") === "共享章节", "Agent scrollspy must highlight its own heading");
+    click(outlineButton("agent", "六级章节"));
+    await until(() => aligned("agent", "六级章节"), "Agent outline must navigate to a level-six heading");
+    await until(() => activeHeading("agent") === "六级章节", "Agent scrollspy must highlight level-six headings");
     assert(scroll("skill").scrollTop === hiddenSkillScroll, "Agent navigation must not scroll the hidden Skill page");
 
     render("skill", skills[1].id);
@@ -108,7 +137,11 @@
     assert(!fixture.querySelector('header [data-slot="document-actions"]') && !fixture.querySelector('header button[aria-label="编辑"]'),
       "Skill editing actions must stay outside the shared Header");
     uniqueIds();
+    checkOutlineHierarchy("skill");
     const hiddenAgentScroll = scroll("agent").scrollTop;
+    click(outlineButton("skill", "六级章节"));
+    await until(() => aligned("skill", "六级章节"), "Skill outline must navigate to a level-six heading");
+    await until(() => activeHeading("skill") === "六级章节", "Skill scrollspy must highlight level-six headings");
     click(link("本页定位"));
     await until(() => aligned("skill"), "Same-file hash must scroll the current Skill container");
     await until(() => activeHeading("skill") === "共享章节", "Skill scrollspy must highlight its own heading");
@@ -137,7 +170,7 @@
     await wait(180);
     assert(writes === afterUnmount, "Unmounting must stop all later scroll writes");
     result.dataset.passed = "true";
-    result.textContent = "PASS: isolated Agent/Skill headings and scrollspy; unique IDs; switched Skill same/cross-file links; scroll cleanup on target change and unmount";
+    result.textContent = "PASS: Agent/Skill h1–h6 outline hierarchy and deep-heading scrollspy; isolated headings and unique IDs; switched Skill same/cross-file links; scroll cleanup on target change and unmount";
   } catch (error) {
     result.dataset.passed = "false";
     result.textContent = `FAIL: ${error.message}`;
