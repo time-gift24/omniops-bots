@@ -285,7 +285,7 @@ export function AgentBuilder({
       {toolbarTarget ? (
         createPortal(toolbar, toolbarTarget)
       ) : (
-        <div className="@container/agent-header flex shrink-0 border-b border-border px-3">
+        <div className="@container/agent-header flex shrink-0 px-3">
           {toolbar}
         </div>
       )}
@@ -297,7 +297,7 @@ export function AgentBuilder({
           {error}
         </p>
       ) : null}
-      <div className="flex min-h-0 flex-1 flex-col border-t border-border @min-[480px]/agent:flex-row">
+      <div className="flex min-h-0 flex-1 flex-col @min-[480px]/agent:flex-row">
         <aside
           id={settingsId}
           aria-label="Agent 配置"

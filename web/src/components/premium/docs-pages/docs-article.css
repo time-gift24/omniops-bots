@@ -87,9 +87,6 @@
     margin: 12px 0 12px 12px;
     border-right: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
-    background: color-mix(in oklch, var(--muted) 70%, transparent);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
   }
 }
 @container skill-header (min-width: 960px) {
