@@ -18,6 +18,8 @@ import "./branched-menu.css"
 export type BranchedMenuChild = {
   value: string
   label: string
+  /** Additional heading levels below the first branch row. */
+  depth?: number
   icon?: IconSvgElement | ReactNode
   badge?: ReactNode
 }
@@ -25,8 +27,6 @@ export type BranchedMenuChild = {
 export type BranchedMenuItem = {
   label: string
   value?: string
-  /** Indentation depth for flat document outlines; does not add folding. */
-  depth?: number
   icon?: IconSvgElement | ReactNode
   badge?: ReactNode
   children?: readonly BranchedMenuChild[]
@@ -38,6 +38,8 @@ export type BranchedMenuProps = {
   active?: string
   defaultOpen?: number | readonly number[]
   defaultActive?: string
+  /** Document headings navigate while their branches stay expanded. */
+  collapsible?: boolean
   onSelect?: (value: string, item: BranchedMenuItem | BranchedMenuChild) => void
   onToggle?: (index: number, open: boolean) => void
   ariaLabel?: string
@@ -57,6 +59,7 @@ export type BranchedMenuProps = {
 
 const PAD = 6
 const MARK = 16
+const DEPTH_STEP = 12
 
 const renderIcon = (icon: IconSvgElement | ReactNode) =>
   isValidElement(icon) ? (
@@ -73,6 +76,7 @@ export function BranchedMenu({
   active: controlledActive,
   defaultOpen = 0,
   defaultActive = "",
+  collapsible = true,
   onSelect,
   onToggle,
   ariaLabel,
@@ -95,7 +99,8 @@ export function BranchedMenu({
   const [internalActive, setInternalActive] = useState(() => {
     if (defaultActive) return defaultActive
     const first = items.find(
-      (item, index) => item.children && toSet(defaultOpen).has(index)
+      (item, index) =>
+        item.children && (!collapsible || toSet(defaultOpen).has(index))
     )
     return first?.children?.[0]?.value ?? ""
   })
@@ -107,7 +112,8 @@ export function BranchedMenu({
   const activeSection = items.findIndex((item) =>
     item.children?.some((kid) => kid.value === active)
   )
-  const markerShown = activeSection >= 0 && open.has(activeSection)
+  const markerShown =
+    activeSection >= 0 && (!collapsible || open.has(activeSection))
   useLayoutEffect(() => {
     const place = (glide: boolean) => {
       const marker = markerRef.current
@@ -145,10 +151,11 @@ export function BranchedMenu({
       if (!item.children) return
       const fold = folds.current[index]
       if (!fold) return
-      const target = open.has(index)
-        ? PAD * 2 + item.children.length * rowHeight
-        : 0
-      if (firstFold.current || reduceMotion) {
+      const target =
+        !collapsible || open.has(index)
+          ? PAD * 2 + item.children.length * rowHeight
+          : 0
+      if (firstFold.current || reduceMotion || !collapsible) {
         fold.style.height = `${target}px`
       } else if (foldHeights.current[index] !== target) {
         animate(fold, { height: target }, { ...SPRING_GLIDE })
@@ -177,14 +184,7 @@ export function BranchedMenu({
   }
 
   const r = Math.min(radius, rowHeight / 2 - 2)
-  const endX = indent - 8
   const rowY = (k: number) => PAD + k * rowHeight + rowHeight / 2
-  const branch = (k: number) =>
-    `M ${trunk} ${rowY(k) - r} A ${r} ${r} 0 0 0 ${trunk + r} ${rowY(k)} H ${endX}`
-  const reach = (k: number) =>
-    `M ${trunk} 0 V ${rowY(k) - r} A ${r} ${r} 0 0 0 ${trunk + r} ${rowY(k)} H ${endX}`
-  const length = (k: number) =>
-    rowY(k) - r + (Math.PI * r) / 2 + (endX - trunk - r)
 
   return (
     <nav
@@ -211,18 +211,50 @@ export function BranchedMenu({
         aria-hidden="true"
       />
       {items.map((item, index) => {
-        const kids = item.children
-        const isOpen = kids ? open.has(index) : false
+        const kids = item.children?.length ? item.children : undefined
+        const isOpen = kids ? !collapsible || open.has(index) : false
         const leafValue = item.value ?? item.label
-        const leafActive = !kids && leafValue === active
+        const leafActive = (!kids || !collapsible) && leafValue === active
         const bodyHeight = kids ? PAD * 2 + kids.length * rowHeight : 0
+        const ancestors: number[] = []
+        const stems = new Map<
+          number,
+          { x: number; start: number; end: number }
+        >()
+        const branches = (kids ?? []).map((kid, k, siblings) => {
+          const depth = kid.depth ?? 0
+          while (
+            ancestors.length &&
+            (siblings[ancestors[ancestors.length - 1]].depth ?? 0) >= depth
+          )
+            ancestors.pop()
+          const parent = ancestors.at(-1) ?? -1
+          const x =
+            trunk +
+            (parent < 0 ? 0 : (siblings[parent].depth ?? 0) + 1) * DEPTH_STEP
+          const start = parent < 0 ? 0 : rowY(parent)
+          const y = rowY(k)
+          const end = indent - 8 + depth * DEPTH_STEP
+          const corner = `A ${r} ${r} 0 0 0 ${x + r} ${y} H ${end}`
+          stems.set(parent, { x, start, end: y - r })
+          ancestors.push(k)
+          return {
+            parent,
+            branch: `M ${x} ${y - r} ${corner}`,
+            reach: `M ${x} ${start} V ${y - r} ${corner}`,
+          }
+        })
+        const activeBranches = new Set<number>()
+        for (
+          let k = kids?.findIndex((kid) => kid.value === active) ?? -1;
+          k >= 0;
+          k = branches[k].parent
+        )
+          activeBranches.add(k)
         return (
           <div
             key={item.value ?? item.label}
             className="branched-menu__section"
-            style={
-              item.depth ? { marginInlineStart: item.depth * 12 } : undefined
-            }
             data-open={isOpen ? "" : undefined}
           >
             <button
@@ -231,10 +263,13 @@ export function BranchedMenu({
               }}
               type="button"
               className="branched-menu__head"
-              aria-expanded={kids ? isOpen : undefined}
+              title={item.label}
+              aria-expanded={kids && collapsible ? isOpen : undefined}
               aria-current={leafActive ? "true" : undefined}
               data-active={leafActive ? "" : undefined}
-              onClick={() => (kids ? toggle(index) : select(leafValue, item))}
+              onClick={() =>
+                kids && collapsible ? toggle(index) : select(leafValue, item)
+              }
             >
               {item.icon ? (
                 <span className="branched-menu__icon" aria-hidden="true">
@@ -260,30 +295,40 @@ export function BranchedMenu({
                   >
                     <svg
                       className="branched-menu__lines"
-                      width={indent}
+                      width={
+                        indent +
+                        kids.reduce(
+                          (max, kid) => Math.max(max, kid.depth ?? 0),
+                          0
+                        ) *
+                          DEPTH_STEP
+                      }
                       height={bodyHeight}
                       aria-hidden="true"
                     >
-                      <path
-                        className="branched-menu__base"
-                        d={`M ${trunk} 0 V ${rowY(kids.length - 1) - r}`}
-                      />
+                      {[...stems].map(([parent, stem]) => (
+                        <path
+                          key={parent}
+                          className="branched-menu__base"
+                          d={`M ${stem.x} ${stem.start} V ${stem.end}`}
+                        />
+                      ))}
                       {kids.map((kid, k) => (
                         <path
                           key={kid.value}
                           className="branched-menu__base"
-                          d={branch(k)}
+                          d={branches[k].branch}
                         />
                       ))}
                       {kids.map((kid, k) => (
                         <path
                           key={kid.value}
                           className="branched-menu__reach"
-                          d={reach(k)}
+                          d={branches[k].reach}
+                          pathLength={1}
                           style={{
-                            strokeDasharray: length(k),
-                            strokeDashoffset:
-                              kid.value === active ? 0 : length(k),
+                            strokeDasharray: 1,
+                            strokeDashoffset: activeBranches.has(k) ? 0 : 1,
                           }}
                         />
                       ))}
@@ -293,6 +338,15 @@ export function BranchedMenu({
                         key={kid.value}
                         type="button"
                         className="branched-menu__item"
+                        title={kid.label}
+                        style={
+                          kid.depth
+                            ? {
+                                paddingInlineStart:
+                                  indent + kid.depth * DEPTH_STEP,
+                              }
+                            : undefined
+                        }
                         aria-current={kid.value === active ? "true" : undefined}
                         data-active={kid.value === active ? "" : undefined}
                         tabIndex={isOpen ? 0 : -1}

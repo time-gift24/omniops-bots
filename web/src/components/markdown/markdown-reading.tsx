@@ -22,7 +22,11 @@ import {
   docsSectionId,
   type DocsSection,
 } from "@/components/premium/docs-pages/docs-data"
-import { BranchedMenu } from "@/components/skills/branched-menu"
+import {
+  BranchedMenu,
+  type BranchedMenuChild,
+  type BranchedMenuItem,
+} from "@/components/skills/branched-menu"
 import { SPRING_GLIDE } from "@/lib/ease"
 import { headingSlug, splitFrontmatter } from "@/skills/content"
 import "@/components/premium/docs-pages/docs-article.css"
@@ -123,10 +127,19 @@ export function MarkdownOutline({
   active: string
   onSelect: (id: string) => void
 }) {
-  const baseLevel = sections.reduce(
-    (level, section) => Math.min(level, section.level),
-    6
-  )
+  const items: BranchedMenuItem[] = []
+  let rootLevel = 0
+  let children: BranchedMenuChild[] = []
+  for (const section of sections) {
+    const item = { label: section.label, value: section.id }
+    if (!items.length || section.level <= rootLevel) {
+      children = []
+      rootLevel = section.level
+      items.push({ ...item, children })
+    } else {
+      children.push({ ...item, depth: section.level - rootLevel - 1 })
+    }
+  }
   return (
     <aside className="doc-outline">
       <div className="doc-outline-sticky">
@@ -135,11 +148,8 @@ export function MarkdownOutline({
         </p>
         <BranchedMenu
           ariaLabel="本页目录"
-          items={sections.map((section) => ({
-            label: section.label,
-            value: section.id,
-            depth: section.level - baseLevel,
-          }))}
+          items={items}
+          collapsible={false}
           active={active}
           onSelect={onSelect}
           color="var(--sidebar-foreground)"

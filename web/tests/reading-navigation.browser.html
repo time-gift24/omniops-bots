@@ -91,10 +91,44 @@
       throw new Error(`Missing outline text: ${label}`);
     };
     const base = textLeft("总览");
-    const indent = textLeft("共享章节") - base;
-    assert(indent > 0, `${name} outline must indent child headings`);
-    for (const [label, level] of outlineHeadings) assert(Math.abs(textLeft(label) - (base + (level - 1) * indent)) <= 1,
+    const firstChild = textLeft("共享章节");
+    const indent = textLeft("三级章节") - firstChild;
+    assert(indent > 0 && firstChild - base > indent,
+      `${name} outline must reserve the first branch indentation and indent deeper headings consistently`);
+    for (const [label, level] of outlineHeadings) assert(Math.abs(textLeft(label) - (level === 1 ? base : firstChild + (level - 2) * indent)) <= 1,
       `${name} outline must align level ${level} for ${label}, including returning to parents and skipped levels`);
+  };
+  const checkOutlineBranches = async name => {
+    await until(() => [...outline(name).querySelectorAll("svg.branched-menu__lines")].some(svg =>
+      svg.getBoundingClientRect().width > 0 && svg.getBoundingClientRect().height > 0 && Number(getComputedStyle(svg).opacity) > 0 &&
+      [...svg.querySelectorAll("path.branched-menu__base")].some(path => path.getTotalLength() > 0 && getComputedStyle(path).stroke !== "none")),
+      `${name} outline must render visible tree branch lines like the file menu`);
+  };
+  const checkActiveBranch = async (name, label) => {
+    await until(() => [...outline(name).querySelectorAll("svg.branched-menu__lines path.branched-menu__reach")].some(path => {
+      const style = getComputedStyle(path);
+      const base = path.parentElement.querySelector("path.branched-menu__base");
+      if (!base || Number(getComputedStyle(path.parentElement).opacity) === 0 || Math.abs(Number.parseFloat(style.strokeDashoffset)) >= 0.01 ||
+        style.stroke === "none" || style.stroke === getComputedStyle(base).stroke) return false;
+      const end = path.getPointAtLength(path.getTotalLength());
+      const point = new DOMPoint(end.x, end.y).matrixTransform(path.getScreenCTM());
+      const row = outlineButton(name, label).getBoundingClientRect();
+      return Math.abs(point.y - (row.top + row.bottom) / 2) <= 1;
+    }), `${name} active branch must highlight the path to ${label}`);
+  };
+  const checkParentNavigation = async name => {
+    click(outlineButton(name, "总览"));
+    await until(() => scroll(name).scrollTop < 1 && activeHeading(name) === "总览",
+      `${name} parent heading must navigate to its document position`);
+    checkOutlineHierarchy(name);
+    for (const [label] of outlineHeadings) {
+      const row = outlineButton(name, label);
+      const rectangle = row.getBoundingClientRect();
+      const fold = row.closest(".branched-menu__fold")?.getBoundingClientRect();
+      assert(rectangle.width > 0 && rectangle.height > 0 && row.tabIndex >= 0 && (!fold ||
+        (rectangle.top >= fold.top - 1 && rectangle.bottom <= fold.bottom + 1)),
+        `${name} parent navigation must keep ${label} visible and keyboard reachable`);
+    }
   };
   const uniqueIds = () => {
     const ids = [...fixture.querySelectorAll("[id]")].map(element => element.id);
@@ -120,14 +154,18 @@
     assert(!fixture.querySelector("header button"), "An inactive Skill page must not render Header controls");
     uniqueIds();
     assert(heading("skill").id !== heading("agent").id, "Matching Chinese headings must have distinct document IDs");
+    await checkOutlineBranches("agent");
     checkOutlineHierarchy("agent");
     const hiddenSkillScroll = scroll("skill").scrollTop;
     click(outlineButton("agent", "共享章节"));
     await until(() => aligned("agent"), "Agent outline must scroll its own heading past the hidden Skill page");
     await until(() => activeHeading("agent") === "共享章节", "Agent scrollspy must highlight its own heading");
+    await checkActiveBranch("agent", "共享章节");
     click(outlineButton("agent", "六级章节"));
     await until(() => aligned("agent", "六级章节"), "Agent outline must navigate to a level-six heading");
     await until(() => activeHeading("agent") === "六级章节", "Agent scrollspy must highlight level-six headings");
+    await checkActiveBranch("agent", "六级章节");
+    await checkParentNavigation("agent");
     assert(scroll("skill").scrollTop === hiddenSkillScroll, "Agent navigation must not scroll the hidden Skill page");
 
     render("skill", skills[1].id);
@@ -137,11 +175,14 @@
     assert(!fixture.querySelector('header [data-slot="document-actions"]') && !fixture.querySelector('header button[aria-label="编辑"]'),
       "Skill editing actions must stay outside the shared Header");
     uniqueIds();
+    await checkOutlineBranches("skill");
     checkOutlineHierarchy("skill");
     const hiddenAgentScroll = scroll("agent").scrollTop;
     click(outlineButton("skill", "六级章节"));
     await until(() => aligned("skill", "六级章节"), "Skill outline must navigate to a level-six heading");
     await until(() => activeHeading("skill") === "六级章节", "Skill scrollspy must highlight level-six headings");
+    await checkActiveBranch("skill", "六级章节");
+    await checkParentNavigation("skill");
     click(link("本页定位"));
     await until(() => aligned("skill"), "Same-file hash must scroll the current Skill container");
     await until(() => activeHeading("skill") === "共享章节", "Skill scrollspy must highlight its own heading");
@@ -170,7 +211,7 @@
     await wait(180);
     assert(writes === afterUnmount, "Unmounting must stop all later scroll writes");
     result.dataset.passed = "true";
-    result.textContent = "PASS: Agent/Skill h1–h6 outline hierarchy and deep-heading scrollspy; isolated headings and unique IDs; switched Skill same/cross-file links; scroll cleanup on target change and unmount";
+    result.textContent = "PASS: Agent/Skill h1–h6 tree branches, active paths and parent navigation without folding; deep-heading scrollspy; isolated headings and unique IDs; switched Skill same/cross-file links; scroll cleanup on target change and unmount";
   } catch (error) {
     result.dataset.passed = "false";
     result.textContent = `FAIL: ${error.message}`;

@@ -215,6 +215,33 @@
     checkHeader()
     checks.push("Markdown reading and collapsed frontmatter")
 
+    const fileNavigation = () => [...document.querySelectorAll('nav[aria-label="技能文件"]')].find(visible)
+    if (!fileNavigation()) {
+      click(button("浏览技能文件"))
+      await until(fileNavigation, "File navigation must open for folder checks")
+    }
+    const referenceFolder = button("reference", fileNavigation())
+    const referenceGroup = referenceFolder.closest(".branched-menu__section")
+    const referenceFold = referenceGroup.querySelector(".branched-menu__fold")
+    const referenceFiles = [...referenceGroup.querySelectorAll(".branched-menu__item")]
+    assert(referenceFolder.getAttribute("aria-expanded") === "true" && referenceFiles.length > 0,
+      "The reference folder must start expanded with selectable files")
+    click(referenceFolder)
+    await until(() => referenceFolder.getAttribute("aria-expanded") === "false" && referenceFold.getBoundingClientRect().height < 1,
+      "File folders must still collapse and hide their children")
+    assert(referenceFiles.every(control => control.tabIndex < 0), "Collapsed file children must leave keyboard navigation")
+    assert(content()?.querySelector("h1")?.textContent === "周报助手", "Toggling a folder must not navigate away from the current file")
+    click(referenceFolder)
+    const templateFile = button("template.md", referenceGroup)
+    await until(() => referenceFolder.getAttribute("aria-expanded") === "true" && templateFile.tabIndex >= 0 &&
+      templateFile.getBoundingClientRect().bottom <= referenceFold.getBoundingClientRect().bottom + 1,
+      "Expanding a file folder must restore visible, keyboard-reachable children")
+    click(templateFile)
+    await until(() => !button("关闭文件导航") && content()?.querySelector("h1")?.textContent === "周报模板",
+      "An expanded file child must remain selectable")
+    await selectFile("SKILL.md")
+    checks.push("file folders still fold, remove hidden children from keyboard navigation and reopen for selection")
+
     await startEditing("SKILL.md")
     assert(
       editor("SKILL.md").value === skillSource,

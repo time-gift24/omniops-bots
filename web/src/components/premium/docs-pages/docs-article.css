@@ -111,7 +111,7 @@
 @container reading (min-width: 1100px) {
   .doc-reading-layout:has(.doc-outline) {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 11rem;
+    grid-template-columns: minmax(0, 1fr) 12rem;
     gap: 1.5rem;
   }
   .doc-outline {
