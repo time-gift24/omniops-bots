@@ -38,6 +38,7 @@ import {
   useAnimatedSidebar,
 } from "@/components/motion/animated-sidebar";
 import { Button } from "@/components/motion/button";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { SharedLayoutBg } from "@/components/motion/shared-layout-bg";
 import {
   CommandDialog,
@@ -160,6 +161,9 @@ export type SidebarRailProps = {
   expanded?: boolean;
   onExpandedChange?: (expanded: boolean) => void;
   defaultItemId?: string;
+  activeSectionId?: string;
+  activeItemId?: string;
+  onSectionSelect?: (section: SidebarRailSection) => void;
   onItemSelect?: (item: SidebarRailItem, section: SidebarRailSection) => void;
   onCreate?: () => void;
   createLabel?: string;
@@ -173,6 +177,8 @@ export type SidebarRailProps = {
   railActions?: ReactNode;
   /** Replaces the workspace breadcrumbs; the navigation toggle stays built in. Pass null to hide them. */
   workspaceHeader?: ReactNode;
+  /** Shared header spacing, including room for floating controls on every page. */
+  workspaceHeaderClassName?: string;
   /** Full-height column rendered after the header+content column, e.g. the workbench panel. */
   endPanel?: ReactNode;
   /** Absolutely positioned overlay on the header+content column, e.g. a floating toggle over the header. Positioning classes are the caller's responsibility. */
@@ -234,6 +240,9 @@ function SidebarRailShell({
   workspaceName = "Cognacta",
   sections = defaultSections,
   defaultItemId = "launch-direction",
+  activeSectionId,
+  activeItemId,
+  onSectionSelect,
   onItemSelect,
   onCreate,
   createLabel = "新建页面",
@@ -243,6 +252,7 @@ function SidebarRailShell({
   railFooter,
   railActions,
   workspaceHeader,
+  workspaceHeaderClassName,
   endPanel,
   headerOverlay,
   contentClassName,
@@ -260,14 +270,16 @@ function SidebarRailShell({
   const context = useAnimatedSidebar();
   const { triggerRef } = context;
   const reduce = useReducedMotion();
-  const [sectionId, setSectionId] = useState(sections[0]?.id);
-  const [itemId, setItemId] = useState(defaultItemId);
+  const [internalSectionId, setSectionId] = useState(sections[0]?.id);
+  const [internalItemId, setItemId] = useState(defaultItemId);
+  const sectionId = activeSectionId ?? internalSectionId;
+  const itemId = activeItemId ?? internalItemId;
   const [searchOpen, setSearchOpen] = useState(false);
   const panelId = useId();
   const section =
     sections.find((entry) => entry.id === sectionId) ?? sections[0];
-  const selectedItem = sections
-    .flatMap((entry) => entry.groups.flatMap((group) => group.items))
+  const selectedItem = section?.groups
+    .flatMap((group) => group.items)
     .find((item) => item.id === itemId);
   const groups = section?.groups ?? [];
 
@@ -433,6 +445,7 @@ function SidebarRailShell({
                   }
                   onClick={(event) => {
                     setSectionId(entry.id);
+                    onSectionSelect?.(entry);
                     if (entry.id !== section?.id && !entry.renderContent) {
                       const firstItem = entry.groups[0]?.items[0];
                       if (firstItem) {
@@ -605,7 +618,7 @@ function SidebarRailShell({
       </CommandDialog>
 
       <div className="relative flex min-w-0 flex-1 flex-col">
-        <header className="flex h-12 shrink-0 items-center gap-3 px-3 sm:px-4">
+        <header className="flex min-h-12 shrink-0 items-center gap-3 px-3 sm:px-4">
           <MorphicTooltip
             content={expanded ? "收起导航" : "展开导航"}
             side="bottom"
@@ -637,25 +650,20 @@ function SidebarRailShell({
           </MorphicTooltip>
           <div
             data-slot="sidebar-rail-workspace-header"
-            className="flex min-w-0 flex-1 items-center gap-3"
+            className={cn(
+              "flex min-w-0 flex-1 items-center gap-3",
+              workspaceHeaderClassName,
+            )}
           >
             {workspaceHeader === undefined ? (
-              <>
-                <span className="hidden text-sm text-muted-foreground lg:inline">
-                  {section?.label}
-                </span>
-                <span
-                  aria-hidden="true"
-                  className="hidden text-sm text-muted-foreground/50 lg:inline"
-                >
-                  /
-                </span>
-                <p className="min-w-0 truncate text-sm font-medium">
-                  {itemId === "new-page"
+              <Breadcrumbs
+                items={[
+                  section?.label ?? "工作区",
+                  itemId === "new-page"
                     ? "未命名页面"
-                    : (selectedItem?.label ?? "工作区")}
-                </p>
-              </>
+                    : (selectedItem?.label ?? "工作区"),
+                ]}
+              />
             ) : (
               workspaceHeader
             )}

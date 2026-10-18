@@ -15,5 +15,15 @@ test("SidebarRail renders on the server without mounting browser portals", async
   const html = renderToString(createElement(SidebarRail, { workspaceName: "Cognacta" }));
   assert.match(html, /Cognacta/);
   assert.match(html, /aria-label="工作区导航区域"/);
+  assert.match(html, /aria-label="面包屑"/);
   assert.doesNotMatch(html, /role="tooltip"/);
+  const controlled = renderToString(createElement(SidebarRail, {
+    activeSectionId: "settings",
+    activeItemId: "members",
+    workspaceHeaderClassName: "pr-10",
+  }));
+  assert.match(controlled, /aria-label="设置" aria-current="page"/);
+  assert.match(controlled, /data-slot="sidebar-rail-workspace-header" class="[^"]*pr-10/);
+  assert.match(controlled, /aria-label="面包屑"[^]*?<span[^>]*>设置<\/span>[^]*?<li[^>]*aria-current="page"[^]*?<span[^>]*>成员<\/span>/);
+  assert.doesNotMatch(controlled, /发布方向/);
 });

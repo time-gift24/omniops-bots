@@ -10,6 +10,7 @@
   import { flushSync } from "react-dom";
   import "/src/index.css";
   import { App } from "/src/App.tsx";
+  import { ThemeProvider } from "/src/components/theme-provider.tsx";
   import { bindChatGateway } from "/src/chat/binding.ts";
   import { createMockGateway } from "/src/chat/mock-gateway.ts";
   import { defaultThreadRegistry } from "/src/chat/react.ts";
@@ -136,7 +137,8 @@
         };
       });
       root = createRoot(fixture);
-      flushSync(() => root.render(React.createElement(React.StrictMode, null, React.createElement(App))));
+      flushSync(() => root.render(React.createElement(React.StrictMode, null,
+        React.createElement(ThemeProvider, null, React.createElement(App)))));
       await until(() => Boolean(labeled("工作区")) && Boolean(drawer()) === mobile, "StrictMode App did not mount at the requested viewport");
       assert(!editor(), "A conversation must require a workspace");
 

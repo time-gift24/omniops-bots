@@ -5,6 +5,7 @@ import { BotIcon, Settings02Icon } from "@hugeicons-pro/core-stroke-rounded"
 import { useEffect, useId, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { MarkdownEditor } from "@/components/markdown/markdown-editor"
+import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import {
   Button,
   type ButtonState,
@@ -92,11 +93,27 @@ export function AgentBuilder({
   }
 
   const toolbar = (
-    <header className="flex min-h-11 min-w-0 flex-1 items-center gap-2">
-      <div className="flex min-w-0 flex-1 items-center gap-2">
-        <h1 className="truncate text-[13px] font-medium">
-          {configuration.name.trim() || "未命名 Agent"}
-        </h1>
+    <div className="flex min-h-11 min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 py-1 @min-[400px]/agent-header:flex-nowrap">
+      <div className="flex min-w-0 flex-1 basis-full items-center gap-2 @min-[400px]/agent-header:basis-auto">
+        <Breadcrumbs
+          items={[
+            "Agent",
+            <div className="flex min-w-0 items-center gap-2">
+              <span
+                aria-hidden="true"
+                className="grid size-6 shrink-0 place-items-center rounded-lg bg-accent text-accent-foreground"
+              >
+                <HugeiconsIcon icon={BotIcon} size={14} />
+              </span>
+              <h1
+                className="truncate text-sm font-medium"
+                title={configuration.name.trim() || "未命名 Agent"}
+              >
+                {configuration.name.trim() || "未命名 Agent"}
+              </h1>
+            </div>,
+          ]}
+        />
         <span
           className="hidden shrink-0 text-xs text-muted-foreground @min-[400px]/agent-header:inline"
           role="status"
@@ -104,7 +121,7 @@ export function AgentBuilder({
           {dirty ? "未保存" : ""}
         </span>
       </div>
-      <div className="flex shrink-0 items-center gap-1">
+      <div className="ml-auto flex shrink-0 items-center gap-1">
         <Button
           disabled={!dirty || saving}
           onClick={() => change(saved)}
@@ -122,10 +139,14 @@ export function AgentBuilder({
             size="sm"
             variant="outline"
             onClick={onDebug}
+            aria-label="调试"
+            title="调试"
             className="px-2.5"
           >
             <HugeiconsIcon icon={BotIcon} size={14} aria-hidden="true" />
-            调试
+            <span className="hidden @min-[400px]/agent-header:inline">
+              调试
+            </span>
           </Button>
         ) : null}
         <StatefulButton
@@ -141,7 +162,7 @@ export function AgentBuilder({
           保存
         </StatefulButton>
       </div>
-    </header>
+    </div>
   )
 
   return (

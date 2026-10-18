@@ -21,6 +21,7 @@ import {
   SidebarRail,
 } from "@/components/premium/sidebar-blocks/sidebar-rail"
 import { Button } from "@/components/ui/button"
+import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import {
   CommandDialog,
   CommandEmpty,
@@ -62,7 +63,10 @@ const INITIAL_AGENTS: readonly AgentEntry[] = [
 ]
 
 type View =
-  { kind: "chat" } | { kind: "agent"; agentId: string } | { kind: "skill" }
+  | { kind: "chat" }
+  | { kind: "agent"; agentId: string }
+  | { kind: "skill" }
+  | { kind: "page"; sectionId: string; itemId: string }
 
 export function App() {
   const [store] = useState(() => createWorkspaceStore(defaultThreadRegistry))
@@ -129,6 +133,23 @@ export function App() {
     view.kind === "agent"
       ? agents.find((agent) => agent.id === view.agentId)
       : undefined
+  const activeSkill = DEMO_SKILLS.find((skill) => skill.id === openedSkillId)
+  const activeSectionId =
+    view.kind === "agent"
+      ? "agents"
+      : view.kind === "skill"
+        ? "skills"
+        : view.kind === "page"
+          ? view.sectionId
+          : "workspace"
+  const activeItemId =
+    view.kind === "agent"
+      ? `agent:${view.agentId}`
+      : view.kind === "skill"
+        ? `skill:${openedSkillId}`
+        : view.kind === "page"
+          ? view.itemId
+          : (activeSession?.id ?? "")
   const agentSection = {
     id: "agents",
     label: "Agent",
@@ -175,6 +196,7 @@ export function App() {
                 store={store}
                 onAdd={() => setPicker("add")}
                 onNavigate={() => {
+                  setView({ kind: "chat" })
                   close()
                   contentRef.current?.focus({ preventScroll: true })
                 }}
@@ -219,21 +241,43 @@ export function App() {
     },
     ...defaultSections.slice(1),
   ]
+  const activePage = sections
+    .find((section) => section.id === activeSectionId)
+    ?.groups.flatMap((group) => group.items)
+    .find((item) => item.id === activeItemId)
 
   return (
     <>
       <SidebarRail
         workspaceName="Cognacta"
         railActions={<ThemePicker />}
+        activeSectionId={activeSectionId}
+        activeItemId={activeItemId}
+        onSectionSelect={(section) => {
+          if (section.id === "workspace") setView({ kind: "chat" })
+        }}
+        workspaceHeaderClassName={workbenchOpen ? undefined : "pr-10"}
         workspaceHeader={
           view.kind === "agent" ? (
             <div
               ref={setAgentToolbarTarget}
-              className="@container/agent-header flex min-w-0 flex-1 pr-10"
+              className="@container/agent-header flex min-w-0 flex-1"
             />
           ) : view.kind === "skill" ? (
-            <span className="text-sm text-muted-foreground">技能</span>
-          ) : null
+            <Breadcrumbs items={["技能", activeSkill?.name ?? "技能"]} />
+          ) : view.kind === "chat" ? (
+            <Breadcrumbs
+              items={[
+                "工作区",
+                ...(activeWorkspace && activeSession
+                  ? [
+                      activeWorkspace.name,
+                      activeSession.blank ? "新会话" : activeSession.title,
+                    ]
+                  : []),
+              ]}
+            />
+          ) : undefined
         }
         endPanel={
           <WorkbenchPanel
@@ -298,7 +342,10 @@ export function App() {
             setView({ kind: "agent", agentId: item.id.slice("agent:".length) })
             return
           }
-          if (section.id !== "workspace") return
+          if (section.id !== "workspace") {
+            setView({ kind: "page", sectionId: section.id, itemId: item.id })
+            return
+          }
           setView({ kind: "chat" })
           if (item.id.startsWith("workspace:"))
             store.startSession(item.id.slice("workspace:".length))
@@ -321,7 +368,14 @@ export function App() {
                 />
               </div>
             ) : null}
-            {view.kind === "skill" ? null : view.kind === "agent" &&
+            {view.kind === "page" ? (
+              <div className="grid h-full place-content-center gap-3 px-6 text-center">
+                <h1 className="text-xl font-medium">{activePage?.label}</h1>
+                <p className="text-sm text-muted-foreground">
+                  项目、页面和资料，触手可及。
+                </p>
+              </div>
+            ) : view.kind === "skill" ? null : view.kind === "agent" &&
               activeAgent ? (
               <AgentBuilder
                 key={activeAgent.id}
