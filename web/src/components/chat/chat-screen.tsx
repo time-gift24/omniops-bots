@@ -28,10 +28,12 @@ export function ChatScreen({
   threadId = "main",
   workspaceName,
   onChooseWorkspace,
+  suggestions = SUGGESTIONS,
 }: {
   threadId?: string;
   workspaceName?: string;
   onChooseWorkspace?: () => void;
+  suggestions?: readonly string[];
 }) {
   const store = useThreadStore(threadId);
   const state = useThreadState(store);
@@ -99,7 +101,7 @@ export function ChatScreen({
                   {composer}
                 </motion.div>
                 <div className="flex flex-wrap justify-center gap-2">
-                  {SUGGESTIONS.map((suggestion) => (
+                  {suggestions.map((suggestion) => (
                     <Button
                       key={suggestion}
                       variant="outline"
