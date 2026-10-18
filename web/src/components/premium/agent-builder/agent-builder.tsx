@@ -234,7 +234,7 @@ export function AgentBuilder({
             value={configuration}
           />
         </aside>
-        <div className="relative flex min-h-0 min-w-0 flex-1 pt-20">
+        <div className="relative flex min-h-0 min-w-0 flex-1 pt-14">
           <DocumentActions
             editing={editing}
             busy={saving}
