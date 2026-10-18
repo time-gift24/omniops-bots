@@ -13,13 +13,15 @@
   import { ChatScreen } from "/src/components/chat/chat-screen.tsx";
   import { AgentChatComposer } from "/src/components/premium/agent-chat-input/composer.tsx";
   import { AgentChatCredits } from "/src/components/premium/agent-chat-input/agent-chat-credits.tsx";
-  import { bindChatGateway } from "/src/chat/binding.ts";
-  import { defaultThreadRegistry } from "/src/chat/react.ts";
+  import { createTestDependencies, withDependencies } from "/tests/support.tsx";
+  import { DEMO_MODELS } from "/src/adapters/demo/resources.ts";
   import { ThreadStoreImpl } from "/src/chat/thread-store.ts";
 
   const fixture = document.querySelector("#fixture");
   const result = document.querySelector("#result");
   const root = createRoot(fixture);
+  let dependencies = createTestDependencies();
+  const render = element => root.render(withDependencies(element, dependencies));
   const assert = (condition, message) => {
     if (!condition) throw new Error(message);
   };
@@ -85,7 +87,7 @@
       sentDrafts.push({ text, attachments, model });
       return accepted ? send(text, attachments, model) : false;
     };
-    flushSync(() => root.render(React.createElement(ChatComposer, { store })));
+    flushSync(() => render(React.createElement(ChatComposer, { store, models: DEMO_MODELS })));
     const draftFile = new File(["test"], "attachment.txt", { type: "text/plain" });
     attach(draftFile);
     assert(sendButton().disabled, "Attachment-only input must not enable send");
@@ -95,7 +97,7 @@
     flushSync(() => sendButton().click());
     assert(attempts === 1 && editor().textContent === "draft" && fixture.textContent.includes("attachment.txt"), "Rejected submission must preserve text and attachments");
     assert(store.getDraft().text === "draft" && store.getDraft().attachments[0]?.file === draftFile, "Rejected submission must preserve the original draft File");
-    assert(sentDrafts[0].text === "draft" && sentDrafts[0].model === "pine-1" && sentDrafts[0].attachments.length === 1 && sentDrafts[0].attachments[0].name === "attachment.txt" && sentDrafts[0].attachments[0].mediaType === "text/plain", "Submission must map the visible draft, attachment metadata and selected model into the store request");
+    assert(sentDrafts[0].text === "draft" && sentDrafts[0].model === "pine-1" && sentDrafts[0].attachments.length === 1 && sentDrafts[0].attachments[0].name === "attachment.txt" && sentDrafts[0].attachments[0].mediaType === "text/plain" && sentDrafts[0].attachments[0].file === draftFile, "Submission must map the visible draft, attachment metadata and selected model into the store request");
     accepted = true;
     // Model native editor input that has not reached the controlled value yet.
     editor().textContent = "  Latest native input  ";
@@ -110,7 +112,7 @@
     assert(sendButton()?.disabled, "Settled submission must restore the disabled send button for an empty draft");
 
     const ref = React.createRef();
-    flushSync(() => root.render(React.createElement(AgentChatComposer, { ref, skills: [], maxLength: 20 })));
+    flushSync(() => render(React.createElement(AgentChatComposer, { ref, skills: [], maxLength: 20 })));
     insert("original");
     paste(" <b>PASTED</b> extra");
     const pasted = ref.current.serialize().text;
@@ -135,25 +137,25 @@
 
     let submittedText;
     const creditsProps = { skills: [], maxLength: 5, defaultValue: "oversized", onSubmit: text => { submittedText = text; } };
-    flushSync(() => root.render(React.createElement(AgentChatCredits, creditsProps)));
+    flushSync(() => render(React.createElement(AgentChatCredits, creditsProps)));
     const creditsSend = () => fixture.querySelector('button[aria-label="Send message"]');
     assert(editor().textContent === "overs" && !creditsSend().disabled, "Clamped initial text must remain sendable");
     click(creditsSend());
     assert(submittedText === "overs", "Submission must match the visible clamped text");
-    flushSync(() => root.render(React.createElement(AgentChatCredits, { ...creditsProps, maxLength: 3 })));
+    flushSync(() => render(React.createElement(AgentChatCredits, { ...creditsProps, maxLength: 3 })));
     assert(editor().textContent === "ove" && !creditsSend().disabled, "Lowering maxLength must update the submit state");
     click(creditsSend());
     assert(submittedText === "ove", "Lowered maxLength must reach the submitted text");
 
     const requests = [];
-    bindChatGateway(() => ({
+    dependencies = createTestDependencies({ gatewayFor: () => ({
       async *stream(request) {
         requests.push(request);
         yield { type: "failed", error: { kind: "unavailable", message: "Fixture response" } };
       },
       abort() {},
-    }));
-    flushSync(() => root.render(React.createElement(ChatScreen)));
+    }) });
+    flushSync(() => render(React.createElement(ChatScreen, { models: DEMO_MODELS })));
     await selectModel("GPT 5.6");
     insert("Keep my model");
     click(sendButton());
@@ -174,24 +176,24 @@
     assert(requests[1]?.model === "gpt-5.6", "Edited message must use the selected model");
     assert(!requests[1]?.messages[0].attachments?.length, "Edited submission must not carry the discarded draft attachments");
 
-    flushSync(() => root.render(null));
-    defaultThreadRegistry.evictIdle();
+    flushSync(() => render(null));
+    dependencies.threads.evictIdle();
     const pending = [];
     let aborts = 0;
-    bindChatGateway(() => ({
+    dependencies = createTestDependencies({ gatewayFor: () => ({
       async *stream(request) {
         requests.push(request);
         yield await new Promise(resolve => pending.push(resolve));
       },
       abort() { aborts += 1; },
-    }));
+    }) });
     const previews = [];
     URL.createObjectURL = (file) => {
       const url = originalCreateObjectURL.call(URL, file);
       previews.push({ file, url });
       return url;
     };
-    flushSync(() => root.render(React.createElement(ChatScreen)));
+    flushSync(() => render(React.createElement(ChatScreen, { models: DEMO_MODELS })));
     await selectModel("GPT 5.6");
     const imageFile = new File(['<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><rect width="2" height="2" fill="green"/></svg>'], "draft.svg", { type: "image/svg+xml" });
     insert("Keep this unsent draft");
@@ -209,16 +211,16 @@
     assert(preview().src !== previousPreview && previews.find(item => item.url === preview().src)?.file === imageFile, "Remounted preview must retain the original draft File");
     assert(attachmentButtons().length === 1, "Suggestion must retain the unsent attachment");
 
-    flushSync(() => root.render(React.createElement(ChatScreen, { key: "other", threadId: "other" })));
+    flushSync(() => render(React.createElement(ChatScreen, { models: DEMO_MODELS, key: "other", threadId: "other" })));
     assert(editor().textContent === "" && attachmentButtons().length === 0 && modelButton().textContent === "Pine 1", "Another conversation must start with its own draft and model");
     insert("Other conversation draft");
     await selectModel("Sonnet 5");
-    flushSync(() => root.render(React.createElement(ChatScreen, { key: "main", threadId: "main" })));
+    flushSync(() => render(React.createElement(ChatScreen, { models: DEMO_MODELS, key: "main", threadId: "main" })));
     assert(editor().textContent === "Keep this unsent draft" && attachmentButtons().length === 1 && modelButton().textContent === "GPT 5.6", "Returning to the running conversation must restore its draft and model");
     await until(() => preview()?.complete && preview().naturalWidth > 0, "Returning to the running conversation must restore its working image preview");
     assert(previews.find(item => item.url === preview().src)?.file === imageFile, "Conversation switching must preserve the original draft File");
-    assert(defaultThreadRegistry.get("other").getDraft().text === "Other conversation draft" && defaultThreadRegistry.get("other").getDraft().model === "sonnet-5", "The other conversation must retain its independent draft and model");
-    assert(requests.length === 3 && pending.length === 1 && aborts === 0 && defaultThreadRegistry.get("main").streaming, "Conversation switching must keep only the original suggestion request running");
+    assert(dependencies.threads.get("other").getDraft().text === "Other conversation draft" && dependencies.threads.get("other").getDraft().model === "sonnet-5", "The other conversation must retain its independent draft and model");
+    assert(requests.length === 3 && pending.length === 1 && aborts === 0 && dependencies.threads.get("main").streaming, "Conversation switching must keep only the original suggestion request running");
 
     flushSync(() => editor().dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true })));
     replaceText("Next draft while the old request runs");

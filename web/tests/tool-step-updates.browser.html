@@ -9,12 +9,14 @@
   import { createRoot } from "react-dom/client";
   import { flushSync } from "react-dom";
   import "/src/index.css";
+  import { createTestDependencies, withDependencies } from "/tests/support.tsx";
   import { MessageView } from "/src/components/chat/message-view.tsx";
   import { TooltipProvider } from "/src/components/ui/tooltip.tsx";
 
   const fixture = document.querySelector("#fixture");
   const result = document.querySelector("#result");
   const root = createRoot(fixture);
+  const dependencies = createTestDependencies();
   const h = React.createElement;
   const assert = (condition, message) => { if (!condition) throw new Error(message); };
   const click = element => { assert(element, "Expected disclosure is missing"); flushSync(() => element.click()); };
@@ -24,10 +26,10 @@
   let tool = { kind: "tool", callId: "tool-1", name: "searchCode", inputText: "{}", state: "done", output };
   let text = "Live body";
   let state = "streaming";
-  const render = () => flushSync(() => root.render(h(TooltipProvider, null, h(MessageView, {
+  const render = () => flushSync(() => root.render(withDependencies(h(TooltipProvider, null, h(MessageView, {
     message: { id: "assistant", role: "assistant", state, parts: [tool, { kind: "text", text }] },
     streaming: state === "streaming", onRetry,
-  }))));
+  })), dependencies)));
   const triggers = () => fixture.querySelectorAll('[data-slot="trace-collapsible-trigger"]');
 
   try {

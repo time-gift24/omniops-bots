@@ -19,6 +19,7 @@ export function MarkdownEditor({
   title,
   disabled = false,
   maxLength,
+  placeholder,
   preview,
   className,
   autoFocus = false,
@@ -32,6 +33,7 @@ export function MarkdownEditor({
   title?: ReactNode
   disabled?: boolean
   maxLength?: number
+  placeholder?: string
   preview?: ReactNode
   className?: string
   autoFocus?: boolean
@@ -71,7 +73,7 @@ export function MarkdownEditor({
     >
       <div className="flex min-h-10 shrink-0 items-center justify-between gap-3 border-b border-border px-2 py-1">
         <div className="flex min-w-0 items-center gap-2 pl-1">
-          <span className="truncate text-xs font-medium">
+          <span className="truncate text-[13px] font-medium">
             {title ?? (markdown ? "Markdown" : "源码")}
           </span>
           <span className="hidden shrink-0 text-[11px] text-muted-foreground tabular-nums @min-[360px]/editor:inline">
@@ -132,8 +134,9 @@ export function MarkdownEditor({
               autoCapitalize="off"
               autoCorrect="off"
               wrap={markdown ? "soft" : "off"}
-              className="block h-full min-h-0 w-full resize-none overflow-auto overscroll-contain bg-transparent px-4 py-3 font-mono text-[13px] leading-6 text-foreground caret-primary outline-none selection:bg-accent selection:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset disabled:opacity-60"
+              className="block h-full min-h-0 w-full resize-none overflow-auto overscroll-contain bg-transparent px-5 py-4 font-mono text-[13px] leading-6 text-foreground caret-primary outline-none selection:bg-accent selection:text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset disabled:opacity-60"
               style={{ tabSize: 2 }}
+              placeholder={placeholder}
             />
           </>
         ) : null}

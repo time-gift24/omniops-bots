@@ -1,13 +1,11 @@
 "use client"
 
 import { HugeiconsIcon } from "@hugeicons/react"
-import {
-  ArrowRight01Icon,
-  PuzzleIcon,
-} from "@hugeicons-pro/core-stroke-rounded"
+import { ArrowRight01Icon } from "@hugeicons-pro/core-stroke-rounded"
 import { Switch } from "@/components/motion/switch"
 import { cn } from "@/lib/utils"
-import type { AgentResource } from "./agent-builder-data"
+import type { AgentResource } from "@/agents/source"
+import { agentResourceIcon } from "./agent-builder-data"
 
 export type AgentResourceListProps = {
   resources: readonly AgentResource[]
@@ -39,7 +37,7 @@ export function AgentResourceList({
     <ul className="divide-y divide-border">
       {resources.map((resource) => {
         const enabled = selected.includes(resource.id)
-        const icon = resource.icon ?? PuzzleIcon
+        const icon = agentResourceIcon(resource.id)
 
         const summary = (
           <>
@@ -65,7 +63,10 @@ export function AgentResourceList({
         )
 
         return (
-          <li className="flex items-center gap-2 py-3" key={resource.id}>
+          <li
+            className="-mx-2 flex items-center gap-3 rounded-lg px-2 py-3 transition-colors duration-150 hover:bg-background motion-reduce:transition-none"
+            key={resource.id}
+          >
             {onInspect ? (
               <button
                 type="button"

@@ -164,6 +164,7 @@ export type SidebarRailProps = {
   activeSectionId?: string;
   activeItemId?: string;
   onSectionSelect?: (section: SidebarRailSection) => void;
+  onParentSelect?: (section: SidebarRailSection) => void;
   onItemSelect?: (item: SidebarRailItem, section: SidebarRailSection) => void;
   onCreate?: () => void;
   createLabel?: string;
@@ -243,6 +244,7 @@ function SidebarRailShell({
   activeSectionId,
   activeItemId,
   onSectionSelect,
+  onParentSelect,
   onItemSelect,
   onCreate,
   createLabel = "新建页面",
@@ -658,10 +660,19 @@ function SidebarRailShell({
             {workspaceHeader === undefined ? (
               <Breadcrumbs
                 items={[
-                  section?.label ?? "工作区",
-                  itemId === "new-page"
-                    ? "未命名页面"
-                    : (selectedItem?.label ?? "工作区"),
+                  {
+                    label: section?.label ?? "工作区",
+                    onSelect:
+                      onParentSelect && section
+                        ? () => onParentSelect(section)
+                        : undefined,
+                  },
+                  {
+                    label:
+                      itemId === "new-page"
+                        ? "未命名页面"
+                        : (selectedItem?.label ?? "工作区"),
+                  },
                 ]}
               />
             ) : (

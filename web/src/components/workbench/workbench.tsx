@@ -40,11 +40,18 @@ import {
 import { MorphicTooltip } from "@/components/premium/morphic-tooltip/morphic-tooltip"
 import { SPRING_PANEL } from "@/lib/ease"
 import { cn } from "@/lib/utils"
-import type { RecommendedSite, WorkbenchBackend } from "@/workbench/backend"
+import type {
+  RecommendedSite,
+  WorkbenchBackend,
+  WorkbenchScope,
+} from "@/workbench/backend"
 import { ChangesView } from "./changes-view"
 import { FilesView, FileView } from "./files-view"
 import { StartPage } from "./start-page"
 import { useBackendData } from "./use-backend-data"
+import { useAppDependencies } from "@/app/dependencies"
+import type { ModelChoice } from "@/models/source"
+import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard"
 
 const MIN_WIDTH = 320
 const DEFAULT_WIDTH = 400
@@ -196,13 +203,20 @@ export function WorkbenchPanel({
   open,
   onClose,
   backend,
+  scope,
+  models,
 }: {
   ref?: Ref<WorkbenchHandle>
   id?: string
   open: boolean
   onClose: () => void
   backend: WorkbenchBackend
+  scope: WorkbenchScope | null
+  models: readonly ModelChoice[]
 }) {
+  const { host } = useAppDependencies()
+  const { copy } = useCopyToClipboard()
+  const [hostError, setHostError] = useState("")
   const reduce = useReducedMotion()
   const counter = useRef(1)
   const [width, setWidth] = useState(DEFAULT_WIDTH)
@@ -243,8 +257,10 @@ export function WorkbenchPanel({
     []
   )
   // 推荐位在面板层级缓存一次，返回起始页不重新请求。
-  const sites = useBackendData("recommendations", () =>
-    backend.listRecommendations()
+  const sites = useBackendData(
+    "recommendations",
+    () => backend.listRecommendations(),
+    backend
   )
   const activeTab = tabs.find((tab) => tab.id === activeId) ?? tabs[0]
   const view = activeTab?.view ?? { type: "start" as const }
@@ -503,8 +519,7 @@ export function WorkbenchPanel({
                 <DropdownMenuItem
                   disabled={view.type !== "page"}
                   onSelect={() => {
-                    if (view.type === "page")
-                      void navigator.clipboard?.writeText(view.url)
+                    if (view.type === "page") void copy(view.url)
                   }}
                 >
                   复制链接
@@ -512,7 +527,14 @@ export function WorkbenchPanel({
                 <DropdownMenuItem
                   disabled={view.type !== "page"}
                   onSelect={() => {
-                    if (view.type === "page") backend.openExternal(view.url)
+                    if (view.type === "page") {
+                      setHostError("")
+                      void host
+                        .openExternal(view.url)
+                        .catch(() =>
+                          setHostError("无法打开链接，请检查权限后重试。")
+                        )
+                    }
                   }}
                 >
                   在默认浏览器中打开
@@ -544,6 +566,11 @@ export function WorkbenchPanel({
           </div>
         )}
 
+        {hostError ? (
+          <p role="alert" className="px-3 py-1 text-xs text-destructive">
+            {hostError}
+          </p>
+        ) : null}
         <div className="@container min-h-0 flex-1 overflow-hidden">
           {view.type === "start" ? (
             <StartPage
@@ -558,12 +585,13 @@ export function WorkbenchPanel({
           ) : view.type === "files" ? (
             <FilesView
               backend={backend}
+              scope={scope}
               onOpenFile={(path) => updateActiveView({ type: "file", path })}
             />
           ) : view.type === "file" ? (
-            <FileView backend={backend} path={view.path} />
+            <FileView backend={backend} scope={scope} path={view.path} />
           ) : view.type === "changes" ? (
-            <ChangesView backend={backend} />
+            <ChangesView backend={backend} scope={scope} />
           ) : null}
           {tabs.map((tab) =>
             tab.view.type === "agent-debug" ? (
@@ -574,6 +602,7 @@ export function WorkbenchPanel({
                 className={tab.id === activeId ? "h-full min-h-0" : "hidden"}
               >
                 <ChatScreen
+                  models={models}
                   threadId={`agent-test:${tab.view.agentId}`}
                   suggestions={DEBUG_SUGGESTIONS}
                 />

@@ -10,10 +10,8 @@
   import { flushSync } from "react-dom";
   import "/src/index.css";
   import { App } from "/src/App.tsx";
-  import { ThemeProvider } from "/src/components/theme-provider.tsx";
-  import { bindChatGateway } from "/src/chat/binding.ts";
-  import { createMockGateway } from "/src/chat/mock-gateway.ts";
-  import { defaultThreadRegistry } from "/src/chat/react.ts";
+  import { createTestDependencies, withTestTheme } from "/tests/support.tsx";
+  import { createMockGateway } from "/src/adapters/demo/chat.ts";
 
   const result = document.querySelector("#result");
   const fixture = document.querySelector("#fixture");
@@ -68,9 +66,13 @@
     await navigation();
     click(labeled("添加工作区"));
     await until(() => dialog()?.querySelector("input"), "Directory picker did not open");
+    await until(() => dialog()?.querySelector("button[aria-pressed]"),
+      "Directory choices did not finish loading");
     await closedDrawer();
   };
   const addDirectory = async path => {
+    await until(() => button(path, dialog()) && !button(path, dialog()).disabled,
+      "Directory choices did not finish loading");
     click(button(path, dialog()));
     click(button("打开工作区", dialog()));
     await until(() => !dialog() && editor(), "Opening a directory did not create a conversation");
@@ -121,7 +123,7 @@
       let held = false;
       let events = 0;
       const gate = new Promise(resolve => { releaseStream = resolve; });
-      bindChatGateway(id => {
+      const dependencies = createTestDependencies({ gatewayFor: id => {
         created.push(id);
         const mock = createMockGateway({ delayMs: 0 });
         return {
@@ -135,10 +137,10 @@
             }
           },
         };
-      });
+      } });
       root = createRoot(fixture);
       flushSync(() => root.render(React.createElement(React.StrictMode, null,
-        React.createElement(ThemeProvider, null, React.createElement(App)))));
+        withTestTheme(React.createElement(App), dependencies))));
       await until(() => Boolean(labeled("工作区")) && Boolean(drawer()) === mobile, "StrictMode App did not mount at the requested viewport");
       assert(!editor(), "A conversation must require a workspace");
 
@@ -147,7 +149,7 @@
       await addDirectory("/workspace/cognacta");
       assert(created.length === 1, `Adding one directory must create one thread, received ${created.length}: ${created.join(", ")}`);
       assert(row("cognacta", "新会话")?.getAttribute("aria-current") === "page", "Adding a directory must select its empty conversation row");
-      const first = defaultThreadRegistry.get(created[0]);
+      const first = dependencies.threads.get(created[0]);
       write("first workspace draft");
       await selectModel("GPT 5.6");
       const files = new DataTransfer();
@@ -170,7 +172,7 @@
       await openAdd();
       await addDirectory("/workspace/客户支持");
       assert(created.length === 2 && editor().textContent === "" && model().textContent.trim() === "Pine 1", "A second workspace must start with an independent draft and model");
-      const second = defaultThreadRegistry.get(created[1]);
+      const second = dependencies.threads.get(created[1]);
       write("support workspace draft");
       await newSession("cognacta");
       assert(editor().textContent === "first workspace draft" && model().textContent.trim() === "GPT 5.6", "Returning to a workspace must restore its text and model");
@@ -259,7 +261,7 @@
       const beforeNewSession = created.length;
       await newSession();
       assert(created.length === beforeNewSession + 1 && row("客户支持", "新会话")?.getAttribute("aria-current") === "page", "New conversation after a suggestion must create a separate support conversation");
-      const freshSupport = defaultThreadRegistry.get(created.at(-1));
+      const freshSupport = dependencies.threads.get(created.at(-1));
       assert(editor().textContent === "" && model().textContent.trim() === "Pine 1" && freshSupport.getDraft().attachments.length === 0, "The new conversation must have an independent empty draft and default model");
       await until(() => !second.streaming && second.getState().messages.at(-1)?.state === "done", "The background suggestion response did not finish", 15000);
       await searchSession(suggestion);

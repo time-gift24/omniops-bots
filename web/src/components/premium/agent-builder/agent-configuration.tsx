@@ -11,7 +11,7 @@ import type {
   AgentConfiguration,
   AgentResource,
   McpServer,
-} from "./agent-builder-data"
+} from "@/agents/source"
 import { AgentResourceList } from "./agent-resource-list"
 import { McpCapabilityDialog } from "./mcp-capability-dialog"
 
@@ -56,36 +56,46 @@ export function AgentConfigurationPanel({
 
   return (
     <>
-      <fieldset disabled={disabled} className="min-w-0 space-y-4">
-        <Input
-          label="名称"
-          value={value.name}
-          maxLength={80}
-          onChange={(name) => onChange({ ...value, name })}
-          classNames={{
-            label: "px-0 text-xs",
-            field: "h-8 rounded-lg bg-background",
-            input: "px-2.5 text-[13px]",
-          }}
-        />
-        <div className="space-y-1.5">
-          <label htmlFor={`${id}-description`} className="text-xs font-medium">
-            简介
-          </label>
-          <Textarea
-            id={`${id}-description`}
-            value={value.description}
-            maxLength={160}
-            rows={3}
-            onChange={(event) =>
-              onChange({ ...value, description: event.target.value })
-            }
-            className="min-h-20 resize-y bg-background text-[13px] leading-relaxed md:text-[13px]"
+      <fieldset disabled={disabled} className="min-w-0">
+        <div className="space-y-4">
+          <Input
+            label="名称"
+            value={value.name}
+            maxLength={80}
+            onChange={(name) => onChange({ ...value, name })}
+            classNames={{
+              label: "px-0 text-[13px]",
+              field: "h-8 rounded-lg bg-background",
+              input: "px-2.5 text-[13px]",
+            }}
           />
+          <div className="space-y-1.5">
+            <label
+              htmlFor={`${id}-description`}
+              className="text-[13px] font-medium"
+            >
+              简介
+            </label>
+            <Textarea
+              id={`${id}-description`}
+              value={value.description}
+              maxLength={160}
+              rows={3}
+              onChange={(event) =>
+                onChange({ ...value, description: event.target.value })
+              }
+              className="min-h-20 resize-y bg-background text-[13px] leading-relaxed md:text-[13px]"
+            />
+          </div>
         </div>
-        <div className="pt-2">
+        <div
+          className="my-5 border-t border-border @min-[760px]/agent:my-6"
+          aria-hidden="true"
+        />
+        <div>
+          <p className="mb-1 text-[13px] font-medium">能力</p>
           <Tabs value={tab} onValueChange={setTab} variant="underline">
-            <TabsList aria-label="Agent 能力" className="w-full gap-3">
+            <TabsList aria-label="Agent 能力" className="w-full gap-4">
               {SECTIONS.map((section, index) => (
                 <TabsTrigger
                   key={section.id}
@@ -93,7 +103,8 @@ export function AgentConfigurationPanel({
                   id={`${id}-${section.id}`}
                   aria-controls={`${id}-panel-${section.id}`}
                   tabIndex={tab === section.id ? 0 : -1}
-                  className="min-h-9 gap-1.5 px-0 pb-2 text-xs focus-visible:outline-2 focus-visible:outline-ring"
+                  indicatorClassName="h-0.5 rounded-full"
+                  className="min-h-9 gap-1.5 px-0 pb-2.5 text-[13px] focus-visible:outline-2 focus-visible:outline-ring"
                   onKeyDown={(event) => {
                     if (
                       !["ArrowLeft", "ArrowRight", "Home", "End"].includes(
@@ -132,6 +143,7 @@ export function AgentConfigurationPanel({
               id={`${id}-panel-${section.id}`}
               aria-labelledby={`${id}-${section.id}`}
               hidden={tab !== section.id}
+              className="pt-1"
             >
               <AgentResourceList
                 resources={
@@ -155,7 +167,7 @@ export function AgentConfigurationPanel({
                     size={14}
                     className="shrink-0 text-muted-foreground"
                   />
-                  <p className="min-w-0 flex-1 text-xs">操作前先确认</p>
+                  <p className="min-w-0 flex-1 text-[13px]">操作前先确认</p>
                   <Switch
                     ariaLabel="变更数据的操作需要批准"
                     checked={value.requireApproval}

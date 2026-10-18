@@ -4,22 +4,23 @@
 <title>Agent editing and Workbench debugging regression</title>
 <!-- Run npm run dev, then open /tests/agent-builder.browser.html. -->
 <div id="fixture" class="flex h-[min(800px,100dvh)] min-w-0"></div>
-<pre id="result">Running…</pre>
+<pre id="result" class="whitespace-pre-wrap break-words">Running…</pre>
 <script type="module">
   import React from "react"
   import { createRoot } from "react-dom/client"
   import { flushSync } from "react-dom"
   import "/src/index.css"
   import { AgentBuilder } from "/src/components/premium/agent-builder/agent-builder.tsx"
-  import { DEFAULT_AGENT } from "/src/components/premium/agent-builder/agent-builder-data.ts"
+  import { DEFAULT_AGENT, MCP_SERVERS, AGENT_TOOLS, AGENT_SKILLS, DEMO_MODELS } from "/src/adapters/demo/resources.ts"
   import { WorkbenchPanel } from "/src/components/workbench/workbench.tsx"
-  import { createMockWorkbenchBackend } from "/src/workbench/mock-backend.ts"
-  import { defaultThreadRegistry } from "/src/chat/react.ts"
+  import { createMockWorkbenchBackend } from "/src/adapters/demo/workbench.ts"
+  import { createTestDependencies, withDependencies } from "/tests/support.tsx"
 
   const fixture = document.querySelector("#fixture")
   const result = document.querySelector("#result")
   const root = createRoot(fixture)
   const backend = createMockWorkbenchBackend()
+  const dependencies = createTestDependencies({ workbench: backend })
   const checks = []
   const saved = []
   let finishSave
@@ -133,6 +134,7 @@
           React.createElement(AgentBuilder, {
             key: selected,
             initialConfiguration: agents[selected],
+            mcpServers: MCP_SERVERS, tools: AGENT_TOOLS, skills: AGENT_SKILLS,
             onDebug() {
               workbench.current.openAgentDebug(
                 `regression-${selected}`,
@@ -158,13 +160,14 @@
         ref: workbench,
         open,
         backend,
+        scope: null, models: DEMO_MODELS,
         onClose: () => setOpen(false),
       })
     )
   }
 
   try {
-    flushSync(() => root.render(React.createElement(Probe)))
+    flushSync(() => root.render(withDependencies(React.createElement(Probe), dependencies)))
     if (visible(button("Agent 配置", editor())))
       click(button("Agent 配置", editor()))
     assert(
@@ -183,6 +186,27 @@
       "summary textarea, model removal and debugging collapsed by default"
     )
 
+    assert(
+      !field("系统提示词"),
+      "Instructions must start in the reading view, not the editor"
+    )
+    assert(
+      editor().querySelector(".doc-preview")?.textContent.includes("客户支持助手"),
+      "Reading view must render the instructions as Markdown"
+    )
+    click(button("编辑", editor()))
+    assert(
+      field("系统提示词") instanceof HTMLTextAreaElement,
+      "Edit action must open the source editor"
+    )
+    click(button("完成编辑", editor()))
+    assert(
+      !field("系统提示词"),
+      "完成编辑 must return to the reading view"
+    )
+    click(button("编辑", editor()))
+    checks.push("instructions default to reading view; edit toggling")
+
     write(field("名称"), "")
     click(button("保存", editor()))
     assert(
@@ -191,7 +215,7 @@
     )
     assert(saved.length === 0, "Invalid name must not reach onSave")
     write(field("名称"), "回归助手")
-    write(field("指令"), "  ")
+    write(field("系统提示词"), "  ")
     click(button("保存", editor()))
     assert(
       editor().querySelector('[role="alert"]'),
@@ -201,7 +225,7 @@
 
     const instructions =
       "# 回归策略\n\n- 保留完整 Markdown。\n- 仅使用已授权能力。\n"
-    write(field("指令"), instructions)
+    write(field("系统提示词"), instructions)
     write(field("简介"), "第一行简介\n第二行简介")
     click(button("预览", editor()))
     await until(
@@ -211,9 +235,13 @@
         ),
       "Instructions preview must render Markdown"
     )
+    await until(
+      () => editor().querySelector('[aria-label="本页目录"]'),
+      "Preview mode must offer the outline navigation"
+    )
     click(button("源码", editor()))
     assert(
-      field("指令").value === instructions,
+      field("系统提示词").value === instructions,
       "Preview switching must preserve complete instructions"
     )
     checks.push("required field validation and shared Markdown preview")
@@ -221,7 +249,7 @@
     click(button("保存", editor()))
     await until(() => saved.length === 1, "Save callback must run")
     assert(
-      field("名称").matches(":disabled") && field("指令").matches(":disabled"),
+      field("名称").matches(":disabled") && field("系统提示词").matches(":disabled"),
       "Saving must lock configuration and instructions"
     )
     assert(
@@ -243,10 +271,10 @@
       () => !field("名称").matches(":disabled"),
       "Save completion must unlock the editor"
     )
-    write(field("指令"), "# 未保存的替换")
+    write(field("系统提示词"), "# 未保存的替换")
     click(button("撤销", editor()))
     assert(
-      field("指令").value === instructions,
+      field("系统提示词").value === instructions,
       "Discard must restore the last saved instructions"
     )
     checks.push(
@@ -273,11 +301,11 @@
     )
     const firstInput = debugInput()
     write(firstInput, "尚未发送的调试草稿")
-    const firstStore = defaultThreadRegistry.get("agent-test:regression-0")
+    const firstStore = dependencies.threads.get("agent-test:regression-0")
     click(button("新建标签页"))
-    defaultThreadRegistry.evictIdle()
+    dependencies.threads.evictIdle()
     assert(
-      defaultThreadRegistry.get("agent-test:regression-0") === firstStore,
+      dependencies.threads.get("agent-test:regression-0") === firstStore,
       "Inactive debug conversation must remain mounted and retained"
     )
     click(debugTabs()[0])
@@ -326,7 +354,7 @@
       readDraft(debugInput()) === "尚未发送的调试草稿",
       "Selecting the first Agent must restore its independent draft"
     )
-    if (window.innerWidth < 768) {
+    if (window.matchMedia("(max-width: 767px)").matches) {
       const panel = fixture.querySelector('[aria-label="工作台"]')
       assert(
         getComputedStyle(panel).position === "fixed",
@@ -345,7 +373,7 @@
     result.textContent = `${checks.map((check) => `PASS: ${check}`).join("\n")}\nFAIL: ${error.message}`
     throw error
   } finally {
-    defaultThreadRegistry.get("agent-test:regression-0").stop()
+    dependencies.threads.get("agent-test:regression-0").stop()
     root.unmount()
   }
 </script>

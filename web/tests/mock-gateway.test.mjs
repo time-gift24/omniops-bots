@@ -11,7 +11,7 @@ async function loadModules(t) {
   })
   t.after(() => server.close())
   const { createMockGateway } = await server.ssrLoadModule(
-    "/src/chat/mock-gateway.ts"
+    "/src/adapters/demo/chat.ts"
   )
   const { ThreadStoreImpl } = await server.ssrLoadModule(
     "/src/chat/thread-store.ts"

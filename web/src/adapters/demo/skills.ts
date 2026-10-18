@@ -1,11 +1,4 @@
-export type SkillFile = { path: string; content: string }
-
-export type Skill = {
-  id: string
-  name: string
-  description: string
-  files: readonly SkillFile[]
-}
+import type { Skill, SkillSource } from "@/skills/source"
 
 export const DEMO_SKILLS: readonly Skill[] = [
   {
@@ -232,3 +225,7 @@ description: 将提供的资料整理为有来源、可检索的研究笔记。
     ],
   },
 ]
+
+export function createDemoSkillSource(): SkillSource {
+  return { list: () => Promise.resolve(structuredClone(DEMO_SKILLS)) }
+}

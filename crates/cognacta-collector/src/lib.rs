@@ -20,6 +20,7 @@
 //! ```
 mod config;
 mod error;
+mod fields;
 mod remote;
 
 pub use error::Error;
@@ -105,9 +106,13 @@ impl Collector {
                     .with(trace_layer)
                     .with(log_layer)
                     .with(
-                        tracing_subscriber::fmt::layer()
-                            .with_ansi(false)
-                            .with_writer(local.writer.clone())
+                        fields::CurrentFields
+                            .and_then(
+                                tracing_subscriber::fmt::layer()
+                                    .fmt_fields(fields::CurrentFields)
+                                    .with_ansi(false)
+                                    .with_writer(local.writer.clone()),
+                            )
                             .with_filter(log_filter)
                             .with_filter(filter_fn(|meta| !internal(meta))),
                     );

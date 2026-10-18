@@ -1,12 +1,15 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createElement } from "react";
-import { renderToString } from "react-dom/server";
+import { renderToString as renderHTML } from "react-dom/server";
 import { createServer } from "vite";
 
 test("流式正文渐显，历史正文直接呈现，代码不参与逐字动画", async (t) => {
   const server = await createServer({ server: { middlewareMode: true, hmr: false, ws: false }, appType: "custom", optimizeDeps: { noDiscovery: true, include: [] } });
   t.after(() => server.close());
+  const { createTestDependencies, withDependencies } = await server.ssrLoadModule("/tests/support.tsx");
+  const dependencies = createTestDependencies();
+  const renderToString = element => renderHTML(withDependencies(element, dependencies));
   const { Markdown } = await server.ssrLoadModule("/src/components/chat/markdown.tsx");
   const children = "你好 🚀 **世界**。\n\n```ts\nconst answer = 42;\n```";
 

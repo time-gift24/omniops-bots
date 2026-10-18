@@ -7,7 +7,7 @@ async function loadModules(t) {
   t.after(() => server.close());
   const { ThreadStoreImpl } = await server.ssrLoadModule("/src/chat/thread-store.ts");
   const { createThreadStoreRegistry } = await server.ssrLoadModule("/src/chat/registry.ts");
-  const { createMockGateway } = await server.ssrLoadModule("/src/chat/mock-gateway.ts");
+  const { createMockGateway } = await server.ssrLoadModule("/src/adapters/demo/chat.ts");
   return { ThreadStoreImpl, createThreadStoreRegistry, createMockGateway };
 }
 

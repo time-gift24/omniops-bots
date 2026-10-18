@@ -10,23 +10,39 @@
   import { flushSync } from "react-dom"
   import "/src/index.css"
   import { SkillScreen } from "/src/components/skills/skill-screen.tsx"
-  import { DEMO_SKILLS } from "/src/skills/data.ts"
+  import { DEMO_SKILLS } from "/src/adapters/demo/skills.ts"
+  import { fileKey } from "/src/skills/drafts.ts"
+  import { createTestDependencies, withDependencies } from "/tests/support.tsx"
 
   const fixture = document.querySelector("#fixture")
   const result = document.querySelector("#result")
   const root = createRoot(fixture)
-  const descriptor = Object.getOwnPropertyDescriptor(window, "localStorage")
   const values = new Map()
   const checks = []
   let failWrites = false
-  const storage = {
-    getItem: (key) => values.get(key) ?? null,
-    setItem: (key, value) => {
-      if (failWrites) throw new DOMException("Storage denied", "SecurityError")
-      values.set(key, value)
+  let failReads = false
+  let failRemoves = false
+  let loadGate
+  let saveGate
+  let removeGate
+  const skillDrafts = {
+    async load() {
+      if (loadGate) await loadGate.promise
+      if (failReads) throw new Error("read denied")
+      return Object.fromEntries(values)
     },
-    removeItem: (key) => values.delete(key),
+    async save(skillId, path, value) {
+      if (saveGate) await saveGate.promise
+      if (failWrites) throw new Error("write denied")
+      values.set(fileKey(skillId, path), value)
+    },
+    async remove(skillId, path) {
+      if (removeGate) await removeGate.promise
+      if (failRemoves) throw new Error("remove denied")
+      values.delete(fileKey(skillId, path))
+    },
   }
+  const dependencies = createTestDependencies({ skillDrafts })
   const assert = (condition, message) => {
     if (!condition) throw new Error(message)
   }
@@ -95,7 +111,7 @@
   const saved = () =>
     fixture
       .querySelector('[role="status"]')
-      ?.textContent.includes("已保存到此浏览器")
+      ?.textContent.includes("草稿已保存")
   const content = () => fixture.querySelector('[aria-label="文件内容"]')
   const fileLink = (path) =>
     [...document.querySelectorAll('nav[aria-label="技能文件"]')]
@@ -123,19 +139,20 @@
     )
   }
   const startEditing = async (path) => {
+    await until(() => button("编辑") && !button("编辑").disabled, "Draft initialization must finish before editing")
     click(button("编辑"))
     await until(() => editor(path), `Expected source editor for ${path}`)
   }
   function Probe() {
-    const [skillId, setSkillId] = React.useState("weekly-report")
+    const skillId = "weekly-report"
     return React.createElement(SkillScreen, {
       skillId,
-      onSkillChange: setSkillId,
+      skills: DEMO_SKILLS,
       active: true,
     })
   }
   const render = (key) =>
-    flushSync(() => root.render(React.createElement(Probe, { key })))
+    flushSync(() => root.render(withDependencies(React.createElement(Probe, { key }), dependencies)))
   const original = DEMO_SKILLS.find((skill) => skill.id === "weekly-report")
   const skillSource = original.files.find(
     (file) => file.path === "SKILL.md"
@@ -145,10 +162,6 @@
   ).content
 
   try {
-    Object.defineProperty(window, "localStorage", {
-      configurable: true,
-      value: storage,
-    })
     render("initial")
     await until(
       () => content()?.querySelector("h1")?.textContent === "周报助手",
@@ -232,6 +245,35 @@
     )
     checks.push("empty draft persistence")
 
+    saveGate = Promise.withResolvers()
+    write("SKILL.md", "submitted version")
+    saveShortcut()
+    write("SKILL.md", "new edit while saving")
+    assert(button("保存草稿").disabled, "An in-flight save must block duplicate writes")
+    saveGate.resolve()
+    await until(() => !button("保存草稿").disabled, "Later editing must remain dirty after the captured version is saved")
+    assert(editor("SKILL.md").value === "new edit while saving", "Saving must not overwrite later editing")
+    assert(values.get(fileKey("weekly-report", "SKILL.md")) === "submitted version", "Save must persist its captured input")
+    saveGate = undefined
+    checks.push("async save captures input without clearing newer edits")
+
+    click(button("完成编辑"))
+    removeGate = Promise.withResolvers()
+    failRemoves = true
+    click(button("恢复原始内容"))
+    await wait()
+    assert(content().textContent.includes("new edit while saving"), "Restore must wait for deletion before changing content")
+    removeGate.resolve()
+    await until(() => fixture.querySelector('[role="alert"]')?.textContent.includes("未能移除"), "Failed deletion must be visible")
+    assert(content().textContent.includes("new edit while saving"), "Failed restore must preserve current editing")
+    failRemoves = false
+    removeGate = undefined
+    click(button("恢复原始内容"))
+    await until(() => !button("恢复原始内容"), "Successful deletion must restore the original source")
+    assert(!values.has(fileKey("weekly-report", "SKILL.md")), "Restore must remove only the saved draft")
+    await startEditing("SKILL.md")
+    checks.push("async restore waits for deletion and preserves edits on failure")
+
     const unsaved = "# 保存失败后保留\n\n这段编辑仍然可以继续修改。\n"
     write("SKILL.md", unsaved)
     failWrites = true
@@ -280,6 +322,27 @@
     )
     checks.push("relative file links and JavaScript source-only editing")
 
+    loadGate = Promise.withResolvers()
+    values.set(fileKey("weekly-report", "SKILL.md"), "late persisted draft")
+    render("waiting-for-drafts")
+    assert(button("编辑").disabled, "Editing must wait for async draft initialization")
+    render("replaced-loading-screen")
+    loadGate.resolve()
+    await startEditing("SKILL.md")
+    assert(editor("SKILL.md").value === "late persisted draft", "Only the live screen may apply loaded drafts")
+    write("SKILL.md", "new live editing")
+    await wait()
+    assert(editor("SKILL.md").value === "new live editing", "Late initialization cannot overwrite editing")
+    loadGate = undefined
+    failReads = true
+    render("read-failure")
+    await until(() => fixture.querySelector('[role="alert"]')?.textContent.includes("无法读取"), "Read failure must remain distinguishable from an empty cache")
+    await startEditing("SKILL.md")
+    write("SKILL.md", "editing despite read failure")
+    assert(editor("SKILL.md").value === "editing despite read failure", "Read failure must still allow editing")
+    failReads = false
+    checks.push("async initialization gates editing, ignores abandoned loads and permits editing after failure")
+
     result.textContent = `PASS: ${checks.join("; ")}`
     result.dataset.passed = "true"
   } catch (error) {
@@ -288,7 +351,5 @@
     throw error
   } finally {
     flushSync(() => root.unmount())
-    if (descriptor) Object.defineProperty(window, "localStorage", descriptor)
-    else delete window.localStorage
   }
 </script>

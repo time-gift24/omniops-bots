@@ -1,14 +1,18 @@
 import * as React from "react"
+import type {
+  InitialThemePreferences,
+  Palette,
+  Theme,
+  ThemePreferences,
+} from "@/preferences/theme"
 
-type Theme = "dark" | "light" | "system"
 type ResolvedTheme = "dark" | "light"
-type Palette = "official" | "claude"
 
 type ThemeProviderProps = {
   children: React.ReactNode
+  preferences: ThemePreferences
+  initialPreferences: InitialThemePreferences
   defaultTheme?: Theme
-  storageKey?: string
-  paletteStorageKey?: string
   disableTransitionOnChange?: boolean
 }
 
@@ -20,23 +24,10 @@ type ThemeProviderState = {
 }
 
 const COLOR_SCHEME_QUERY = "(prefers-color-scheme: dark)"
-const THEME_VALUES: Theme[] = ["dark", "light", "system"]
 
 const ThemeProviderContext = React.createContext<
   ThemeProviderState | undefined
 >(undefined)
-
-function isTheme(value: string | null): value is Theme {
-  if (value === null) {
-    return false
-  }
-
-  return THEME_VALUES.includes(value as Theme)
-}
-
-function isPalette(value: string | null): value is Palette {
-  return value === "official" || value === "claude"
-}
 
 function getSystemTheme(): ResolvedTheme {
   if (window.matchMedia(COLOR_SCHEME_QUERY).matches) {
@@ -86,55 +77,30 @@ function isEditableTarget(target: EventTarget | null) {
 
 export function ThemeProvider({
   children,
+  preferences,
+  initialPreferences,
   defaultTheme = "system",
-  storageKey = "theme",
-  paletteStorageKey = "cognacta-palette",
   disableTransitionOnChange = true,
   ...props
 }: ThemeProviderProps) {
-  const [theme, setThemeState] = React.useState<Theme>(() => {
-    try {
-      const storedTheme = localStorage.getItem(storageKey)
-      if (isTheme(storedTheme)) return storedTheme
-    } catch {
-      // Storage can be unavailable; the in-memory theme still works.
-    }
-
-    return defaultTheme
-  })
-  const [palette, setPaletteState] = React.useState<Palette>(() => {
-    try {
-      const storedPalette = localStorage.getItem(paletteStorageKey)
-      if (isPalette(storedPalette)) return storedPalette
-    } catch {
-      // Storage can be unavailable; the in-memory palette still works.
-    }
-
-    return "official"
-  })
+  const [theme, setThemeState] = React.useState(initialPreferences.theme)
+  const [palette, setPaletteState] = React.useState(initialPreferences.palette)
 
   const setTheme = React.useCallback(
     (nextTheme: Theme) => {
-      try {
-        localStorage.setItem(storageKey, nextTheme)
-      } catch {
-        // Persistence must not prevent a theme change.
-      }
       setThemeState(nextTheme)
+      // Persistence must not prevent a theme change or roll it back.
+      void preferences.writeTheme(nextTheme).catch(() => {})
     },
-    [storageKey]
+    [preferences]
   )
 
   const setPalette = React.useCallback(
     (nextPalette: Palette) => {
-      try {
-        localStorage.setItem(paletteStorageKey, nextPalette)
-      } catch {
-        // Persistence must not prevent a palette change.
-      }
       setPaletteState(nextPalette)
+      void preferences.writePalette(nextPalette).catch(() => {})
     },
-    [paletteStorageKey]
+    [preferences]
   )
 
   const applyTheme = React.useCallback(
@@ -158,7 +124,7 @@ export function ThemeProvider({
     [disableTransitionOnChange]
   )
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     applyTheme(theme, palette)
 
     if (theme !== "system") {
@@ -213,39 +179,16 @@ export function ThemeProvider({
     }
   }, [theme, setTheme])
 
-  React.useEffect(() => {
-    let storage: Storage
-    try {
-      storage = window.localStorage
-    } catch {
-      return
-    }
-    const handleStorageChange = (event: StorageEvent) => {
-      if (event.storageArea !== storage) {
-        return
-      }
-
-      if (event.key === null) {
-        setThemeState(defaultTheme)
-        setPaletteState("official")
-        return
-      }
-
-      if (event.key === storageKey) {
-        setThemeState(isTheme(event.newValue) ? event.newValue : defaultTheme)
-      }
-
-      if (event.key === paletteStorageKey) {
-        setPaletteState(isPalette(event.newValue) ? event.newValue : "official")
-      }
-    }
-
-    window.addEventListener("storage", handleStorageChange)
-
-    return () => {
-      window.removeEventListener("storage", handleStorageChange)
-    }
-  }, [defaultTheme, storageKey, paletteStorageKey])
+  React.useEffect(
+    () =>
+      preferences.subscribe((change) => {
+        if (change.theme !== undefined)
+          setThemeState(change.theme ?? defaultTheme)
+        if (change.palette !== undefined)
+          setPaletteState(change.palette ?? "official")
+      }),
+    [defaultTheme, preferences]
+  )
 
   const value = React.useMemo(
     () => ({

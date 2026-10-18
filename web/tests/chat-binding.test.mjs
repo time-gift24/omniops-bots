@@ -5,9 +5,9 @@ import { createServer } from "vite";
 async function loadModules(t) {
   const server = await createServer({ configFile: false, server: { middlewareMode: true, hmr: false, ws: false }, appType: "custom", optimizeDeps: { noDiscovery: true, include: [] } });
   t.after(() => server.close());
-  const binding = await server.ssrLoadModule("/src/chat/binding.ts");
-  const { defaultThreadRegistry } = await server.ssrLoadModule("/src/chat/react.ts");
-  return { ...binding, defaultThreadRegistry };
+  const { createThreadStoreRegistry } = await server.ssrLoadModule("/src/chat/registry.ts");
+  const { createMockGateway } = await server.ssrLoadModule("/src/adapters/demo/chat.ts");
+  return { createThreadStoreRegistry, createMockGateway };
 }
 
 async function waitFor(check) {
@@ -18,8 +18,9 @@ async function waitFor(check) {
   }
 }
 
-test("默认注册表并发运行的线程独立停止，另一线程继续接收增量", async (t) => {
-  const { defaultThreadRegistry: registry } = await loadModules(t);
+test("显式注入的注册表并发运行的线程独立停止，另一线程继续接收增量", async (t) => {
+  const { createThreadStoreRegistry, createMockGateway } = await loadModules(t);
+  const registry = createThreadStoreRegistry(() => createMockGateway());
   const first = registry.acquire("first");
   const second = registry.acquire("second");
   t.after(() => {
@@ -40,10 +41,10 @@ test("默认注册表并发运行的线程独立停止，另一线程继续接�
   assert.equal(second.streaming, true);
 });
 
-test("绑定工厂按线程创建网关，重新取得同一线程复用原实例", async (t) => {
-  const { bindChatGateway, defaultThreadRegistry: registry } = await loadModules(t);
+test("注入工厂按线程创建网关，重新取得同一线程复用原实例", async (t) => {
+  const { createThreadStoreRegistry } = await loadModules(t);
   const created = [];
-  bindChatGateway((threadId) => {
+  const registry = createThreadStoreRegistry((threadId) => {
     created.push(threadId);
     return { abort() {}, stream() { throw new Error("unexpected stream"); } };
   });

@@ -1,9 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from "react"
 
 export type BackendDataState<T> =
-  | { status: "loading" }
-  | { status: "error" }
-  | { status: "ready"; data: T };
+  { status: "loading" } | { status: "error" } | { status: "ready"; data: T }
 
 /**
  * 按 key 从 WorkbenchBackend 加载数据。
@@ -12,25 +10,33 @@ export type BackendDataState<T> =
 export function useBackendData<T>(
   key: unknown,
   load: () => Promise<T>,
+  source?: unknown
 ): BackendDataState<T> {
-  type KeyedState = BackendDataState<T> & { key: unknown };
-  const [state, setState] = useState<KeyedState>({ key, status: "loading" });
+  type KeyedState = BackendDataState<T> & { key: unknown; source: unknown }
+  const [state, setState] = useState<KeyedState>({
+    key,
+    source,
+    status: "loading",
+  })
   // React 认可的派生重置：渲染期比较 key，避免在 effect 里同步 setState。
-  if (state.key !== key) setState({ key, status: "loading" });
+  if (state.key !== key || state.source !== source)
+    setState({ key, source, status: "loading" })
   useEffect(() => {
-    let live = true;
-    load().then(
-      (data) => {
-        if (live) setState({ key, status: "ready", data });
-      },
-      () => {
-        if (live) setState({ key, status: "error" });
-      },
-    );
+    let live = true
+    Promise.resolve()
+      .then(load)
+      .then(
+        (data) => {
+          if (live) setState({ key, source, status: "ready", data })
+        },
+        () => {
+          if (live) setState({ key, source, status: "error" })
+        }
+      )
     return () => {
-      live = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- load 由 key 标识，调用方保证 key 覆盖 load 依赖的输入。
-  }, [key]);
-  return state;
+      live = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- key covers query inputs; source covers adapter identity.
+  }, [key, source])
+  return state
 }

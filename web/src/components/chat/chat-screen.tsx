@@ -8,11 +8,9 @@ import {
 } from "@hugeicons-pro/core-stroke-rounded"
 import { HugeiconsIcon } from "@hugeicons/react"
 
+import { useAppDependencies } from "@/app/dependencies"
 import { useThreadStore } from "@/chat/react.ts"
-import {
-  ChatComposer,
-  DEFAULT_CHAT_MODEL,
-} from "@/components/chat/chat-composer"
+import { ChatComposer } from "@/components/chat/chat-composer"
 import {
   ChatThreadLoading,
   preloadChatThread,
@@ -20,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { SPRING_PANEL } from "@/lib/ease"
+import type { ModelChoice } from "@/models/source"
 
 const SUGGESTIONS = [
   "为什么这次构建这么慢？",
@@ -29,16 +28,19 @@ const SUGGESTIONS = [
 
 export function ChatScreen({
   threadId = "main",
+  models,
   workspaceName,
   onChooseWorkspace,
   suggestions = SUGGESTIONS,
 }: {
   threadId?: string
+  models: readonly ModelChoice[]
   workspaceName?: string
   onChooseWorkspace?: () => void
   suggestions?: readonly string[]
 }) {
-  const store = useThreadStore(threadId)
+  const { threads } = useAppDependencies()
+  const store = useThreadStore(threadId, threads)
   const empty = React.useSyncExternalStore(
     store.subscribe,
     () => store.getState().messages.length === 0
@@ -51,7 +53,9 @@ export function ChatScreen({
   )
   const reduce = useReducedMotion()
 
-  const composer = <ChatComposer store={store} className="mx-auto w-full" />
+  const composer = (
+    <ChatComposer store={store} models={models} className="mx-auto w-full" />
+  )
 
   return (
     <TooltipProvider>
@@ -111,6 +115,7 @@ export function ChatScreen({
                   {suggestions.map((suggestion) => (
                     <Button
                       key={suggestion}
+                      disabled={!models.length}
                       variant="outline"
                       size="sm"
                       className="rounded-full"
@@ -119,7 +124,9 @@ export function ChatScreen({
                         store.send(
                           suggestion,
                           undefined,
-                          store.getDraft().model ?? DEFAULT_CHAT_MODEL
+                          models.find(
+                            (choice) => choice.id === store.getDraft().model
+                          )?.id ?? models[0]?.id
                         )
                       }}
                     >

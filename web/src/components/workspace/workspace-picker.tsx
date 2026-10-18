@@ -1,22 +1,19 @@
-import { useEffect, useId, useRef, useState, type RefObject } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Folder01Icon } from "@hugeicons-pro/core-stroke-rounded";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useEffect, useId, useRef, useState, type RefObject } from "react"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { Folder01Icon } from "@hugeicons-pro/core-stroke-rounded"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import type { Workspace } from "@/workspace/store";
-
-const DIRECTORIES = [
-  "/workspace/cognacta",
-  "/workspace/客户支持",
-  "/workspace/研发协作",
-];
+} from "@/components/ui/dialog"
+import type { Workspace } from "@/workspace/store"
+import type { WorkspaceDirectory } from "@/workspace/access"
+import { useAppDependencies } from "@/app/dependencies"
+import { useBackendData } from "@/components/workbench/use-backend-data"
 
 export function WorkspacePicker({
   open,
@@ -27,56 +24,61 @@ export function WorkspacePicker({
   addOnly,
   fallbackFocusRef,
 }: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  workspaces: readonly Workspace[];
-  onPick: (workspaceId: string) => void;
-  onAdd: (path: string) => void;
-  addOnly: boolean;
-  fallbackFocusRef: RefObject<HTMLElement | null>;
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  workspaces: readonly Workspace[]
+  onPick: (workspaceId: string) => void
+  onAdd: (directory: WorkspaceDirectory) => void
+  addOnly: boolean
+  fallbackFocusRef: RefObject<HTMLElement | null>
 }) {
-  const inputId = useId();
-  const [path, setPath] = useState(DIRECTORIES[0]);
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const attempt = useRef(0);
-  const previousFocus = useRef<HTMLElement | null>(null);
-  const picked = useRef(false);
+  const { workspaceAccess } = useAppDependencies()
+  const directories = useBackendData(
+    "directories",
+    () => workspaceAccess.listDirectories(),
+    workspaceAccess
+  )
+  const inputId = useId()
+  const [typedPath, setPath] = useState<string | null>(null)
+  const path =
+    typedPath ??
+    (directories.status === "ready" ? (directories.data[0]?.path ?? "") : "")
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const attempt = useRef(0)
+  const previousFocus = useRef<HTMLElement | null>(null)
+  const picked = useRef(false)
   useEffect(
     () => () => {
-      attempt.current += 1;
+      attempt.current += 1
     },
-    [],
-  );
+    []
+  )
 
   function close() {
-    attempt.current += 1;
-    setBusy(false);
-    onOpenChange(false);
+    attempt.current += 1
+    setBusy(false)
+    onOpenChange(false)
   }
 
   async function add() {
-    if (busy) return;
-    const current = ++attempt.current;
-    setBusy(true);
-    setError(null);
+    if (busy || !path) return
+    const current = ++attempt.current
+    setBusy(true)
+    setError(null)
     try {
-      // ponytail: only mock directories are available; replace with the host picker when IPC lands.
-      await new Promise((resolve) => setTimeout(resolve, 200));
-      if (current !== attempt.current) return;
-      const selected = path.trim().replace(/\/+$/, "");
-      if (!DIRECTORIES.includes(selected))
-        throw new Error("未找到这个演示目录，请从列表选择后重试。");
-      onAdd(selected);
-      picked.current = true;
-      close();
+      const selected = await workspaceAccess.resolveDirectory(path)
+      if (current !== attempt.current) return
+      onAdd(selected)
+      picked.current = true
+      close()
     } catch (cause) {
       if (current === attempt.current)
         setError(
-          cause instanceof Error ? cause.message : "无法添加工作区，请重试。",
-        );
+          cause instanceof Error ? cause.message : "无法添加工作区，请重试。"
+        )
     } finally {
-      if (current === attempt.current) setBusy(false);
+      if (current === attempt.current) setBusy(false)
     }
   }
 
@@ -84,7 +86,7 @@ export function WorkspacePicker({
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        if (!next) close();
+        if (!next) close()
       }}
     >
       <DialogContent
@@ -93,24 +95,24 @@ export function WorkspacePicker({
           previousFocus.current =
             document.activeElement instanceof HTMLElement
               ? document.activeElement
-              : null;
+              : null
         }}
         onCloseAutoFocus={(event) => {
-          event.preventDefault();
-          const previous = previousFocus.current;
+          event.preventDefault()
+          const previous = previousFocus.current
           const editor = picked.current
             ? fallbackFocusRef.current?.querySelector<HTMLElement>(
-                '[contenteditable="true"]',
+                '[contenteditable="true"]'
               )
-            : null;
-          (
+            : null
+          ;(
             editor ??
             (previous?.isConnected &&
             !previous.closest("[inert]") &&
             previous.getClientRects().length
               ? previous
               : fallbackFocusRef.current)
-          )?.focus({ preventScroll: true });
+          )?.focus({ preventScroll: true })
         }}
       >
         <DialogHeader className="pr-8 text-left">
@@ -128,9 +130,9 @@ export function WorkspacePicker({
                 disabled={busy}
                 className="h-auto min-h-12 min-w-0 justify-start gap-3 rounded-lg px-3 py-2 text-left"
                 onClick={() => {
-                  onPick(workspace.id);
-                  picked.current = true;
-                  close();
+                  onPick(workspace.id)
+                  picked.current = true
+                  close()
                 }}
               >
                 <HugeiconsIcon
@@ -150,8 +152,8 @@ export function WorkspacePicker({
         ) : null}
         <form
           onSubmit={(event) => {
-            event.preventDefault();
-            void add();
+            event.preventDefault()
+            void add()
           }}
           className="grid min-w-0 gap-3"
         >
@@ -159,15 +161,15 @@ export function WorkspacePicker({
             <label htmlFor={inputId} className="text-sm font-medium">
               目录
             </label>
-            <span className="text-xs text-muted-foreground">演示目录</span>
+            <span className="text-xs text-muted-foreground">可用目录</span>
           </div>
           <Input
             id={inputId}
             value={path}
             disabled={busy}
             onChange={(event) => {
-              setPath(event.target.value);
-              setError(null);
+              setPath(event.target.value)
+              setError(null)
             }}
             aria-invalid={Boolean(error)}
             aria-describedby={error ? `${inputId}-error` : undefined}
@@ -175,27 +177,29 @@ export function WorkspacePicker({
             autoComplete="off"
           />
           <div className="grid gap-1">
-            {DIRECTORIES.map((directory) => (
-              <Button
-                key={directory}
-                type="button"
-                variant="ghost"
-                disabled={busy}
-                aria-pressed={path === directory}
-                onClick={() => {
-                  setPath(directory);
-                  setError(null);
-                }}
-                className="h-9 min-w-0 justify-start gap-2 rounded-lg px-3 font-normal aria-pressed:bg-accent"
-              >
-                <HugeiconsIcon
-                  icon={Folder01Icon}
-                  size={16}
-                  aria-hidden="true"
-                />
-                <span className="truncate">{directory}</span>
-              </Button>
-            ))}
+            {(directories.status === "ready" ? directories.data : []).map(
+              (directory) => (
+                <Button
+                  key={directory.path}
+                  type="button"
+                  variant="ghost"
+                  disabled={busy}
+                  aria-pressed={path === directory.path}
+                  onClick={() => {
+                    setPath(directory.path)
+                    setError(null)
+                  }}
+                  className="h-9 min-w-0 justify-start gap-2 rounded-lg px-3 font-normal aria-pressed:bg-accent"
+                >
+                  <HugeiconsIcon
+                    icon={Folder01Icon}
+                    size={16}
+                    aria-hidden="true"
+                  />
+                  <span className="truncate">{directory.path}</span>
+                </Button>
+              )
+            )}
           </div>
           {error ? (
             <p
@@ -229,5 +233,5 @@ export function WorkspacePicker({
         </form>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

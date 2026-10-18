@@ -1,13 +1,11 @@
-import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  FileEditIcon,
-  FileTextIcon,
-} from "@hugeicons-pro/core-stroke-rounded";
-import type { ChangeSet, WorkbenchBackend } from "@/workbench/backend";
-import {
-  useBackendData,
-  type BackendDataState,
-} from "./use-backend-data";
+import { HugeiconsIcon } from "@hugeicons/react"
+import { FileEditIcon, FileTextIcon } from "@hugeicons-pro/core-stroke-rounded"
+import type {
+  ChangeSet,
+  WorkbenchBackend,
+  WorkbenchScope,
+} from "@/workbench/backend"
+import { useBackendData, type BackendDataState } from "./use-backend-data"
 
 function ChangeCount({ added, removed }: { added: number; removed: number }) {
   return (
@@ -15,13 +13,13 @@ function ChangeCount({ added, removed }: { added: number; removed: number }) {
       <span className="text-primary">+{added}</span>{" "}
       <span className="text-muted-foreground">−{removed}</span>
     </span>
-  );
+  )
 }
 
 function ChangeContent({
   changeSet,
 }: {
-  changeSet: BackendDataState<ChangeSet>;
+  changeSet: BackendDataState<ChangeSet>
 }) {
   if (changeSet.status === "loading") {
     return (
@@ -37,22 +35,22 @@ function ChangeContent({
           ))}
         </div>
       </div>
-    );
+    )
   }
   if (changeSet.status === "error") {
     return (
       <p className="px-1 py-2 text-xs text-muted-foreground">
         变更摘要加载失败。
       </p>
-    );
+    )
   }
-  const { data } = changeSet;
+  const { data } = changeSet
   if (data.files.length === 0) {
     return (
       <p className="px-1 py-2 text-xs text-muted-foreground">
         本次会话还没有改动文件。
       </p>
-    );
+    )
   }
   return (
     <>
@@ -93,14 +91,27 @@ function ChangeContent({
         ))}
       </ul>
     </>
-  );
+  )
 }
 
-export function ChangesView({ backend }: { backend: WorkbenchBackend }) {
-  const changeSet = useBackendData("change-set", () => backend.getChangeSet());
+export function ChangesView({
+  backend,
+  scope,
+}: {
+  backend: WorkbenchBackend
+  scope: WorkbenchScope | null
+}) {
+  const changeSet = useBackendData(
+    JSON.stringify(scope),
+    () =>
+      scope
+        ? backend.getChangeSet(scope)
+        : Promise.resolve({ fileCount: 0, added: 0, removed: 0, files: [] }),
+    backend
+  )
   return (
     <div className="h-full overflow-auto p-3">
       <ChangeContent changeSet={changeSet} />
     </div>
-  );
+  )
 }

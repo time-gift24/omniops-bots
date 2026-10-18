@@ -15,6 +15,7 @@ import {
 import type { AgentChatCreditsLabels } from "@/components/premium/agent-chat-input/credits-labels"
 import type { AgentChatInputStatus } from "@/components/premium/agent-chat-input/types"
 import { cn } from "@/lib/utils"
+import type { ModelChoice } from "@/models/source"
 
 const LABELS: Partial<AgentChatCreditsLabels> = {
   editor: "消息输入",
@@ -29,15 +30,6 @@ const LABELS: Partial<AgentChatCreditsLabels> = {
   previewAttachment: (name) => `预览 ${name}`,
 }
 
-/** 仅用于 mock 网关。 */
-const MODELS = [
-  { id: "pine-1", label: "Pine 1" },
-  { id: "sonnet-5", label: "Sonnet 5" },
-  { id: "opus-4.8", label: "Opus 4.8" },
-  { id: "gpt-5.6", label: "GPT 5.6" },
-] as const
-export const DEFAULT_CHAT_MODEL = MODELS[0].id
-
 /** 失败后仍可继续输入，error 仅作语义标记。 */
 function toComposerStatus(status: string): AgentChatInputStatus {
   if (status === "submitted" || status === "streaming") return status
@@ -47,9 +39,11 @@ function toComposerStatus(status: string): AgentChatInputStatus {
 
 export function ChatComposer({
   store,
+  models,
   className,
 }: {
   store: ThreadStore
+  models: readonly ModelChoice[]
   className?: string
 }) {
   const status = React.useSyncExternalStore(
@@ -61,7 +55,8 @@ export function ChatComposer({
     store.getDraft,
     store.getDraft
   )
-  const model = draft.model ?? DEFAULT_CHAT_MODEL
+  const model =
+    models.find((choice) => choice.id === draft.model)?.id ?? models[0]?.id
 
   return (
     <AgentChatCredits
@@ -74,7 +69,7 @@ export function ChatComposer({
       skills={[]}
       status={toComposerStatus(status)}
       placeholder=""
-      models={MODELS}
+      models={models}
       model={model}
       onModelChange={(model) => store.updateDraft({ model })}
       attachments={draft.attachments}
@@ -84,8 +79,12 @@ export function ChatComposer({
         const accepted = store.send(
           text,
           sent.map((attachment) => ({
+            id: attachment.id,
             name: attachment.name,
             mediaType: attachment.type ?? "application/octet-stream",
+            size: attachment.size,
+            file: attachment.file,
+            url: attachment.url,
           })),
           model
         )

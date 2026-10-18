@@ -1,30 +1,27 @@
 <!doctype html>
 <meta charset="utf-8" />
 <title>Reading navigation and animation lifecycle regression</title>
-<!-- Run npm run dev, then open /tests/reading-navigation.browser.html with normal motion enabled. -->
+<!-- Run npm run dev, then open /tests/reading-navigation.browser.html. -->
 <style>#fixture { width: 1800px; height: 650px; } #fixture > div { height: 100%; } #result { white-space: pre-wrap; }</style>
 <div id="fixture"></div>
+<div id="probe"></div>
 <pre id="result">Running…</pre>
 <script type="module">
   import React from "react";
   import { createRoot } from "react-dom/client";
   import { flushSync } from "react-dom";
   import "/src/index.css";
+  import { createTestDependencies, withDependencies } from "/tests/support.tsx";
+  import { AgentBuilder } from "/src/components/premium/agent-builder/agent-builder.tsx";
   import { SkillScreen } from "/src/components/skills/skill-screen.tsx";
-  import { DEMO_SKILLS } from "/src/skills/data.ts";
-  import { saveDraft } from "/src/skills/drafts.ts";
+  import { useHeadingScroll } from "/src/components/markdown/markdown-reading.tsx";
 
   const fixture = document.querySelector("#fixture");
   const result = document.querySelector("#result");
   const root = createRoot(fixture);
+  const probeRoot = createRoot(document.querySelector("#probe"));
+  const dependencies = createTestDependencies();
   const h = React.createElement;
-  const descriptor = Object.getOwnPropertyDescriptor(window, "localStorage");
-  const values = new Map();
-  const storage = {
-    getItem: key => values.get(key) ?? null,
-    setItem: (key, value) => values.set(key, value),
-    removeItem: key => values.delete(key),
-  };
   const wait = (ms = 20) => new Promise(resolve => setTimeout(resolve, ms));
   const assert = (condition, message) => { if (!condition) throw new Error(message); };
   const until = async (condition, message) => {
@@ -32,104 +29,108 @@
     while (!condition() && performance.now() < deadline) await wait();
     assert(condition(), message);
   };
-  const paragraphs = label => Array.from({ length: 25 }, (_, index) => `${label} 阅读段落 ${index + 1}。`).join("\n\n");
-  const markdown = (label, href) => `# 总览\n\n[本页定位](#共享章节)\n\n[跨文件定位](${href}#共享章节)\n\n${paragraphs(label)}\n\n## 共享章节\n\n${paragraphs(label)}\n\n## 尾部章节\n\n${paragraphs(label)}`;
-  const skills = DEMO_SKILLS.slice(0, 2);
-  for (const [index, skill] of skills.entries()) {
-    const reference = skill.files.find(file => file.path.startsWith("reference/") && file.path.endsWith(".md"));
-    saveDraft(storage, skill.id, "SKILL.md", markdown(`${index}_MAIN`, reference.path));
-    saveDraft(storage, skill.id, reference.path, markdown(`${index}_REFERENCE`, "../SKILL.md"));
-  }
-  function Pages({ skillId }) {
+  const paragraphs = label => Array.from({ length: 20 }, (_, index) => `${label} 阅读段落 ${index + 1}。`).join("\n\n");
+  const markdown = (label, guide = false) => `# 总览\n\n${guide
+    ? "[回到主文件](../SKILL.md#共享章节)"
+    : "[本页定位](#共享章节)\n\n[跨文件定位](reference/guide.md#共享章节)"}\n\n${paragraphs(label)}\n\n## 共享章节\n\n${paragraphs(label)}\n\n## 尾部章节\n\n${paragraphs(label)}`;
+  const skills = ["FIRST", "SECOND"].map((label, index) => ({
+    id: `reading-${index}`, name: `${label} skill`, description: "Reading navigation fixture",
+    files: [
+      { path: "SKILL.md", content: markdown(`${label}_MAIN`) },
+      { path: "reference/guide.md", content: markdown(`${label}_GUIDE`, true) },
+    ],
+  }));
+  const agent = {
+    name: "Reading agent", description: "Reading navigation fixture", instructions: markdown("AGENT"),
+    mcpServerIds: [], toolIds: [], skillIds: [], requireApproval: false,
+  };
+  function Pages({ visible, skillId }) {
     return h(React.Fragment, null,
-      h("div", { id: "hidden-page", style: { display: "none" } }, h(SkillScreen, { skillId: skills[0].id, active: false })),
-      h("div", { id: "active-page" }, h(SkillScreen, { skillId, active: true })),
+      h("div", { id: "skill-page", style: { display: visible === "skill" ? "block" : "none" } },
+        h(SkillScreen, { skills, skillId, active: visible === "skill" })),
+      h("div", { id: "agent-page", style: { display: visible === "agent" ? "block" : "none" } },
+        h(AgentBuilder, { initialConfiguration: agent, mcpServers: [], tools: [], skills: [], onSave() {} })),
     );
   }
-  const render = skillId => flushSync(() => root.render(h(Pages, { skillId })));
-  const page = () => fixture.querySelector("#active-page");
-  const scroll = () => page().querySelector(".skill-docs-scroll");
-  const heading = () => page().querySelector('[data-docs-section="共享章节"]');
-  const outline = () => page().querySelector('nav[aria-label="本页目录"]');
-  const outlineButton = () => [...outline().querySelectorAll("button")].find(button => button.textContent.trim() === "共享章节");
-  const button = label => [...page().querySelectorAll("button")].find(button => button.textContent.trim() === label);
+  const render = (visible, skillId = skills[0].id) => flushSync(() => root.render(withDependencies(h(Pages, { visible, skillId }), dependencies)));
+  const page = name => fixture.querySelector(`#${name}-page`);
+  const scroll = name => page(name).querySelector(".doc-reading-scroll");
+  const heading = name => page(name).querySelector('[data-docs-section="共享章节"]');
+  const outline = name => page(name).querySelector('nav[aria-label="本页目录"]');
+  const outlineButton = (name, label) => [...outline(name).querySelectorAll("button")].find(button => button.textContent.trim() === label);
+  const activeHeading = name => outline(name)?.querySelector('[aria-current="true"]')?.textContent.trim();
   const click = element => { assert(element, "Expected navigation control is missing"); flushSync(() => element.click()); };
-  const link = label => [...page().querySelectorAll(".skill-preview a")].find(anchor => anchor.textContent === label);
-  const aligned = () => scroll().scrollTop > 100 && Math.abs(heading().getBoundingClientRect().top - scroll().getBoundingClientRect().top - 32) < 3;
+  const link = label => [...page("skill").querySelectorAll(".doc-preview a")].find(anchor => anchor.textContent === label);
+  const aligned = name => {
+    const container = scroll(name);
+    const target = heading(name);
+    return container.scrollTop > 100 && Math.abs(target.getBoundingClientRect().top - container.getBoundingClientRect().top - 32) < 3;
+  };
   const uniqueIds = () => {
     const ids = [...fixture.querySelectorAll("[id]")].map(element => element.id);
-    assert(ids.length === new Set(ids).size, "Simultaneously mounted readers must not duplicate HTML IDs");
+    assert(ids.length === new Set(ids).size, "Simultaneously mounted pages must not duplicate HTML IDs");
   };
-  let mounted = true;
-  let restoreScroll = () => {};
+  let writes = 0;
+  let top = 0;
+  let startScroll;
+  const scrolling = document.createElement("div");
+  Object.defineProperty(scrolling, "scrollTop", { get: () => top, set: value => { top = value; writes += 1; } });
+  const resolve = () => scrolling;
+  function ScrollProbe({ targetKey }) {
+    const { scrollToY } = useHeadingScroll(resolve, targetKey);
+    startScroll = scrollToY;
+    return null;
+  }
+  const renderProbe = targetKey => flushSync(() => probeRoot.render(withDependencies(h(ScrollProbe, { targetKey }), dependencies)));
+  let probeMounted = true;
   try {
-    assert(!matchMedia("(prefers-reduced-motion: reduce)").matches, "Run this animation cleanup regression with normal motion enabled");
-    Object.defineProperty(window, "localStorage", { configurable: true, value: storage });
-    render(skills[0].id);
-    await until(() => heading() && outline(), "Both real Skill readers must mount");
+    render("agent");
+    await until(() => heading("skill") && heading("agent") && outline("agent"), "Both real reading pages must mount");
     uniqueIds();
-    const hiddenScroll = fixture.querySelector("#hidden-page .skill-docs-scroll");
-    const hiddenTop = hiddenScroll.scrollTop;
-    const hiddenHeading = fixture.querySelector('#hidden-page [data-docs-section="共享章节"]');
-    assert(hiddenHeading.id !== heading().id, "Matching Chinese headings must have distinct HTML IDs");
-    click(outlineButton());
-    await until(aligned, "Outline must scroll its own heading past the earlier hidden reader");
-    await until(() => outline().querySelector('[aria-current="true"]')?.textContent.trim() === "共享章节", "Scrollspy must highlight the current reader's heading");
-    assert(hiddenScroll.scrollTop === hiddenTop, "Outline must not scroll the hidden reader");
+    assert(heading("skill").id !== heading("agent").id, "Matching Chinese headings must have distinct document IDs");
+    const hiddenSkillScroll = scroll("skill").scrollTop;
+    click(outlineButton("agent", "共享章节"));
+    await until(() => aligned("agent"), "Agent outline must scroll its own heading past the hidden Skill page");
+    await until(() => activeHeading("agent") === "共享章节", "Agent scrollspy must highlight its own heading");
+    assert(scroll("skill").scrollTop === hiddenSkillScroll, "Agent navigation must not scroll the hidden Skill page");
 
-    render(skills[1].id);
-    await until(() => page().querySelector(".skill-preview")?.textContent.includes("1_MAIN"), "Switching Skill must render its current file");
+    render("skill", skills[1].id);
+    await until(() => page("skill").querySelector(".doc-preview")?.textContent.includes("SECOND_MAIN"), "Switching Skill must render its current file");
     uniqueIds();
+    const hiddenAgentScroll = scroll("agent").scrollTop;
     click(link("本页定位"));
-    await until(aligned, "Same-file hash must scroll the switched Skill's heading");
+    await until(() => aligned("skill"), "Same-file hash must scroll the current Skill container");
+    await until(() => activeHeading("skill") === "共享章节", "Skill scrollspy must highlight its own heading");
     click(link("跨文件定位"));
-    await until(() => page().querySelector(".skill-preview")?.textContent.includes("1_REFERENCE") && aligned(), "Cross-file hash must scroll the switched Skill's reference file");
-    click(link("跨文件定位"));
-    await until(() => page().querySelector(".skill-preview")?.textContent.includes("1_MAIN") && aligned(), "Returning across files must resolve the current document's heading");
+    await until(() => page("skill").querySelector(".doc-preview")?.textContent.includes("SECOND_GUIDE") && aligned("skill"), "Cross-file hash must target the switched Skill's reference file");
     uniqueIds();
-    assert(hiddenScroll.scrollTop === hiddenTop, "Skill hash links must not scroll the hidden reader");
+    click(link("回到主文件"));
+    await until(() => page("skill").querySelector(".doc-preview")?.textContent.includes("SECOND_MAIN") && aligned("skill"), "Returning across files must resolve the current document heading");
+    assert(scroll("agent").scrollTop === hiddenAgentScroll, "Skill links must not scroll the hidden Agent page");
+    uniqueIds();
 
-    const observed = scroll();
-    const original = Object.getOwnPropertyDescriptor(observed, "scrollTop");
-    const native = Object.getOwnPropertyDescriptor(Element.prototype, "scrollTop");
-    let writes = 0;
-    Object.defineProperty(observed, "scrollTop", {
-      configurable: true,
-      get() { return native.get.call(this); },
-      set(value) { writes += 1; native.set.call(this, value); },
-    });
-    restoreScroll = () => {
-      if (original) Object.defineProperty(observed, "scrollTop", original);
-      else delete observed.scrollTop;
-    };
-    native.set.call(observed, 0);
-    click(outlineButton());
-    await until(() => writes >= 2, "The real scroll animation must write on multiple frames");
-    click(button("编辑"));
-    const afterEditing = writes;
+    renderProbe("first");
+    startScroll(10000);
+    await until(() => writes > 0, "The real scroll hook must begin updating its target");
+    renderProbe("second");
+    const afterTargetChange = writes;
     await wait(180);
-    assert(writes === afterEditing, "Entering edit mode must stop writes to the previous reading target");
-    click(button("完成编辑"));
-    await until(() => heading() && outline(), "Returning to reading must restore the outline");
-    native.set.call(observed, 0);
-    const beforeUnmount = writes;
-    click(outlineButton());
-    await until(() => writes >= beforeUnmount + 2, "The new reading target must still animate");
-    root.unmount();
-    mounted = false;
+    assert(writes === afterTargetChange, "Changing targetKey must stop the previous animation");
+    startScroll(0);
+    await until(() => writes > afterTargetChange, "The new target must still support scrolling");
+    probeRoot.unmount();
+    probeMounted = false;
     const afterUnmount = writes;
     await wait(180);
-    assert(writes === afterUnmount, "Unmounting must stop later writes to the detached reading target");
+    assert(writes === afterUnmount, "Unmounting must stop all later scroll writes");
     result.dataset.passed = "true";
-    result.textContent = "PASS: reader-scoped Chinese headings, unique IDs and scrollspy; switched Skill same/cross-file hashes; real animation stops on edit and unmount";
+    result.textContent = "PASS: isolated Agent/Skill headings and scrollspy; unique IDs; switched Skill same/cross-file links; scroll cleanup on target change and unmount";
   } catch (error) {
     result.dataset.passed = "false";
     result.textContent = `FAIL: ${error.message}`;
     throw error;
   } finally {
-    if (mounted) root.unmount();
-    restoreScroll();
-    if (descriptor) Object.defineProperty(window, "localStorage", descriptor);
-    else delete window.localStorage;
+    if (probeMounted) probeRoot.unmount();
+    root.unmount();
   }
 </script>

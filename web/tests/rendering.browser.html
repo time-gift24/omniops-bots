@@ -10,6 +10,7 @@
   import { createRoot } from "react-dom/client";
   import { flushSync } from "react-dom";
   import "/src/index.css";
+  import { createTestDependencies, withDependencies } from "/tests/support.tsx";
   import { MessageView } from "/src/components/chat/message-view.tsx";
   import { TooltipProvider } from "/src/components/ui/tooltip.tsx";
   import { InputGroup, InputGroupAddon, InputGroupTextarea } from "/src/components/ui/input-group.tsx";
@@ -22,7 +23,8 @@
   const referenceRoot = createRoot(reference);
   const results = [];
   const assert = (condition, message) => { if (!condition) throw new Error(message); };
-  const render = element => flushSync(() => root.render(element));
+  const dependencies = createTestDependencies();
+  const render = element => flushSync(() => root.render(withDependencies(element, dependencies)));
   const until = async predicate => {
     const deadline = performance.now() + 5000;
     while (!predicate() && performance.now() < deadline) await new Promise(resolve => setTimeout(resolve, 20));

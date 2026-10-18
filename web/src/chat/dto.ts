@@ -85,10 +85,20 @@ export type ChatEvent =
   | { type: "completed"; response: ChatResponse }
   | { type: "failed"; error: ChatError };
 
+/** 运行态输入引用由 adapter 读取；消息快照只保存附件名称和媒体类型。 */
+export interface ChatInputAttachment {
+  name: string;
+  mediaType: string;
+  id?: string;
+  size?: number;
+  file?: File;
+  url?: string;
+}
+
 export interface ChatRequestMessage {
   role: "user";
   text: string;
-  attachments?: { name: string; mediaType: string }[];
+  attachments?: ChatInputAttachment[];
 }
 
 export interface ChatRequest {

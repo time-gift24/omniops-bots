@@ -1,10 +1,10 @@
-import type { WorkbenchBackend } from "./backend";
+import type { WorkbenchBackend } from "@/workbench/backend"
 import {
   CHANGE_SET,
   MOCK_FILE_LINES,
   RECOMMENDED_SITES,
   WORKSPACE_FILES,
-} from "./mock-data";
+} from "./workbench-data"
 
 /**
  * 示例实现：只返回内存中的静态数据，用于布局与样式开发。
@@ -13,19 +13,16 @@ import {
 export function createMockWorkbenchBackend(): WorkbenchBackend {
   return {
     listRecommendations() {
-      return Promise.resolve(RECOMMENDED_SITES);
+      return Promise.resolve(RECOMMENDED_SITES)
     },
     listWorkspaceFiles() {
-      return Promise.resolve(WORKSPACE_FILES);
+      return Promise.resolve(WORKSPACE_FILES)
     },
-    readFilePreview(path) {
-      return Promise.resolve({ path, lines: MOCK_FILE_LINES });
+    readFilePreview(_scope, path) {
+      return Promise.resolve({ path, lines: MOCK_FILE_LINES })
     },
     getChangeSet() {
-      return Promise.resolve(CHANGE_SET);
+      return Promise.resolve(CHANGE_SET)
     },
-    openExternal(url) {
-      window.open(`https://${url}`, "_blank", "noopener");
-    },
-  };
+  }
 }

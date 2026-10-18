@@ -10,27 +10,30 @@ async function setup(t) {
     optimizeDeps: { noDiscovery: true, include: [] },
   })
   t.after(() => server.close())
-  const drafts = await server.ssrLoadModule("/src/skills/drafts.ts")
-  const { DEMO_SKILLS } = await server.ssrLoadModule("/src/skills/data.ts")
+  const { fileKey } = await server.ssrLoadModule("/src/skills/drafts.ts")
+  const { createBrowserStorage } = await server.ssrLoadModule("/src/adapters/browser-storage.ts")
+  const { DEMO_SKILLS } = await server.ssrLoadModule("/src/adapters/demo/skills.ts")
   const values = new Map()
   const storage = {
     getItem: (key) => values.get(key) ?? null,
-    setItem: (key, value) => values.set(key, value),
-    removeItem: (key) => values.delete(key),
+    setItem: (key, value) => { values.set(key, value) },
+    removeItem: (key) => { values.delete(key) },
   }
-  return { ...drafts, DEMO_SKILLS, storage, values }
+  const create = (backendId = "demo", providedStorage = storage) => createBrowserStorage(backendId, {
+    getStorage: () => providedStorage,
+    events: { addEventListener() {}, removeEventListener() {} },
+  }).skillDrafts
+  return { fileKey, DEMO_SKILLS, storage, values, create, cache: create() }
 }
 
-test("草稿按技能和文件隔离，完整源码与空内容刷新后保留", async (t) => {
-  const { fileKey, loadDrafts, saveDraft, DEMO_SKILLS, storage, values } =
-    await setup(t)
-  assert.deepEqual(loadDrafts(storage, DEMO_SKILLS), {})
+test("草稿按技能和文件隔离，完整源码与空内容重新加载后保留", async (t) => {
+  const { fileKey, DEMO_SKILLS, values, cache } = await setup(t)
+  assert.deepEqual(await cache.load(DEMO_SKILLS), {})
   for (const skill of DEMO_SKILLS) {
-    for (const file of skill.files)
-      saveDraft(storage, skill.id, file.path, file.content)
+    for (const file of skill.files) await cache.save(skill.id, file.path, file.content)
   }
-  saveDraft(storage, DEMO_SKILLS[0].id, "reference/template.md", "")
-  const restored = loadDrafts(storage, DEMO_SKILLS)
+  await cache.save(DEMO_SKILLS[0].id, "reference/template.md", "")
+  const restored = await cache.load(DEMO_SKILLS)
   for (const skill of DEMO_SKILLS) {
     for (const file of skill.files) {
       const expected = file.path === "reference/template.md" ? "" : file.content
@@ -38,57 +41,53 @@ test("草稿按技能和文件隔离，完整源码与空内容刷新后保留",
     }
   }
   assert.notEqual(fileKey("a/b", "c"), fileKey("a", "b/c"))
-  assert.ok(
-    [...values.keys()].every((key) =>
-      key.startsWith("cognacta:skill-draft:v1:")
-    )
-  )
+  assert.ok([...values.keys()].every(key => key.startsWith("cognacta:skill-draft:v1:")))
 })
 
-test("恢复原始内容只删除目标草稿，重新加载回退到原始文件", async (t) => {
-  const { fileKey, loadDrafts, saveDraft, removeDraft, DEMO_SKILLS, storage } =
-    await setup(t)
+test("恢复原始内容只删除目标草稿，demo兼容已有数据且删除后不复活", async (t) => {
+  const { fileKey, DEMO_SKILLS, cache, values, create } = await setup(t)
   const skill = DEMO_SKILLS[0]
   const file = skill.files[0]
-  saveDraft(storage, skill.id, file.path, "修改后的内容")
-  saveDraft(storage, skill.id, skill.files[1].path, "保留另一个文件")
-  removeDraft(storage, skill.id, file.path)
-  const restored = loadDrafts(storage, DEMO_SKILLS)
-  assert.equal(
-    restored[fileKey(skill.id, file.path)] ?? file.content,
-    file.content
-  )
-  assert.equal(
-    restored[fileKey(skill.id, skill.files[1].path)],
-    "保留另一个文件"
-  )
+  const legacyKey = `cognacta:skill-draft:v1:${fileKey(skill.id, file.path)}`
+  values.set(legacyKey, "旧版草稿")
+  assert.equal((await cache.load(DEMO_SKILLS))[fileKey(skill.id, file.path)], "旧版草稿")
+  await cache.save(skill.id, skill.files[1].path, "保留另一个文件")
+  await cache.remove(skill.id, file.path)
+  const restored = await create().load(DEMO_SKILLS)
+  assert.equal(restored[fileKey(skill.id, file.path)], undefined)
+  assert.equal(restored[fileKey(skill.id, skill.files[1].path)], "保留另一个文件")
+  assert.equal(values.has(legacyKey), false)
 })
 
-test("存储读取、写入和删除失败均交由界面处理，已有草稿不变", async (t) => {
-  const { fileKey, loadDrafts, saveDraft, removeDraft, DEMO_SKILLS, storage } =
-    await setup(t)
+test("存储读取、写入和删除失败通过Promise传出，已有草稿不变", async (t) => {
+  const { fileKey, DEMO_SKILLS, storage, create, cache } = await setup(t)
   const skill = DEMO_SKILLS[0]
   const file = skill.files[0]
-  saveDraft(storage, skill.id, file.path, "之前保存的版本")
+  await cache.save(skill.id, file.path, "之前保存的版本")
   const failure = new Error("storage unavailable")
-  const fail = () => {
-    throw failure
-  }
-  assert.throws(
-    () => loadDrafts({ ...storage, getItem: fail }, DEMO_SKILLS),
-    (error) => error === failure
-  )
-  assert.throws(
-    () =>
-      saveDraft({ ...storage, setItem: fail }, skill.id, file.path, "新版本"),
-    (error) => error === failure
-  )
-  assert.throws(
-    () => removeDraft({ ...storage, removeItem: fail }, skill.id, file.path),
-    (error) => error === failure
-  )
-  assert.equal(
-    loadDrafts(storage, DEMO_SKILLS)[fileKey(skill.id, file.path)],
-    "之前保存的版本"
-  )
+  const fail = () => { throw failure }
+  await assert.rejects(create("demo", { ...storage, getItem: fail }).load(DEMO_SKILLS), error => error === failure)
+  await assert.rejects(create("demo", { ...storage, setItem: fail }).save(skill.id, file.path, "新版本"), error => error === failure)
+  await assert.rejects(create("demo", { ...storage, removeItem: fail }).remove(skill.id, file.path), error => error === failure)
+  assert.equal((await cache.load(DEMO_SKILLS))[fileKey(skill.id, file.path)], "之前保存的版本")
+})
+
+test("两个后端的草稿命名空间互不读取、覆盖或删除，也不回退demo", async (t) => {
+  const { fileKey, DEMO_SKILLS, create, cache } = await setup(t)
+  const skill = DEMO_SKILLS[0]
+  const file = skill.files[0]
+  const key = fileKey(skill.id, file.path)
+  await cache.save(skill.id, file.path, "demo")
+  const web = create("web:https://example.com/a")
+  const desktop = create("desktop:local")
+  assert.deepEqual(await web.load(DEMO_SKILLS), {})
+  assert.deepEqual(await desktop.load(DEMO_SKILLS), {})
+  await web.save(skill.id, file.path, "web")
+  await desktop.save(skill.id, file.path, "desktop")
+  assert.equal((await web.load(DEMO_SKILLS))[key], "web")
+  assert.equal((await desktop.load(DEMO_SKILLS))[key], "desktop")
+  await web.remove(skill.id, file.path)
+  assert.equal((await web.load(DEMO_SKILLS))[key], undefined)
+  assert.equal((await desktop.load(DEMO_SKILLS))[key], "desktop")
+  assert.equal((await cache.load(DEMO_SKILLS))[key], "demo")
 })

@@ -1,20 +1,12 @@
 import {
   useCallback,
   useEffect,
-  useId,
   useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type MouseEvent,
-  type ComponentProps,
 } from "react"
-import {
-  animate,
-  useReducedMotion,
-  type AnimationPlaybackControls,
-} from "motion/react"
-import type { ExtraProps } from "streamdown"
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
 import {
   BookOpen01Icon,
@@ -26,13 +18,16 @@ import {
   RefreshIcon,
   SourceCodeIcon,
 } from "@hugeicons-pro/core-stroke-rounded"
-import { Markdown } from "@/components/chat/markdown"
 import {
   MarkdownEditor,
   type MarkdownEditorMode,
 } from "@/components/markdown/markdown-editor"
 import {
-  docsSectionId,
+  MarkdownOutline,
+  MarkdownReading,
+  useHeadingScroll,
+} from "@/components/markdown/markdown-reading"
+import {
   findDocsHeading,
   type DocsSection,
 } from "@/components/premium/docs-pages/docs-data"
@@ -49,45 +44,17 @@ import {
   CodeBlockTitle,
 } from "@/components/ui/code-block"
 import { useHighlightedCode } from "@/hooks/use-highlighted-code"
-import { SPRING_GLIDE } from "@/lib/ease"
 import { cn } from "@/lib/utils"
-import { DEMO_SKILLS } from "@/skills/data"
-import { fileKey, loadDrafts, removeDraft, saveDraft } from "@/skills/drafts"
-import {
-  headingSlug,
-  resolveSkillLink,
-  splitFrontmatter,
-} from "@/skills/content"
+import { useAppDependencies } from "@/app/dependencies"
+import type { Skill } from "@/skills/source"
+import { fileKey } from "@/skills/drafts"
+import { resolveSkillLink } from "@/skills/content"
 import {
   BranchedMenu,
   type BranchedMenuChild,
   type BranchedMenuItem,
 } from "./branched-menu"
 import "@/components/premium/docs-pages/docs-article.css"
-
-function SkillLink({
-  href,
-  children,
-  node: _node,
-  ...props
-}: ComponentProps<"a"> & ExtraProps) {
-  const local =
-    href?.startsWith("/") ||
-    href?.startsWith("#") ||
-    href?.startsWith("https://skill.invalid/")
-  return (
-    <a
-      {...props}
-      href={href}
-      target={local ? undefined : "_blank"}
-      rel="noopener noreferrer"
-      className="rounded-sm text-primary underline decoration-primary/40 underline-offset-4 outline-none hover:decoration-primary focus-visible:ring-2 focus-visible:ring-ring"
-    >
-      {children}
-    </a>
-  )
-}
-const skillMarkdownComponents = { a: SkillLink }
 
 function SourceView({ source, path }: { source: string; path: string }) {
   const lines = useHighlightedCode(source, "javascript")
@@ -105,64 +72,6 @@ function SourceView({ source, path }: { source: string; path: string }) {
         ))}
       </CodeBlockContent>
     </CodeBlock>
-  )
-}
-
-function SkillPreview({
-  source,
-  path,
-  onSections,
-  onLink,
-}: {
-  source: string
-  path: string
-  onSections: (sections: DocsSection[]) => void
-  onLink: (event: MouseEvent<HTMLDivElement>) => void
-}) {
-  const root = useRef<HTMLDivElement>(null)
-  const instanceId = useId()
-  const { metadata, body } = splitFrontmatter(source)
-  useLayoutEffect(() => {
-    const used = new Map<string, number>()
-    const sections = Array.from(
-      root.current?.querySelectorAll<HTMLElement>("h1,h2,h3,h4,h5,h6") ?? []
-    ).map((heading) => {
-      const label = heading.textContent ?? ""
-      const base = headingSlug(label)
-      const count = used.get(base) ?? 0
-      used.set(base, count + 1)
-      const id = count ? `${base}-${count}` : base
-      heading.id = docsSectionId(`${instanceId}-${id}`)
-      heading.dataset.docsSection = id
-      return { id, label, level: Number(heading.tagName.slice(1)) }
-    })
-    onSections(sections.filter((section) => section.level <= 2))
-  }, [body, instanceId, onSections])
-  return (
-    <div ref={root} className="skill-preview" onClickCapture={onLink}>
-      {body.trim() ? (
-        <Markdown
-          linkBase={`https://skill.invalid/${path}`}
-          componentOverrides={skillMarkdownComponents}
-        >
-          {body}
-        </Markdown>
-      ) : (
-        <p className="py-12 text-center text-sm text-muted-foreground">
-          这个文件还是空的，点击「编辑」开始编写。
-        </p>
-      )}
-      {metadata !== null ? (
-        <details className="mt-12 border-t border-border pt-5 text-sm text-muted-foreground">
-          <summary className="w-fit cursor-pointer rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            文件元数据（frontmatter）
-          </summary>
-          <pre className="mt-4 overflow-x-auto rounded-lg bg-muted p-4 font-mono text-xs leading-6 text-foreground">
-            {metadata}
-          </pre>
-        </details>
-      ) : null}
-    </div>
   )
 }
 
@@ -207,30 +116,28 @@ function SkillFileNav({
   )
 }
 
-function initialDrafts() {
-  try {
-    return { saved: loadDrafts(window.localStorage, DEMO_SKILLS), error: "" }
-  } catch {
-    return {
-      saved: {} as Record<string, string>,
-      error:
-        "无法读取本地草稿。请检查浏览器的存储权限；新编辑的内容会暂留在页面中。",
-    }
-  }
-}
-
 export function SkillScreen({
+  skills,
   skillId,
   active,
 }: {
+  skills: readonly Skill[]
   skillId: string
   active: boolean
 }) {
-  const [initial] = useState(initialDrafts)
-  const [saved, setSaved] = useState(initial.saved)
-  const [contents, setContents] = useState(initial.saved)
-  const [error, setError] = useState(initial.error)
+  const { skillDrafts, host } = useAppDependencies()
+  const [saved, setSaved] = useState<Record<string, string>>({})
+  const [contents, setContents] = useState<Record<string, string>>({})
+  const [loaded, setLoaded] = useState<{
+    cache: typeof skillDrafts
+    skills: readonly Skill[]
+  } | null>(null)
+  const loading = loaded?.cache !== skillDrafts || loaded?.skills !== skills
+  const [error, setError] = useState("")
   const [message, setMessage] = useState("")
+  const [busy, setBusy] = useState(false)
+  const operation = useRef(false)
+  const mounted = useRef(false)
   const [paths, setPaths] = useState<Record<string, string>>({})
   const [editing, setEditing] = useState(false)
   const [mode, setMode] = useState<MarkdownEditorMode>("source")
@@ -241,16 +148,49 @@ export function SkillScreen({
     key: string
     sections: DocsSection[]
   }>({ key: "", sections: [] })
-  const skill =
-    DEMO_SKILLS.find((entry) => entry.id === skillId) ?? DEMO_SKILLS[0]
-  const path = paths[skill.id] ?? "SKILL.md"
-  const file = skill.files.find((entry) => entry.path === path)
-  const key = fileKey(skill.id, path)
+  const skill = skills.find((entry) => entry.id === skillId) ?? skills[0]
+  const path = (skill && paths[skill.id]) ?? "SKILL.md"
+  const file = skill?.files.find((entry) => entry.path === path)
+  const key = fileKey(skill?.id ?? "", path)
+  const selectedKey = useRef(key)
+  useLayoutEffect(() => {
+    selectedKey.current = key
+  }, [key])
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+    }
+  }, [])
+  useEffect(() => {
+    let live = true
+    void Promise.resolve()
+      .then(() => skillDrafts.load(skills))
+      .then(
+        (drafts) => {
+          if (!live) return
+          // A refreshed catalog must not replace edits already held by this screen.
+          setSaved((current) => ({ ...drafts, ...current }))
+          setContents((current) => ({ ...drafts, ...current }))
+          setLoaded({ cache: skillDrafts, skills })
+        },
+        () => {
+          if (!live) return
+          setError(
+            "无法读取本地草稿。请检查存储权限；新编辑的内容会暂留在页面中。"
+          )
+          setLoaded({ cache: skillDrafts, skills })
+        }
+      )
+    return () => {
+      live = false
+    }
+  }, [skillDrafts, skills])
   const source = contents[key] ?? file?.content ?? ""
   const original = file?.content ?? ""
   const dirty = source !== (saved[key] ?? original)
   const markdown = path.toLowerCase().endsWith(".md")
-  const unsaved = DEMO_SKILLS.some((item) =>
+  const unsaved = skills.some((item) =>
     item.files.some((entry) => {
       const id = fileKey(item.id, entry.path)
       return (contents[id] ?? entry.content) !== (saved[id] ?? entry.content)
@@ -268,60 +208,35 @@ export function SkillScreen({
     outlineSections.map((section) => section.id),
     editing ? editorPreviewRef : scrollRef
   )
-  const reduceMotion = useReducedMotion()
-  const scrollAnimation = useRef<AnimationPlaybackControls | null>(null)
-  useLayoutEffect(
-    () => () => {
-      scrollAnimation.current?.stop()
-      scrollAnimation.current = null
-    },
-    [key, editing, mode, reduceMotion]
+  const resolveScroll = useCallback(
+    () => editorPreviewRef.current ?? scrollRef.current,
+    []
   )
-  const scrollToY = useCallback(
-    (top: number) => {
-      const el = editorPreviewRef.current ?? scrollRef.current
-      if (!el) return
-      scrollAnimation.current?.stop()
-      if (reduceMotion) {
-        el.scrollTop = top
-        return
-      }
-      scrollAnimation.current = animate(el.scrollTop, top, {
-        ...SPRING_GLIDE,
-        type: "spring",
-        onUpdate: (value) => {
-          el.scrollTop = value
-        },
-      })
-    },
-    [reduceMotion]
-  )
-  const scrollToHeading = useCallback(
-    (node: HTMLElement) => {
-      const el = editorPreviewRef.current ?? scrollRef.current
-      if (!el) return
-      // 2rem scroll-margin-top，与 .skill-preview 标题的 scroll-margin 对齐。
-      const top =
-        node.getBoundingClientRect().top -
-        el.getBoundingClientRect().top +
-        el.scrollTop -
-        32
-      scrollToY(Math.max(0, top))
-    },
-    [scrollToY]
+  const { scrollToY, scrollToHeading } = useHeadingScroll(
+    resolveScroll,
+    `${key}:${editing ? mode : "reading"}`
   )
 
-  function save() {
-    if (!file || !dirty) return
+  async function save() {
+    if (!skill || !file || !dirty || loading || operation.current) return
+    operation.current = true
+    setBusy(true)
     try {
-      saveDraft(window.localStorage, skill.id, path, source)
+      await skillDrafts.save(skill.id, path, source)
+      if (!mounted.current) return
       setSaved((current) => ({ ...current, [key]: source }))
-      setError("")
-      setMessage("已保存到此浏览器")
+      if (selectedKey.current === key) {
+        setError("")
+        setMessage("草稿已保存")
+      }
     } catch {
-      setError(
-        "草稿保存失败，编辑内容仍在页面中。请检查存储权限或可用空间，再重试保存。"
-      )
+      if (mounted.current && selectedKey.current === key)
+        setError(
+          "草稿保存失败，编辑内容仍在页面中。请检查存储权限或可用空间，再重试保存。"
+        )
+    } finally {
+      operation.current = false
+      if (mounted.current) setBusy(false)
     }
   }
 
@@ -340,7 +255,7 @@ export function SkillScreen({
     const shortcut = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
         event.preventDefault()
-        save()
+        void save()
       }
     }
     window.addEventListener("keydown", shortcut)
@@ -348,34 +263,51 @@ export function SkillScreen({
   })
 
   function selectFile(nextPath: string) {
+    if (!skill) return
     setPaths((current) => ({ ...current, [skill.id]: nextPath }))
     setEditing(false)
     setMessage("")
   }
 
-  function restore() {
-    if (
-      !window.confirm(
-        `将 ${path} 恢复为演示原始内容？此文件的编辑和本地草稿会被移除。`
-      )
-    )
-      return
+  async function restore() {
+    if (!skill || loading || operation.current) return
+    operation.current = true
+    setBusy(true)
     try {
-      removeDraft(window.localStorage, skill.id, path)
-      setContents((current) => ({ ...current, [key]: original }))
+      if (
+        !(await host.confirm(
+          `将 ${path} 恢复为原始内容？此文件的编辑和本地草稿会被移除。`
+        ))
+      )
+        return
+      if (!mounted.current) return
+      await skillDrafts.remove(skill.id, path)
+      if (!mounted.current) return
+      setContents((current) =>
+        (current[key] ?? original) === source
+          ? { ...current, [key]: original }
+          : current
+      )
       setSaved((current) => {
         const next = { ...current }
         delete next[key]
         return next
       })
-      setError("")
-      setMessage("已恢复原始内容")
+      if (selectedKey.current === key) {
+        setError("")
+        setMessage("已恢复原始内容")
+      }
     } catch {
-      setError("未能移除本地草稿，内容保持原样。请检查存储权限后重试。")
+      if (mounted.current && selectedKey.current === key)
+        setError("未能移除本地草稿，内容保持原样。请检查存储权限后重试。")
+    } finally {
+      operation.current = false
+      if (mounted.current) setBusy(false)
     }
   }
 
   function followLink(event: MouseEvent<HTMLDivElement>) {
+    if (!skill) return
     const anchor = (event.target as Element).closest("a")
     if (!anchor) return
     let href = anchor.getAttribute("href")
@@ -396,10 +328,7 @@ export function SkillScreen({
     selectFile(target.path)
     requestAnimationFrame(() => {
       if (target.hash) {
-        const node = findDocsHeading(
-          editorPreviewRef.current ?? scrollRef.current,
-          target.hash
-        )
+        const node = findDocsHeading(resolveScroll(), target.hash)
         if (node) scrollToHeading(node)
       } else {
         scrollToY(0)
@@ -408,6 +337,7 @@ export function SkillScreen({
   }
 
   const menuItems = useMemo<BranchedMenuItem[]>(() => {
+    if (!skill) return []
     const fileBadge = (entryPath: string) => {
       const entry = skill.files.find((file) => file.path === entryPath)
       const id = fileKey(skill.id, entryPath)
@@ -472,11 +402,16 @@ export function SkillScreen({
   }
 
   const preview = (
-    <SkillPreview
+    <MarkdownReading
       source={source}
-      path={path}
+      linkBase={`https://skill.invalid/${path}`}
       onSections={updateSections}
       onLink={followLink}
+      empty={
+        <p className="py-12 text-center text-sm text-muted-foreground">
+          这个文件还是空的，点击「编辑」开始编写。
+        </p>
+      }
     />
   )
 
@@ -540,7 +475,7 @@ export function SkillScreen({
               </Button>
               <Button
                 className="rounded-full"
-                disabled={!dirty}
+                disabled={!dirty || loading || busy}
                 onClick={save}
                 title="保存草稿（⌘/Ctrl+S）"
               >
@@ -561,6 +496,7 @@ export function SkillScreen({
                   className="rounded-full"
                   aria-label="恢复原始内容"
                   title="恢复原始内容"
+                  disabled={loading || busy}
                   onClick={restore}
                 >
                   <HugeiconsIcon
@@ -572,6 +508,7 @@ export function SkillScreen({
               ) : null}
               <Button
                 className="rounded-full"
+                disabled={loading || busy || !skill}
                 onClick={() => {
                   setEditing(true)
                   setMode("source")
@@ -614,19 +551,19 @@ export function SkillScreen({
         <div
           ref={scrollRef}
           className={cn(
-            "skill-docs-scroll min-w-0 flex-1 overflow-y-auto overscroll-contain",
+            "doc-reading-scroll skill-docs-scroll min-w-0 flex-1 overflow-y-auto overscroll-contain",
             editing && "overflow-hidden"
           )}
           tabIndex={0}
           aria-label="文件内容"
         >
           <div
-            className={cn("skill-reading-layout", wide && "skill-reading-wide")}
+            className={cn("doc-reading-layout", wide && "doc-reading-wide")}
             style={editing ? { height: "100%", maxWidth: "none" } : undefined}
           >
             <article
               className={cn(
-                "skill-article min-w-0",
+                "doc-article min-w-0",
                 editing && "flex h-full min-h-0 flex-col p-3!"
               )}
             >
@@ -658,35 +595,14 @@ export function SkillScreen({
               )}
             </article>
             {!wide && outlineSections.length > 0 ? (
-              <aside className="skill-outline">
-                <div className="skill-outline-sticky">
-                  <p className="mb-3 text-xs font-medium text-muted-foreground">
-                    本页目录
-                  </p>
-                  <BranchedMenu
-                    ariaLabel="本页目录"
-                    items={outlineSections.map((section) => ({
-                      label: section.label,
-                      value: section.id,
-                    }))}
-                    active={activeSection ?? ""}
-                    onSelect={(id) => {
-                      const node = findDocsHeading(
-                        editorPreviewRef.current ?? scrollRef.current,
-                        id
-                      )
-                      if (node) scrollToHeading(node)
-                    }}
-                    color="var(--sidebar-foreground)"
-                    accentColor="var(--primary)"
-                    lineColor="var(--border-strong)"
-                    width={168}
-                    rowHeight={32}
-                    fontSize={13}
-                    className="branched-menu--fill"
-                  />
-                </div>
-              </aside>
+              <MarkdownOutline
+                sections={outlineSections}
+                active={activeSection ?? ""}
+                onSelect={(id) => {
+                  const node = findDocsHeading(resolveScroll(), id)
+                  if (node) scrollToHeading(node)
+                }}
+              />
             ) : null}
           </div>
         </div>

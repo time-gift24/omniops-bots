@@ -1,17 +1,18 @@
-import { HugeiconsIcon } from "@hugeicons/react";
-import { FileTextIcon } from "@hugeicons-pro/core-stroke-rounded";
-import type { WorkbenchBackend, WorkspaceFileEntry } from "@/workbench/backend";
-import {
-  useBackendData,
-  type BackendDataState,
-} from "./use-backend-data";
+import { HugeiconsIcon } from "@hugeicons/react"
+import { FileTextIcon } from "@hugeicons-pro/core-stroke-rounded"
+import type {
+  WorkbenchBackend,
+  WorkbenchScope,
+  WorkspaceFileEntry,
+} from "@/workbench/backend"
+import { useBackendData, type BackendDataState } from "./use-backend-data"
 
 function FileList({
   files,
   onOpenFile,
 }: {
-  files: BackendDataState<readonly WorkspaceFileEntry[]>;
-  onOpenFile: (path: string) => void;
+  files: BackendDataState<readonly WorkspaceFileEntry[]>
+  onOpenFile: (path: string) => void
 }) {
   if (files.status === "loading") {
     return (
@@ -23,21 +24,21 @@ function FileList({
           />
         ))}
       </ul>
-    );
+    )
   }
   if (files.status === "error") {
     return (
       <p className="px-2.5 py-2 text-xs text-muted-foreground">
         文件列表加载失败。
       </p>
-    );
+    )
   }
   if (files.data.length === 0) {
     return (
       <p className="px-2.5 py-2 text-xs text-muted-foreground">
         工作区目录为空。
       </p>
-    );
+    )
   }
   return (
     <ul className="space-y-0.5">
@@ -46,7 +47,7 @@ function FileList({
           <button
             type="button"
             onClick={() => onOpenFile(file.path)}
-            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
           >
             <HugeiconsIcon
               icon={FileTextIcon}
@@ -68,34 +69,47 @@ function FileList({
         </li>
       ))}
     </ul>
-  );
+  )
 }
 
 export function FilesView({
   backend,
+  scope,
   onOpenFile,
 }: {
-  backend: WorkbenchBackend;
-  onOpenFile: (path: string) => void;
+  backend: WorkbenchBackend
+  scope: WorkbenchScope | null
+  onOpenFile: (path: string) => void
 }) {
-  const files = useBackendData("workspace-files", () =>
-    backend.listWorkspaceFiles(),
-  );
+  const files = useBackendData(
+    JSON.stringify(scope),
+    () => (scope ? backend.listWorkspaceFiles(scope) : Promise.resolve([])),
+    backend
+  )
   return (
     <div className="h-full overflow-auto p-2">
       <FileList files={files} onOpenFile={onOpenFile} />
     </div>
-  );
+  )
 }
 
 export function FileView({
   backend,
+  scope,
   path,
 }: {
-  backend: WorkbenchBackend;
-  path: string;
+  backend: WorkbenchBackend
+  scope: WorkbenchScope | null
+  path: string
 }) {
-  const preview = useBackendData(path, () => backend.readFilePreview(path));
+  const preview = useBackendData(
+    JSON.stringify([scope, path]),
+    () =>
+      scope
+        ? backend.readFilePreview(scope, path)
+        : Promise.resolve({ path, lines: [] }),
+    backend
+  )
   return (
     <div className="h-full overflow-auto p-3">
       <div className="overflow-hidden rounded-xl border border-border bg-card">
@@ -120,7 +134,7 @@ export function FileView({
               <li key={index} className="flex gap-4 whitespace-pre">
                 <span
                   aria-hidden="true"
-                  className="w-6 shrink-0 text-right text-muted-foreground/50 select-none tabular-nums"
+                  className="w-6 shrink-0 text-right text-muted-foreground/50 tabular-nums select-none"
                 >
                   {index + 1}
                 </span>
@@ -131,5 +145,5 @@ export function FileView({
         )}
       </div>
     </div>
-  );
+  )
 }

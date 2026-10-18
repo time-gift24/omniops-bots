@@ -11,8 +11,8 @@
   import { flushSync } from "react-dom";
   import { MotionConfig } from "motion/react";
   import "/src/index.css";
-  import { bindChatGateway } from "/src/chat/binding.ts";
-  import { defaultThreadRegistry } from "/src/chat/react.ts";
+  import { createTestDependencies, withDependencies } from "/tests/support.tsx";
+  import { DEMO_MODELS } from "/src/adapters/demo/resources.ts";
   import { ChatScreen } from "/src/components/chat/chat-screen.tsx";
 
   const fixture = document.querySelector("#fixture");
@@ -22,7 +22,7 @@
   const assert = (condition, message) => { if (!condition) throw new Error(message); };
   const wait = (ms = 0) => new Promise(resolve => setTimeout(resolve, ms));
   const gateways = new Map();
-  bindChatGateway(id => {
+  const dependencies = createTestDependencies({ gatewayFor: id => {
     const gateway = {
       requests: [], pending: null, aborts: 0,
       async *stream(request) {
@@ -39,11 +39,11 @@
     };
     gateways.set(id, gateway);
     return gateway;
-  });
-  const first = defaultThreadRegistry.get("subscriptions-first");
-  const second = defaultThreadRegistry.get("subscriptions-second");
+  } });
+  const first = dependencies.threads.get("subscriptions-first");
+  const second = dependencies.threads.get("subscriptions-second");
   const metadata = { providerName: "test", protocolName: "test", requestedModel: "sonnet-5" };
-  const render = id => flushSync(() => root.render(h(MotionConfig, { reducedMotion: "always" }, h(ChatScreen, { threadId: id }))));
+  const render = id => flushSync(() => root.render(withDependencies(h(MotionConfig, { reducedMotion: "always" }, h(ChatScreen, { threadId: id, models: DEMO_MODELS })), dependencies)));
   const editor = () => fixture.querySelector('[role="textbox"]');
   const action = label => fixture.querySelector(`button[aria-label="${label}"]`);
   const click = element => { assert(element, "Expected action is missing"); flushSync(() => element.click()); };
@@ -145,6 +145,6 @@
     first.stop();
     second.stop();
     root.unmount();
-    defaultThreadRegistry.evictIdle();
+    dependencies.threads.evictIdle();
   }
 </script>

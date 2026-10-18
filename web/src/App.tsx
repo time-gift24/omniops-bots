@@ -18,16 +18,18 @@ import {
   Search01Icon,
 } from "@hugeicons-pro/core-stroke-rounded"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
-import { defaultThreadRegistry } from "@/chat/react"
+import { useAppDependencies } from "@/app/dependencies"
+import type { AgentEntry, AgentResources } from "@/agents/source"
+import type { Skill } from "@/skills/source"
+import type { ModelChoice } from "@/models/source"
+import { useBackendData } from "@/components/workbench/use-backend-data"
 import { ChatScreen } from "@/components/chat/chat-screen"
-import {
-  type AgentConfiguration,
-  DEFAULT_AGENT,
-} from "@/components/premium/agent-builder/agent-builder-data"
 import { MorphicTooltip } from "@/components/premium/morphic-tooltip/morphic-tooltip"
 import {
   defaultSections,
   SidebarRail,
+  type SidebarRailItem,
+  type SidebarRailSection,
 } from "@/components/premium/sidebar-blocks/sidebar-rail"
 import { Button } from "@/components/ui/button"
 import { Breadcrumbs } from "@/components/ui/breadcrumbs"
@@ -46,10 +48,7 @@ import {
 import { WorkspacePanel } from "@/components/workspace/workspace-panel"
 import { WorkspacePicker } from "@/components/workspace/workspace-picker"
 import { EASE_OUT } from "@/lib/ease"
-import { createMockWorkbenchBackend } from "@/workbench/mock-backend"
-import { createWorkspaceStore } from "@/workspace/store"
 import { ThemePicker } from "@/components/theme-picker"
-import { DEMO_SKILLS } from "@/skills/data"
 
 const AgentBuilder = lazy(() =>
   import("@/components/premium/agent-builder/agent-builder").then((module) => ({
@@ -91,37 +90,88 @@ class PageLoadBoundary extends Component<
   }
 }
 
-type AgentEntry = {
-  id: string
-  configuration: AgentConfiguration
-  draft?: AgentConfiguration
-}
-
-const INITIAL_AGENTS: readonly AgentEntry[] = [
-  { id: "customer-support", configuration: DEFAULT_AGENT },
-  {
-    id: "weekly-data-report",
-    configuration: {
-      name: "数据周报",
-      description: "汇总业务数据，生成每周报告。",
-      instructions:
-        "你是数据分析助手。每周一汇总上周的核心业务指标，通过只读查询核实数据，引用指标字典中的口径。产出结构化的周报：亮点、异常、下周关注点。",
-      mcpServerIds: ["database", "feishu"],
-      toolIds: ["search"],
-      skillIds: ["weekly-report"],
-      requireApproval: false,
-    },
-  },
-]
-
 type View =
   | { kind: "chat" }
   | { kind: "agent"; agentId: string }
   | { kind: "skill" }
   | { kind: "page"; sectionId: string; itemId: string }
+  | { kind: "section"; sectionId: string; workspaceId?: string }
 
 export function App() {
-  const [store] = useState(() => createWorkspaceStore(defaultThreadRegistry))
+  const dependencies = useAppDependencies()
+  const [attempt, setAttempt] = useState(0)
+  const agents = useBackendData(
+    attempt,
+    () => dependencies.agents.load(),
+    dependencies.agents
+  )
+  const skills = useBackendData(
+    attempt,
+    () => dependencies.skills.list(),
+    dependencies.skills
+  )
+  const models = useBackendData(
+    attempt,
+    () => dependencies.models.list(),
+    dependencies.models
+  )
+  if (
+    agents.status === "error" ||
+    skills.status === "error" ||
+    models.status === "error"
+  ) {
+    return (
+      <div
+        role="alert"
+        className="grid h-full place-content-center gap-3 text-center"
+      >
+        <p>资源加载失败，请重试。</p>
+        <Button
+          variant="outline"
+          onClick={() => setAttempt((current) => current + 1)}
+        >
+          重试
+        </Button>
+      </div>
+    )
+  }
+  if (
+    agents.status !== "ready" ||
+    skills.status !== "ready" ||
+    models.status !== "ready"
+  ) {
+    return (
+      <p role="status" className="p-6 text-sm text-muted-foreground">
+        正在加载工作区…
+      </p>
+    )
+  }
+  return (
+    <WorkspaceApp
+      initialAgents={agents.data.agents}
+      resources={agents.data.resources}
+      skills={skills.data}
+      models={models.data}
+    />
+  )
+}
+
+function WorkspaceApp({
+  initialAgents,
+  resources,
+  skills,
+  models,
+}: {
+  initialAgents: readonly AgentEntry[]
+  resources: AgentResources
+  skills: readonly Skill[]
+  models: readonly ModelChoice[]
+}) {
+  const {
+    workspaces: store,
+    workbench: workbenchBackend,
+    agents: agentSource,
+  } = useAppDependencies()
   const state = useSyncExternalStore(
     store.subscribe,
     store.getState,
@@ -129,14 +179,13 @@ export function App() {
   )
   const [picker, setPicker] = useState<"add" | "choose" | null>(null)
   const [skillSearchOpen, setSkillSearchOpen] = useState(false)
-  const [agents, setAgents] = useState<readonly AgentEntry[]>(INITIAL_AGENTS)
+  const [agents, setAgents] = useState<readonly AgentEntry[]>(initialAgents)
+  const [openedAgentId, setOpenedAgentId] = useState<string | null>(null)
   const [view, setView] = useState<View>({ kind: "chat" })
   const [agentToolbarTarget, setAgentToolbarTarget] =
     useState<HTMLDivElement | null>(null)
   const [openedSkillId, setOpenedSkillId] = useState<string | null>(null)
   const [workbenchOpen, setWorkbenchOpen] = useState(true)
-  // 后端接入时替换为真实实现，UI 只依赖 WorkbenchBackend 接口。
-  const [workbenchBackend] = useState(() => createMockWorkbenchBackend())
   const workbenchId = useId()
   const workbenchRef = useRef<WorkbenchHandle>(null)
   const workbenchToggleRef = useRef<HTMLButtonElement>(null)
@@ -181,17 +230,14 @@ export function App() {
   const activeWorkspace = state.workspaces.find(
     (workspace) => workspace.id === activeSession?.workspaceId
   )
-  const activeAgent =
-    view.kind === "agent"
-      ? agents.find((agent) => agent.id === view.agentId)
-      : undefined
-  const activeSkill = DEMO_SKILLS.find((skill) => skill.id === openedSkillId)
+  const activeAgent = agents.find((agent) => agent.id === openedAgentId)
+  const activeSkill = skills.find((skill) => skill.id === openedSkillId)
   const activeSectionId =
     view.kind === "agent"
       ? "agents"
       : view.kind === "skill"
         ? "skills"
-        : view.kind === "page"
+        : view.kind === "page" || view.kind === "section"
           ? view.sectionId
           : "workspace"
   const activeItemId =
@@ -201,7 +247,9 @@ export function App() {
         ? `skill:${openedSkillId}`
         : view.kind === "page"
           ? view.itemId
-          : (activeSession?.id ?? "")
+          : view.kind === "section"
+            ? ""
+            : (activeSession?.id ?? "")
   const agentSection = {
     id: "agents",
     label: "Agent",
@@ -244,7 +292,11 @@ export function App() {
             })),
             renderContent: (close: () => void) => (
               <WorkspacePanel
-                state={state}
+                state={
+                  view.kind === "section"
+                    ? { ...state, activeSessionId: null }
+                    : state
+                }
                 store={store}
                 onAdd={() => setPicker("add")}
                 onNavigate={() => {
@@ -283,7 +335,7 @@ export function App() {
               </Button>
             </MorphicTooltip>
           ),
-          items: DEMO_SKILLS.map((skill) => ({
+          items: skills.map((skill) => ({
             id: `skill:${skill.id}`,
             label: skill.name,
             icon: PackageIcon,
@@ -293,10 +345,59 @@ export function App() {
     },
     ...defaultSections.slice(1),
   ]
-  const activePage = sections
-    .find((section) => section.id === activeSectionId)
-    ?.groups.flatMap((group) => group.items)
+  const activeSection = sections.find(
+    (section) => section.id === activeSectionId
+  )
+  const activePage = activeSection?.groups
+    .flatMap((group) => group.items)
     .find((item) => item.id === activeItemId)
+  const overviewWorkspace =
+    view.kind === "section"
+      ? state.workspaces.find((workspace) => workspace.id === view.workspaceId)
+      : undefined
+  const overviewItems: readonly SidebarRailItem[] =
+    view.kind === "section" && view.sectionId === "workspace"
+      ? overviewWorkspace
+        ? state.sessions
+            .filter((session) => session.workspaceId === overviewWorkspace.id)
+            .map((session) => ({
+              id: session.id,
+              label: session.blank ? "新会话" : session.title,
+            }))
+        : state.workspaces.map((workspace) => ({
+            id: `workspace:${workspace.id}`,
+            label: workspace.name,
+          }))
+      : (activeSection?.groups.flatMap((group) => group.items) ?? [])
+
+  function openSection(sectionId: string, workspaceId?: string) {
+    contentRef.current?.focus({ preventScroll: true })
+    setView({ kind: "section", sectionId, workspaceId })
+  }
+
+  function selectItem(item: SidebarRailItem, section: SidebarRailSection) {
+    if (section.id === "skills") {
+      setOpenedSkillId(item.id.slice("skill:".length))
+      setView({ kind: "skill" })
+      return
+    }
+    if (section.id === "agents") {
+      wasWorkbenchOpen.current = false
+      setWorkbenchOpen(false)
+      const agentId = item.id.slice("agent:".length)
+      setOpenedAgentId(agentId)
+      setView({ kind: "agent", agentId })
+      return
+    }
+    if (section.id !== "workspace") {
+      setView({ kind: "page", sectionId: section.id, itemId: item.id })
+      return
+    }
+    setView({ kind: "chat" })
+    if (item.id.startsWith("workspace:"))
+      store.startSession(item.id.slice("workspace:".length))
+    else store.selectSession(item.id)
+  }
 
   return (
     <>
@@ -308,6 +409,7 @@ export function App() {
         onSectionSelect={(section) => {
           if (section.id === "workspace") setView({ kind: "chat" })
         }}
+        onParentSelect={(section) => openSection(section.id)}
         workspaceHeaderClassName={workbenchOpen ? undefined : "pr-10"}
         workspaceHeader={
           view.kind === "agent" ? (
@@ -316,16 +418,41 @@ export function App() {
               className="@container/agent-header flex min-w-0 flex-1"
             />
           ) : view.kind === "skill" ? (
-            <Breadcrumbs items={["技能", activeSkill?.name ?? "技能"]} />
+            <Breadcrumbs
+              items={[
+                { label: "技能", onSelect: () => openSection("skills") },
+                { label: activeSkill?.name ?? "技能" },
+              ]}
+            />
           ) : view.kind === "chat" ? (
             <Breadcrumbs
               items={[
-                "工作区",
+                { label: "工作区", onSelect: () => openSection("workspace") },
                 ...(activeWorkspace && activeSession
                   ? [
-                      activeWorkspace.name,
-                      activeSession.blank ? "新会话" : activeSession.title,
+                      {
+                        label: activeWorkspace.name,
+                        onSelect: () =>
+                          openSection("workspace", activeWorkspace.id),
+                      },
+                      {
+                        label: activeSession.blank
+                          ? "新会话"
+                          : activeSession.title,
+                      },
                     ]
+                  : []),
+              ]}
+            />
+          ) : view.kind === "section" ? (
+            <Breadcrumbs
+              items={[
+                {
+                  label: activeSection?.label ?? "工作区",
+                  onSelect: () => openSection(view.sectionId),
+                },
+                ...(overviewWorkspace
+                  ? [{ label: overviewWorkspace.name }]
                   : []),
               ]}
             />
@@ -337,6 +464,16 @@ export function App() {
             id={workbenchId}
             open={workbenchOpen}
             backend={workbenchBackend}
+            scope={
+              activeSession && activeWorkspace
+                ? {
+                    workspaceId: activeWorkspace.id,
+                    workspacePath: activeWorkspace.path,
+                    sessionId: activeSession.id,
+                  }
+                : null
+            }
+            models={models}
             onClose={() => setWorkbenchOpen(false)}
           />
         }
@@ -381,28 +518,7 @@ export function App() {
           setView({ kind: "chat" })
           if (!store.startSession()) setPicker("choose")
         }}
-        onItemSelect={(item, section) => {
-          if (section.id === "skills") {
-            setOpenedSkillId(item.id.slice("skill:".length))
-            setView({ kind: "skill" })
-            return
-          }
-          if (section.id === "agents") {
-            // 页面切换保留导航焦点，不触发工作台关闭后的焦点回移。
-            wasWorkbenchOpen.current = false
-            setWorkbenchOpen(false)
-            setView({ kind: "agent", agentId: item.id.slice("agent:".length) })
-            return
-          }
-          if (section.id !== "workspace") {
-            setView({ kind: "page", sectionId: section.id, itemId: item.id })
-            return
-          }
-          setView({ kind: "chat" })
-          if (item.id.startsWith("workspace:"))
-            store.startSession(item.id.slice("workspace:".length))
-          else store.selectSession(item.id)
-        }}
+        onItemSelect={selectItem}
       >
         <div className="h-full min-h-0">
           <div
@@ -426,6 +542,7 @@ export function App() {
                     }
                   >
                     <SkillScreen
+                      skills={skills}
                       skillId={openedSkillId}
                       active={view.kind === "skill"}
                     />
@@ -433,61 +550,114 @@ export function App() {
                 </PageLoadBoundary>
               </div>
             ) : null}
-            {view.kind === "page" ? (
+            {activeAgent ? (
+              <div
+                className={view.kind === "agent" ? "h-full min-h-0" : "hidden"}
+              >
+                <PageLoadBoundary>
+                  <Suspense
+                    fallback={
+                      <p
+                        role="status"
+                        className="p-6 text-sm text-muted-foreground"
+                      >
+                        正在加载 Agent…
+                      </p>
+                    }
+                  >
+                    <AgentBuilder
+                      key={activeAgent.id}
+                      initialConfiguration={activeAgent.configuration}
+                      mcpServers={resources.mcpServers}
+                      tools={resources.tools}
+                      skills={resources.skills}
+                      initialDraft={activeAgent.draft}
+                      onDraftChange={(draft) =>
+                        setAgents((current) =>
+                          current.map((agent) =>
+                            agent.id === activeAgent.id
+                              ? { ...agent, draft }
+                              : agent
+                          )
+                        )
+                      }
+                      toolbarTarget={
+                        view.kind === "agent" ? agentToolbarTarget : null
+                      }
+                      onBack={() => openSection("agents")}
+                      onDebug={() => {
+                        workbenchRef.current?.openAgentDebug(
+                          activeAgent.id,
+                          activeAgent.configuration.name
+                        )
+                        setWorkbenchOpen(true)
+                      }}
+                      onSave={async (configuration) => {
+                        await agentSource.save(activeAgent.id, configuration)
+                        setAgents((current) =>
+                          current.map((agent) =>
+                            agent.id === activeAgent.id
+                              ? { ...agent, configuration, draft: undefined }
+                              : agent
+                          )
+                        )
+                      }}
+                    />
+                  </Suspense>
+                </PageLoadBoundary>
+              </div>
+            ) : null}
+            {view.kind === "section" ? (
+              <section
+                data-slot="navigation-overview"
+                className="mx-auto w-full max-w-3xl px-6 py-8 sm:px-8"
+              >
+                <h1 className="text-2xl font-medium tracking-tight">
+                  {overviewWorkspace?.name ?? activeSection?.label}
+                </h1>
+                {overviewItems.length ? (
+                  <ul className="mt-6 space-y-1">
+                    {overviewItems.map((item) => (
+                      <li key={item.id}>
+                        <Button
+                          variant="ghost"
+                          className="h-auto min-h-11 w-full justify-start rounded-full px-4 py-3 text-left font-normal"
+                          onClick={() => {
+                            if (!activeSection) return
+                            if (
+                              activeSection.id === "workspace" &&
+                              item.id.startsWith("workspace:")
+                            )
+                              openSection(
+                                "workspace",
+                                item.id.slice("workspace:".length)
+                              )
+                            else selectItem(item, activeSection)
+                          }}
+                        >
+                          <span className="truncate">{item.label}</span>
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-6 text-sm text-muted-foreground">
+                    暂无内容。
+                  </p>
+                )}
+              </section>
+            ) : view.kind === "page" ? (
               <div className="grid h-full place-content-center gap-3 px-6 text-center">
                 <h1 className="text-xl font-medium">{activePage?.label}</h1>
                 <p className="text-sm text-muted-foreground">
                   项目、页面和资料，触手可及。
                 </p>
               </div>
-            ) : view.kind === "skill" ? null : view.kind === "agent" &&
-              activeAgent ? (
-              <PageLoadBoundary>
-                <Suspense
-                  fallback={
-                    <p
-                      role="status"
-                      className="p-6 text-sm text-muted-foreground"
-                    >
-                      正在加载Agent…
-                    </p>
-                  }
-                >
-                  <AgentBuilder
-                    key={activeAgent.id}
-                    initialConfiguration={activeAgent.configuration}
-                    initialDraft={activeAgent.draft}
-                    onDraftChange={(draft) =>
-                      setAgents((current) =>
-                        current.map((agent) =>
-                          agent.id === activeAgent.id
-                            ? { ...agent, draft }
-                            : agent
-                        )
-                      )
-                    }
-                    toolbarTarget={agentToolbarTarget}
-                    onDebug={() => {
-                      workbenchRef.current?.openAgentDebug(
-                        activeAgent.id,
-                        activeAgent.configuration.name
-                      )
-                      setWorkbenchOpen(true)
-                    }}
-                    onSave={(configuration) =>
-                      setAgents((current) =>
-                        current.map((agent) =>
-                          agent.id === activeAgent.id
-                            ? { ...agent, configuration, draft: undefined }
-                            : agent
-                        )
-                      )
-                    }
-                  />
-                </Suspense>
-              </PageLoadBoundary>
-            ) : activeSession && activeWorkspace ? (
+            ) : view.kind === "skill" ||
+              view.kind === "agent" ? null : activeSession &&
+              activeWorkspace ? (
               <ChatScreen
+                models={models}
                 key={activeSession.id}
                 threadId={activeSession.id}
                 workspaceName={activeWorkspace.name}
@@ -531,7 +701,7 @@ export function App() {
         <CommandList className="max-h-[min(24rem,60dvh)]">
           <CommandEmpty>没有找到技能。</CommandEmpty>
           <CommandGroup heading="我的技能">
-            {DEMO_SKILLS.map((skill) => (
+            {skills.map((skill) => (
               <CommandItem
                 key={skill.id}
                 value={`${skill.name} ${skill.description}`}
@@ -563,7 +733,9 @@ export function App() {
         workspaces={state.workspaces}
         addOnly={picker === "add"}
         onPick={(id) => store.startSession(id)}
-        onAdd={(path) => store.startSession(store.addWorkspace(path).id)}
+        onAdd={(directory) =>
+          store.startSession(store.addWorkspace(directory).id)
+        }
         fallbackFocusRef={contentRef}
       />
     </>

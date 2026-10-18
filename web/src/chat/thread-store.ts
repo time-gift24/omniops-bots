@@ -1,7 +1,7 @@
 /** 界面卸载不终止流，只有用户显式 stop() 才中止。 */
 
 import type { ChatGateway } from "./gateway.ts";
-import type { ThreadId } from "./dto.ts";
+import type { ChatInputAttachment, ThreadId } from "./dto.ts";
 import {
   appendUserMessage,
   createThreadState,
@@ -38,7 +38,7 @@ export interface ThreadStore {
   /** 提交给定内容，不修改草稿；输入框在接受提交后负责清理。 */
   send(
     text: string,
-    attachments?: { name: string; mediaType: string }[],
+    attachments?: ChatInputAttachment[],
     model?: string,
   ): boolean;
   /** 唯一会调用 gateway.abort() 的入口。 */
@@ -59,8 +59,14 @@ export class ThreadStoreImpl implements ThreadStore {
   private draftListeners = new Set<() => void>();
   private activeRequest: { messageId: string } | undefined;
   private gateway: ChatGateway;
-  /** 每条回复的请求模型；undefined 保留网关的缺省选择。 */
-  private models = new Map<string, string | undefined>();
+  /** 重试保留运行态附件引用与模型；这些输入不进入消息视图或 snapshot。 */
+  private requestInputs = new Map<
+    string,
+    {
+      attachments: ChatInputAttachment[] | undefined;
+      model: string | undefined;
+    }
+  >();
 
   constructor(threadId: ThreadId, gateway: ChatGateway) {
     this.gateway = gateway;
@@ -106,14 +112,18 @@ export class ThreadStoreImpl implements ThreadStore {
 
   send = (
     text: string,
-    attachments?: { name: string; mediaType: string }[],
+    attachments?: ChatInputAttachment[],
     model?: string,
   ): boolean => {
     const trimmed = text.trim();
     if (!trimmed || this.streaming) return false;
 
     const files = attachments?.map((attachment) => ({ ...attachment }));
-    this.state = appendUserMessage(this.state, trimmed, files);
+    this.state = appendUserMessage(
+      this.state,
+      trimmed,
+      files?.map(({ name, mediaType }) => ({ name, mediaType })),
+    );
     void this.consume(trimmed, files, model);
     return true;
   };
@@ -148,23 +158,24 @@ export class ThreadStoreImpl implements ThreadStore {
       .map((part) => part.text)
       .join("");
     const replyId = this.state.messages[index].id;
+    const input = this.requestInputs.get(replyId);
     void this.consume(
       text,
-      user.attachments,
-      this.models.get(replyId),
+      input?.attachments ?? user.attachments,
+      input?.model,
       replyId,
     );
   };
 
   private async consume(
     text: string,
-    attachments: { name: string; mediaType: string }[] | undefined,
+    attachments: ChatInputAttachment[] | undefined,
     model: string | undefined,
     messageId = `m-${this.state.messages.length + 1}`,
   ): Promise<void> {
     const active = { messageId };
     this.activeRequest = active;
-    this.models.set(messageId, model);
+    this.requestInputs.set(messageId, { attachments, model });
     const reply: ChatMessageView = {
       id: messageId,
       role: "assistant",

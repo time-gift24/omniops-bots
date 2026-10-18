@@ -23,29 +23,55 @@ async function setup(t, gatewayFor = () => ({
   return { store, registry };
 }
 
-test("目录规范化去重；无效路径不改变工作区和选择", async (t) => {
+test("adapter 的规范目录按路径去重，保留 Windows 与虚拟路径；无效描述不改变状态", async (t) => {
   const { store } = await setup(t);
   assert.deepEqual(store.getState().workspaces, []);
   assert.deepEqual(store.getState().sessions, []);
   assert.equal(store.startSession(), null);
-  const workspace = store.addWorkspace(" /Users/me//Projects/old/../cognacta/./ ");
-  assert.equal(workspace.path, "/Users/me/Projects/cognacta");
-  assert.equal(workspace.name, "cognacta");
-  assert.equal(store.addWorkspace("/Users/me/Projects/cognacta"), workspace);
+  const directory = { path: "/Users/me/Projects/cognacta", name: "项目名称由 adapter 提供" };
+  const workspace = store.addWorkspace(directory);
+  assert.equal(workspace.path, directory.path);
+  assert.equal(workspace.name, directory.name);
+  assert.equal(store.addWorkspace({ ...directory, name: "重复目录" }), workspace);
   assert.equal(store.getState().workspaces.length, 1);
   assert.equal(store.getState().activeSessionId, null);
   const before = store.getState();
-  for (const path of ["", "   ", "./project", "~/project", "file:///project", "/a\nb", "/a\0b"]) {
-    assert.throws(() => store.addWorkspace(path), /绝对目录路径/);
+  for (const invalid of [
+    { path: "", name: "项目" }, { path: "   ", name: "项目" },
+    { path: "/project", name: "" }, { path: "/project", name: "   " },
+    { path: "/a\nb", name: "项目" }, { path: "/a\0b", name: "项目" },
+    { path: "/project", name: "a\nb" }, { path: "/project", name: "a\x7fb" },
+  ]) {
+    assert.throws(() => store.addWorkspace(invalid));
     assert.equal(store.getState(), before);
   }
-  assert.equal(store.addWorkspace("/../../").path, "/");
+  for (const directory of [
+    { path: "C:\\Users\\me\\Projects\\cognacta", name: "Windows 项目" },
+    { path: "workspace://tenant/project", name: "虚拟项目" },
+  ]) {
+    const saved = store.addWorkspace(directory);
+    assert.equal(saved.path, directory.path);
+    assert.equal(saved.name, directory.name);
+  }
+});
+
+test("demo 目录 adapter 返回显示名称与规范路径，拒绝取消和不存在的目录", async t => {
+  const server = await createServer({ configFile: false, server: { middlewareMode: true, hmr: false, ws: false }, appType: "custom", optimizeDeps: { noDiscovery: true, include: [] } });
+  t.after(() => server.close());
+  const { createDemoWorkspaceAccess } = await server.ssrLoadModule("/src/adapters/demo/workspace.ts");
+  const access = createDemoWorkspaceAccess();
+  const directories = await access.listDirectories();
+  assert.deepEqual(directories[0], { path: "/workspace/cognacta", name: "cognacta" });
+  assert.deepEqual(await access.resolveDirectory(" /workspace/cognacta/// "), directories[0]);
+  await Promise.all(["", "   ", "/missing", "/workspace/cognacta\nbad"].map(path =>
+    assert.rejects(access.resolveDirectory(path)),
+  ));
 });
 
 test("新会话按指定、当前、最近工作区选择，同组空会话同步复用并展开", async (t) => {
   const { store, registry } = await setup(t);
-  const first = store.addWorkspace("/projects/first");
-  const second = store.addWorkspace("/projects/second");
+  const first = store.addWorkspace({ path: "/projects/first", name: "first" });
+  const second = store.addWorkspace({ path: "/projects/second", name: "second" });
   const recentId = store.startSession();
   assert.equal(store.getState().sessions[0].workspaceId, second.id);
   assert.equal(store.startSession(), recentId);
@@ -53,7 +79,7 @@ test("新会话按指定、当前、最近工作区选择，同组空会话同�
   assert.equal(store.getState().sessions.length, 1);
 
   const firstId = store.startSession(first.id);
-  store.addWorkspace("/projects/latest");
+  store.addWorkspace({ path: "/projects/latest", name: "latest" });
   assert.equal(store.startSession(), firstId, "当前会话优先于最近添加工作区");
   store.toggleWorkspace(first.id);
   assert.ok(!store.getState().expandedWorkspaceIds.includes(first.id));
@@ -97,7 +123,7 @@ test("后台生成保留引用，只有回合和状态边界广播，标题为�
       yield completed;
     },
   }));
-  const workspace = store.addWorkspace("/projects/test");
+  const workspace = store.addWorkspace({ path: "/projects/test", name: "test" });
   const id = store.startSession(workspace.id);
   const thread = registry.get(id);
   let notices = 0;
@@ -164,7 +190,7 @@ test("失败、重试和停止同步到会话状态；dispose 不停止进行中
       yield completed;
     },
   }));
-  const workspace = store.addWorkspace("/project");
+  const workspace = store.addWorkspace({ path: "/project", name: "project" });
   const id = store.startSession(workspace.id);
   const thread = registry.get(id);
   thread.send("保留原始标题");

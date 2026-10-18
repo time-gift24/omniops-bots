@@ -12,8 +12,8 @@
   import { flushSync } from "react-dom";
   import { MotionConfig } from "motion/react";
   import "/src/index.css";
-  import { bindChatGateway } from "/src/chat/binding.ts";
-  import { defaultThreadRegistry } from "/src/chat/react.ts";
+  import { createTestDependencies, withDependencies } from "/tests/support.tsx";
+  import { DEMO_MODELS } from "/src/adapters/demo/resources.ts";
   import { ChatScreen } from "/src/components/chat/chat-screen.tsx";
 
   const fixture = document.querySelector("#fixture");
@@ -31,7 +31,7 @@
   let requests = 0;
   let aborts = 0;
   let finish;
-  bindChatGateway(() => ({
+  const dependencies = createTestDependencies({ gatewayFor: () => ({
     async *stream() {
       requests += 1;
       yield { type: "started", metadata };
@@ -42,8 +42,8 @@
       yield { type: "completed", response: { assistant: { parts: [{ type: "text", text: "Reply **ready**" }] }, finish: { reason: "stop" }, usage: {}, metadata } };
     },
     abort() { aborts += 1; finish?.(); finish = undefined; },
-  }));
-  const store = defaultThreadRegistry.get("thread-loading");
+  }) });
+  const store = dependencies.threads.get("thread-loading");
   const root = createRoot(fixture);
   const editor = () => fixture.querySelector('[role="textbox"]');
   const modelButton = () => fixture.querySelector('button[aria-label^="选择模型:"]');
@@ -54,9 +54,9 @@
   });
   const click = node => { assert(node, "Expected action is missing"); flushSync(() => node.click()); };
   try {
-    flushSync(() => root.render(React.createElement(React.StrictMode, null,
+    flushSync(() => root.render(withDependencies(React.createElement(React.StrictMode, null,
       React.createElement(MotionConfig, { reducedMotion: "always" },
-        React.createElement(ChatScreen, { threadId: "thread-loading" })))));
+        React.createElement(ChatScreen, { threadId: "thread-loading", models: DEMO_MODELS }))), dependencies)));
     await wait(100);
     assert(editor() && !requested("/src/components/chat/chat-thread.tsx") && !requested("/src/components/chat/markdown.tsx") && !requested("/streamdown"), "Empty chat must not request the thread or Markdown rendering modules");
     result.dataset.phase = "empty";
@@ -101,6 +101,6 @@
   } finally {
     store.stop();
     root.unmount();
-    defaultThreadRegistry.evictIdle();
+    dependencies.threads.evictIdle();
   }
 </script>

@@ -1,34 +1,34 @@
-"use client";
+"use client"
 
-import { HugeiconsIcon } from "@hugeicons/react";
-import { PuzzleIcon } from "@hugeicons-pro/core-stroke-rounded";
+import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import type { McpCapability, McpServer } from "./agent-builder-data";
+} from "@/components/ui/dialog"
+import type { McpCapability, McpServer } from "@/agents/source"
+import { agentResourceIcon } from "./agent-builder-data"
 
 const GROUPS = [
   { key: "tools", label: "工具" },
   { key: "resources", label: "资源" },
   { key: "prompts", label: "提示词" },
-] as const;
+] as const
 
 function CapabilityGroup({
   label,
   items,
 }: {
-  label: string;
-  items: readonly McpCapability[];
+  label: string
+  items: readonly McpCapability[]
 }) {
   return (
     <section>
       <h3 className="mb-2 flex items-baseline gap-2 text-sm font-medium">
         {label}
-        <span className="text-xs font-normal tabular-nums text-muted-foreground">
+        <span className="text-xs font-normal text-muted-foreground tabular-nums">
           {items.length}
         </span>
       </h3>
@@ -54,7 +54,7 @@ function CapabilityGroup({
         </p>
       )}
     </section>
-  );
+  )
 }
 
 /** 展示一个 MCP 服务当前提供的能力清单：工具、资源和提示词。 */
@@ -63,9 +63,9 @@ export function McpCapabilityDialog({
   open,
   onOpenChange,
 }: {
-  server: McpServer | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  server: McpServer | null
+  open: boolean
+  onOpenChange: (open: boolean) => void
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -75,7 +75,7 @@ export function McpCapabilityDialog({
             <DialogHeader className="flex-row items-center gap-3 space-y-0 text-left">
               <span className="grid size-10 shrink-0 place-items-center rounded-full bg-accent text-accent-foreground">
                 <HugeiconsIcon
-                  icon={server.icon ?? PuzzleIcon}
+                  icon={agentResourceIcon(server.id)}
                   aria-hidden="true"
                   size={18}
                 />
@@ -100,5 +100,5 @@ export function McpCapabilityDialog({
         ) : null}
       </DialogContent>
     </Dialog>
-  );
+  )
 }

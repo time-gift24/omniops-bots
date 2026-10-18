@@ -8,19 +8,24 @@
  * burst 的 partId 0-2 为步骤、3 为整篇正文，测试依赖该结构。
  */
 
-import type { ChatGateway } from "./gateway.ts";
-import type { ChatEvent, ChatRequest, ChatUsage, OutputContent } from "./dto.ts";
+import type { ChatGateway } from "@/chat/gateway.ts"
+import type {
+  ChatEvent,
+  ChatRequest,
+  ChatUsage,
+  OutputContent,
+} from "@/chat/dto.ts"
 
 export interface MockGatewayOptions {
   /** 每个事件之间的基础延迟（ms），默认 45。 */
-  delayMs?: number;
+  delayMs?: number
 }
 
 const BUILD_REASONING = `**核对构建耗时**
 先确认缓存键的构成，再核对部署日志里的耗时分布。
 
 **定位缓存失效**
-对比安装、编译和图片处理阶段，优先检查耗时最高的一段。`;
+对比安装、编译和图片处理阶段，优先检查耗时最高的一段。`
 
 const REPLY_INTRO = `先把问题拆成两半：缓存键不该包含提交哈希。
 
@@ -30,11 +35,11 @@ const REPLY_INTRO = `先把问题拆成两半：缓存键不该包含提交哈�
 const cacheKey = \`img:\${dir}:\${process.env.CONTENT_HASH}\`
 \`\`\`
 
-这样同目录的图片在多次部署间共享缓存，构建时间从约 4 分钟降到 20 秒以内。`;
+这样同目录的图片在多次部署间共享缓存，构建时间从约 4 分钟降到 20 秒以内。`
 
 const REPLY_SEG_1 = `## 先定位耗时，再调整缓存 🔍
 
-${REPLY_INTRO}`;
+${REPLY_INTRO}`
 
 const REPLY_SEG_2 = `## 一次只改一个变量
 
@@ -66,7 +71,7 @@ function imageCacheKey(
 
 const options = { width: 1280, quality: 82, format: "webp" } as const;
 const key = imageCacheKey("hero", "a1b2c3", options);
-\`\`\``;
+\`\`\``
 
 const REPLY_SEG_3 = `## 验证缓存是否真的生效
 
@@ -119,9 +124,9 @@ for (const result of results) {
 
 最后分别记录冷缓存、热缓存和局部更新的构建时间。不要只看一次部署的总耗时：依赖下载、机器负载和网络抖动都会影响它。连续跑几次，比较图片阶段的中位数，才能判断缓存调整是否有效。
 
-如果热缓存已经稳定命中，而总耗时仍没有明显下降，再检查编译阶段。先把最慢的一段改好，再决定下一步，避免同时修改多个环节后难以确认收益。`;
+如果热缓存已经稳定命中，而总耗时仍没有明显下降，再检查编译阶段。先把最慢的一段改好，再决定下一步，避免同时修改多个环节后难以确认收益。`
 
-const DEMO_REPLY = [REPLY_SEG_1, REPLY_SEG_2, REPLY_SEG_3].join("\n\n");
+const DEMO_REPLY = [REPLY_SEG_1, REPLY_SEG_2, REPLY_SEG_3].join("\n\n")
 
 const BURST_REPLY = [
   DEMO_REPLY,
@@ -182,16 +187,16 @@ const variants${index + 1} = fixture${index + 1}.widths.flatMap((width) =>
 
 > 观察点 ${index + 1}：长回复会穿过多个屏幕。可以向上翻阅这一组的表格，再返回最新位置，确认新输出没有打断阅读。🧪
 
-完成本组后，再对比冷缓存和热缓存的结果。如果耗时没有下降，先核对缓存位置和键值；如果出现旧图，优先检查源文件哈希以及格式、质量和尺寸是否都参与了键的计算。每次只调整一个条件，保留前后两次的对照结果。`,
+完成本组后，再对比冷缓存和热缓存的结果。如果耗时没有下降，先核对缓存位置和键值；如果出现旧图，优先检查源文件哈希以及格式、质量和尺寸是否都参与了键的计算。每次只调整一个条件，保留前后两次的对照结果。`
   ),
   "## 全部回归完成 ✅\n\n将各组结果放在一起，再决定是否需要继续调整并发量、编译流程或部署资源。先确认每个变化都能独立复现，避免同时修改多个环节后难以确认收益。",
-].join("\n\n");
+].join("\n\n")
 
 const sleep = (ms: number, signal: { aborted: boolean }) =>
   new Promise<void>((resolve) => {
-    if (signal.aborted) return resolve();
-    setTimeout(resolve, ms);
-  });
+    if (signal.aborted) return resolve()
+    setTimeout(resolve, ms)
+  })
 
 const MODEL_PROFILES: Record<
   string,
@@ -213,35 +218,36 @@ const MODEL_PROFILES: Record<
     pace: 0.8,
     resolved: "gpt-5.6-2026-10",
   },
-};
+}
 
 function chunkText(text: string, size = 3): string[] {
-  const characters = Array.from(text);
-  const chunks: string[] = [];
+  const characters = Array.from(text)
+  const chunks: string[] = []
   for (let i = 0; i < characters.length; i += size) {
-    chunks.push(characters.slice(i, i + size).join(""));
+    chunks.push(characters.slice(i, i + size).join(""))
   }
-  return chunks;
+  return chunks
 }
 
 export function createMockGateway(
-  options: MockGatewayOptions = {},
+  options: MockGatewayOptions = {}
 ): ChatGateway {
-  const baseDelay = options.delayMs ?? 45;
-  let active: { aborted: boolean } | undefined;
+  const baseDelay = options.delayMs ?? 45
+  let active: { aborted: boolean } | undefined
 
   async function* script(
     request: ChatRequest,
-    signal: { aborted: boolean },
+    signal: { aborted: boolean }
   ): AsyncGenerator<ChatEvent> {
-    const text = request.messages.at(-1)?.text ?? "";
-    const burst = text.includes("[burst]");
-    const model = request.model ?? "pine-1";
-    const profile = MODEL_PROFILES[Object.hasOwn(MODEL_PROFILES, model) ? model : "pine-1"];
-    const delay = baseDelay * (text.includes("[slow]") ? 8 : 1) * profile.pace;
-    const tick = () => sleep(delay, signal);
-    const alive = () => !signal.aborted;
-    if (!alive()) return;
+    const text = request.messages.at(-1)?.text ?? ""
+    const burst = text.includes("[burst]")
+    const model = request.model ?? "pine-1"
+    const profile =
+      MODEL_PROFILES[Object.hasOwn(MODEL_PROFILES, model) ? model : "pine-1"]
+    const delay = baseDelay * (text.includes("[slow]") ? 8 : 1) * profile.pace
+    const tick = () => sleep(delay, signal)
+    const alive = () => !signal.aborted
+    if (!alive()) return
 
     const metadata = {
       providerName: "mock-provider",
@@ -250,139 +256,155 @@ export function createMockGateway(
       resolvedModel: profile.resolved,
       requestId: "req_mock_001",
       responseId: "resp_mock_001",
-    };
+    }
 
     if (text.includes("[fail-send]")) {
-      yield { type: "started", metadata };
-      await tick();
-      if (!alive()) return;
+      yield { type: "started", metadata }
+      await tick()
+      if (!alive()) return
       yield {
         type: "failed",
         error: {
           kind: "transport",
           message: "连接模型服务失败，请检查网络后重试。",
         },
-      };
-      return;
+      }
+      return
     }
 
-    yield { type: "started", metadata };
-    await tick();
-    if (!alive()) return;
-    const parts: OutputContent[] = [];
+    yield { type: "started", metadata }
+    await tick()
+    if (!alive()) return
+    const parts: OutputContent[] = []
 
     async function* emitReasoning(
       partId: number,
-      reasoning: string,
+      reasoning: string
     ): AsyncGenerator<ChatEvent> {
-      yield { type: "part-started", partId, kind: "reasoning" };
+      yield { type: "part-started", partId, kind: "reasoning" }
       // 使用 baseDelay 避免 [slow] 拉长思考阶段，测试仍可用 delayMs 加速。
-      await sleep(baseDelay * 10, signal);
+      await sleep(baseDelay * 10, signal)
       for (const chunk of chunkText(reasoning, 4)) {
-        await sleep(baseDelay * 6, signal);
-        if (!alive()) return;
-        yield { type: "delta", partId, text: chunk };
+        await sleep(baseDelay * 6, signal)
+        if (!alive()) return
+        yield { type: "delta", partId, text: chunk }
       }
-      if (!alive()) return;
-      const content: OutputContent = { type: "reasoning", text: reasoning };
-      parts.push(content);
+      if (!alive()) return
+      const content: OutputContent = { type: "reasoning", text: reasoning }
+      parts.push(content)
       yield {
         type: "part-completed",
         partId,
         content,
-      };
+      }
     }
 
     async function* emitTool(
       partId: number,
       name: string,
       input: unknown,
-      result: { output?: unknown; errorText?: string },
+      result: { output?: unknown; errorText?: string }
     ): AsyncGenerator<ChatEvent> {
-      yield { type: "part-started", partId, kind: "tool-call", name };
-      const inputText = JSON.stringify(input);
+      yield { type: "part-started", partId, kind: "tool-call", name }
+      const inputText = JSON.stringify(input)
       for (const chunk of chunkText(inputText, 12)) {
-        await tick();
-        if (!alive()) return;
-        yield { type: "delta", partId, text: chunk };
+        await tick()
+        if (!alive()) return
+        yield { type: "delta", partId, text: chunk }
       }
-      await sleep(baseDelay * 24, signal);
-      if (!alive()) return;
+      await sleep(baseDelay * 24, signal)
+      if (!alive()) return
       const content: OutputContent = {
         type: "tool-call",
         call: { callId: `call_${partId}`, name, inputText, ...result },
-      };
-      parts.push(content);
+      }
+      parts.push(content)
       yield {
         type: "part-completed",
         partId,
         content,
-      };
+      }
     }
 
     async function* emitText(
       partId: number,
       text: string,
-      burstMode = false,
+      burstMode = false
     ): AsyncGenerator<ChatEvent> {
-      yield { type: "part-started", partId, kind: "text" };
+      yield { type: "part-started", partId, kind: "text" }
       for (const [index, chunk] of chunkText(
         text,
-        burstMode ? 96 : 3,
+        burstMode ? 96 : 3
       ).entries()) {
-        await sleep(delay * (burstMode && index % 3 === 0 ? 24 : 1), signal);
-        if (!alive()) return;
-        yield { type: "delta", partId, text: chunk };
+        await sleep(delay * (burstMode && index % 3 === 0 ? 24 : 1), signal)
+        if (!alive()) return
+        yield { type: "delta", partId, text: chunk }
       }
-      if (!alive()) return;
-      const content: OutputContent = { type: "text", text };
-      parts.push(content);
+      if (!alive()) return
+      const content: OutputContent = { type: "text", text }
+      parts.push(content)
       yield {
         type: "part-completed",
         partId,
         content,
-      };
+      }
     }
 
     const searchCodeResult = text.includes("[fail-step]")
       ? { errorText: "索引服务 503：search backend unavailable" }
-      : { output: { files: ["next.config.ts", "scripts/optimize-images.ts"] } };
+      : { output: { files: ["next.config.ts", "scripts/optimize-images.ts"] } }
 
     // burst 压测内容固定，不添加模型开场白。
     const seg1 = profile.opener
       ? `${profile.opener}\n\n${REPLY_SEG_1}`
-      : REPLY_SEG_1;
+      : REPLY_SEG_1
 
     if (burst) {
-      yield* emitReasoning(0, BUILD_REASONING);
-      if (!alive()) return;
-      yield* emitTool(1, "readBuildLog", { deployment: "dpl_8Kx2" }, {
-        output: { log: "install    41s\ncompile    38s\nimages   3m 52s" },
-      });
-      if (!alive()) return;
-      yield* emitTool(2, "searchCode", { query: "cacheKey" }, searchCodeResult);
-      if (!alive()) return;
-      yield* emitText(3, BURST_REPLY, true);
-      if (!alive()) return;
+      yield* emitReasoning(0, BUILD_REASONING)
+      if (!alive()) return
+      yield* emitTool(
+        1,
+        "readBuildLog",
+        { deployment: "dpl_8Kx2" },
+        {
+          output: { log: "install    41s\ncompile    38s\nimages   3m 52s" },
+        }
+      )
+      if (!alive()) return
+      yield* emitTool(2, "searchCode", { query: "cacheKey" }, searchCodeResult)
+      if (!alive()) return
+      yield* emitText(3, BURST_REPLY, true)
+      if (!alive()) return
     } else {
-      yield* emitReasoning(0, BUILD_REASONING);
-      if (!alive()) return;
-      yield* emitTool(1, "readBuildLog", { deployment: "dpl_8Kx2" }, {
-        output: { log: "install    41s\ncompile    38s\nimages   3m 52s" },
-      });
-      if (!alive()) return;
-      yield* emitText(2, seg1);
-      if (!alive()) return;
+      yield* emitReasoning(0, BUILD_REASONING)
+      if (!alive()) return
+      yield* emitTool(
+        1,
+        "readBuildLog",
+        { deployment: "dpl_8Kx2" },
+        {
+          output: { log: "install    41s\ncompile    38s\nimages   3m 52s" },
+        }
+      )
+      if (!alive()) return
+      yield* emitText(2, seg1)
+      if (!alive()) return
 
-      yield* emitReasoning(3, "**检查图片缓存**\n图片阶段耗时最高，达到 3 分 52 秒。\n\n接下来检查：\n- `cacheKey` 的组成\n- 部署标识是否参与缓存键\n- 图片内容和转换参数是否被正确区分");
-      if (!alive()) return;
-      yield* emitTool(4, "searchCode", { query: "cacheKey" }, searchCodeResult);
-      if (!alive()) return;
-      yield* emitText(5, REPLY_SEG_2);
-      if (!alive()) return;
+      yield* emitReasoning(
+        3,
+        "**检查图片缓存**\n图片阶段耗时最高，达到 3 分 52 秒。\n\n接下来检查：\n- `cacheKey` 的组成\n- 部署标识是否参与缓存键\n- 图片内容和转换参数是否被正确区分"
+      )
+      if (!alive()) return
+      yield* emitTool(4, "searchCode", { query: "cacheKey" }, searchCodeResult)
+      if (!alive()) return
+      yield* emitText(5, REPLY_SEG_2)
+      if (!alive()) return
 
-      yield* emitReasoning(6, "**交叉验证方案**\n当前定位与日志一致，再对照图片缓存键的常见设计。\n\n**明确验证步骤**\n方案应同时覆盖首次构建、重复构建和图片变更后的增量构建。");
-      if (!alive()) return;
+      yield* emitReasoning(
+        6,
+        "**交叉验证方案**\n当前定位与日志一致，再对照图片缓存键的常见设计。\n\n**明确验证步骤**\n方案应同时覆盖首次构建、重复构建和图片变更后的增量构建。"
+      )
+      if (!alive()) return
       yield* emitTool(
         7,
         "searchWeb",
@@ -394,11 +416,11 @@ export function createMockGateway(
               "部署标识只用于关联，不参与键的计算",
             ],
           },
-        },
-      );
-      if (!alive()) return;
-      yield* emitText(8, REPLY_SEG_3);
-      if (!alive()) return;
+        }
+      )
+      if (!alive()) return
+      yield* emitText(8, REPLY_SEG_3)
+      if (!alive()) return
     }
 
     const usage: ChatUsage = {
@@ -406,9 +428,9 @@ export function createMockGateway(
       outputTokens: 486,
       totalTokens: 798,
       reasoningTokens: 96,
-    };
-    yield { type: "usage", usage };
-    if (!alive()) return;
+    }
+    yield { type: "usage", usage }
+    if (!alive()) return
     yield {
       type: "completed",
       response: {
@@ -417,17 +439,17 @@ export function createMockGateway(
         usage,
         metadata,
       },
-    };
+    }
   }
 
   return {
     stream(request) {
-      const signal = { aborted: false };
-      active = signal;
-      return script(request, signal);
+      const signal = { aborted: false }
+      active = signal
+      return script(request, signal)
     },
     abort() {
-      if (active) active.aborted = true;
+      if (active) active.aborted = true
     },
-  };
+  }
 }

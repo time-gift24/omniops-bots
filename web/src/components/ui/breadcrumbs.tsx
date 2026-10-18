@@ -1,11 +1,16 @@
 import { type ReactNode } from "react"
 import { cn } from "@/lib/utils"
 
+export type BreadcrumbItem = {
+  label: ReactNode
+  onSelect?: () => void
+}
+
 export function Breadcrumbs({
   items,
   className,
 }: {
-  items: readonly ReactNode[]
+  items: readonly BreadcrumbItem[]
   className?: string
 }) {
   return (
@@ -25,12 +30,21 @@ export function Breadcrumbs({
             )}
           >
             {index > 0 ? <span aria-hidden="true">/</span> : null}
-            {typeof item === "string" ? (
-              <span className="truncate" title={item}>
-                {item}
+            {index < items.length - 1 && item.onSelect ? (
+              <button
+                type="button"
+                onClick={item.onSelect}
+                title={typeof item.label === "string" ? item.label : undefined}
+                className="min-h-9 min-w-0 cursor-pointer truncate rounded-sm text-left underline-offset-4 transition-colors outline-none hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
+              >
+                {item.label}
+              </button>
+            ) : typeof item.label === "string" ? (
+              <span className="truncate" title={item.label}>
+                {item.label}
               </span>
             ) : (
-              item
+              item.label
             )}
           </li>
         ))}

@@ -10,12 +10,14 @@
   import { createRoot } from "react-dom/client";
   import { flushSync } from "react-dom";
   import "/src/index.css";
+  import { createTestDependencies, withDependencies } from "/tests/support.tsx";
+  import { createBrowserHost } from "/src/adapters/browser-host.ts";
   import { ChainOfThought } from "/src/components/chat/chain-of-thought.tsx";
   import { ChatThread } from "/src/components/chat/chat-thread.tsx";
   import { MessageView } from "/src/components/chat/message-view.tsx";
   import { CodeBlockCopyButton } from "/src/components/ui/code-block.tsx";
   import { TooltipProvider } from "/src/components/ui/tooltip.tsx";
-  import { createMockGateway } from "/src/chat/mock-gateway.ts";
+  import { createMockGateway } from "/src/adapters/demo/chat.ts";
   import { createThreadState, foldChatEvent } from "/src/chat/fold.ts";
 
   const fixture = document.querySelector("#fixture");
@@ -24,8 +26,9 @@
   const h = React.createElement;
   const wait = (ms = 0) => new Promise(resolve => setTimeout(resolve, ms));
   const assert = (condition, message) => { if (!condition) throw new Error(message); };
+  const dependencies = createTestDependencies({ host: createBrowserHost() });
   const render = (component, props) => {
-    flushSync(() => root.render(h(TooltipProvider, null, h(component, props))));
+    flushSync(() => root.render(withDependencies(h(TooltipProvider, null, h(component, props)), dependencies)));
     if (reduced) activateReducedMotion();
   };
   const click = element => flushSync(() => element.click());

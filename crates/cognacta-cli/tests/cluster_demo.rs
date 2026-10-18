@@ -114,6 +114,74 @@ fn all_scenarios_have_exact_results_and_safe_errors_without_external_configurati
 
 #[cfg(feature = "cognacta-test")]
 #[test]
+fn debug_spans_show_current_fields_once_without_changing_results() {
+    fn field<'a>(text: &'a str, name: &str) -> &'a str {
+        let values: Vec<_> = text
+            .split_ascii_whitespace()
+            .filter_map(|part| part.split_once('='))
+            .filter_map(|(key, value)| (key == name).then_some(value.trim_matches('"')))
+            .collect();
+        assert_eq!(values.len(), 1, "expected one {name}: {text}");
+        values[0]
+    }
+
+    for &(scenario, summary, code, _) in CASES
+        .iter()
+        .filter(|&&(scenario, _, code, _)| scenario == "chain" || code != 0)
+    {
+        let output = support::finish(
+            command()
+                .args(["cluster-demo", scenario])
+                .env("RUST_LOG", "debug")
+                .spawn()
+                .unwrap(),
+        );
+        assert_eq!(output.status.code(), Some(code), "{scenario}");
+        assert_eq!(output.stdout, summary.as_bytes(), "{scenario}");
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let events: Vec<_> = stderr
+            .lines()
+            .filter(|line| line.contains("cluster.run{"))
+            .collect();
+        assert_eq!(events.len(), 6, "{scenario}: {stderr}");
+        for line in events {
+            let event_fields = &line[line.find("event=").unwrap()..];
+            let event = field(event_fields, "event");
+            let run = line.split_once("cluster.run{").unwrap().1;
+            let run = run.split_once('}').unwrap().0;
+            let expected_run_phase = match event {
+                "cluster.run.started" => "ready",
+                "cluster.run.completed" => "completed",
+                "cluster.run.failed" => "failed",
+                _ => "running",
+            };
+            assert_eq!(field(run, "phase"), expected_run_phase, "{line}");
+            if event.starts_with("cluster.step.") {
+                let step = line.split_once("cluster.step{").unwrap().1;
+                let step = step.split_once('}').unwrap().0;
+                for key in ["phase", "step_phase", "node_id"] {
+                    assert_eq!(field(step, key), field(event_fields, key), "{line}");
+                }
+                assert!(!field(step, "node_id").is_empty(), "{line}");
+                let expected_step_phase = match event {
+                    "cluster.step.started" => "lookup",
+                    "cluster.step.completed" => "route",
+                    "cluster.step.failed" => match scenario {
+                        "node-error" => "body",
+                        "delta-error" => "delta",
+                        "input-error" => "input",
+                        _ => panic!("unexpected step failure: {line}"),
+                    },
+                    _ => panic!("unexpected step event: {line}"),
+                };
+                assert_eq!(field(step, "step_phase"), expected_step_phase, "{line}");
+            }
+        }
+    }
+}
+
+#[cfg(feature = "cognacta-test")]
+#[test]
 fn telemetry_health_does_not_change_demo_results() {
     use std::time::{Duration, Instant};
 

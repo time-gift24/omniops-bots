@@ -1,12 +1,15 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createElement } from "react";
-import { renderToString } from "react-dom/server";
+import { renderToString as renderHTML } from "react-dom/server";
 import { createServer } from "vite";
 
 test("思维链收起时隐藏内容并保留子步骤，运行中展开", async (t) => {
   const server = await createServer({ server: { middlewareMode: true, hmr: false, ws: false }, appType: "custom", optimizeDeps: { noDiscovery: true, include: [] } });
   t.after(() => server.close());
+  const { createTestDependencies, withDependencies } = await server.ssrLoadModule("/tests/support.tsx");
+  const dependencies = createTestDependencies();
+  const renderToString = element => renderHTML(withDependencies(element, dependencies));
   const { ChainOfThought } = await server.ssrLoadModule("/src/components/chat/chain-of-thought.tsx");
   for (const streaming of [false, true]) {
     const html = renderToString(createElement(ChainOfThought, {
@@ -25,6 +28,9 @@ test("思维链收起时隐藏内容并保留子步骤，运行中展开", async
 test("思考完成由步骤事件决定；停止和失败不再旋转或显示完成", async (t) => {
   const server = await createServer({ server: { middlewareMode: true, hmr: false, ws: false }, appType: "custom", optimizeDeps: { noDiscovery: true, include: [] } });
   t.after(() => server.close());
+  const { createTestDependencies, withDependencies } = await server.ssrLoadModule("/tests/support.tsx");
+  const dependencies = createTestDependencies();
+  const renderToString = element => renderHTML(withDependencies(element, dependencies));
   const { ChainOfThought } = await server.ssrLoadModule("/src/components/chat/chain-of-thought.tsx");
   for (const [partState, messageState, title, summary, spinning] of [
     ["running", "streaming", "正在思考…", "正在思考…", true],
@@ -49,6 +55,9 @@ test("思考完成由步骤事件决定；停止和失败不再旋转或显示�
 test("组内等待保持活动提示，正文接管后完成，步骤自身保持已完成", async (t) => {
   const server = await createServer({ server: { middlewareMode: true, hmr: false, ws: false }, appType: "custom", optimizeDeps: { noDiscovery: true, include: [] } });
   t.after(() => server.close());
+  const { createTestDependencies, withDependencies } = await server.ssrLoadModule("/tests/support.tsx");
+  const dependencies = createTestDependencies();
+  const renderToString = element => renderHTML(withDependencies(element, dependencies));
   const { ChainOfThought } = await server.ssrLoadModule("/src/components/chat/chain-of-thought.tsx");
   for (const answering of [false, true]) {
     const html = renderToString(createElement(ChainOfThought, {
@@ -68,6 +77,9 @@ test("组内等待保持活动提示，正文接管后完成，步骤自身保�
 test("思考预览只在段首行完整后更新，完成或停止后保留首行", async (t) => {
   const server = await createServer({ server: { middlewareMode: true, hmr: false, ws: false }, appType: "custom", optimizeDeps: { noDiscovery: true, include: [] } });
   t.after(() => server.close());
+  const { createTestDependencies, withDependencies } = await server.ssrLoadModule("/tests/support.tsx");
+  const dependencies = createTestDependencies();
+  const renderToString = element => renderHTML(withDependencies(element, dependencies));
   const { ChainOfThought } = await server.ssrLoadModule("/src/components/chat/chain-of-thought.tsx");
   for (const [text, messageState, preview] of [
     ["**第一阶段还在写", "streaming", ""],
@@ -93,6 +105,9 @@ test("思考预览只在段首行完整后更新，完成或停止后保留首�
 test("工具摘要优先当前活动，仅显示完整参数中受控的单行短详情", async (t) => {
   const server = await createServer({ server: { middlewareMode: true, hmr: false, ws: false }, appType: "custom", optimizeDeps: { noDiscovery: true, include: [] } });
   t.after(() => server.close());
+  const { createTestDependencies, withDependencies } = await server.ssrLoadModule("/tests/support.tsx");
+  const dependencies = createTestDependencies();
+  const renderToString = element => renderHTML(withDependencies(element, dependencies));
   const { ChainOfThought } = await server.ssrLoadModule("/src/components/chat/chain-of-thought.tsx");
   const render = (inputText, messageState = "streaming") => renderToString(createElement(ChainOfThought, {
     parts: [
@@ -130,6 +145,9 @@ test("工具摘要优先当前活动，仅显示完整参数中受控的单行�
 test("工具进行中结束回复也移除旋转状态", async (t) => {
   const server = await createServer({ server: { middlewareMode: true, hmr: false, ws: false }, appType: "custom", optimizeDeps: { noDiscovery: true, include: [] } });
   t.after(() => server.close());
+  const { createTestDependencies, withDependencies } = await server.ssrLoadModule("/tests/support.tsx");
+  const dependencies = createTestDependencies();
+  const renderToString = element => renderHTML(withDependencies(element, dependencies));
   const { ChainOfThought } = await server.ssrLoadModule("/src/components/chat/chain-of-thought.tsx");
   for (const messageState of ["stopped", "failed"]) {
     const html = renderToString(createElement(ChainOfThought, {
@@ -144,6 +162,9 @@ test("工具进行中结束回复也移除旋转状态", async (t) => {
 test("工具名与对象原型属性重名时仍显示原始名称", async (t) => {
   const server = await createServer({ server: { middlewareMode: true, hmr: false, ws: false }, appType: "custom", optimizeDeps: { noDiscovery: true, include: [] } });
   t.after(() => server.close());
+  const { createTestDependencies, withDependencies } = await server.ssrLoadModule("/tests/support.tsx");
+  const dependencies = createTestDependencies();
+  const renderToString = element => renderHTML(withDependencies(element, dependencies));
   const { ChainOfThought } = await server.ssrLoadModule("/src/components/chat/chain-of-thought.tsx");
   for (const name of ["constructor", "__proto__", "toString"]) {
     const html = renderToString(createElement(ChainOfThought, {

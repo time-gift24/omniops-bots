@@ -26,4 +26,14 @@ test("SidebarRail renders on the server without mounting browser portals", async
   assert.match(controlled, /data-slot="sidebar-rail-workspace-header" class="[^"]*pr-10/);
   assert.match(controlled, /aria-label="面包屑"[^]*?<span[^>]*>设置<\/span>[^]*?<li[^>]*aria-current="page"[^]*?<span[^>]*>成员<\/span>/);
   assert.doesNotMatch(controlled, /发布方向/);
+  const { Breadcrumbs } = await server.ssrLoadModule("/src/components/ui/breadcrumbs.tsx");
+  const breadcrumbs = renderToString(createElement(Breadcrumbs, {
+    items: [
+      { label: "上级", onSelect() {} },
+      { label: "当前页", onSelect() {} },
+    ],
+  }));
+  assert.equal((breadcrumbs.match(/<button\b/g) ?? []).length, 1);
+  assert.match(breadcrumbs, /<button[^>]*type="button"[^>]*>上级<\/button>/);
+  assert.match(breadcrumbs, /<li aria-current="page"[^>]*>[^]*<span[^>]*>当前页<\/span><\/li>/);
 });

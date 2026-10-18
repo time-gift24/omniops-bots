@@ -5,6 +5,15 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
+const platformNames = [
+  'fetch', 'XMLHttpRequest', 'WebSocket', 'EventSource',
+  'localStorage', 'sessionStorage', 'indexedDB', 'open', 'confirm',
+  'showDirectoryPicker', 'showOpenFilePicker', 'showSaveFilePicker',
+]
+const adapterImports = '(^|/)(adapters?(/|$)|__mocks__(/|$)|__fixtures__(/|$)|mocks?([-./]|$)|fixtures?([-./]|$))|^(@tauri-apps/|electron(/|$)|@capacitor/|node:|fs(/|$)|child_process(/|$))'
+const interfaceMessage = 'Use an injected interface; platform access and fixtures belong in adapters.'
+const globalNavigator = 'MemberExpression[object.type="MemberExpression"][object.object.name=/^(window|self|globalThis)$/]:matches([object.property.name="navigator"],[object.property.value="navigator"])'
+
 export default defineConfig([
   globalIgnores(['dist']),
   {
@@ -23,6 +32,28 @@ export default defineConfig([
       '@typescript-eslint/no-unused-vars': [
         'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
+    },
+  },
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/adapters/**', 'src/main.tsx', 'src/bootstrap*.{ts,tsx}', 'src/bootstrap/**'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [{ regex: adapterImports, message: interfaceMessage }],
+      }],
+      'no-restricted-globals': ['error', {
+        globals: platformNames.map(name => ({ name, message: interfaceMessage })),
+        checkGlobalObject: true,
+      }],
+      'no-restricted-properties': ['error',
+        { object: 'navigator', property: 'clipboard', message: interfaceMessage },
+        { object: 'navigator', property: 'storage', message: interfaceMessage },
+      ],
+      'no-restricted-syntax': ['error',
+        { selector: `ImportExpression[source.value=/${adapterImports.replaceAll('/', '\\u002F')}/]`, message: interfaceMessage },
+        { selector: `VariableDeclarator[init.name=/^(window|self|globalThis)$/] > ObjectPattern > Property:matches([key.name=/^(${platformNames.join('|')})$/],[key.value=/^(${platformNames.join('|')})$/])`, message: interfaceMessage },
+        { selector: `${globalNavigator}:matches([property.name=/^(clipboard|storage)$/],[property.value=/^(clipboard|storage)$/])`, message: interfaceMessage },
       ],
     },
   },
