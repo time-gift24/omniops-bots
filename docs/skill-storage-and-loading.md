@@ -98,7 +98,7 @@ sequenceDiagram
 
 ## LangGraph.js 当前实际如何加载
 
-当前调用链为：`desktop/runtime/main.mjs` 启动，`resources.mjs` 提供资源接口，`assembly.ts` 捕获或验证会话装配，`runtime.mjs` 管理每轮生命周期，`langgraph.ts` 调用 `createDeepAgent`。`mcp.ts` 负责真实 Streamable HTTP MCP 连接、能力发现与工具调用。依赖锁定在 `desktop/runtime/package.json`：`@langchain/langgraph` 1.5.0、`@langchain/langgraph-checkpoint` 1.2.0、`deepagents` 1.15.0。
+当前调用链为：`desktop/runtime/main.mjs` 启动，`resources.mjs` 提供资源接口，`assembly.ts` 捕获或验证会话装配，`runtime.mjs` 协调桌面命令，`execution/index.ts` 管理每轮生命周期，`chat/adapter.mjs` 转换聊天历史与展示，`graphs/browser-agent.ts` 调用 `createDeepAgent`。`mcp.ts` 负责真实 Streamable HTTP MCP 连接、能力发现与工具调用。依赖锁定在 `desktop/runtime/package.json`：`@langchain/langgraph` 1.5.0、`@langchain/langgraph-checkpoint` 1.2.0、`@langchain/langgraph-checkpoint-sqlite` 1.1.0、`deepagents` 1.15.0。
 
 目前的配置是 Agent 的 `skillIds: string[]`。用户在 Agent 配置中勾选 Skill 后保存，`agent_save` 校验这些 ID 存在；`agents_load` 从当前 Skill 根目录生成可选资源。官方 ID 包含明确的 `contentId`，本地 ID 指向可编辑工作包。
 
@@ -119,7 +119,7 @@ sequenceDiagram
 
 `chat_start` 携带 `threadId`、`runId`、所选 `agentId` 和可选的 `experimentSkillId`。运行时先保存本轮占用记录，再调用 `prepareSession`：新会话捕获完整包，已有会话核验原快照。每个 Skill 必须有有效 UTF-8 `SKILL.md` 和 YAML 元信息，入口上限 256 KiB；单包文件、目录和字节上限沿用文件管理约束，一次装配总量不超过 256 MiB。缺少资源、内容摘要不匹配或必要 builtinTool 不可用时，开始模型／工具执行前失败。
 
-`langgraph.ts` 已将完整包快照通过 `backend` 与 `skills` 挂载给 Deep Agents，模型按需读取入口及引用文件。快照保留二进制资源、相对路径和空目录；文件被保存或挂载不代表模型能解释任意二进制格式，也不使包内脚本自动执行。工具发现与实际调用都受所选能力白名单约束。
+`graphs/browser-agent.ts` 已将完整包快照通过 `backend` 与 `skills` 挂载给 Deep Agents，模型按需读取入口及引用文件。快照保留二进制资源、相对路径和空目录；文件被保存或挂载不代表模型能解释任意二进制格式，也不使包内脚本自动执行。工具发现与实际调用都受所选能力白名单约束。
 
 ### 运行模型：当前本地会话装配
 
@@ -127,30 +127,41 @@ sequenceDiagram
 sequenceDiagram
     actor U as 用户
     participant UI as 会话与 Tauri adapter
+    participant R as runtime.mjs
+    participant E as execution/index.ts
+    participant C as chat/adapter.mjs
     participant Res as resources.mjs / assembly.ts
-    participant Disk as Skill 文件目录
-    participant Run as runtime.mjs / langgraph.ts
+    participant Disk as 会话文件与 SQLite
     U->>UI: 发送一轮消息
-    UI->>Run: chat_start(threadId, runId, agentId, experimentSkillId)
-    Run->>Res: prepareSession(threadId, agentId, experimentSkillId)
+    UI->>R: chat_start(threadId, runId, agentId, experimentSkillId)
+    R->>E: execute(request)
+    E->>E: 占用 run、生成 graphThreadId、保存准备记录
+    E->>C: prepare(scope)
+    C->>Res: prepareSession(threadId, agentId, experimentSkillId)
     alt 新会话
-        Res->>Disk: 捕获完整包、校验内容 ID，写只读快照
+        Res->>Disk: 捕获完整包、校验内容 ID、写只读快照
     else 已有会话
         Res->>Disk: 验证并读取原会话快照
     end
-    Res-->>Run: 固定 Agent、Skill 路径与 MCP 配置
-    Run->>Run: 连接 MCP 并核验工具定义
-    Run->>Run: createDeepAgent(systemPrompt, tools, backend, skills, MemorySaver)
-    Run->>Run: stream(configurable.thread_id = threadId)
-    Run-->>UI: 模型与工具事件，最后返回结果
-    Note over UI,Run: 运行记录与会话消息落盘；已有会话沿用原快照
+    Res-->>C: 固定 Agent、Skill 路径与 MCP 配置
+    C->>C: 连接 MCP、核验工具定义、构造浏览器图
+    C-->>E: 原生图与本轮 input
+    E->>E: streamEvents(v3, thread_id = graphThreadId)
+    E->>Disk: 保存根图与子图 namespace 的 checkpoint
+    E-->>C: 原生模型与工具事件
+    C-->>UI: 转换为聊天展示
+    E->>E: 排空已启动操作与 checkpoint、清理资源
+    E->>C: settle(outcome)，保存历史或中止证据
+    E->>Disk: 保存 run 终态
+    E-->>R: ExecutionOutcome
+    R-->>UI: 唯一 terminal 事件
 ```
 
-当前每轮仍新建 `MemorySaver`，图 checkpoint 仅在本轮内存中；`thread_id` 使用业务会话 ID，不因此获得跨重启 checkpoint。`run-store.ts` 已在 `.records` 保存运行证据、在 `.sessions` 保存消息和装配快照，下一轮由 runtime 恢复已有历史；失败或中断只恢复证据，不恢复待执行图任务。会话固定快照已实现。新增设计已确定将 checkpoint 存入 SQLite，并按 run 隔离、按业务 thread 聚合导出；该持久化与诊断上传尚未接入，见[运维与诊断上传](./requirements-walkthrough/09-运维与诊断上传.md)。
+`main.mjs` 打开本地 `checkpoints.sqlite` 并注入 execution；每个 run 使用独立的 graphThreadId 作为图 `thread_id`，保留原生子图 namespace。`execution/records.ts` 在 `.records` 保存通用运行证据，`chat/history.mjs` 在 `.sessions` 保存消息和固定快照。下一轮由聊天适配器恢复已有历史或中止证据，使用新 run 和新图身份，不 resume 旧图任务。SQLite checkpoint 与聊天历史分别持久化；诊断导出、上传和服务端接收仍待实现，见[运维与诊断上传](./requirements-walkthrough/09-运维与诊断上传.md)。
 
 ## 完整装配：当前本地实现与后续服务端接入
 
-`assembly.ts` 已从当前本地清单选择具体文件并固定快照，`langgraph.ts` 显式把已选 Skill 的根目录传给 Deep Agents；后续仍需补齐远端版本核对和缺包下载。框架 `skills` 参数接收虚拟 POSIX 路径；`backend` 决定这些虚拟路径如何对应实际文件。一次运行只挂载选中的快照，不把包含全部历史版本的 `.omnimind-ops/skills` 作为搜索目录，避免同名 Skill 相互覆盖。[Deep Agents 的 `skills` 参数](https://reference.langchain.com/javascript/deepagents/index/CreateDeepAgentParams)
+`assembly.ts` 已从当前本地清单选择具体文件并固定快照，`graphs/browser-agent.ts` 显式把已选 Skill 的根目录传给 Deep Agents；后续仍需补齐远端版本核对和缺包下载。框架 `skills` 参数接收虚拟 POSIX 路径；`backend` 决定这些虚拟路径如何对应实际文件。一次运行只挂载选中的快照，不把包含全部历史版本的 `.omnimind-ops/skills` 作为搜索目录，避免同名 Skill 相互覆盖。[Deep Agents 的 `skills` 参数](https://reference.langchain.com/javascript/deepagents/index/CreateDeepAgentParams)
 
 Agent 发布查询返回的身份与物料摘要应固定内容 ID，标签只供人查看。以下仅摘示 API 返回信息，不是版本内 `agent.json` 的完整结构：
 
@@ -174,36 +185,34 @@ Agent 发布查询返回的身份与物料摘要应固定内容 ID，标签只�
 
 当前 Deep Agents 配置使用 `FilesystemBackend({ rootDir: snapshot.directory, virtualMode: true })`，把虚拟路径限制在会话快照目录；通过 `permissions` 只允许读取 `/skills/**`，拒绝其他读写，并在工具中间件限制实际能力。`FilesystemBackend` 本身提供读写能力，仅指定 `rootDir` 不等同于只读。[FilesystemBackend API](https://reference.langchain.com/javascript/deepagents/backends/FilesystemBackend)
 
-下面摘示已接入的配置关系；完整实现还包括受控系统指令、能力白名单中间件、取消信号与工具排空，见 [`langgraph.ts`](../desktop/runtime/langgraph.ts)：
+下面摘示已接入的配置关系；模型对象、浏览器能力、固定快照、工具和本轮 input 由入口及聊天适配器准备。完整实现还包括受控系统指令、能力白名单中间件、取消信号与工具排空，见 [`graphs/browser-agent.ts`](../desktop/runtime/graphs/browser-agent.ts)：
 
 ```ts
-import { createDeepAgent, FilesystemBackend } from "deepagents"
+import { createExecution } from "../desktop/runtime/execution/index.ts"
+import { openSqliteCheckpointer } from "../desktop/runtime/execution/sqlite.ts"
+import { createBrowserAgent } from "../desktop/runtime/graphs/browser-agent.ts"
 
-const backend = new FilesystemBackend({
-  rootDir: snapshot.directory,
-  virtualMode: true,
-})
-
-const graph = createDeepAgent({
-  model,
-  systemPrompt: snapshot.agent.configuration.instructions,
-  tools: resolvedBuiltinAndMcpTools,
-  backend,
-  permissions: [
-    { operations: ["read"], paths: ["/skills/**"], mode: "allow" },
-    { operations: ["read", "write"], paths: ["/**"], mode: "deny" },
-  ],
-  skills: snapshot.skills.map(skill => skill.mountPath),
-  checkpointer,
-})
-
-await graph.stream(input, {
-  configurable: { thread_id: threadId },
-  signal,
-})
+const checkpoints = await openSqliteCheckpointer(checkpointPath)
+try {
+  const execution = await createExecution({ recordsDirectory: runsDir, checkpointer: checkpoints.checkpointer })
+  try {
+    const result = await execution.execute({
+      threadId, runId, timeoutMs: 300_000,
+      prepare(scope) {
+        const graph = createBrowserAgent({ model, scope, workspace, browser, snapshot, extraTools })
+        return { graph, input }
+      },
+    })
+    if (!result.ok) throw result.error
+  } finally {
+    await execution.close()
+  }
+} finally {
+  await checkpoints.close()
+}
 ```
 
-Deep Agents 会发现所选 Skill 的元信息，并按需读取入口和引用文件；应用负责把版本和权限约束变成实际可读的文件集合。LangGraph 的 `thread_id` 对应图状态，版本仍由应用自己的 Agent／Skill 清单固定。[Skill middleware](https://reference.langchain.com/javascript/deepagents/node/createSkillsMiddleware)；[LangGraph 图与 thread_id](https://docs.langchain.com/oss/javascript/langgraph/thinking-in-langgraph)
+Deep Agents 会发现所选 Skill 的元信息，并按需读取入口和引用文件；应用负责把版本和权限约束变成实际可读的文件集合。LangGraph 的 `thread_id` 使用每个 run 独立的 graphThreadId；业务会话 threadId 不直接复用为图身份。版本仍由应用自己的 Agent／Skill 清单固定。[Skill middleware](https://reference.langchain.com/javascript/deepagents/node/createSkillsMiddleware)；[LangGraph 图与 thread_id](https://docs.langchain.com/oss/javascript/langgraph/thinking-in-langgraph)
 
 ### 运行模型：待接入的官方调用与下载
 

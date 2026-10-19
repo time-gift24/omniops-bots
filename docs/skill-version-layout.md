@@ -48,7 +48,7 @@
 运行时：~/.omnimind-ops/runs/<sha256(threadId)>/skills/<mountName>/SKILL.md
 ```
 
-前两处是同一正式版本的存储与缓存；运行目录是该版本的会话只读副本。`langgraph.ts` 只挂载当前会话选中的 Skill，不能扫描整个正式版本库来决定使用哪个版本。
+前两处是同一正式版本的存储与缓存；运行目录是该版本的会话只读副本。`graphs/browser-agent.ts` 只挂载当前会话选中的 Skill，不能扫描整个正式版本库来决定使用哪个版本。
 
 ## 标签怎样对应版本
 

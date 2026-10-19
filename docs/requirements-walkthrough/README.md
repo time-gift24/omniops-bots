@@ -12,7 +12,7 @@
 
 设计范围包含已具备的界面与尚未完成的能力，具体完成情况见第 08 章。业务章节按「US → 简要设计 → 客户端 → 详细设计 → 服务端配合」展开；第 10 章按接口分组给出请求、响应与失败边界。运行模型按不同场景说明触发条件、参与者交互和最终结果。
 
-Skill 列表、包内文件管理、文件级上传、草稿实验和本地完整快照装配已实现。桌面文件落在 `.omnimind-ops/skills`；版本保存方式与当前 LangGraph.js 加载见[Skill 存储与运行加载](../skill-storage-and-loading.md)。服务端草稿、发布同步与远端任务交付仍待接入；SQLite checkpoint 和按 thread 诊断上传为第 09 章新增的待实现设计。
+Skill 列表、包内文件管理、文件级上传、草稿实验和本地完整快照装配已实现。桌面文件落在 `.omnimind-ops/skills`；版本保存方式与当前 LangGraph.js 加载见[Skill 存储与运行加载](../skill-storage-and-loading.md)。服务端草稿、发布同步与远端任务交付仍待接入；SQLite checkpoint 已接入；按 thread 诊断导出与上传仍待实现，见第 09 章。
 
 两端的正式版本采用一致相对目录：[Agent 版本文件布局](../agent-version-layout.md)说明提示词、MCP 配置、tool 与 Skill 引用的保存和加载；[Skill 版本文件布局](../skill-version-layout.md)说明完整文件包、内容摘要与标签映射。服务端保存历史全集，客户端按需缓存。
 

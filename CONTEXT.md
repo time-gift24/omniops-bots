@@ -30,3 +30,16 @@ _Avoid_: 将完整工具循环称为一次 Generation
 **FinishReason**：模型停止本次输出的原因，区别于调用发生的网络或协议失败。
 
 **Completed**：一次 Generation 已正常收尾并返回完整结果；不表示上层用户任务或工具循环已经结束。
+
+## Desktop 图执行
+
+**Thread**：业务会话，可包含多轮显式发起的 Run；聊天适配器在会话内固定 Agent／Skill 装配快照，等待用户输入时不占用执行名额。
+
+**Run**：用户明确发起的一轮图执行，可包含多次 Generation 和图内并行分支；失败、取消或重启中断后不自动续跑。
+_Avoid_: 将单次 Generation 的 Completed 当作 Run 已完成
+
+**Graph**：由代码定义并随 desktop 发版的 LangGraph 编排，拥有自己的输入、state 与结果，不强制包含 messages；Agent 配置只负责提示词、Skill 和工具选择。
+
+**GraphThreadId**：一个 Run 独有的图执行标识，对应 LangGraph 的 thread_id；保留业务 threadId → runId → graphThreadId 映射及原生 checkpoint_ns。
+
+**Checkpoint**：LangGraph 图状态、父关系与 pending writes 的保存证据，由本地 SQLite 持久化；聊天历史不能替代它，保存也不表示允许重启后续跑。

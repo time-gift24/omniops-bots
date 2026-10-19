@@ -65,7 +65,7 @@
 
 | 内容 | 保存位置与约束 | 运行时处理 |
 | --- | --- | --- |
-| 系统提示词 | `prompt.md`；`agent.json.promptFile` 在本期固定为 `prompt.md` | 读取正文，写入会话固定配置的 `instructions`，传给 `langgraph.ts` |
+| 系统提示词 | `prompt.md`；`agent.json.promptFile` 在本期固定为 `prompt.md` | 读取正文，写入会话固定配置的 `instructions`，传给 `graphs/browser-agent.ts` |
 | MCP 配置 | `agent.json.mcpServers` 保存本版本完整的非敏感配置，包含服务 ID、名称、描述、URL 和可选凭据环境变量名 | 按固定 URL 使用现有 Streamable HTTP 接入；从运行环境取得凭据，连接并发现工具 |
 | builtinTool | `agent.json.toolIds` 保存确定的工具 ID 列表 | 从本次桌面版本查找实现，缺失则失败并提示更新 |
 | Skill 引用 | `agent.json.skills` 保存 `skillId + contentId + mountPath`；正式版本只引用官方确定包 | 从独立 Skill 版本目录取完整包，复制到会话快照并挂载到指定虚拟路径 |
@@ -144,37 +144,43 @@ sequenceDiagram
 
 标签和发布元信息不混入版本包；暂存和传输容器也放在版本目录外。服务端公布版本前，完整 Agent 包及其引用的 Skill 必须可取得。收到已存在标签的不同指向或同一内容 ID 下不一致的文件时，客户端拒绝本次同步并保留原缓存。
 
-## 运行模型二：从版本文件装配到 langgraph.ts
+## 运行模型二：从版本文件装配到 graphs/browser-agent.ts
 
 ```mermaid
 sequenceDiagram
     participant C as 客户端会话入口
+    participant E as execution/index.ts
     participant A as 装配器
     participant FS as Agent 与 Skill 版本缓存
     participant M as 远端 MCP
-    participant G as langgraph.ts
-    C->>A: 指定 agentId + agentContentId，物料已同步
+    participant G as graphs/browser-agent.ts
+    C->>E: execute(request)，指定 Agent 版本与本轮上下文
+    E->>A: prepare(scope)，物料已同步
     A->>FS: 读取该版本 agent.json 与 prompt.md，验证摘要
     A->>FS: 按 skillId + contentId 读取并核验完整包
     A->>A: 将 Skill 复制到会话只读目录，固定挂载路径
     A->>A: 按 toolIds 检查本机实现，读取运行时 MCP 凭据
     break 物料校验失败、缺少 builtinTool 或必要凭据
-        A-->>C: 返回具体原因，停止本次准备
+        A-->>E: 准备失败
+        E-->>C: 收尾后返回具体原因
     end
     A->>M: 使用版本内固定配置连接并发现工具
     alt MCP 连接与工具发现成功
         M-->>A: 返回工具定义与调用入口
         A->>A: 合并工具，记录不含凭据值的运行快照
-        A->>G: instructions、tools、只读 backend、Skill mountPaths
-        G->>G: createDeepAgent 后按本轮上下文执行
-        G-->>C: 返回本轮结果
+        A->>G: model、scope、snapshot、浏览器能力与已选工具
+        G-->>A: 原生浏览器图
+        A-->>E: graph 与本轮 input
+        E->>E: 驱动原生图，使用本轮 graphThreadId
+        E-->>C: 操作与 checkpoint 收尾后的 ExecutionOutcome
     else MCP 连接、工具发现或合并失败
-        A-->>C: 准备失败，返回具体原因，不开始执行
+        A-->>E: 准备失败
+        E-->>C: 收尾后返回具体原因，不开始图执行
     end
     Note over C,G: 后续轮次沿用本会话快照，新发布只对新会话生效
 ```
 
-`langgraph.ts` 接收装配完成的运行对象，不扫描 `agents/releases` 或 `skills/releases` 来猜测版本。`prompt.md` 转为 `snapshot.agent.configuration.instructions`；Skill 引用解析为固定 `snapshot.skills` 和会话只读文件；`toolIds` 与 `mcpServers` 解析为实际工具。模型参数和桌面版本记录实际运行条件，不倒写到发布文件。
+`graphs/browser-agent.ts` 接收装配完成的运行对象并构造原生图，execution 负责驱动与收尾；图工厂不扫描 `agents/releases` 或 `skills/releases` 来猜测版本。`prompt.md` 转为 `snapshot.agent.configuration.instructions`；Skill 引用解析为固定 `snapshot.skills` 和会话只读文件；`toolIds` 与 `mcpServers` 解析为实际工具。模型参数和桌面版本记录实际运行条件，不倒写到发布文件。
 
 ## 当前实现与接入边界
 
