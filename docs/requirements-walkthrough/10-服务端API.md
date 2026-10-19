@@ -64,13 +64,15 @@ HTTPS 传输物料、发布请求和诊断包；WebSocket 传输任务控制与�
 | --- | --- | --- |
 | `GET /api/agents` | 分页参数，可按名称筛选 | 官方 Agent 目录，含资源 ID、名称、可选版本摘要与标签；返回可读取的确定版本 |
 | `GET /api/agents/{agentId}/versions` | 分页参数 | 已发布版本及标签，不包含客户端私有 Agent 或未授权草稿 |
-| `GET /api/agents/{agentId}/versions/{contentId}` | 精确的官方装配身份 | 完整装配和所需物料清单；不存在即失败，不解析为“最新版” |
+| `GET /api/agents/{agentId}/versions/{contentId}` | 精确的官方装配身份 | Agent 完整包的两项文件清单、内容摘要及受限下载地址，关联所需 Skill 清单；不存在即失败，不解析为“最新版” |
 | `GET /api/skills` | 分页参数，可按名称筛选 | 官方 Skill 目录与摘要 |
 | `GET /api/skills/{skillId}/versions` | 分页参数 | 已发布 `contentId`、标签与发布日期；不要求下载全部历史 |
 | `GET /api/skills/{skillId}/versions/{contentId}` | 精确包身份 | 包清单、内容摘要、传输包大小／SHA-256、受权下载地址及必要的到期时间 |
 | `GET /api/skills/{skillId}/versions/{contentId}/package` | 精确包身份及读取权限 | 完整文件包的原始字节与目录结构；等效的受限下载地址可替代此路由 |
 
-Agent 装配至少包含确定的系统提示词、`skills[{skillId, contentId, releaseTag}]`、`builtinToolIds` 和 `mcpServers`。MCP 项保存连接配置或固定配置引用、凭据引用；发布所需的非敏感配置必须可按该版本解析，不能指向会悄悄改变的配置。MCP 服务实现和实时工具行为不因此冻结，也不另设本项目 MCP 发布版本。
+Agent 完整包严格由 `prompt.md` 与 `agent.json` 组成：前者保存系统提示词；后者保存 `schemaVersion`、名称与描述、`promptFile`、`skills[{skillId, contentId, mountPath}]`、`toolIds` 和完整非敏感 `mcpServers`（包含可选凭据引用）。MCP 不再通过可变全局 ID 解析连接配置；服务实现和实时工具行为不因此冻结，也不另设本项目 MCP 发布版本。展示用发布标签在包外版本清单中返回。
+
+服务端与客户端均保存为 `agents/releases/<agentId>/<contentId>/`，人工标签映射位于上一级 `tags.json`。Agent 文件清单同样列出相对路径、`kind`、字节数与 SHA-256；下载地址可以分别返回两个文件，也可以返回完整传输包。必须交付原始字节，不能只返回一个 JSON 对象让客户端重新序列化。完整目录、示例、摘要算法与运行模型见 [Agent 版本文件布局](../agent-version-layout.md)。这里的包摘要是待接入的正式发布契约，不是当前本地配置文件摘要。
 
 Skill 清单逐项列出 POSIX 相对 `path`、`kind`，文件另有 `bytes` 与 `sha256`，空目录也保留。完整包内容摘要严格采用[Skill 版本文件布局](../skill-version-layout.md)的规范化算法；传输 ZIP 的 SHA-256 与包 `contentId` 是两个值，不能混用。服务端提供跨语言摘要用例供客户端对照。
 
@@ -84,11 +86,11 @@ Skill 清单逐项列出 POSIX 相对 `path`、`kind`，文件另有 `bytes` 与
 | --- | --- | --- |
 | `POST /api/skills`、`POST /api/agents` | 运维权限、目录名称等元数据、幂等键 | 新的官方资源身份，尚无正式版本；本地新建不调用它 |
 | `POST /api/skills/{skillId}/drafts` | 完整文件包、包摘要、`expectedRevision`（首次为空）、幂等键 | `draftRevisionId`、`contentId`、保存时间与新的草稿头；完整包持久保存后才成功 |
-| `POST /api/agents/{agentId}/drafts` | 完整装配、`expectedRevision`（首次为空）、幂等键 | 新修订 ID、装配摘要及新的草稿头；校验引用和配置后保存 |
+| `POST /api/agents/{agentId}/drafts` | 完整 Agent 包的原始文件字节、包摘要、`expectedRevision`（首次为空）、幂等键 | 新 `draftRevisionId`、包 `contentId` 及新的草稿头；校验引用、配置及包摘要后保存 |
 | `GET /api/{skills\|agents}/{resourceId}/drafts` | 运维权限、分页参数 | 已保存修订的 ID、摘要、保存时间与当前草稿头；这里表示两组同形路由 |
-| `GET /api/{skills\|agents}/{resourceId}/drafts/{draftRevisionId}` | 运维权限、确定修订 | Agent 完整装配，或 Skill 完整包的清单与受限下载地址 |
+| `GET /api/{skills\|agents}/{resourceId}/drafts/{draftRevisionId}` | 运维权限、确定修订 | Agent 或 Skill 完整包的文件清单、摘要与受限下载地址，保留原始字节 |
 
-Skill 服务端修订存于 `skills/drafts/<skillId>/revisions/<draftRevisionId>/`；客户端未同步工作副本在 `working/`，上传前固定完整内容。客户端上传期间继续编辑，不改变已经提交的修订；服务端失败时保留本地副本。
+Skill 服务端修订存于 `skills/drafts/<skillId>/revisions/<draftRevisionId>/`；Agent 修订存于 `agents/drafts/<agentId>/revisions/<draftRevisionId>/`，包含完整 `agent.json` 和 `prompt.md` 原始字节。客户端下载修订采用相同相对目录，未同步工作副本在对应资源的 `working/`，上传前固定完整内容。客户端上传期间继续编辑，不改变已经提交的修订；服务端失败时保留本地副本。
 
 **保存草稿不发布、不联动 Agent，也不要求实验通过。** 文件级添加、重命名和删除发生在客户端，服务端不为每个文件另建发布 API。Agent 草稿允许表达待发布装配；正式发布时所引用的 Skill 必须是可取得的正式版本，联动发布中的新 Skill 包除外。
 

@@ -430,8 +430,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <li>作为用户，我能在客户端查看服务端发起的独立任务会话、执行过程和结果。</li>
 <li>作为使用者，我能追溯实际装配和运行条件，已有会话不受新发布影响。</li>
 </ol>
-<figure class="usecase"><a class="screenshot-link" href="./assets/04-agent-usecase.svg" target="_blank" rel="noopener" aria-label="放大用例图"><img src="./assets/04-agent-usecase.svg" alt="Agent 用例图：用户选择与编辑、运维发布、服务端调用"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure>
-<h2 id="04-agent-简要设计">简要设计</h2>
+<figure class="usecase"><a class="screenshot-link" href="./assets/04-agent-usecase.svg" target="_blank" rel="noopener" aria-label="放大用例图"><img src="./assets/04-agent-usecase.svg" alt="Agent 用例图：用户选择与编辑、运维发布、服务端调用"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure><h2 id="04-agent-简要设计">简要设计</h2>
 <p>客户端提供本地 Agent 编辑和官方 Agent 使用两条路径。本地 Agent 可以随时编辑、保存，不设发布标签，服务端不会调用它。用户同步官方 Agent 后，可以查看只读配置并主动发起会话；运维人员在客户端维护官方草稿并发布新版本，由服务端配合保存和分发。</p>
 <p>客户端开始会话时固定 Agent 与 Skill 快照，并按装配执行。用户主动发起的会话允许正常输入；接到服务端调用时，客户端使用传入的上下文新建独立会话，该会话仅供本地查看过程和结果。</p>
 <p>Agent 的内容 ID 根据系统提示词、固定 Skill 版本、所选 builtinTool 和 MCP 装配配置生成。正式发布时手填 <code>v.1.0.0</code> 形式的标签，已发布内容和标签指向不可变。模型和推理参数仅记录于运行快照，不参与内容 ID。</p>
@@ -453,7 +452,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 <tr>
 <td>Skill</td>
-<td>官方 Skill 的身份、完整包内容 ID 和展示标签；本地 Agent 也可引用本地包</td>
+<td>官方 Skill 的身份、完整包内容 ID 和挂载路径；展示标签从外部版本清单取得，本地 Agent 也可引用本地包</td>
 <td>会话目录下完整、只读的 Skill 快照，包括入口与包内引用文件</td>
 <td>正式 Agent 固定官方 Skill 内容 ID；本地可编辑包在运行前固定快照，不使用浮动“最新版”代替</td>
 </tr>
@@ -461,13 +460,13 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <td>builtinTool</td>
 <td>所选内置工具 ID</td>
 <td>当前桌面版本中对应的可调用工具实现</td>
-<td>工具选择参与 Agent ID；实现随桌面版本，缺失时提示更新，不通过 Skill 同步安装</td>
+<td>工具选择参与 Agent 内容 ID；实现随桌面版本，缺失时提示更新，不通过 Skill 同步安装</td>
 </tr>
 <tr>
 <td>MCP</td>
-<td>所选远端服务的连接配置或配置引用、凭据引用</td>
+<td>所选远端服务的完整非敏感连接配置、凭据引用</td>
 <td>远端连接与该服务返回的工具定义、调用入口</td>
-<td>非敏感装配配置参与 Agent ID；MCP 服务本身没有本项目发布标签，也不保证外部实现历史冻结</td>
+<td>非敏感装配配置参与 Agent 内容 ID；MCP 服务本身没有本项目发布标签，也不保证外部实现历史冻结</td>
 </tr>
 <tr>
 <td>运行条件</td>
@@ -477,13 +476,40 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 </tbody></table>
 <p>配置保存的是“本次需要哪些能力”，运行装配则将它们解析为实际文件和可调用工具。MVP 保持 MCP 服务级选择：连接选中的服务并取得工具清单，不新增逐工具授权管理界面。密钥、Token 从运行时凭据来源取得，其值不进入发布指纹或快照。</p>
+<h3>两端一致的 Agent 版本文件</h3>
+<p>服务端与客户端均采用 <code>agents/releases/&lt;agentId&gt;/&lt;contentId&gt;/</code>：<code>agentId</code> 是稳定资源身份，<code>contentId</code> 是确定装配的版本摘要。每个版本只包含 <code>prompt.md</code> 和 <code>agent.json</code>；人工标签保存在上一级 <code>tags.json</code>，不进入版本包。正式调用携带的 <code>agentContentId</code> 就是这里的 <code>contentId</code>。</p>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>保存内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>prompt.md</code></td>
+<td>该版本完整系统提示词正文</td>
+</tr>
+<tr>
+<td><code>agent.json</code></td>
+<td>名称与描述、<code>promptFile</code>、builtin <code>toolIds</code>、完整非敏感 <code>mcpServers</code>、固定的 <code>skills[{skillId, contentId, mountPath}]</code></td>
+</tr>
+<tr>
+<td><code>../tags.json</code></td>
+<td>运维手填的 <code>v.1.0.0</code> 等标签到 Agent 内容 ID 的不可变映射</td>
+</tr>
+</tbody></table>
+<p>Skill 完整文件包独立保存于 <code>skills/releases/&lt;skillId&gt;/&lt;contentId&gt;/</code>，由 Agent 引用并在运行前复制到会话快照。MCP 凭据只保存引用，不能仅存可变全局 MCP ID；tool 只保存选择，具体实现随桌面版本交付。Agent 内容摘要覆盖两个文件的原始字节，使用与 Skill 相同的文件清单摘要规则。</p>
+<p>上述正式多版本布局待接入；当前本地 Agent 仍存于 <code>agents/&lt;agentId&gt;.json</code>，现有配置摘要和运行快照摘要不等同于新正式包摘要。完整目录、JSON 示例、草稿修订、发布同步与运行装配顺序图见 <a href="../agent-version-layout.md">Agent 版本文件布局</a>。</p>
 <h3>与每周资产发布的关系</h3>
 <p>Agent 提示词和 Skill 是持续改进的核心资产。只修改提示词时，发布新的 Agent，原 Skill 包继续复用；修改 Skill 时，正式发布完整新包，并一次更新所有受影响官方 Agent 的引用、内容 ID 和人工新标签。周内编辑与保存草稿不联动，按周选择已确认的改进发布；详见<a href="#00-overview">总体设计中的周迭代</a>。</p>
 <p>以下描述完整装配流程。当前本地实现已支持 Agent 配置持久化、完整 Skill 包捕获与只读挂载、会话固定快照、builtinTool 白名单和真实 MCP 连接；<code>langgraph.ts</code> 负责图装配，浏览器工具经 Playwright 操作内置 Chrome。官方版本发布、远端下载同步与 WebSocket 调用仍待接入。实际入口见<a href="../skill-storage-and-loading.md">Skill 存储与运行加载</a>，服务端契约汇总见 <a href="#10-server-api">10 · 服务端 API</a>。</p>
 <details>
-<summary>Agent 装配与运行快照的关系</summary><figure class="diagram"><a class="screenshot-link" href="diagrams/04-agent.html" target="_blank" rel="noopener" aria-label="打开可缩放设计图"><img src="./assets/04-agent.svg" alt="Agent 装配关系：固定物料生成内容 ID，运行环境进入快照"></a><figcaption>结构或状态概览 · 点击缩放查看</figcaption></figure>
-<p><a href="./diagrams/04-agent.html">打开装配关系图</a></p>
-</details><h2 id="04-agent-客户端">客户端</h2>
+<summary>Agent 装配与运行快照的关系</summary>
+
+<figure class="diagram"><a class="screenshot-link" href="diagrams/04-agent.html" target="_blank" rel="noopener" aria-label="打开可缩放设计图"><img src="./assets/04-agent.svg" alt="Agent 装配关系：固定物料生成内容 ID，运行环境进入快照"></a><figcaption>结构或状态概览 · 点击缩放查看</figcaption></figure><p><a href="./diagrams/04-agent.html">打开装配关系图</a></p>
+</details>
+
+<h2 id="04-agent-客户端">客户端</h2>
 <ul>
 <li>提供本地 Agent 编辑；允许直接引用官方已发布 Skill，修改官方 Skill 时先复制成本地副本。</li>
 <li>官方配置保持只读，但用户主动发起的会话可以正常输入。服务端发起的会话只展示执行过程和结果，不接受本地追加指令。</li>
@@ -495,8 +521,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <h2 id="04-agent-详细设计">详细设计</h2>
 <h3>运行模型一：完整装配后开始执行</h3>
 <p><strong>条件：</strong> 用户选定 Agent 发起新会话，或服务端传入确定的官方 Agent 版本与上下文。图中展示官方 Agent 缺少部分 Skill 包、同步和各项检查均成功的情况；缓存已齐全则跳过下载。本地 Agent 读取当前已保存配置，并在本次准备中固定其内容。</p>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/04-assembly-ready.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/04-assembly-ready.svg" alt="完整装配：提示词、Skill、builtinTool 与 MCP 进入同一次运行"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
-<p><a href="./diagrams/runtime/04-assembly-ready.html">打开运行模型：Agent 完整装配</a></p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/04-assembly-ready.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/04-assembly-ready.svg" alt="完整装配：提示词、Skill、builtinTool 与 MCP 进入同一次运行"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/04-assembly-ready.html">打开运行模型：Agent 完整装配</a></p>
 <p>装配按下面的顺序完成。表中的步骤是客户端职责，不要求拆成独立服务：</p>
 <table>
 <thead>
@@ -546,8 +571,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <p><strong>结果：</strong> 本次运行获得明确的提示词、可读 Skill 文件集合和可调用工具集合。不能把包含所有历史版本的 Skill 根目录直接作为本次搜索范围。手动会话后续轮次复用原 Agent／Skill 快照及配置；MCP 连接可以重新建立，但这不代表外部服务行为被快照冻结。每轮仍重新检查 Chrome 是否空闲。</p>
 <h3>运行模型二：装配失败时停止</h3>
 <p><strong>条件：</strong> Agent 与 Skill 已解析，但所需 MCP 无法连接或鉴权失败。图中只展示这一条失败路径，其他失败按下表处理。</p>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/04-assembly-failure.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/04-assembly-failure.svg" alt="装配失败：MCP 接入失败，不构造或执行 Agent"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
-<p><a href="./diagrams/runtime/04-assembly-failure.html">打开运行模型：Agent 装配失败</a></p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/04-assembly-failure.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/04-assembly-failure.svg" alt="装配失败：MCP 接入失败，不构造或执行 Agent"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/04-assembly-failure.html">打开运行模型：Agent 装配失败</a></p>
 <table>
 <thead>
 <tr>
@@ -587,13 +611,11 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <p><strong>结果：</strong> 客户端展示失败环节和原因；远端任务按原调用 ID 回传失败。若已取得 Chrome 名额则释放，已有缓存与未同步编辑保留，不自动重试整次任务。此处沿用已确认的状态、错误与运行快照观测边界，本次文档补充不新增日志、span 或指标要求。</p>
 <h3>运行模型三：编辑本地 Agent 后开始会话</h3>
 <p>**条件：**用户编辑本地 Agent 并保存；本次所需物料已准备好，builtinTool 检查通过。客户端在取得 Chrome 执行名额后执行。</p>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/04-local-session.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/04-local-session.svg" alt="本地 Agent 运行顺序：保存装配、读取物料、固定快照、执行"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
-<p><a href="./diagrams/runtime/04-local-session.html">打开运行模型</a></p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/04-local-session.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/04-local-session.svg" alt="本地 Agent 运行顺序：保存装配、读取物料、固定快照、执行"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/04-local-session.html">打开运行模型</a></p>
 <p>**结果：**本轮按确定的 Agent、Skill 和运行条件执行。之后再编辑本地 Agent，也不会改变这个会话已经固定的快照；修改从新会话生效。本地 Agent 不设发布标签，也不接受服务端调用。缺包、缺少工具和忙时的处理分别见<a href="#06-sync">同步与装配</a>、<a href="#03-builtintool">builtinTool</a>与<a href="#07-execution">任务执行与恢复</a>。</p>
 <h3>运行模型四：官方发布新版，已有会话继续使用原快照</h3>
 <p>**条件：**已有手动会话已经固定快照；随后官方发布了新的 Agent 装配。图中先展示用户继续旧会话，再展示另开新会话，两次输入分别触发各自的准备和执行。</p>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/04-official-new-version.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/04-official-new-version.svg" alt="官方 Agent 新版发布后的顺序：旧会话保持原快照，新会话同步新版"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
-<p><a href="./diagrams/runtime/04-official-new-version.html">打开运行模型</a></p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/04-official-new-version.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/04-official-new-version.svg" alt="官方 Agent 新版发布后的顺序：旧会话保持原快照，新会话同步新版"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/04-official-new-version.html">打开运行模型</a></p>
 <p>**结果：**旧会话的原 Agent、Skill 版本保持不变；新会话按用户所选的官方新版同步物料并固定新快照。官方配置始终只读，但用户主动发起的会话可以继续输入。服务端发起的任务另建独立只读会话，具体运行模型见<a href="#07-execution">任务执行与恢复</a>。</p>
 <table>
 <thead>
@@ -624,8 +646,8 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <p>为支持客户端维护、同步和执行官方 Agent，服务端需要配合：</p>
 <ul>
 <li>接收并保存官方 Agent 草稿修订、装配清单、内容 ID 和手填发布标签，校验运维写入权限，并提供同步物料。</li>
-<li>在同一份官方装配中提供确定提示词、Skill 内容 ID、builtinTool ID 和 MCP 连接配置或引用，让客户端可以一次解析完整能力；凭据值不放进可分发的发布清单或运行快照。</li>
-<li>Skill 正式发布时向客户端提供受影响 Agent，更新装配并生成新 ID；接收同次手填的新标签完成联动发布。保存 Skill 草稿不联动。</li>
+<li>按与客户端相同的 <code>agents/releases/&lt;agentId&gt;/&lt;contentId&gt;/</code> 保存完整版本，提供 <code>prompt.md</code>、<code>agent.json</code> 和包外标签映射；清单固定 Skill 内容 ID、builtinTool ID 与完整非敏感 MCP 配置，凭据值不进入发布文件或运行快照。</li>
+<li>Skill 正式发布时向客户端提供受影响 Agent，更新装配并生成新的内容 ID；接收同次手填的新标签完成联动发布。保存 Skill 草稿不联动。</li>
 <li>支持每周发布已确认的提示词与 Skill 改进并保留历史装配；只改提示词时可单独发布 Agent，MCP 服务和内置工具实现不随资产周发布复制一份。</li>
 <li>通过 LangGraph 调用客户端 Agent，传入每次独立任务的上下文，接收执行结果。每个 Agent 的业务输入输出由服务端单独定义，本章不展开。</li>
 </ul>
@@ -698,22 +720,33 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 </thead>
 <tbody><tr>
-<td>完整文件包</td>
+<td>Agent 完整版本</td>
+<td><code>&lt;服务端根&gt;/agents/releases/&lt;agentId&gt;/&lt;contentId&gt;/</code></td>
+<td><code>&lt;客户端根&gt;/agents/releases/&lt;agentId&gt;/&lt;contentId&gt;/</code></td>
+</tr>
+<tr>
+<td>Agent 版本文件</td>
+<td><code>prompt.md</code> 与 <code>agent.json</code>，保存提示词、MCP 配置、tool 和 Skill 引用</td>
+<td>相同路径、相同原始字节，下载后独立核对摘要</td>
+</tr>
+<tr>
+<td>Skill 完整文件包</td>
 <td><code>&lt;服务端根&gt;/skills/releases/&lt;skillId&gt;/&lt;contentId&gt;/</code></td>
 <td><code>&lt;客户端根&gt;/skills/releases/&lt;skillId&gt;/&lt;contentId&gt;/</code></td>
 </tr>
 <tr>
 <td>标签索引</td>
-<td><code>skills/releases/&lt;skillId&gt;/tags.json</code>，由正式发布新增映射</td>
+<td><code>agents/releases/&lt;agentId&gt;/tags.json</code>、<code>skills/releases/&lt;skillId&gt;/tags.json</code>，正式发布新增映射</td>
 <td>相同相对路径，只接受服务端确认的映射</td>
 </tr>
 <tr>
-<td>包内路径与内容</td>
+<td>Skill 包内路径与内容</td>
 <td><code>SKILL.md</code>、引用文件、脚本和资源原始字节</td>
 <td>相同路径、相同字节，下载后独立核对摘要</td>
 </tr>
 </tbody></table>
-<p>两端的物理根路径可以不同，版本相对路径不变。客户端只缓存当前需要的包，不镜像全部历史；标签清单可以包含尚未缓存的版本。完整包先在正式版本目录外暂存，通过摘要和来源校验后再提交；版本包内不增加发布元信息或传输清单。详细目录及失败处理见 <a href="../skill-version-layout.md">Skill 版本文件布局</a>。</p>
+<p>两端的物理根路径可以不同，版本相对路径不变。客户端只缓存当前需要的包，不镜像全部历史；标签清单可以包含尚未缓存的版本。完整包先在正式版本目录外暂存，通过摘要和来源校验后再提交；版本包内不增加发布元信息或传输清单。详细目录及失败处理见 <a href="../agent-version-layout.md">Agent 版本文件布局</a>和 <a href="../skill-version-layout.md">Skill 版本文件布局</a>。</p>
+<p>先取得确定 Agent 版本的两个文件，再按 <code>agent.json.skills</code> 补齐独立 Skill 包；MCP 完整非敏感配置随 Agent 文件取得，不套用本地可变配置。tool 只核对本机实现，不下载实现包。Agent 正式目录与同步尚待接入，当前本地单文件保存及会话快照不变。</p>
 <h2 id="06-sync-客户端">客户端</h2>
 <ul>
 <li>官方新会话同步版本清单；每次远端调用核对所需版本，不匹配或缺少物料就先同步。</li>
@@ -730,7 +763,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <h3>运行模型二：下载本次缺失的物料</h3>
 <p>**条件：**版本清单已明确本次装配，但本地缺少其中某些完整 Skill 包或其他 Agent 物料。本图只展示下载成功的情况。</p>
 <figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/06-download-missing.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/06-download-missing.svg" alt="按需下载运行顺序：清单核对、识别缺失、下载保存、固定快照"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/06-download-missing.html">打开运行模型</a></p>
-<p>**结果：**客户端只下载缺失项，按版本保存后装配。MCP 配置或引用与 Agent 一并准备；旧 Skill 包继续保留，不自动覆盖或清理。已有手动会话继续使用原快照，同步取得的新版只用于新会话。</p>
+<p>**结果：**客户端只下载缺失项，按版本保存后装配。完整非敏感 MCP 配置与 Agent 一并准备，凭据值运行时取得；旧 Agent 与 Skill 包继续保留，不自动覆盖或清理。已有手动会话继续使用原快照，同步取得的新版只用于新会话。</p>
 <h3>运行模型三：核对或下载失败</h3>
 <p>**条件：**核对清单失败，或者下载所需物料失败、物料不可取得。任一条件都直接结束本次准备，不再继续后面的装配与执行。</p>
 <figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/06-sync-failure.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/06-sync-failure.svg" alt="同步失败运行顺序：请求失败、保留缓存、反馈本次失败"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/06-sync-failure.html">打开运行模型</a></p>
@@ -740,9 +773,9 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <h2 id="06-sync-服务端配合">服务端配合</h2>
 <p>为支持客户端核对版本与按需装配，服务端需要：</p>
 <ul>
-<li>提供官方已发布 Agent、Skill 的版本清单和缺失物料下载；Agent 的 MCP 配置或引用随清单关联。</li>
-<li>使用与客户端相同的 Skill 版本相对目录、包内路径、内容 ID 算法及标签映射；只有完整包与关联 Agent 均可取得后才公布正式发布结果。</li>
-<li>远端调用明确所需 Agent 版本，客户端据此核对；具体字段和端点留到实现阶段确定。</li>
+<li>提供官方已发布 Agent、Skill 的版本清单和缺失物料下载；Agent 版本包包含完整非敏感 MCP 配置及凭据引用。</li>
+<li>使用与客户端相同的 Agent、Skill 版本相对目录、包内路径、内容 ID 算法及标签映射；只有完整包与关联 Agent 均可取得后才公布正式发布结果。</li>
+<li>远端调用通过 <code>agentId + agentContentId</code> 明确所需版本，客户端据此核对；接口约定见 <a href="#10-server-api">10 · 服务端 API</a>。</li>
 <li>保留已发布版本和标签的不可变关系。Skill 发布产生新 Agent 装配，不改写历史版本。</li>
 <li>按现有身份体系开放相应读取和运维写入能力，不新增客户端账号体系。</li>
 </ul>
@@ -1172,7 +1205,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <p>串讲重点：服务端提供身份与权限、官方物料、草稿与发布、远端任务通道、桌面更新和诊断接收；每项接口都明确何时才算成功，以及断线后怎样查询或重试。</p>
 </blockquote>
 <p><strong>本章是拟定的接入契约，相关平台 API 和 WebSocket 通道尚未实现。</strong> 路径名称可适配现有平台网关，输入输出与成功边界保持一致；不据此另建账号体系、审批平台或文件级发布服务。客户端已实现的本地能力见<a href="#08-frontend">第 08 章</a>。</p>
-<h2 id="10-server-api-API-分组与边界">API 分组与边界</h2>
+<h2 id="10-server-api-API分组与边界">API 分组与边界</h2>
 <table>
 <thead>
 <tr>
@@ -1334,7 +1367,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <tr>
 <td><code>GET /api/agents/{agentId}/versions/{contentId}</code></td>
 <td>精确的官方装配身份</td>
-<td>完整装配和所需物料清单；不存在即失败，不解析为“最新版”</td>
+<td>Agent 完整包的两项文件清单、内容摘要及受限下载地址，关联所需 Skill 清单；不存在即失败，不解析为“最新版”</td>
 </tr>
 <tr>
 <td><code>GET /api/skills</code></td>
@@ -1357,7 +1390,8 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <td>完整文件包的原始字节与目录结构；等效的受限下载地址可替代此路由</td>
 </tr>
 </tbody></table>
-<p>Agent 装配至少包含确定的系统提示词、<code>skills[{skillId, contentId, releaseTag}]</code>、<code>builtinToolIds</code> 和 <code>mcpServers</code>。MCP 项保存连接配置或固定配置引用、凭据引用；发布所需的非敏感配置必须可按该版本解析，不能指向会悄悄改变的配置。MCP 服务实现和实时工具行为不因此冻结，也不另设本项目 MCP 发布版本。</p>
+<p>Agent 完整包严格由 <code>prompt.md</code> 与 <code>agent.json</code> 组成：前者保存系统提示词；后者保存 <code>schemaVersion</code>、名称与描述、<code>promptFile</code>、<code>skills[{skillId, contentId, mountPath}]</code>、<code>toolIds</code> 和完整非敏感 <code>mcpServers</code>（包含可选凭据引用）。MCP 不再通过可变全局 ID 解析连接配置；服务实现和实时工具行为不因此冻结，也不另设本项目 MCP 发布版本。展示用发布标签在包外版本清单中返回。</p>
+<p>服务端与客户端均保存为 <code>agents/releases/&lt;agentId&gt;/&lt;contentId&gt;/</code>，人工标签映射位于上一级 <code>tags.json</code>。Agent 文件清单同样列出相对路径、<code>kind</code>、字节数与 SHA-256；下载地址可以分别返回两个文件，也可以返回完整传输包。必须交付原始字节，不能只返回一个 JSON 对象让客户端重新序列化。完整目录、示例、摘要算法与运行模型见 <a href="../agent-version-layout.md">Agent 版本文件布局</a>。这里的包摘要是待接入的正式发布契约，不是当前本地配置文件摘要。</p>
 <p>Skill 清单逐项列出 POSIX 相对 <code>path</code>、<code>kind</code>，文件另有 <code>bytes</code> 与 <code>sha256</code>，空目录也保留。完整包内容摘要严格采用<a href="../skill-version-layout.md">Skill 版本文件布局</a>的规范化算法；传输 ZIP 的 SHA-256 与包 <code>contentId</code> 是两个值，不能混用。服务端提供跨语言摘要用例供客户端对照。</p>
 <p>正式内容保持 <code>skills/releases/&lt;skillId&gt;/&lt;contentId&gt;/</code> 的包内结构；人工标签和上传者等元数据在包外。下载在临时目录完成，拒绝路径穿越、符号链接、重复路径、大小写冲突及超限内容，客户端重算摘要后原子提交缓存。失效 URL 可重新取得，但同一内容 ID 对应的内容不能改变。</p>
 <p>客户端只请求当前装配缺少的包；已缓存相同完整版本可复用。新会话核对版本，已有会话继续使用固定快照。清单、权限、下载或摘要任一失败都停止本次准备，不回退旧版或移除缺失能力后继续执行。</p>
@@ -1382,8 +1416,8 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 <tr>
 <td><code>POST /api/agents/{agentId}/drafts</code></td>
-<td>完整装配、<code>expectedRevision</code>（首次为空）、幂等键</td>
-<td>新修订 ID、装配摘要及新的草稿头；校验引用和配置后保存</td>
+<td>完整 Agent 包的原始文件字节、包摘要、<code>expectedRevision</code>（首次为空）、幂等键</td>
+<td>新 <code>draftRevisionId</code>、包 <code>contentId</code> 及新的草稿头；校验引用、配置及包摘要后保存</td>
 </tr>
 <tr>
 <td><code>GET /api/{skills|agents}/{resourceId}/drafts</code></td>
@@ -1393,12 +1427,12 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <tr>
 <td><code>GET /api/{skills|agents}/{resourceId}/drafts/{draftRevisionId}</code></td>
 <td>运维权限、确定修订</td>
-<td>Agent 完整装配，或 Skill 完整包的清单与受限下载地址</td>
+<td>Agent 或 Skill 完整包的文件清单、摘要与受限下载地址，保留原始字节</td>
 </tr>
 </tbody></table>
-<p>Skill 服务端修订存于 <code>skills/drafts/&lt;skillId&gt;/revisions/&lt;draftRevisionId&gt;/</code>；客户端未同步工作副本在 <code>working/</code>，上传前固定完整内容。客户端上传期间继续编辑，不改变已经提交的修订；服务端失败时保留本地副本。</p>
+<p>Skill 服务端修订存于 <code>skills/drafts/&lt;skillId&gt;/revisions/&lt;draftRevisionId&gt;/</code>；Agent 修订存于 <code>agents/drafts/&lt;agentId&gt;/revisions/&lt;draftRevisionId&gt;/</code>，包含完整 <code>agent.json</code> 和 <code>prompt.md</code> 原始字节。客户端下载修订采用相同相对目录，未同步工作副本在对应资源的 <code>working/</code>，上传前固定完整内容。客户端上传期间继续编辑，不改变已经提交的修订；服务端失败时保留本地副本。</p>
 <p><strong>保存草稿不发布、不联动 Agent，也不要求实验通过。</strong> 文件级添加、重命名和删除发生在客户端，服务端不为每个文件另建发布 API。Agent 草稿允许表达待发布装配；正式发布时所引用的 Skill 必须是可取得的正式版本，联动发布中的新 Skill 包除外。</p>
-<h2 id="10-server-api-正式发布与-Skill／Agent-联动">正式发布与 Skill／Agent 联动</h2>
+<h2 id="10-server-api-正式发布与Skill／Agent联动">正式发布与 Skill／Agent 联动</h2>
 <table>
 <thead>
 <tr>

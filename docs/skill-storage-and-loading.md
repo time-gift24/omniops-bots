@@ -115,6 +115,8 @@ sequenceDiagram
 
 这段是现有 Agent 的 `configuration` 形状，不是新加的配置文件。Agent 记录连同 `id`、来源、内容 ID 和可选发布标签保存在 `.omnimind-ops/agents/<agentId>.json`，可跨进程读取。本地配置可新建、保存与复制；官方记录只读。真实运行不包含操作审批开关。
 
+官方多版本的目标格式另见 [Agent 版本文件布局](./agent-version-layout.md)：两端均使用 `agents/releases/<agentId>/<contentId>/agent.json` 与 `prompt.md`，固定完整 MCP 配置、tool 选择和 Skill 内容引用。该目录读取及转换尚未接入；当前单文件配置摘要和会话 `assemblyContentId` 不能直接当作正式版本包摘要。
+
 `chat_start` 携带 `threadId`、`runId`、所选 `agentId` 和可选的 `experimentSkillId`。运行时先保存本轮占用记录，再调用 `prepareSession`：新会话捕获完整包，已有会话核验原快照。每个 Skill 必须有有效 UTF-8 `SKILL.md` 和 YAML 元信息，入口上限 256 KiB；单包文件、目录和字节上限沿用文件管理约束，一次装配总量不超过 256 MiB。缺少资源、内容摘要不匹配或必要 builtinTool 不可用时，开始模型／工具执行前失败。
 
 `langgraph.ts` 已将完整包快照通过 `backend` 与 `skills` 挂载给 Deep Agents，模型按需读取入口及引用文件。快照保留二进制资源、相对路径和空目录；文件被保存或挂载不代表模型能解释任意二进制格式，也不使包内脚本自动执行。工具发现与实际调用都受所选能力白名单约束。
@@ -150,11 +152,12 @@ sequenceDiagram
 
 `assembly.ts` 已从当前本地清单选择具体文件并固定快照，`langgraph.ts` 显式把已选 Skill 的根目录传给 Deep Agents；后续仍需补齐远端版本核对和缺包下载。框架 `skills` 参数接收虚拟 POSIX 路径；`backend` 决定这些虚拟路径如何对应实际文件。一次运行只挂载选中的快照，不把包含全部历史版本的 `.omnimind-ops/skills` 作为搜索目录，避免同名 Skill 相互覆盖。[Deep Agents 的 `skills` 参数](https://reference.langchain.com/javascript/deepagents/index/CreateDeepAgentParams)
 
-Agent 发布清单中的引用应固定内容 ID，标签只供人查看。例如：
+Agent 发布查询返回的身份与物料摘要应固定内容 ID，标签只供人查看。以下仅摘示 API 返回信息，不是版本内 `agent.json` 的完整结构：
 
 ```json
 {
-  "agentId": "<assembly-hash>",
+  "agentId": "chrome-operator",
+  "contentId": "<agentContentId>",
   "releaseTag": "v.1.0.0",
   "skills": [
     {

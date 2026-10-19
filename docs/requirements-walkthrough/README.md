@@ -14,6 +14,8 @@
 
 Skill 列表、包内文件管理、文件级上传、草稿实验和本地完整快照装配已实现。桌面文件落在 `.omnimind-ops/skills`；版本保存方式与当前 LangGraph.js 加载见[Skill 存储与运行加载](../skill-storage-and-loading.md)。服务端草稿、发布同步与远端任务交付仍待接入；SQLite checkpoint 和按 thread 诊断上传为第 09 章新增的待实现设计。
 
+两端的正式版本采用一致相对目录：[Agent 版本文件布局](../agent-version-layout.md)说明提示词、MCP 配置、tool 与 Skill 引用的保存和加载；[Skill 版本文件布局](../skill-version-layout.md)说明完整文件包、内容摘要与标签映射。服务端保存历史全集，客户端按需缓存。
+
 | 章节 | 一句话讲清 | 运行场景 |
 | --- | --- | --- |
 | [00 客户端总体设计](./00-总体架构.md) | 管理核心资产，通过 Playwright＋内置 Chrome 执行运维任务 | 用户发起会话、远端独立任务、核心资产按周演进 |
