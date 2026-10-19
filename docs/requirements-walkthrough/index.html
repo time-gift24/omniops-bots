@@ -1,13 +1,13 @@
 <!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OmniOps 客户端需求串讲</title><style>@import url('./assets/fonts/fonts.css');
 :root{color-scheme:light;--background:oklch(.991 .001 106.4);--surface:#fff;--foreground:oklch(.196 0 89.9);--muted:oklch(.970 .003 106.4);--muted-foreground:oklch(.439 0 89.9);--primary:oklch(.51 .105 164);--primary-hover:oklch(.45 .11 163);--accent:oklch(.952 .014 160);--border:oklch(.930 .003 106.5);--border-strong:oklch(.854 .004 106.5);--ring:oklch(.57 .11 166);--rail:56px;--sidebar:248px;--header:64px;--radius:8px;--sticky:20}
 :root.dark{color-scheme:dark;--background:oklch(.196 0 89.9);--surface:oklch(.217 .002 106.6);--foreground:oklch(.970 0 89.9);--muted:oklch(.243 .004 106.7);--muted-foreground:oklch(.715 0 89.9);--primary:oklch(.72 .115 170);--primary-hover:oklch(.65 .115 168);--accent:oklch(.28 .025 164);--border:oklch(1 0 0 / 9%);--border-strong:oklch(1 0 0 / 18%);--ring:oklch(.72 .115 170)}
-*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:16px}body{margin:0;background:var(--background);color:var(--foreground);font-family:'Geist Variable','MiSans VF','PingFang SC','Microsoft YaHei',sans-serif;font-size:16px;line-height:1.8;-webkit-font-smoothing:antialiased}::selection{color:var(--foreground);background:var(--accent)}a{color:var(--primary);text-underline-offset:4px;text-decoration-thickness:1px}a:hover{color:var(--primary-hover)}button,select{font:inherit;caret-color:var(--primary)}a,button,select{-webkit-tap-highlight-color:transparent}button:focus-visible,a:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--ring);outline-offset:4px}button{cursor:pointer}button:disabled{color:var(--muted-foreground);opacity:.5;cursor:default}svg.icon{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}a.skip{position:fixed;top:8px;left:12px;z-index:100;background:var(--surface);padding:8px 16px;transform:translateY(-150%)}a.skip:focus{transform:none}.rail{position:fixed;inset:0 auto 0 0;width:var(--rail);background:var(--muted);border-right:1px solid var(--border);display:flex;align-items:center;flex-direction:column;gap:16px;padding:24px 0;z-index:var(--sticky)}.icon-control{width:36px;height:36px;border:0;border-radius:50%;background:transparent;color:var(--muted-foreground);display:inline-flex;align-items:center;justify-content:center;text-decoration:none}.icon-control:hover{background:var(--accent);color:var(--foreground)}.rail a:first-child{color:var(--foreground)}.rail .theme-toggle{margin-top:auto}.sidebar{position:fixed;inset:0 auto 0 var(--rail);width:var(--sidebar);padding:24px 16px;display:flex;flex-direction:column;background:var(--muted);border-right:1px solid var(--border);overflow-y:auto}.wordmark{font-size:18px;line-height:1.4;font-weight:600;margin:0 12px 26px}.wordmark small{display:block;font-size:13px;font-weight:400;color:var(--muted-foreground);margin-top:8px}.chapter-nav{display:grid;gap:5px}.chapter-nav a{display:flex;gap:12px;align-items:baseline;color:var(--muted-foreground);text-decoration:none;font-size:14px;padding:9px 12px;border-radius:var(--radius);line-height:1.65}.chapter-nav a:hover{background:var(--surface);color:var(--foreground)}.chapter-nav a[aria-current=page]{background:var(--accent);color:var(--foreground);font-weight:600}.chapter-nav .num{font-size:12px;font-variant-numeric:tabular-nums;min-width:18px;font-weight:400}.chapter-nav a:last-child{margin-top:20px}.sidebar-foot{margin-top:auto;padding:32px 12px 0;font-size:12px;line-height:1.8;color:var(--muted-foreground)}.sidebar-foot a{display:inline-block;margin-top:8px}.main{margin-left:calc(var(--rail) + var(--sidebar));min-width:0}.header{min-height:var(--header);position:sticky;top:0;z-index:var(--sticky);background:var(--background);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:20px;padding:12px 32px}.breadcrumbs{display:flex;align-items:center;gap:10px;font-size:13px;min-width:0;line-height:1.5}.breadcrumbs a{color:var(--muted-foreground);text-decoration:none;white-space:nowrap}.breadcrumbs span[aria-hidden]{color:var(--muted-foreground)}#current-title{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.actions{display:flex;align-items:center;gap:8px;flex:none}.text-control{height:32px;display:inline-flex;align-items:center;gap:6px;padding:0 12px;border:1px solid var(--border-strong);border-radius:100px;background:transparent;color:var(--foreground);font-size:12px;text-decoration:none;white-space:nowrap}.text-control:hover{background:var(--muted);color:var(--foreground);text-decoration:none}.actions .pagination{display:flex;gap:2px;align-items:center;margin-left:8px}.progress{font-size:12px;color:var(--muted-foreground);font-variant-numeric:tabular-nums;min-width:42px;text-align:center}.reading{max-width:1184px;margin:0 auto;padding:0 48px 64px}.section-links{display:flex;flex-wrap:wrap;gap:24px;padding:22px 0 16px;font-size:12px}.section-links a{color:var(--muted-foreground);text-decoration:none}.section-links a:hover{color:var(--foreground)}article{padding-top:16px}article[hidden]{display:none}h1,h2,h3{font-weight:600;line-height:1.4;letter-spacing:-.015em;text-wrap:balance}article h1{font-size:30px;margin:0 0 18px}article h2{font-size:20px;margin:48px 0 18px;scroll-margin-top:88px}article h3{font-size:16px;margin:26px 0 14px}article>p,article>ul,article>ol,article>blockquote,article>h1,article>h2,article>h3{max-width:44rem}p{margin:14px 0}li{margin:8px 0}ul,ol{padding-left:24px}strong{font-weight:600}blockquote{margin:0 0 20px;padding:0;color:var(--muted-foreground);font-size:14px}blockquote p{margin:0}figure{margin:22px 0 26px}figure img{display:block;width:100%;height:auto;border:1px solid var(--border-strong);border-radius:var(--radius);background:#fff}.screenshot-link{display:block;border-radius:var(--radius)}.screenshot-link:hover{outline:2px solid var(--border-strong);outline-offset:3px}figcaption{font-size:12px;line-height:1.7;color:var(--muted-foreground);margin-top:10px}.diagram img{padding:10px}.diagram figcaption{text-align:right}table{border-collapse:collapse;width:100%;margin:24px 0;font-size:13px;line-height:1.8}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--border);padding:14px 16px 14px 0}th{font-weight:500;color:var(--muted-foreground);border-bottom-color:var(--border-strong)}td:first-child,th:first-child{min-width:85px}tr td:last-child,tr th:last-child{padding-right:0}code{font-family:'Geist Mono Variable',ui-monospace,monospace;font-size:.86em;padding:2px 4px;border-radius:4px;background:var(--muted);overflow-wrap:anywhere}details{margin:24px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:14px 0;font-size:14px}summary{cursor:pointer;color:var(--primary);font-size:13px}details>ul{padding-left:22px}article footer{display:flex;align-items:center;justify-content:space-between;gap:20px;border-top:1px solid var(--border);margin-top:48px;padding-top:20px;font-size:13px;color:var(--muted-foreground)}.footer-label{font-size:12px}.mobile-nav{display:none}.empty-diagram{display:none!important}.sr-only{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:16px}body{margin:0;background:var(--background);color:var(--foreground);font-family:'Geist Variable','MiSans VF','PingFang SC','Microsoft YaHei',sans-serif;font-size:16px;line-height:1.8;-webkit-font-smoothing:antialiased}::selection{color:var(--foreground);background:var(--accent)}a{color:var(--primary);text-underline-offset:4px;text-decoration-thickness:1px}a:hover{color:var(--primary-hover)}button,select{font:inherit;caret-color:var(--primary)}a,button,select{-webkit-tap-highlight-color:transparent}button:focus-visible,a:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--ring);outline-offset:4px}button{cursor:pointer}button:disabled{color:var(--muted-foreground);opacity:.5;cursor:default}svg.icon{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}a.skip{position:fixed;top:8px;left:12px;z-index:100;background:var(--surface);padding:8px 16px;transform:translateY(-150%)}a.skip:focus{transform:none}.rail{position:fixed;inset:0 auto 0 0;width:var(--rail);background:var(--muted);border-right:1px solid var(--border);display:flex;align-items:center;flex-direction:column;gap:16px;padding:24px 0;z-index:var(--sticky)}.icon-control{width:36px;height:36px;border:0;border-radius:50%;background:transparent;color:var(--muted-foreground);display:inline-flex;align-items:center;justify-content:center;text-decoration:none}.icon-control:hover{background:var(--accent);color:var(--foreground)}.rail a:first-child{color:var(--foreground)}.rail .theme-toggle{margin-top:auto}.sidebar{position:fixed;inset:0 auto 0 var(--rail);width:var(--sidebar);padding:24px 16px;display:flex;flex-direction:column;background:var(--muted);border-right:1px solid var(--border);overflow-y:auto}.wordmark{font-size:18px;line-height:1.4;font-weight:600;margin:0 12px 26px}.wordmark small{display:block;font-size:13px;font-weight:400;color:var(--muted-foreground);margin-top:8px}.chapter-nav{display:grid;gap:5px}.chapter-nav a{display:flex;gap:12px;align-items:baseline;color:var(--muted-foreground);text-decoration:none;font-size:14px;padding:9px 12px;border-radius:var(--radius);line-height:1.65}.chapter-nav a:hover{background:var(--surface);color:var(--foreground)}.chapter-nav a[aria-current=page]{background:var(--accent);color:var(--foreground);font-weight:600}.chapter-nav .num{font-size:12px;font-variant-numeric:tabular-nums;min-width:18px;font-weight:400}.chapter-nav a[href="#08-frontend"]{margin-top:20px}.sidebar-foot{margin-top:auto;padding:32px 12px 0;font-size:12px;line-height:1.8;color:var(--muted-foreground)}.sidebar-foot a{display:inline-block;margin-top:8px}.main{margin-left:calc(var(--rail) + var(--sidebar));min-width:0}.header{min-height:var(--header);position:sticky;top:0;z-index:var(--sticky);background:var(--background);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:20px;padding:12px 32px}.breadcrumbs{display:flex;align-items:center;gap:10px;font-size:13px;min-width:0;line-height:1.5}.breadcrumbs a{color:var(--muted-foreground);text-decoration:none;white-space:nowrap}.breadcrumbs span[aria-hidden]{color:var(--muted-foreground)}#current-title{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.actions{display:flex;align-items:center;gap:8px;flex:none}.text-control{height:32px;display:inline-flex;align-items:center;gap:6px;padding:0 12px;border:1px solid var(--border-strong);border-radius:100px;background:transparent;color:var(--foreground);font-size:12px;text-decoration:none;white-space:nowrap}.text-control:hover{background:var(--muted);color:var(--foreground);text-decoration:none}.actions .pagination{display:flex;gap:2px;align-items:center;margin-left:8px}.progress{font-size:12px;color:var(--muted-foreground);font-variant-numeric:tabular-nums;min-width:42px;text-align:center}.reading{max-width:1184px;margin:0 auto;padding:0 48px 64px}.section-links{display:flex;flex-wrap:wrap;gap:24px;padding:22px 0 16px;font-size:12px}.section-links a{color:var(--muted-foreground);text-decoration:none}.section-links a:hover{color:var(--foreground)}article{padding-top:16px}article[hidden]{display:none}h1,h2,h3{font-weight:600;line-height:1.4;letter-spacing:-.015em;text-wrap:balance}article h1{font-size:30px;margin:0 0 18px}article h2{font-size:20px;margin:48px 0 18px;scroll-margin-top:88px}article h3{font-size:16px;margin:26px 0 14px}article>p,article>ul,article>ol,article>blockquote,article>h1,article>h2,article>h3{max-width:44rem}p{margin:14px 0}li{margin:8px 0}ul,ol{padding-left:24px}strong{font-weight:600}blockquote{margin:0 0 20px;padding:0;color:var(--muted-foreground);font-size:14px}blockquote p{margin:0}figure{margin:22px 0 26px}figure img{display:block;width:100%;height:auto;border:1px solid var(--border-strong);border-radius:var(--radius);background:#fff}.screenshot-link{display:block;border-radius:var(--radius)}.screenshot-link:hover{outline:2px solid var(--border-strong);outline-offset:3px}figcaption{font-size:12px;line-height:1.7;color:var(--muted-foreground);margin-top:10px}.diagram img{padding:10px}.diagram figcaption{text-align:right}table{border-collapse:collapse;width:100%;margin:24px 0;font-size:13px;line-height:1.8}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--border);padding:14px 16px 14px 0}th{font-weight:500;color:var(--muted-foreground);border-bottom-color:var(--border-strong)}td:first-child,th:first-child{min-width:85px}tr td:last-child,tr th:last-child{padding-right:0}code{font-family:'Geist Mono Variable',ui-monospace,monospace;font-size:.86em;padding:2px 4px;border-radius:4px;background:var(--muted);overflow-wrap:anywhere}details{margin:24px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:14px 0;font-size:14px}summary{cursor:pointer;color:var(--primary);font-size:13px}details>ul{padding-left:22px}article footer{display:flex;align-items:center;justify-content:space-between;gap:20px;border-top:1px solid var(--border);margin-top:48px;padding-top:20px;font-size:13px;color:var(--muted-foreground)}.footer-label{font-size:12px}.mobile-nav{display:none}.empty-diagram{display:none!important}.sr-only{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 @media(min-width:1800px){.reading{max-width:1328px;padding-inline:64px}article h1{font-size:32px}}
 @media(max-width:1100px){:root{--sidebar:210px}.reading{padding-inline:28px}.header{padding-inline:24px}.source-control{display:none}.section-links{gap:18px}.wordmark{font-size:16px}}
 @media(max-width:760px){.rail,.sidebar{display:none}.main{margin-left:0}.header{position:relative;padding:18px 20px 12px;flex-wrap:wrap;gap:12px}.breadcrumbs{width:100%}.actions{width:100%;justify-content:space-between}.text-control{height:36px}.actions .pagination{margin:0}.mobile-nav{display:flex;gap:12px;align-items:center;padding:16px 20px 0}.mobile-nav label{font-size:13px;color:var(--muted-foreground)}.mobile-nav select{min-width:0;flex:1;border:1px solid var(--border-strong);border-radius:var(--radius);background:var(--surface);color:var(--foreground);padding:8px 10px;font-size:14px}.mobile-nav .theme-toggle{flex:none}.reading{padding:0 20px 40px}.section-links{gap:16px;padding:20px 0 10px}article{padding-top:18px}article h1{font-size:24px}article h2{font-size:18px;margin-top:36px}article h3{font-size:14px}body{font-size:14px;line-height:1.85}blockquote{font-size:14px}figure{margin:20px -4px 22px}figure img{border-radius:6px}.diagram img{padding:4px}table{font-size:13px}thead{display:none}tbody,tr,td{display:block}tr{border-bottom:1px solid var(--border);padding:12px 0}td{display:grid;grid-template-columns:86px minmax(0,1fr);gap:12px;padding:6px 0;border:0;min-width:0;overflow-wrap:anywhere}td:before{content:attr(data-label);color:var(--muted-foreground);font-size:12px}article footer{align-items:flex-start}.footer-label{max-width:55%}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{scroll-behavior:auto!important}}
 @media print{.rail,.sidebar,.header,.section-links,.mobile-nav,article footer{display:none}.main,.reading{margin:0;padding:0}body{background:white;color:black}article,article[hidden]{display:block;break-before:page;padding:20px}article:first-of-type{break-before:auto}h2,h3,figure{break-inside:avoid}}
-</style></head><body><a class="skip" href="#content">跳到正文</a><div class="rail" aria-label="文档工具"><a class="icon-control" href="#00-overview" aria-label="客户端总体设计" title="客户端总体设计"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6a2 2 0 0 1 2 2v14a3 3 0 0 0-3-2H4zM20 4h-6a2 2 0 0 0-2 2v14a3 3 0 0 1 3-2h5z"/></svg></a><a class="icon-control" href="#08-frontend" aria-label="前端现状与缺口" title="前端现状与缺口"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg></a><button type="button" class="icon-control theme-toggle" aria-label="切换为深色"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.7A8.4 8.4 0 0 1 8.3 4 8.5 8.5 0 1 0 20 15.7Z"/></svg></button></div><aside class="sidebar"><p class="wordmark">omniops-bots<small>客户端需求串讲</small></p><nav class="chapter-nav" aria-label="串讲章节"><a href="#00-overview"><span class="num">00</span><span>客户端总体设计</span></a><a href="#01-skill"><span class="num">01</span><span>SKILL</span></a><a href="#02-mcp"><span class="num">02</span><span>MCP</span></a><a href="#03-builtintool"><span class="num">03</span><span>builtinTool</span></a><a href="#04-agent"><span class="num">04</span><span>Agent</span></a><a href="#05-updater"><span class="num">05</span><span>桌面端更新</span></a><a href="#06-sync"><span class="num">06</span><span>同步与装配</span></a><a href="#07-execution"><span class="num">07</span><span>任务执行与恢复</span></a><a href="#08-frontend"><span class="num">08</span><span>前端现状与缺口</span></a></nav><div class="sidebar-foot">8 章需求设计 · 1 章完成情况<br>界面设计实拍 · 图中为演示数据<br><a href="README.md">Markdown 目录</a><br><a href="https://github.com/time-gift24/omniops-bots/issues/3" target="_blank" rel="noopener">已确认规格</a></div></aside><main class="main" id="content" tabindex="-1"><header class="header"><nav class="breadcrumbs" aria-label="面包屑"><a href="#00-overview">客户端设计</a><span aria-hidden="true">/</span><span id="current-title" aria-current="page"></span></nav><div class="actions"><a class="text-control source-control" id="source" href="00-总体架构.md">Markdown</a><a class="text-control" id="diagram" href="diagrams/00-overview.html" target="_blank" rel="noopener">打开运行模型<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-8 8M10 20H4v-6M4 20l8-8"/></svg></a><div class="pagination"><button type="button" id="prev" class="icon-control" aria-label="上一章"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button><span class="progress" id="progress"></span><button type="button" id="next" class="icon-control" aria-label="下一章"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button></div></div></header><div class="mobile-nav"><label for="chapter-select">章节</label><select id="chapter-select"><option value="00-overview">00 客户端总体设计</option><option value="01-skill">01 SKILL</option><option value="02-mcp">02 MCP</option><option value="03-builtintool">03 builtinTool</option><option value="04-agent">04 Agent</option><option value="05-updater">05 桌面端更新</option><option value="06-sync">06 同步与装配</option><option value="07-execution">07 任务执行与恢复</option><option value="08-frontend">08 前端现状与缺口</option></select><button type="button" class="icon-control theme-toggle" aria-label="切换为深色"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.7A8.4 8.4 0 0 1 8.3 4 8.5 8.5 0 1 0 20 15.7Z"/></svg></button></div><div class="reading"><nav class="section-links" id="sections" aria-label="本章目录"></nav><article id="00-overview" data-file="00-总体架构.md" hidden><h1>00 客户端总体设计</h1>
+</style><link rel="stylesheet" href="comments.css"></head><body><a class="skip" href="#content">跳到正文</a><div class="rail" aria-label="文档工具"><a class="icon-control" href="#00-overview" aria-label="客户端总体设计" title="客户端总体设计"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6a2 2 0 0 1 2 2v14a3 3 0 0 0-3-2H4zM20 4h-6a2 2 0 0 0-2 2v14a3 3 0 0 1 3-2h5z"/></svg></a><a class="icon-control" href="#08-frontend" aria-label="前端现状与缺口" title="前端现状与缺口"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg></a><button type="button" class="icon-control theme-toggle" aria-label="切换为深色"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.7A8.4 8.4 0 0 1 8.3 4 8.5 8.5 0 1 0 20 15.7Z"/></svg></button></div><aside class="sidebar"><p class="wordmark">omniops-bots<small>客户端需求串讲</small></p><nav class="chapter-nav" aria-label="串讲章节"><a href="#00-overview"><span class="num">00</span><span>客户端总体设计</span></a><a href="#01-skill"><span class="num">01</span><span>SKILL</span></a><a href="#02-mcp"><span class="num">02</span><span>MCP</span></a><a href="#03-builtintool"><span class="num">03</span><span>builtinTool</span></a><a href="#04-agent"><span class="num">04</span><span>Agent</span></a><a href="#05-updater"><span class="num">05</span><span>桌面端更新</span></a><a href="#06-sync"><span class="num">06</span><span>同步与装配</span></a><a href="#07-execution"><span class="num">07</span><span>任务执行与恢复</span></a><a href="#08-frontend"><span class="num">08</span><span>前端现状与缺口</span></a><a href="#09-operations"><span class="num">09</span><span>运维与诊断上传</span></a></nav><div class="sidebar-foot">9 章需求设计 · 1 章完成情况<br>界面设计实拍 · 图中为演示数据<br><a href="README.md">Markdown 目录</a><br><a href="https://github.com/time-gift24/omniops-bots/issues/3" target="_blank" rel="noopener">已确认规格</a></div></aside><main class="main" id="content" tabindex="-1"><header class="header"><nav class="breadcrumbs" aria-label="面包屑"><a href="#00-overview">客户端设计</a><span aria-hidden="true">/</span><span id="current-title" aria-current="page"></span></nav><div class="actions"><a class="text-control source-control" id="source" href="00-总体架构.md">Markdown</a><a class="text-control" id="diagram" href="diagrams/00-overview.html" target="_blank" rel="noopener">打开运行模型<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-8 8M10 20H4v-6M4 20l8-8"/></svg></a><div class="pagination"><button type="button" id="prev" class="icon-control" aria-label="上一章"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button><span class="progress" id="progress"></span><button type="button" id="next" class="icon-control" aria-label="下一章"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button></div></div></header><div class="mobile-nav"><label for="chapter-select">章节</label><select id="chapter-select"><option value="00-overview">00 客户端总体设计</option><option value="01-skill">01 SKILL</option><option value="02-mcp">02 MCP</option><option value="03-builtintool">03 builtinTool</option><option value="04-agent">04 Agent</option><option value="05-updater">05 桌面端更新</option><option value="06-sync">06 同步与装配</option><option value="07-execution">07 任务执行与恢复</option><option value="08-frontend">08 前端现状与缺口</option><option value="09-operations">09 运维与诊断上传</option></select><button type="button" class="icon-control theme-toggle" aria-label="切换为深色"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.7A8.4 8.4 0 0 1 8.3 4 8.5 8.5 0 1 0 20 15.7Z"/></svg></button></div><div class="reading"><nav class="section-links" id="sections" aria-label="本章目录"></nav><article id="00-overview" data-file="00-总体架构.md" hidden><h1>00 客户端总体设计</h1>
 <p><strong>我们要构建一个面向运维场景的桌面客户端。</strong> 用户在客户端管理 Agent 与 Skill、进行本地编辑和实验，并由 Agent 在本机专用 Chrome 中执行运维操作。</p>
 <p><strong>我们的核心资产是受版本控制、可持续演进的 Agent 提示词与 Skill。</strong> 提示词沉淀任务目标、操作边界和结果要求，Skill 完整文件包沉淀可复用的运维方法、操作步骤和参考资料。团队按周将实际任务中的反馈转化为改进，经本地编辑、按需实验后发布新的确定版本，逐步提高 Agent 的任务完成能力。</p>
 <p>客户端支持用户主动发起会话，也能连接已有内部服务，接收远端 Agent 调用并回传结果。本设计围绕客户端的界面、资源管理、运行与恢复展开；各章最后列出服务端需要配合提供的能力。</p>
@@ -20,8 +20,10 @@
 <li>作为普通用户，我希望同步并使用官方能力，也能自由编辑自己的本地资源。</li>
 <li>作为用户，我希望客户端能接收服务端任务，在 Chrome 完成操作，并让我查看执行过程与结果。</li>
 <li>作为用户，我希望知道运行了什么、结果是什么，并在断线后仍能交付已有结果。</li>
+<li>作为用户，我希望客户端出问题后能上传指定 thread 的诊断材料，并取得服务端确认接收的编号。</li>
 </ol>
-<figure class="usecase"><a class="screenshot-link" href="./assets/00-overview-usecase.svg" target="_blank" rel="noopener" aria-label="放大用例图"><img src="./assets/00-overview-usecase.svg" alt="总体用例图：运维人员、普通用户与服务端编排方"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure><h2 id="00-overview-简要设计">简要设计</h2>
+<figure class="usecase"><a class="screenshot-link" href="./assets/00-overview-usecase.svg" target="_blank" rel="noopener" aria-label="放大用例图"><img src="./assets/00-overview-usecase.svg" alt="总体用例图：运维人员、普通用户与服务端编排方"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure>
+<h2 id="00-overview-简要设计">简要设计</h2>
 <p>客户端把资源管理和任务执行放在同一个工作空间中：用户编辑、实验和选择 Agent，客户端准备所需物料，在专用 Chrome 中执行，并保存可查看、可补传的结果。Tauri 承担桌面包装，本次不引入其他 Rust 业务模块作为前置条件。</p>
 <table>
 <thead>
@@ -55,6 +57,11 @@
 <td>桌面更新</td>
 <td>检查、下载、验签，在空闲时由用户确认安装</td>
 <td>提供更新清单和已签名整包下载</td>
+</tr>
+<tr>
+<td>运维诊断</td>
+<td>将指定 thread 的 SQLite checkpoint、运行快照与记录导出，经预览后上传</td>
+<td>校验并持久保存诊断包，返回回执，提供只读排查入口</td>
 </tr>
 </tbody></table>
 <p>客户端保留未同步编辑、已下载历史版本、会话快照与执行记录。本地资源可自由编辑；官方已发布资源同步后只读，服务端只调用官方 Agent。</p>
@@ -117,35 +124,36 @@
 </tbody></table>
 <p>按周发布是团队的迭代节奏，不增加审核人、审批流或强制实验门槛；运维提交即表示本人已确认。标签始终人工输入，周次和日期不替代发布标签，也不自动覆盖历史版本。没有已确认变更时不创建空版本。</p>
 <details>
-<summary>客户端与外部服务的结构关系</summary>
-
-<figure class="diagram"><a class="screenshot-link" href="diagrams/00-overview.html" target="_blank" rel="noopener" aria-label="打开可缩放设计图"><img src="./assets/00-overview.svg" alt="客户端与外部服务的结构关系"></a><figcaption>结构或状态概览 · 点击缩放查看</figcaption></figure><p><a href="./diagrams/00-overview.html">打开结构关系图</a></p>
-</details>
-
-<h2 id="00-overview-客户端">客户端</h2>
+<summary>客户端与外部服务的结构关系</summary><figure class="diagram"><a class="screenshot-link" href="diagrams/00-overview.html" target="_blank" rel="noopener" aria-label="打开可缩放设计图"><img src="./assets/00-overview.svg" alt="客户端与外部服务的结构关系"></a><figcaption>结构或状态概览 · 点击缩放查看</figcaption></figure>
+<p><a href="./diagrams/00-overview.html">打开结构关系图</a></p>
+</details><h2 id="00-overview-客户端">客户端</h2>
 <ul>
 <li>展示登录身份、运维权限和连接状态，复用已有 Token 连接服务端；WebSocket 断线后退避重连。</li>
 <li>提供本地编辑、草稿实验和运维上传入口；官方已发布配置只读。</li>
 <li>围绕提示词和 Skill 的每周改进保存草稿、实验记录及发布引用，展示本次 Agent 实际装配；发布过程不增加审批。</li>
 <li>新会话同步清单，按需下载缺失物料；调用前核对版本，失败不拿旧版代替。</li>
 <li>运行前固定装配快照，检查所需内置工具；同一 Chrome 每轮只执行一个任务，忙时直接返回。</li>
-<li>展示过程、保存结果并补传；只向服务端发送状态、最终结果和运行快照。</li>
+<li>展示过程、保存结果并补传；正常任务交付只向服务端发送状态、最终结果和运行快照。</li>
+<li>用户需要排查时，另行选择一个 thread，通过 HTTPS 上传脱敏后的 SQLite checkpoint、过程与关联材料。服务端确认接收后展示诊断编号，具体见<a href="#09-operations">运维与诊断上传</a>。</li>
 </ul>
 <h2 id="00-overview-详细设计">详细设计</h2>
 <p>以下运行模型按消息发生顺序描述客户端行为；各图是独立场景。准备失败、忙或执行中断的路径分别见同步与执行章节。</p>
 <h3>场景一：用户主动发起会话</h3>
 <p>前提：用户选择官方 Agent，准备检查成功，Chrome 执行名额空闲。本地 Agent 使用本地装配；引用官方 Skill 时仍需补齐对应版本。</p>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/00-manual.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/00-manual.svg" alt="用户主动发起会话"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/00-manual.html">打开顺序图：用户主动发起会话</a></p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/00-manual.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/00-manual.svg" alt="用户主动发起会话"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
+<p><a href="./diagrams/runtime/00-manual.html">打开顺序图：用户主动发起会话</a></p>
 <p>结果：客户端保存并展示本轮结果，等待用户继续输入时释放 Chrome 名额；同一会话继续使用开始时的快照。</p>
 <h3>场景二：客户端接收远端调用</h3>
 <p>前提：客户端收到对官方 Agent 的调用，指定版本准备成功且 Chrome 空闲。</p>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/00-remote.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/00-remote.svg" alt="远端独立任务与结果确认"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/00-remote.html">打开顺序图：远端独立任务与结果确认</a></p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/00-remote.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/00-remote.svg" alt="远端独立任务与结果确认"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
+<p><a href="./diagrams/runtime/00-remote.html">打开顺序图：远端独立任务与结果确认</a></p>
 <p>结果：每次调用新建独立、只读会话，逐条过程在客户端展示。结果与快照先落本地，再向服务端回传，确认前保留。断线继续执行，重连只补传；重启后未完成任务报告“执行中断、结果未知”。</p>
 <p>验收从客户端操作或远端调用进入，覆盖“编辑发布 → 同步装配 → 调用执行 → 结果恢复”的完整结果。<a href="https://github.com/time-gift24/omniops-bots/issues/3">规格依据：Issue #3</a>。</p>
 <h3>场景三：核心资产按周迭代发布</h3>
 <p>前提：运维已根据本周实际任务反馈确认需要改进的提示词或 Skill，客户端完成本地编辑。图中展示本周修改 Skill、选择本地实验并联动发布受影响 Agent 的情况；实验按需进行，正式发布由运维直接提交。只改提示词时，发布新的 Agent 并复用原 Skill 包。</p>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/00-weekly-evolution.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/00-weekly-evolution.svg" alt="按周迭代：任务反馈、草稿改进、发布与新版使用"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/00-weekly-evolution.html">打开顺序图：核心资产按周迭代发布</a></p>
-<p>结果：本周的改进形成新的不可变 Agent／Skill 发布版本，新会话使用所选新版，旧会话保持原快照。执行中发现的问题继续进入下一周迭代。图示为目标业务流程；当前草稿实验、官方发布同步和完整会话快照仍待接入。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/00-weekly-evolution.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/00-weekly-evolution.svg" alt="按周迭代：任务反馈、草稿改进、发布与新版使用"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
+<p><a href="./diagrams/runtime/00-weekly-evolution.html">打开顺序图：核心资产按周迭代发布</a></p>
+<p>结果：本周的改进形成新的不可变 Agent／Skill 发布版本，新会话使用所选新版，旧会话保持原快照。执行中发现的问题继续进入下一周迭代。图示为目标业务流程；当前草稿实验与本地完整会话快照已实现，官方发布同步仍待接入，完成情况见第 08 章。</p>
 <h2 id="00-overview-服务端配合">服务端配合</h2>
 <p>为支持上述客户端能力，已有内部服务需要提供：</p>
 <ul>
@@ -154,9 +162,10 @@
 <li><strong>资产持续演进</strong>：保留每周发布涉及的提示词、Skill 和 Agent 装配关系，让客户端能够查看新旧版本及本次改进；不为周发布新增定时自动发版、MCP 发布或独立提示词版本系统。</li>
 <li><strong>调用与结果确认</strong>：LangGraph 将客户端 Agent 作为工具调用，通过 WebSocket 传入上下文、按调用 ID 取消，接收状态、结果、快照并确认；客户端返回忙时由服务端安排后续调用。</li>
 <li><strong>桌面更新来源</strong>：提供更新清单和已签名整包下载，供客户端检查、下载与校验。</li>
+<li><strong>诊断接收</strong>：接收用户指定 thread 的诊断包，校验并持久保存后返回回执，支持运维按编号只读查看；不会因此恢复或重新执行任务。</li>
 </ul>
 <p>服务端高可用、内部编排实现和具体业务协议另行定义，本设计只说明客户端依赖的配合能力。</p>
-<footer><span class="footer-label">客户端 MVP 设计 · 2026-10-18</span><a href="#01-skill">下一章：SKILL</a></footer></article><article id="01-skill" data-file="01-SKILL.md" hidden><h1>01 · SKILL</h1>
+<footer><span class="footer-label">客户端 MVP 设计 · 2026-10-19</span><a href="#01-skill">下一章：SKILL</a></footer></article><article id="01-skill" data-file="01-SKILL.md" hidden><h1>01 · SKILL</h1>
 <blockquote>
 <p>串讲重点：客户端提供 Skill 列表与包内文件管理，支持文件级上传、编辑和实验；运维人员上传完整草稿、发布完整文件包，服务端配合保存和分发。</p>
 </blockquote>
@@ -712,18 +721,16 @@
 <li>作为使用者，我希望断线时任务继续执行，恢复连接后能取得结果。</li>
 <li>作为用户，我希望重启后知道哪些任务已经完成、哪些执行中断，不自动重做操作。</li>
 </ol>
-<figure class="usecase"><a class="screenshot-link" href="./assets/07-execution-usecase.svg" target="_blank" rel="noopener" aria-label="放大用例图"><img src="./assets/07-execution-usecase.svg" alt="执行用例图：发起任务、查看过程、取消任务、接收结果"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure><h2 id="07-execution-简要设计">简要设计</h2>
+<figure class="usecase"><a class="screenshot-link" href="./assets/07-execution-usecase.svg" target="_blank" rel="noopener" aria-label="放大用例图"><img src="./assets/07-execution-usecase.svg" alt="执行用例图：发起任务、查看过程、取消任务、接收结果"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure>
+<h2 id="07-execution-简要设计">简要设计</h2>
 <p>客户端管理一个专用 Chrome 环境，本地、实验和远端任务共用，每轮只允许一个任务执行。忙时直接返回“忙”，客户端不排队。手动会话等待用户输入时释放执行名额，下一轮重新检查；会话和固定快照继续保留。</p>
 <p>一轮任务可以包含多次模型调用，单次模型输出结束不等于任务结束。任务终止与结果交付分别处理：执行已结束但尚未收到服务端确认时，保留结果等待补传。</p>
 <details>
-<summary>任务状态与结果交付状态概览</summary>
-
-<figure class="diagram"><a class="screenshot-link" href="diagrams/07-execution.html" target="_blank" rel="noopener" aria-label="打开可缩放设计图"><img src="./assets/07-execution.svg" alt="任务状态与结果交付状态"></a><figcaption>结构或状态概览 · 点击缩放查看</figcaption></figure><p><a href="./diagrams/07-execution.html">打开状态概览</a></p>
-</details>
-
-<h2 id="07-execution-客户端">客户端</h2>
+<summary>任务状态与结果交付状态概览</summary><figure class="diagram"><a class="screenshot-link" href="diagrams/07-execution.html" target="_blank" rel="noopener" aria-label="打开可缩放设计图"><img src="./assets/07-execution.svg" alt="任务状态与结果交付状态"></a><figcaption>结构或状态概览 · 点击缩放查看</figcaption></figure>
+<p><a href="./diagrams/07-execution.html">打开状态概览</a></p>
+</details><h2 id="07-execution-客户端">客户端</h2>
 <ul>
-<li>展示逐条模型输出和工具调用过程；远端任务会话保持只读，不向服务端逐条传输过程内容。</li>
+<li>展示逐条模型输出和工具调用过程；远端任务会话保持只读，正常执行不向服务端逐条传输过程内容。故障排查时由用户另行确认上传指定 thread 的诊断包，见<a href="#09-operations">运维与诊断上传</a>。</li>
 <li>每轮采用统一、可配置的兜底超时。取消或超时后停止后续步骤，回传相应结果；已完成的 Chrome 操作不回滚。</li>
 <li>遇到人工登录或验证直接失败并说明原因，用户处理后重新发起，不暂停等待。</li>
 <li>有任务运行时阻止正常退出并提示等待，结束后由用户退出；强制退出或崩溃按重启规则处理。</li>
@@ -732,31 +739,39 @@
 <p>以下每张顺序图对应一个独立运行场景。正常执行与结果确认见<a href="#00-overview">客户端总体设计</a>。</p>
 <h3>场景一：Chrome 正忙</h3>
 <p>本地、实验和远端任务共用一个 Chrome 执行名额。图中已有任务尚未结束。</p>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-busy.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-busy.svg" alt="场景一：Chrome 正忙"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/07-busy.html">打开顺序图：场景一：Chrome 正忙</a></p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-busy.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-busy.svg" alt="场景一：Chrome 正忙"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
+<p><a href="./diagrams/runtime/07-busy.html">打开顺序图：场景一：Chrome 正忙</a></p>
 <p>本轮返回忙，不排队、不自动重试。手动会话及固定快照保留，等待输入时不占用名额；下一轮重新检查。</p>
 <h3>场景二：执行中 WebSocket 断线</h3>
 <p>客户端进程仍在运行。图中任务先执行完成，连接随后恢复；退避重连与执行可以并行。</p>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-disconnect.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-disconnect.svg" alt="场景二：执行中 WebSocket 断线"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/07-disconnect.html">打开顺序图：场景二：执行中 WebSocket 断线</a></p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-disconnect.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-disconnect.svg" alt="场景二：执行中 WebSocket 断线"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
+<p><a href="./diagrams/runtime/07-disconnect.html">打开顺序图：场景二：执行中 WebSocket 断线</a></p>
 <p>当前任务继续，结果与快照先保存本地。恢复连接后按原调用 ID 补传；确认之前保留，不重新执行。</p>
 <h3>场景三：重启发现已完成、未确认的结果</h3>
 <p>上次任务已完成并持久化结果，但服务端尚未确认。</p>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-restart-complete.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-restart-complete.svg" alt="场景三：重启发现已完成、未确认的结果"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/07-restart-complete.html">打开顺序图：场景三：重启发现已完成、未确认的结果</a></p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-restart-complete.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-restart-complete.svg" alt="场景三：重启发现已完成、未确认的结果"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
+<p><a href="./diagrams/runtime/07-restart-complete.html">打开顺序图：场景三：重启发现已完成、未确认的结果</a></p>
 <p>只恢复结果交付，不装配或重跑任务。已有记录继续保留。</p>
 <h3>场景四：重启发现未完成任务</h3>
 <p>客户端此前强退或崩溃，磁盘记录中任务未完成。</p>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-restart-incomplete.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-restart-incomplete.svg" alt="场景四：重启发现未完成任务"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/07-restart-incomplete.html">打开顺序图：场景四：重启发现未完成任务</a></p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-restart-incomplete.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-restart-incomplete.svg" alt="场景四：重启发现未完成任务"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
+<p><a href="./diagrams/runtime/07-restart-incomplete.html">打开顺序图：场景四：重启发现未完成任务</a></p>
 <p>回报“执行中断、结果未知”，不续跑、不自动重试，已有记录保留，由服务端决定后续处理。</p>
+<p>新增运维设计将 LangGraph checkpoint 持久化到客户端 SQLite，供重启后按 thread 导出排查。它保留每个 run 的图状态证据，不改变本场景“不自动续跑”的约定；用户继续会话仍创建新 run。当前实现已有会话、运行快照与执行记录落盘，但仍使用每轮内存 <code>MemorySaver</code>，SQLite 接入和服务端诊断接收尚待实现，具体边界见第 09 章。</p>
 <h3>场景五：服务端按调用 ID 取消</h3>
 <p>远端任务正在执行，客户端收到取消请求。</p>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-cancel.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-cancel.svg" alt="场景五：服务端按调用 ID 取消"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/07-cancel.html">打开顺序图：场景五：服务端按调用 ID 取消</a></p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-cancel.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-cancel.svg" alt="场景五：服务端按调用 ID 取消"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
+<p><a href="./diagrams/runtime/07-cancel.html">打开顺序图：场景五：服务端按调用 ID 取消</a></p>
 <p>停止后续步骤，保存并回传取消结果；已完成操作不回滚。客户端远端会话保持只读。</p>
 <h3>场景六：本轮执行超时</h3>
 <p>每轮使用统一、可配置的客户端兜底超时。图中展示远端任务的结果交付。</p>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-timeout.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-timeout.svg" alt="场景六：本轮执行超时"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/07-timeout.html">打开顺序图：场景六：本轮执行超时</a></p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-timeout.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-timeout.svg" alt="场景六：本轮执行超时"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
+<p><a href="./diagrams/runtime/07-timeout.html">打开顺序图：场景六：本轮执行超时</a></p>
 <p>停止后续步骤，记录并回传“执行超时”；本地会话展示相同终止原因。已完成操作不回滚，不自动重试。</p>
 <h3>场景七：需要人工登录或验证</h3>
 <p>图中为远端任务：Chrome 操作触发需要人处理的登录或验证。</p>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-login.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-login.svg" alt="场景七：需要人工登录或验证"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/07-login.html">打开顺序图：场景七：需要人工登录或验证</a></p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-login.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-login.svg" alt="场景七：需要人工登录或验证"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
+<p><a href="./diagrams/runtime/07-login.html">打开顺序图：场景七：需要人工登录或验证</a></p>
 <p>本次任务直接失败，客户端提示原因。用户在专用 Chrome 处理后发起新任务；远端任务由服务端重新调用，不暂停恢复原任务。</p>
 <p>执行记录保存调用 ID、状态、起止时间与错误；快照保存实际装配与运行条件，不含密钥和 Token。本轮可观测范围是这些记录与客户端过程展示，不新增监控平台。通信恢复不重复启动任务，但不承诺外部 Chrome 操作的副作用恰好发生一次。</p>
 <h2 id="07-execution-服务端配合">服务端配合</h2>
@@ -765,8 +780,9 @@
 <li>通过 WebSocket 发送调用、上下文和按调用 ID 发起的取消请求；后续调度由 LangGraph 决定。</li>
 <li>接收任务状态、最终结果、运行快照，并确认收到。</li>
 <li>收到“忙”或“执行中断、结果未知”后决定后续处理；客户端不自动重跑。</li>
+<li>按第 09 章提供独立的诊断接收与查询能力；诊断包回执与任务结果确认分别处理，收到 checkpoint 不触发任务恢复。</li>
 </ul>
-<footer><span class="footer-label">客户端 MVP 设计 · 2026-10-18</span><a href="#08-frontend">下一章：前端现状与缺口</a></footer></article><article id="08-frontend" data-file="08-前端现状与缺口.md" hidden><h1>08 · 前端现状与缺口</h1>
+<footer><span class="footer-label">客户端 MVP 设计 · 2026-10-19</span><a href="#08-frontend">下一章：前端现状与缺口</a></footer></article><article id="08-frontend" data-file="08-前端现状与缺口.md" hidden><h1>08 · 前端现状与缺口</h1>
 <blockquote>
 <p>串讲重点：围绕客户端页面和用户操作，说明界面、交互与执行能力的完成情况，最后列出所需的服务端配合。</p>
 </blockquote>
@@ -778,16 +794,17 @@
 </ol>
 <h2 id="08-frontend-简要设计">简要设计</h2>
 <p>前端由左侧导航、中央业务页面与右侧工作台组成。会话承载执行与交互，Agent 页面管理装配，Skill 页面管理文件包与版本，工作台展示浏览器和执行过程。视觉采用<strong>暖灰底色、绿色强调、细边框、轻量圆角，以及 Geist / MiSans 字体</strong>。</p>
-<p>截图直接展示当前前端设计，图中使用演示数据。页面与交互的完成情况、业务接入的完成情况分别列在下表中。</p>
+<p>截图保留前期前端设计与演示数据，不作为最新功能完成情况的依据。下表依据已提交的本地 LangGraph 客户端实现区分已具备能力与剩余接入；浏览器演示适配器也不等同于桌面真实运行。</p>
 <figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/00-workspace.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/00-workspace.png" alt="现有 Web 工作区：左侧导航、中央会话和右侧工作台"></a><figcaption>左侧导航组织资源与会话，中央区域承载当前业务，右侧工作台展示执行环境。</figcaption></figure>
 <h2 id="08-frontend-客户端">客户端</h2>
-<p>前端围绕三组业务流程组织：</p>
+<p>前端目标围绕四组业务流程组织：</p>
 <ol>
 <li><strong>资源身份与发布</strong>：Skill、Agent 页面区分本地与官方资源，管理版本、只读配置、草稿实验、运维上传和手填标签发布。</li>
 <li><strong>同步与开始运行</strong>：在新会话入口展示版本核对、缺失物料下载和工具检查；准备失败说明原因，准备完成固定快照。</li>
 <li><strong>执行与结果交付</strong>：会话与任务横条展示执行过程；服务端会话只读，执行记录呈现快照、结果待确认与重启中断状态。</li>
+<li><strong>故障诊断上传</strong>：从执行记录选择指定 thread，查看 checkpoint 与材料清单，提交后以服务端持久保存的回执确认接收。</li>
 </ol>
-<p>设置中的桌面更新入口展示检查、下载、待安装和失败状态。</p>
+<p>设置中的桌面更新入口计划展示检查、下载、待安装和失败状态，尚未实现。</p>
 <h3>完成情况</h3>
 <table>
 <thead>
@@ -806,27 +823,27 @@
 </tr>
 <tr>
 <td>01 Skill</td>
-<td>File Manager 列表与包内管理、来源筛选、新建与复制、文件级上传、新建目录/文件、重命名/删除、文本编辑与预览、冲突与失败提示、官方包只读；浏览器和桌面文件持久化</td>
-<td>历史版本切换、官方草稿维护、选 Agent 实验、上传草稿与联动发布</td>
-<td>完整包运行快照、草稿修订、发布与实验装配；官方身份、下载与校验</td>
+<td>File Manager 包内管理、来源筛选、新建与复制、真实文件持久化、冲突与失败提示、官方包只读；保存本地草稿后选择 Agent 在新会话实验</td>
+<td>官方历史版本切换、官方草稿维护、上传草稿与联动发布</td>
+<td>服务端身份、草稿修订、发布和下载；本地完整包快照与实验装配已接入</td>
 </tr>
 <tr>
 <td>02 MCP</td>
-<td>Agent 内 MCP 勾选与能力详情</td>
-<td>配置或引用、官方只读、连接失败原因</td>
-<td>随 Agent 同步配置、真实远端连接与工具调用</td>
+<td>本地配置管理、连接测试、Agent 内能力勾选与详情、连接失败提示</td>
+<td>官方来源及只读配置流程</td>
+<td>随官方 Agent 同步配置；本地已接入真实 Streamable HTTP 连接、发现与工具调用，resource/prompt 不自动作为工具</td>
 </tr>
 <tr>
 <td>03 builtinTool</td>
-<td>Agent 的工具勾选清单</td>
-<td>缺失工具提示、更新入口、实际工具清单</td>
-<td>本机工具目录和运行前检查</td>
+<td>实际工具勾选清单、缺失工具失败提示</td>
+<td>桌面更新入口</td>
+<td>本机能力目录、运行前检查及运行中工具白名单已接入；更新下载与安装待接入</td>
 </tr>
 <tr>
 <td>04 Agent</td>
-<td>名称、描述、系统提示词、能力勾选和调试</td>
-<td>本地/官方分组、新建本地 Agent、固定 Skill 版本、内容 ID、发布标签、从 Agent 发起会话</td>
-<td>官方草稿发布、确定装配和会话快照</td>
+<td>本地/官方分组、本地新建/保存/复制、官方只读、配置与能力勾选、内容 ID/发布标签展示、开始新会话</td>
+<td>官方草稿编辑、发布与版本选择流程</td>
+<td>官方发布同步；本地 Agent 持久化、完整装配和会话固定快照已接入</td>
 </tr>
 <tr>
 <td>05 桌面更新</td>
@@ -836,49 +853,54 @@
 </tr>
 <tr>
 <td>06 同步装配</td>
-<td>通用加载中、失败和重试样式；按独立 ID 展示本机官方缓存包</td>
-<td>核对版本、缺包下载、版本轨迹；已有会话沿用原快照</td>
-<td>远端清单、按需下载与摘要校验、完整包固定装配；本地多版本目录读取已接入</td>
+<td>准备/失败状态、本机官方缓存身份、运行快照查看；已有会话沿用原装配</td>
+<td>远端版本核对、缺包下载和版本轨迹</td>
+<td>远端清单与下载；本地完整包捕获、缓存内容摘要校验、快照固定与篡改检查已接入</td>
 </tr>
 <tr>
 <td>07 执行恢复</td>
-<td>流式对话、工具过程、任务横条、忙时限制</td>
-<td>远端会话只读、调用 ID、起止时间、结果/错误、快照、待确认/已交付、超时和中断未知</td>
-<td>持久化、确认与补传、服务端取消、兜底超时</td>
+<td>流式对话、真实工具过程、任务横条、忙时限制、停止、超时/中断提示；执行记录含 run/thread ID、起止时间、结果/错误、运行快照，可继续原会话</td>
+<td>远端会话来源及只读流程、结果待确认/已交付状态</td>
+<td>WebSocket 任务与取消、结果确认与补传；本地记录/会话持久化、兜底超时、重启标记中断且不自动重跑已接入</td>
+</tr>
+<tr>
+<td><a href="#09-operations">09 运维诊断</a></td>
+<td>可复用现有执行记录与快照详情</td>
+<td>按 thread 选择材料、脱敏预览、上传与接收状态；独立诊断导出入口</td>
+<td>当前每轮使用内存 MemorySaver；SQLite checkpoint 持久化已确定为设计，尚未接入；诊断导出、HTTPS 上传、服务端校验保存与回执均待实现</td>
 </tr>
 </tbody></table>
-<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/04-agent.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/04-agent.png" alt="现有 Agent 页面：配置、能力选择与系统提示词"></a><figcaption>Agent 页面管理身份、提示词、能力装配与发布版本。当前调试入口可打开会话，临时装配 Skill 草稿的实验流程尚未完成。</figcaption></figure>
+<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/04-agent.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/04-agent.png" alt="现有 Agent 页面：配置、能力选择与系统提示词"></a><figcaption>图为前期 Agent 页面。当前本地实现已支持从 Agent 开始新会话，以及从 Skill 页面选择 Agent 实验完整本地草稿；官方发布流程仍待接入。</figcaption></figure>
 <figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/01-skill-list.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/01-skill-list.png" alt="Skill 列表：已实现的来源筛选与本地管理"></a><figcaption>本次 Web 界面实拍。Skill 列表和包内文件管理已实现；图片中的数据为演示内容。</figcaption></figure>
-<p>Skill 页面见 <a href="#01-skill">01 SKILL</a>：已安装 <code>@beui-pro/file-manager-workspace</code> 并接入真实文件内容保存。浏览器使用 IndexedDB；桌面通过 JavaScript runtime 保存到 <code>.omnimind-ops/skills</code>，无 Rust 改动。文件上传与服务端草稿上传、正式发布是三个不同动作，后两项尚未接入。</p>
-<p>桌面 Skill 读取和 Agent 可选清单使用同一目录。当前运行时每轮只读取所选包的 <code>SKILL.md</code> 并拼接提示词，尚未挂载完整包，也未固定会话快照。仓库没有 <code>langgraph.ts</code> 文件；实际调用链及后续 <code>backend</code> / <code>skills</code> 配置见<a href="../skill-storage-and-loading.md">Skill 存储与运行加载</a>。</p>
+<p>Skill 页面见 <a href="#01-skill">01 SKILL</a>：已安装 <code>@beui-pro/file-manager-workspace</code> 并接入真实文件内容保存。浏览器使用 IndexedDB；桌面通过 JavaScript runtime 保存到 <code>.omnimind-ops/skills</code>。文件上传与服务端草稿上传、正式发布是三个不同动作，后两项尚未接入。</p>
+<p>桌面 Skill 读取和 Agent 可选清单使用同一目录。<code>assembly.ts</code> 已在会话开始时捕获完整包、固定装配与内容身份；<code>langgraph.ts</code> 通过只读 <code>FilesystemBackend</code> 与 <code>skills</code> 挂载所选快照，支持按需读取入口和引用文件。现有会话继续使用原快照，包缺失、被修改或 MCP 工具定义变化时明确失败，不能静默换成新版本。实际调用链见<a href="../skill-storage-and-loading.md">Skill 存储与运行加载</a>。</p>
 <p>完成情况与范围：</p>
 <ul>
-<li><strong>审批不属于本期 MVP 流程。</strong> 截图中的“操作前先确认”和审批状态是当前实现中的历史内容；正式发布无审核环节。</li>
-<li><strong>草稿实验尚未完成。</strong> 实验将当前完整草稿临时装配给选中的 Agent，并固定快照；当前调试入口只打开 Agent 会话。</li>
-<li><strong>桌面更新界面尚未完成。</strong> 本章只列前端页面与接入接口的完成情况。</li>
+<li><strong>审批不属于本期 MVP 流程。</strong> 真实本地运行不经过操作审批；旧截图和演示适配器中的审批内容不代表桌面执行流程，正式发布也无审核环节。</li>
+<li><strong>本地草稿实验已完成。</strong> 先保存当前编辑，再选择 Agent 新建实验会话；运行时固定完整草稿，不修改模板 Agent 或已有会话。</li>
+<li><strong>本地会话持久化不等于 checkpoint 持久化。</strong> <code>.sessions</code> 保存消息和装配快照，<code>.records</code> 保存运行证据；当前每轮新建的 <code>MemorySaver</code> 只保留内存图状态，SQLite 与诊断上传见第 09 章。</li>
+<li><strong>服务端接入与桌面更新仍未完成。</strong> 登录权限、官方同步/发布、WebSocket 任务与结果交付不能以本地链路通过作为完成依据。</li>
 </ul>
 <details>
-<summary>查看前端源证据</summary>
-
-<ul>
+<summary>查看前端源证据</summary><ul>
 <li>启动与数据来源：<a href="../../web/src/main.tsx">main.tsx</a>、<a href="../../web/src/adapters/demo.ts">演示适配器</a>、<a href="../../web/src/adapters/tauri/index.ts">Tauri 适配器</a>。</li>
 <li>现有布局与 Agent 调试入口：<a href="../../web/src/App.tsx">App.tsx</a>、<a href="../../web/src/components/workbench/workbench.tsx">工作台调试会话</a>。</li>
 <li>Skill 文件操作：<a href="../../web/src/components/skills/skill-library-screen.tsx">Skill 管理页</a>、<a href="../../web/src/skills/library.ts">SkillLibrary 接口与本地行为</a>、<a href="../../web/src/adapters/browser-skill-library.ts">浏览器 IndexedDB</a>、<a href="../../web/src/adapters/tauri/skills.ts">Tauri 适配器</a>、<a href="../../desktop/runtime/skill-library.mjs">桌面文件存储</a>。</li>
-<li>Agent 当前类型仅引用能力 ID：<a href="../../web/src/agents/source.ts">source.ts</a> 第 1–15、37–48 行；阅读模式只读不是官方权限：<a href="../../web/src/components/premium/agent-builder/agent-builder.tsx">agent-builder.tsx</a> 第 227–234 行；Web 保存修改演示内存：<a href="../../web/src/adapters/demo/resources.ts">resources.ts</a> 第 170–198 行。</li>
-<li>MCP、工具与旧审批开关：<a href="../../web/src/components/premium/agent-builder/agent-configuration.tsx">agent-configuration.tsx</a> 第 143–195 行；<a href="../../web/src/components/premium/agent-builder/mcp-capability-dialog.tsx">MCP 能力弹窗</a> 第 60–98 行。</li>
-<li>执行与恢复边界：<a href="../../web/src/desktop/runtime.ts">任务类型</a> 第 28–42、62–78 行；<a href="../../web/src/components/chat/chat-composer.tsx">聊天忙时限制和审批面板</a> 第 76–107、132–170 行；<a href="../../web/src/workspace/store.ts">工作区内存状态</a> 第 39–46 行；<a href="../../web/src/chat/registry.ts">线程内存缓存</a> 第 23–41 行。</li>
+<li>Agent 身份、持久化与完整快照：<a href="../../desktop/runtime/assembly.ts">assembly.ts</a>、<a href="../../web/src/agents/source.ts">AgentSource</a>、<a href="../../web/src/components/premium/agent-builder/agent-builder.tsx">Agent 界面</a>、<a href="../../web/src/adapters/tauri/resources.ts">Tauri 资源映射</a>。</li>
+<li>MCP 配置、真实连接与工具调用：<a href="../../desktop/runtime/mcp.ts">mcp.ts</a>、<a href="../../web/src/components/premium/agent-builder/mcp-manager.tsx">MCP 管理界面</a>、<a href="../../web/src/components/premium/agent-builder/mcp-capability-dialog.tsx">MCP 能力弹窗</a>。</li>
+<li>图装配、执行与恢复边界：<a href="../../desktop/runtime/langgraph.ts">langgraph.ts</a>、<a href="../../desktop/runtime/runtime.mjs">runtime.mjs</a>、<a href="../../desktop/runtime/run-store.ts">run-store.ts</a>、<a href="../../web/src/components/runs/run-history.tsx">执行记录页</a>、<a href="../../web/src/adapters/tauri/runtime.ts">Tauri 运行适配器</a>。</li>
 <li>更新与同步接口范围：<a href="../../web/src/app/dependencies.tsx">应用依赖</a>、<a href="../../web/src/agents/source.ts">Agent 来源接口</a>、<a href="../../web/src/skills/source.ts">Skill 来源接口</a>。桌面资源加载见 <a href="../../desktop/runtime/resources.mjs">resources.mjs</a>；现有 Web 未接入官方物料下载或桌面更新流程。</li>
 <li>视觉依据：<a href="../../web/src/index.css">index.css</a> 第 13–14、57–92 行；<a href="../../web/src/components/premium/docs-pages/docs-article.css">文档阅读样式</a> 第 20–25、41–83 行。</li>
 </ul>
-</details>
-
-<h2 id="08-frontend-详细设计">详细设计</h2>
+</details><h2 id="08-frontend-详细设计">详细设计</h2>
 <p>前端状态按运行模型呈现。下面两种场景展示用户在客户端观察到的开始、运行和交付；各模块的其他失败情况见对应章节顺序图。</p>
 <h3>正常开始：准备完成后进入会话</h3>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/00-manual.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/00-manual.svg" alt="用户发起会话的运行模型"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/00-manual.html">打开顺序图：用户发起会话的运行模型</a></p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/00-manual.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/00-manual.svg" alt="用户发起会话的运行模型"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
+<p><a href="./diagrams/runtime/00-manual.html">打开顺序图：用户发起会话的运行模型</a></p>
 <p>界面先展示准备状态，准备完成后展示执行过程，结束后展示结果并允许下一轮输入。准备或工具检查失败时停在失败状态，按同步与 builtinTool 章节的运行模型处理。</p>
 <h3>执行中断线：区分执行结果与交付状态</h3>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-disconnect.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-disconnect.svg" alt="断线继续执行与结果补传"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/07-disconnect.html">打开顺序图：断线继续执行与结果补传</a></p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-disconnect.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-disconnect.svg" alt="断线继续执行与结果补传"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
+<p><a href="./diagrams/runtime/07-disconnect.html">打开顺序图：断线继续执行与结果补传</a></p>
 <p>界面同时表达连接状态与任务状态：连接断开时任务仍可运行，任务结束后可处于“结果待确认”，确认收到后转为“已交付”。连接恢复本身不触发重新执行。</p>
 <h2 id="08-frontend-服务端配合">服务端配合</h2>
 <p>客户端页面与业务接入依赖以下服务端能力：</p>
@@ -887,8 +909,225 @@
 <li>提供官方草稿修订、发布版本、版本清单与物料下载；Skill 发布联动受影响 Agent。</li>
 <li>通过 WebSocket 调用与取消任务，接收状态、结果、快照并确认收到。</li>
 <li>提供桌面更新清单和整包下载。</li>
+<li>提供诊断上传身份与权限校验、指定 thread 材料接收、持久保存回执和运维只读查看；不因接收 checkpoint 启动原任务。</li>
 </ul>
-<footer><span class="footer-label">客户端 MVP 设计 · 2026-10-18</span><a href="#00-overview">回到客户端总体设计</a></footer></article></div></main><script>const chapters=[["00-overview","00-总体架构.md","客户端总体设计"],["01-skill","01-SKILL.md","SKILL"],["02-mcp","02-MCP.md","MCP"],["03-builtintool","03-buildintool.md","builtinTool"],["04-agent","04-agent.md","Agent"],["05-updater","05-桌面端更新.md","桌面端更新"],["06-sync","06-同步与装配.md","同步与装配"],["07-execution","07-任务执行与恢复.md","任务执行与恢复"],["08-frontend","08-前端现状与缺口.md","前端现状与缺口"]];
+<footer><span class="footer-label">客户端 MVP 设计 · 2026-10-19</span><a href="#09-operations">下一章：运维与诊断上传</a></footer></article><article id="09-operations" data-file="09-运维与诊断上传.md" hidden><h1>09 · 运维与诊断上传：把指定 thread 交给服务端排查</h1>
+<blockquote>
+<p>串讲重点：客户端出问题后，用户选择一个 thread，将 SQLite 中已落盘的 checkpoint、执行记录和运行快照导出为诊断包；服务端校验、保存并返回接收回执，运维据此排查。</p>
+</blockquote>
+<p><strong>本章是新增设计，上传接口、SQLite checkpointer 和诊断页面尚未实现。</strong> 文档阅读页的「本章评论」用于串讲时记录意见，不属于客户端产品的会话功能。</p>
+<h2 id="09-operations-US">US</h2>
+<ol>
+<li>作为用户，我能选择出问题的 thread，说明现象，预览将要上传的内容后提交，不必上传整台客户端的数据。</li>
+<li>作为用户，客户端重启后仍能取得已落盘的 checkpoint；主界面打不开时也有独立的诊断导出入口。</li>
+<li>作为用户，我能区分「正在上传」「接收待确认」「服务端已接收」和「上传失败」，断网后重试不会重复生成工单材料。</li>
+<li>作为运维人员，我能在服务端按诊断编号找到来源 thread、各轮运行、checkpoint 和故障位置，看到材料缺失与脱敏说明。</li>
+<li>作为运维人员，查看故障材料不会启动模型、MCP、浏览器或恢复原任务；浏览器操作结果不确定时保留“结果未知”。</li>
+</ol>
+<h2 id="09-operations-简要设计">简要设计</h2>
+<p><strong>checkpoint 固定存放在客户端本地 SQLite。</strong> SQLite 仅承担客户端图状态的持久化，不改变业务服务端使用 PostgreSQL 的约定。诊断上传走 HTTPS，与 WebSocket 上的任务调用、取消和最终结果回传分开。</p>
+<table>
+<thead>
+<tr>
+<th>对象</th>
+<th>用途与边界</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>业务 thread</td>
+<td>用户看到的一次会话，包含多个 run；上传范围以这个 thread 为边界</td>
+</tr>
+<tr>
+<td>run</td>
+<td>用户明确发起的一轮执行；失败、取消或重启中断后不自动重跑</td>
+</tr>
+<tr>
+<td>SQLite checkpoint</td>
+<td>保存该轮 LangGraph 图状态、父子关系和待提交写入等证据；不能用聊天消息代替</td>
+</tr>
+<tr>
+<td>运行快照</td>
+<td>固定 Agent、Skill 内容身份、工具、MCP 清单、模型参数与客户端版本</td>
+</tr>
+<tr>
+<td>诊断包</td>
+<td>某个导出截止点的不可变材料，包含一个 thread 及其关联 run、checkpoint、记录；脱敏后用于排查</td>
+</tr>
+<tr>
+<td>接收回执</td>
+<td>服务端完成校验与持久保存的证明，包含诊断编号与包摘要；不同于任务结果确认</td>
+</tr>
+</tbody></table>
+<h3>当前实现与新增部分</h3>
+<p>当前 <a href="../../desktop/runtime/runtime.mjs">runtime.mjs</a> 每轮新建 <code>MemorySaver</code>，checkpoint 随进程退出丢失。<a href="../../desktop/runtime/run-store.ts">run-store.ts</a> 已将 <code>.records</code> 的事件、结果与状态，以及 <code>.sessions</code> 的消息、快照和 <code>lastRunId</code> 保存到磁盘；这些文件是执行记录与会话历史，<strong>不是完整的 LangGraph checkpoint</strong>。</p>
+<p>新增 SQLite 持久化后才能承诺“崩溃后上传已提交 checkpoint”。旧版历史只导出已有记录，并明确标记 <code>checkpoint-missing</code>，不从消息推造 checkpoint。<a href="https://docs.langchain.com/oss/javascript/langgraph/persistence">LangGraph 官方持久化说明</a>也区分了内存 saver 与可跨重启保存的持久化 saver。</p>
+<h2 id="09-operations-客户端">客户端</h2>
+<h3>从执行记录上传</h3>
+<p>在执行记录详情增加「上传诊断」入口，也可在运维页按 thread ID 搜索。页面展示会话标题、thread ID、关联 run、状态、最后更新时间、checkpoint 可用情况、材料大小，以及问题描述输入框。上传前明确显示接收服务和当前账号。</p>
+<p>用户查看材料清单与脱敏摘要后提交。完整 thread 的已保存消息、工具过程、运行快照与 checkpoint 是主要材料；截图、脚本和其他产物作为明确列出的可选附件。用户取消准备或上传，不取消原任务，也不删除原会话。</p>
+<p>首版只导出已结束或已排空写入的 thread。目标 thread 正在准备、执行或停止时，提示等待，或由用户主动停止后再导出；不为了上传偷偷停止任务。其他 thread 可以继续使用客户端。</p>
+<p>上传状态为：<code>准备材料 → 待用户确认 → 上传中 → 接收待确认 → 已接收／失败</code>。服务端回执带材料不完整标记时，显示「已接收，材料不完整」及具体原因，不显示“完整恢复成功”。</p>
+<h3>主界面无法打开</h3>
+<p>提供不依赖主 UI、浏览器和 Agent 启动的诊断导出入口，可列出本机 thread 并按 ID 导出。它只读取当前用户有权限的本地数据，不启动任务、不调用模型、不初始化 MCP，也不要求执行记录全部正常才能打开。</p>
+<p>某条记录损坏时，保留原件，继续收集该 thread 的可读材料，将损坏项记入清单。无法可靠确定记录属于所选 thread 时，不将它混入包。SQLite 完全不可读时，仍可导出会话／执行记录及 SQLite 错误类别，标记 checkpoint 缺失；不自动修库或上传整个数据库。</p>
+<p>网络或登录不可用时，先导出本地诊断包。客户端恢复后可选择同一个包上传；运维也可在有权限的服务端接收页上传该包，服务端使用相同的接收校验。导出成功不等于服务端收到。</p>
+<h2 id="09-operations-详细设计">详细设计</h2>
+<h3>1. SQLite 持久化与执行隔离</h3>
+<ul>
+<li>SQLite 放在用户私有的应用数据目录，例如 <code>&lt;localRoot&gt;/checkpoints.sqlite</code>，不随安装包分发，不写入 Git，也不放进 Skill 包。数据库及其 WAL／SHM 文件遵循同一用户访问边界。</li>
+<li>优先使用官方 <code>@langchain/langgraph-checkpoint-sqlite</code> 的 <code>SqliteSaver</code>，通过 <code>getTuple</code>／<code>list</code>／<code>put</code>／<code>putWrites</code> 保存和读取 checkpoint 与 pending writes；启动时校验 schema／序列化版本，事务提交成功才记为“已持久化”。SQLite 存储失败须明确反馈，不能静默回退为内存并继续声称可恢复。</li>
+<li>启用 WAL，使用 <code>synchronous=FULL</code>，并为读取与写入设置有界等待；不将 <code>NORMAL</code> 描述为断电后仍保留所有已确认提交。SQLite 将 WAL 合并回主文件的 checkpoint 与 LangGraph checkpoint 是两个不同概念。失败处理保留业务侧已发生操作的“不确定”状态，不因存储错误自动重试模型或工具。数据库升级前保留可恢复副本，失败时不清空旧库。</li>
+<li><strong>按 run 隔离图执行状态，按业务 thread 聚合归档。</strong> 本地保存 <code>threadId → runId → graphThreadId</code> 的映射，每个 run 有独立的图执行标识；根图、子图继续保留各自的 <code>checkpoint_ns</code>。包内记录映射，不假定业务 thread ID 与图 <code>thread_id</code> 永远相同。</li>
+<li>现有实现每轮将保存的消息重新交给新图。接入 SQLite 时保留这一执行语义，避免直接复用旧图状态再输入全量历史，造成消息重复或挂起任务继续执行。用户继续会话会创建新 run，不对失败 run 调用 <code>resume</code>。</li>
+<li>正常退出前排空已发起的 checkpoint 写入；强退后只承诺已提交部分。checkpoint 未记录到某个工具结果，不代表外部操作没有发生。</li>
+<li>保留策略按 thread／run 管理，不能删除仍被保留 checkpoint 依赖的祖先或增量数据。正在导出的材料在冻结完成前不被清理；超出容量时明确告知，不能无限增长或静默裁剪。</li>
+</ul>
+<p>SQLite checkpointer 的具体依赖版本须与已锁定的 LangGraph、checkpoint 接口及 Node 26.11.1 兼容。<a href="https://github.com/langchain-ai/langgraphjs/blob/main/libs/checkpoint-sqlite/src/index.ts">官方 SqliteSaver</a> 依赖 <code>better-sqlite3</code> 原生模块，而现有<a href="../../desktop/scripts/prepare.mjs">打包准备脚本</a>使用 <code>npm ci --ignore-scripts</code>；实现时必须补上目标平台的原生产物准备与校验，仅添加依赖不足以交付。macOS ARM64 与 Windows x64 分别准备匹配目标架构和 Node ABI 的产物，并在对应平台实际加载验收；不能直接复制 macOS 的 native addon 到 Windows 包。WAL 与同步策略的语义以 <a href="https://sqlite.org/wal.html">SQLite 官方说明</a>为准。</p>
+<h3>2. 固定一个可核查的导出截止点</h3>
+<ol>
+<li>解析用户所选的业务 thread ID，取得其 run 与图标识映射；校验归属，不接受用户输入任意磁盘路径。</li>
+<li>取得该 thread 的短期导出锁，阻止它开始新一轮；等待已发起的工具、记录与 checkpoint 写入结束。等待超时则失败并保留当前任务状态。</li>
+<li>在 SQLite 一致性读事务中读取该 thread 对应的各 run、全部 namespace、checkpoint、父关系及 pending writes，同时冻结会话和执行记录副本。现有多个 JSON 文件分别原子写入并不构成跨文件事务，必须由同一 thread 锁协调。</li>
+<li>在清单记录每个 run／namespace 的截止 checkpoint ID、最后事件序号、采集时间与已知状态。冻结后释放导出锁，后续新消息不进入这次包；需要包含它们时生成新的上传 ID。</li>
+<li>对冻结副本进行脱敏、材料校验和压缩，计算包摘要。只读原始 SQLite；不直接复制正在使用的 <code>.sqlite</code> 文件而遗漏 WAL，也不把整库、WAL、SHM 上传给服务端。按映射使用绑定参数查询并生成全新的逻辑包，不能用“复制全库再删除其他 thread”的方式导出，因为删除页仍可能残留其他会话数据。</li>
+</ol>
+<p>崩溃后的首次诊断读取应先保留磁盘上的故障证据，再由正常启动流程标记未完成 run 为“执行中断、结果未知”；导出清单分别说明磁盘观测状态和恢复判定。缺失、截断、损坏或尚未提交的尾部数据均有明确记录。</p>
+<h3>3. 单个 thread 的诊断包</h3>
+<table>
+<thead>
+<tr>
+<th>材料</th>
+<th>必须说明的内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>manifest.json</code></td>
+<td>格式版本、上传 ID、来源客户端安装标识、业务 thread ID、run 映射、客户端／引擎／checkpointer 版本、截止点、文件字节数与 SHA-256、脱敏策略版本、缺失清单</td>
+</tr>
+<tr>
+<td><code>thread.json</code></td>
+<td>会话标题、已保存消息、问题描述、来源标识；不附带其他 thread</td>
+</tr>
+<tr>
+<td>执行记录</td>
+<td>每个 run 的输入、事件顺序、开始／结束时间、终态、结果或安全错误类别；保留本地时间与服务端接收时间的区别</td>
+</tr>
+<tr>
+<td>运行快照</td>
+<td>实际 Agent／Skill 内容身份、模型参数与工具清单；仅引用包内的相对路径</td>
+</tr>
+<tr>
+<td>checkpoint 归档</td>
+<td>每个图的 <code>thread_id</code>、<code>checkpoint_ns</code>、<code>checkpoint_id</code>、checkpoint 本体、metadata、父 checkpoint 关系、pending writes 及其任务／通道关联与顺序</td>
+</tr>
+<tr>
+<td>可选附件</td>
+<td>用户勾选的截图、脚本及相关产物；按清单校验摘要，缺失文件明确列出</td>
+</tr>
+</tbody></table>
+<p>checkpoint 导出须包含解释图状态所需的祖先、版本与增量依赖，不只保存最新 <code>messages</code> 或一次 <code>getState()</code> 的输出。通过受控序列化转成可检查的 JSON 数据，保留类型与序列化版本；无法安全解释的值标记缺失，不让服务端执行反序列化代码。</p>
+<p>所有材料统一处理凭据与敏感字段，包括 checkpoint、metadata、pending writes、工具参数／返回值和附件。默认排除 API key、Token、Cookie、认证头、环境变量文件、浏览器 profile、系统钥匙串和无关本地文件。现有密钥字符串替换不等于完整脱敏；截图和自由文本也需要预览与选择。脱敏不回写本地原件。</p>
+<p>诊断包用于定位问题，脱敏或缺失后的包不承诺能还原为可执行的 saver。Agent／Skill 的完整源包按需另行提供，不能因为上传一个 thread 就扫描并上传所有物料。</p>
+<h3>4. 上传与服务端接收</h3>
+<p>首版使用<strong>单包 HTTPS 上传＋接收状态查询</strong>，不增加分片协议。客户端持久保存不可变包、摘要和上传 ID；同一个包重试复用 ID，材料变化则使用新 ID。下面是待实现的最小接口契约，具体路由可在服务端接入时统一命名：</p>
+<table>
+<thead>
+<tr>
+<th>接口</th>
+<th>请求</th>
+<th>成功含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>PUT /api/diagnostics/thread-uploads/{uploadId}</code></td>
+<td>已鉴权请求、诊断 ZIP、包 SHA-256；ZIP 内有上述 manifest</td>
+<td>服务端校验通过，包与索引持久保存，返回接收回执</td>
+</tr>
+<tr>
+<td><code>GET /api/diagnostics/thread-uploads/{uploadId}</code></td>
+<td>同一身份边界下查询上传 ID</td>
+<td>返回已接收回执、处理中或失败状态；不存在明确返回未接收</td>
+</tr>
+<tr>
+<td><code>GET /api/diagnostics/{diagnosticId}</code></td>
+<td>有权限的用户或运维请求</td>
+<td>返回只读诊断摘要、run／checkpoint 时间线、附件与缺失项</td>
+</tr>
+</tbody></table>
+<p>接口基于现有账号、租户／组织和设备身份鉴权；服务端不相信 manifest 中自报的用户或租户。幂等键为鉴权范围内的 <code>uploadId</code>，同时绑定来源安装标识、thread ID 和包摘要。同 ID 同摘要重试返回同一回执；同 ID 不同摘要返回冲突，不覆盖已接收材料。</p>
+<p>服务端先将上传流写入隔离暂存区，限制压缩与解压大小、文件数量和路径；拒绝路径穿越、符号链接、重复路径、未知格式版本及摘要不符。确认包只对应一个业务 thread，run 映射、checkpoint 父关系与缺失声明互相一致。超出配置上限时返回明确错误，客户端展示限制，不能悄悄丢数据后宣称完整上传。</p>
+<p><strong>只有包已持久保存、元数据与可查询索引已提交，才返回“已接收”。</strong> 回执至少包含 <code>uploadId</code>、<code>diagnosticId</code>、<code>threadId</code>、<code>bundleSha256</code>、服务端 <code>receivedAt</code>，以及材料完整性和缺失列表。若服务端采用异步校验，<code>202</code> 仅表示处理中，客户端继续查询，不能当成最终接收成功。</p>
+<p>运维接收页按诊断编号、来源设备、thread、run 和状态查找；详情将消息、工具事件、checkpoint 与运行快照关联呈现。服务端诊断存储与生产任务的可执行 checkpointer 隔离：不覆盖已有生产 thread，不连接包中的 MCP，不加载 Skill 脚本，不调用 <code>invoke</code>／<code>stream</code>／<code>resume</code>。查看与下载均校验权限，材料保留期限与删除遵循服务端策略。</p>
+<h3>5. 运行场景与故障处理</h3>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>客户端行为</th>
+<th>服务端与最终结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>正常上传</td>
+<td>选择 thread，冻结 SQLite 与记录，预览后上传</td>
+<td>校验并持久保存，返回诊断编号；客户端核对摘要后显示已接收</td>
+</tr>
+<tr>
+<td>任务仍在运行</td>
+<td>提示等待或由用户主动停止，写入排空后再导出</td>
+<td>不把上传行为当作取消或新任务调用</td>
+</tr>
+<tr>
+<td>崩溃后导出</td>
+<td>读取已提交 checkpoint 与现有记录，标明尾部缺失和结果未知</td>
+<td>接收可读材料，运维看到完整性标记；不根据缺失结果判断操作未执行</td>
+</tr>
+<tr>
+<td>主 UI 启动失败</td>
+<td>独立入口只读导出；无法联网则保存本地包</td>
+<td>后续通过客户端或接收页上传相同包</td>
+</tr>
+<tr>
+<td>上传中断／回执丢失</td>
+<td>保留包，先按上传 ID 查询；未接收则重传同一包</td>
+<td>已接收时返回同一回执，不建立重复记录</td>
+</tr>
+<tr>
+<td>无权限／会话过期</td>
+<td>保留本地包，明确提示重新登录或联系有权限人员</td>
+<td>拒绝跨组织、跨用户越权，不自动换账号上传</td>
+</tr>
+<tr>
+<td>材料不完整</td>
+<td>预览中列出缺失；用户确认后上传可读部分</td>
+<td>结构与缺失声明合法时可接收，明确标记不完整；结构损坏则拒绝</td>
+</tr>
+<tr>
+<td>SQLite 或本地磁盘故障</td>
+<td>保留原件，不自动修库；保存能取得的安全错误类别与其他材料</td>
+<td>未取得的 checkpoint 明确缺失，不伪造恢复成功</td>
+</tr>
+</tbody></table>
+<p>上传失败不改变原 run 结果，不重试原工具。客户端重启后展示已确认过的待上传包，由用户重试；不会自动扫描并上传其他 thread。暂存包清理与原会话数据清理分开，收到回执后也不自动删除原始会话。</p>
+<h2 id="09-operations-服务端配合">服务端配合</h2>
+<ul>
+<li>提供鉴权后的诊断上传、幂等查询、只读检索和附件下载；普通用户可提交自己有权查看的 thread，运维查看范围由服务端授权。</li>
+<li>提供可查询的包大小、展开大小、文件数和格式版本限制；校验失败返回稳定错误类别，客户端不依赖原始堆栈或数据库错误文本。</li>
+<li>将包、摘要、来源、run／checkpoint 索引和接收回执一起纳入持久接收流程；未提交完成的暂存数据不出现在已接收列表。</li>
+<li>存储接收身份与时间，并使用平台既有访问审计和保留策略；上传业务记录、任务结果确认、生产调度状态彼此独立。</li>
+</ul>
+<p>本章新增的是持久化诊断业务记录，不新增日志平台、span 或指标。上传 ID、状态、稳定错误类别和服务端回执已覆盖首版排查与验收需要；用户消息、checkpoint 内容、工具正文和凭据不写入遥测。若后续增加上传成功率、耗时等监控，另按项目规范确认统计口径。</p>
+<h2 id="09-operations-验收边界">验收边界</h2>
+<ol>
+<li>macOS ARM64 与 Windows x64 均验证 SQLite 落盘、重启可读、异常退出后已提交 checkpoint 保留；原生 SQLite 依赖随正确架构的包交付。</li>
+<li>两个 thread 同时存在时，只导出所选 thread；覆盖多 run、根／子图 namespace、父链、pending writes 与版本匹配。</li>
+<li>正在执行时不能取得半写入快照；停止、超时、崩溃、SQLite 损坏和磁盘写满均有明确结果，未提交部分不冒充已保存。</li>
+<li>覆盖凭据嵌入在消息、工具输出、metadata 与 checkpoint 中的情况；默认无浏览器登录态和其他会话材料。</li>
+<li>服务端真实接收测试覆盖持久保存后回执、丢失回执后的幂等重试、同 ID 不同摘要、越权、超限与恶意压缩路径。</li>
+<li>接收后可按诊断编号查到同一 thread 的 run／checkpoint；查看包不会产生模型、MCP 或浏览器调用。</li>
+<li>旧版无 checkpoint、附件缺失与脱敏包能展示真实完整性；客户端导出成功、HTTP 请求完成和服务端已接收三者不混淆。</li>
+</ol>
+<footer><span class="footer-label">客户端 MVP 设计 · 2026-10-19</span><a href="#00-overview">回到客户端总体设计</a></footer></article></div></main><script>const chapters=[["00-overview","00-总体架构.md","客户端总体设计"],["01-skill","01-SKILL.md","SKILL"],["02-mcp","02-MCP.md","MCP"],["03-builtintool","03-buildintool.md","builtinTool"],["04-agent","04-agent.md","Agent"],["05-updater","05-桌面端更新.md","桌面端更新"],["06-sync","06-同步与装配.md","同步与装配"],["07-execution","07-任务执行与恢复.md","任务执行与恢复"],["08-frontend","08-前端现状与缺口.md","前端现状与缺口"],["09-operations","09-运维与诊断上传.md","运维与诊断上传"]];
 const navLinks=[...document.querySelectorAll('.chapter-nav a')];
 const articles=[...document.querySelectorAll('article')];
 let current=-1;
@@ -914,6 +1153,7 @@ function show(){
  document.getElementById('next').disabled=current===chapters.length-1;
  document.getElementById('sections').innerHTML=[...article.querySelectorAll('h2')].map(h=>'<a href="#'+h.id+'">'+h.textContent+'</a>').join('');
  document.title=title+' · OmniOps 客户端需求串讲';
+ window.dispatchEvent(new Event('walkthrough:chapterchange'));
  if(hash!==id&&hash.startsWith(id+'-'))requestAnimationFrame(()=>document.getElementById(hash)?.scrollIntoView({behavior:reduced?'instant':'smooth',block:'start'}));
  else if(changed)requestAnimationFrame(()=>window.scrollTo({top:0,behavior:'instant'}));
 }
@@ -929,4 +1169,4 @@ document.addEventListener('click',e=>{const a=e.target.closest('a[href^="#"]');i
 document.addEventListener('keydown',e=>{if(e.altKey||e.ctrlKey||e.metaKey||e.target.closest('button,a,input,textarea,select,summary'))return;if(e.key==='ArrowRight'&&current<chapters.length-1)location.hash=chapters[current+1][0];if(e.key==='ArrowLeft'&&current>0)location.hash=chapters[current-1][0]});
 document.querySelectorAll('table').forEach(table=>{const labels=[...table.querySelectorAll('th')].map(th=>th.textContent);table.querySelectorAll('tbody tr').forEach(tr=>[...tr.children].forEach((td,i)=>td.dataset.label=labels[i]||''))});
 show();
-</script></body></html>
+</script><script src="comments.js"></script></body></html>

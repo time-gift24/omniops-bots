@@ -1,16 +1,17 @@
 # 客户端 Skill 文件管理、版本与运行加载
 
-我们正在构建一个在客户端管理 Skill、装配 Agent 并执行 Chrome 运维任务的桌面客户端。Skill 的真实文件目录固定为当前用户主目录下的 `.omnimind-ops/skills`。前端负责列表、包内文件操作与上传交互；桌面 JavaScript runtime 负责文件落盘；服务端负责官方草稿修订、发布与版本清单。
+我们正在构建一个在客户端管理 Skill、装配 Agent 并执行 Chrome 运维任务的桌面客户端。Skill 的真实文件目录默认为当前用户主目录下的 `.omnimind-ops/skills`，runtime 可通过 `OMNIOPS_BOTS_LOCAL_ROOT` 指定本地数据根目录。前端负责列表、包内文件操作与上传交互；桌面 JavaScript runtime 负责文件落盘；服务端负责官方草稿修订、发布与版本清单。
 
 ## 本次已实现的范围
 
 - Skill 列表、包内文件管理共用 `SkillLibrary` 接口。浏览器预览通过 IndexedDB 保存，Tauri 桌面通过既有 `runtime_request` 写入本机文件系统；浏览器存储不代表已经写进桌面目录。
 - 桌面支持创建本地 Skill、复制、文本与二进制文件上传、读取、创建目录、重命名、删除。成功提示表示文件操作已完成；关闭并重启客户端后文件仍在。
 - 本地 Skill 可编辑；官方已发布目录只读，可复制到本地。文件级上传先保存当前本地包；本次没有接通服务端草稿上传、运维身份判定或发布接口，因此不会把一次文件上传显示成正式发布。
-- 新目录同时供 `skills_list`、`agents_load` 的 Skill 选项和 `agent_instructions` 使用。没有只写管理目录、运行时仍读取旧目录的分叉。
+- 同一 Skill 目录供 `skills_list`、`agents_load` 的 Skill 选项及 `assembly.ts` 的完整包捕获使用。桌面执行由固定会话快照装配，不再依赖每轮将 `SKILL.md` 拼进提示词。
+- 本地 Agent 配置已持久保存；开始新会话时捕获完整 Skill 包、计算内容摘要并写入只读快照，后续轮次验证并复用。Skill 页面可保存当前编辑、选择 Agent 并在新会话实验，模板和已有会话不变。
 - 每个文件上限 20 MiB、每个包上限 100 MiB 和 1000 个文件／目录。上传时目标目录必须仍存在；同名文件须明确替换，大小写冲突不会自动改名。拒绝越界路径、符号链接及系统保留名称，替换先写临时文件再提交；提交前失败保留原文件。未知存储错误保留当前编辑，并提示刷新确认实际结果。
 
-文件管理的落盘、官方缓存的只读约束已经实现。官方版本的下载校验、草稿修订、发布联动、会话开始时完整快照与固定装配仍需要后续对接，不能以本次页面完成作为这些能力已完成的依据。
+文件管理落盘、官方缓存只读、完整快照与固定装配已经实现。装配时校验本机官方缓存内容是否匹配其内容 ID；官方版本的远端下载与来源验证、草稿修订和发布联动仍待接入。
 
 ## 目录：可编辑包与不可变版本分别保存
 
@@ -38,7 +39,7 @@
 
 当前本地管理 ID 为 `local/<localId>`；官方缓存 ID 为 `official/<skillId>/<contentId>`。这些是前端使用的不透明身份，包内路径始终相对于该 Skill 根目录。页面不接受任意主机绝对路径。缓存中的每个官方版本有独立身份，不会因另一版本存在而覆盖旧版本。
 
-`.metadata` 保存客户端名称与描述，不作为包内文件，不参与目标发布包和内容指纹；当前本地名称也用于提示词中的 Skill 标识。导入文件不会覆盖这份元数据。复制官方 Skill 时，新建本地身份及元数据，复制完整文件集合；副本没有发布标签，修改副本不改变原版。
+`.metadata` 保存客户端名称与描述，不作为包内文件，不参与目标发布包和内容指纹；运行入口名称与描述从 `SKILL.md` 的 YAML 元信息读取。导入文件不会覆盖这份元数据。复制官方 Skill 时，新建本地身份及元数据，复制完整文件集合；副本没有发布标签，修改副本不改变原版。
 
 服务端与客户端采用相同的 `skills/releases/<skillId>/<contentId>/` 正式版本布局和 `tags.json` 映射。完整的两端目录对照、草稿修订分布、摘要算法与同步顺序见 [Skill 版本文件布局](./skill-version-layout.md)。
 
@@ -53,7 +54,7 @@
 
 文件级上传只改变当前工作副本，不生成独立的文件发布版本。正式发布时收集整个包，包含入口、引用文档、脚本和二进制资源；实验日志、截图和执行结果不在包里。草稿保存不触发 Agent 更新；Skill 正式发布才一并更新受影响 Agent 的装配 ID 和人工填写的新标签。
 
-内容 ID 的生成与校验需要发布／同步服务实现，约定为：路径规范化为 NFC、POSIX 相对路径；按路径排序，记录目录及各文件的字节数、SHA-256；将规范化清单编码后计算 SHA-256，形成包的 `contentId`。时间戳、绝对目录、缓存展示元数据和人工标签均不参与指纹。任何文件字节、路径或目录集合变化都会产生新的包内容 ID。
+客户端 `assembly.ts` 已实现完整包内容 ID 的生成与校验：路径采用 NFC、POSIX 相对路径，不符合要求则拒绝；按路径排序，记录目录及各文件的字节数、SHA-256；将规范化清单编码后计算 SHA-256，形成包的 `contentId`。时间戳、绝对目录、缓存展示元数据和人工标签均不参与指纹。任何文件字节、路径或目录集合变化都会产生新的包内容 ID。后续发布／同步服务必须使用一致的算法。
 
 `tags.json` 的形状如下；`<contentId>` 表示实际 64 位十六进制摘要，不是字面字符串：
 
@@ -64,7 +65,7 @@
 }
 ```
 
-标签不能重定向或重用。当前读取器只消费缓存标签映射，没有“新增标签”或“修改已发布文件”的客户端写接口。正式同步接入时，还须校验服务端清单与包摘要，下载到暂存位置，校验通过后放入新的 `contentId` 目录；本次没有实现这段下载与完整性验证，不能把手工放入目录的文件视为已经过服务端验证。
+标签不能重定向或重用。当前读取器只消费缓存标签映射，没有“新增标签”或“修改已发布文件”的客户端写接口。装配已验证本机包的摘要；正式同步接入时，还须校验服务端清单与来源，下载到暂存位置，校验通过后放入新的 `contentId` 目录。这段下载流程尚未实现，不能把手工放入目录的文件视为已经过服务端身份与发布验证。
 
 ### 运行模型：文件上传与正式发布
 
@@ -97,53 +98,57 @@ sequenceDiagram
 
 ## LangGraph.js 当前实际如何加载
 
-仓库没有名为 `langgraph.ts` 的入口。当前客户端用的是 JavaScript 模块：`desktop/runtime/main.mjs` 启动，`resources.mjs` 读取资源，`runtime.mjs` 执行任务，`agent.mjs` 调用 `createDeepAgent`。依赖锁定在 `desktop/runtime/package.json`：`@langchain/langgraph` 1.5.0、`deepagents` 1.15.0。
+当前调用链为：`desktop/runtime/main.mjs` 启动，`resources.mjs` 提供资源接口，`assembly.ts` 捕获或验证会话装配，`runtime.mjs` 管理每轮生命周期，`langgraph.ts` 调用 `createDeepAgent`。`mcp.ts` 负责真实 Streamable HTTP MCP 连接、能力发现与工具调用。依赖锁定在 `desktop/runtime/package.json`：`@langchain/langgraph` 1.5.0、`@langchain/langgraph-checkpoint` 1.2.0、`deepagents` 1.15.0。
 
 目前的配置是 Agent 的 `skillIds: string[]`。用户在 Agent 配置中勾选 Skill 后保存，`agent_save` 校验这些 ID 存在；`agents_load` 从当前 Skill 根目录生成可选资源。官方 ID 包含明确的 `contentId`，本地 ID 指向可编辑工作包。
 
 ```json
 {
   "name": "浏览器助手",
+  "description": "按任务要求操作内置浏览器。",
   "instructions": "按任务要求操作 Chrome。",
   "skillIds": ["local/<localId>"],
   "toolIds": ["inspect_browser", "read_playwright_script"],
-  "mcpServerIds": [],
-  "requireApproval": true
+  "mcpServerIds": []
 }
 ```
 
-这段是现有 Agent 配置形状的说明，不是新加的配置文件。当前 Agent 配置保存在 runtime 内存中；本次只新增 Skill 文件的持久化，没有宣称 Agent 配置可跨进程重启恢复。
+这段是现有 Agent 的 `configuration` 形状，不是新加的配置文件。Agent 记录连同 `id`、来源、内容 ID 和可选发布标签保存在 `.omnimind-ops/agents/<agentId>.json`，可跨进程读取。本地配置可新建、保存与复制；官方记录只读。真实运行不包含操作审批开关。
 
-当前每轮发送之前，Tauri adapter 调用 `agent_instructions`；资源层重新读取已选 Skill 的 UTF-8 `SKILL.md`，拼接到 Agent 指令，再随 `chat_start` 传给 `createBrowserAgent` 的 `extraInstructions`。缺少 Skill、缺少有效入口或指令过长直接失败。文本来源限制为单文件 256 KiB，资源目录文本合计 32 MiB；Agent 最终指令合计最多 256 Ki 字符。
+`chat_start` 携带 `threadId`、`runId`、所选 `agentId` 和可选的 `experimentSkillId`。运行时先保存本轮占用记录，再调用 `prepareSession`：新会话捕获完整包，已有会话核验原快照。每个 Skill 必须有有效 UTF-8 `SKILL.md` 和 YAML 元信息，入口上限 256 KiB；单包文件、目录和字节上限沿用文件管理约束，一次装配总量不超过 256 MiB。缺少资源、内容摘要不匹配或必要 builtinTool 不可用时，开始模型／工具执行前失败。
 
-这条路径只把入口内容提供给提示词，**尚未将包内所有文件挂载到 Deep Agents 的 Skill 文件后端**。虽然管理页可以保存 `references/`、图片和其他资源，当前模型并不会因此自动获得这些文件的读取能力。`createDeepAgent` 当前没有传 `skills` 或 `backend` 配置，不能把“文件已上传”解释为“完整 Skill 已装配到一次运行”。
+`langgraph.ts` 已将完整包快照通过 `backend` 与 `skills` 挂载给 Deep Agents，模型按需读取入口及引用文件。快照保留二进制资源、相对路径和空目录；文件被保存或挂载不代表模型能解释任意二进制格式，也不使包内脚本自动执行。工具发现与实际调用都受所选能力白名单约束。
 
-### 运行模型：当前入口读取路径
+### 运行模型：当前本地会话装配
 
 ```mermaid
 sequenceDiagram
     actor U as 用户
     participant UI as 会话与 Tauri adapter
-    participant Res as resources.mjs
+    participant Res as resources.mjs / assembly.ts
     participant Disk as Skill 文件目录
-    participant Run as runtime.mjs / agent.mjs
+    participant Run as runtime.mjs / langgraph.ts
     U->>UI: 发送一轮消息
-    UI->>Res: agent_instructions(agentId)
-    Res->>Disk: 按 skillIds 读取各包 SKILL.md
-    Disk-->>Res: 当前入口文本
-    Res-->>UI: 系统指令＋所选 Skill 入口文本
-    UI->>Run: chat_start(request.instructions)
-    Run->>Run: createDeepAgent(systemPrompt, tools, MemorySaver)
-    Run->>Run: stream(configurable.thread_id = runId)
+    UI->>Run: chat_start(threadId, runId, agentId, experimentSkillId)
+    Run->>Res: prepareSession(threadId, agentId, experimentSkillId)
+    alt 新会话
+        Res->>Disk: 捕获完整包、校验内容 ID，写只读快照
+    else 已有会话
+        Res->>Disk: 验证并读取原会话快照
+    end
+    Res-->>Run: 固定 Agent、Skill 路径与 MCP 配置
+    Run->>Run: 连接 MCP 并核验工具定义
+    Run->>Run: createDeepAgent(systemPrompt, tools, backend, skills, MemorySaver)
+    Run->>Run: stream(configurable.thread_id = threadId)
     Run-->>UI: 模型与工具事件，最后返回结果
-    Note over UI,Run: 每轮重新读取；会话固定完整快照尚未接入
+    Note over UI,Run: 运行记录与会话消息落盘；已有会话沿用原快照
 ```
 
-现有 `MemorySaver` 和 `thread_id` 用于单次运行的图状态与工具中断，不能替代 Skill 包版本管理，也不代表持久化会话快照。当前实现每轮会新建 checkpointer，下一轮历史消息由前端再次传入。此前确认的“会话固定开始时快照，新版本只在新会话生效”仍是必须完成的后续运行需求。
+当前每轮仍新建 `MemorySaver`，图 checkpoint 仅在本轮内存中；`thread_id` 使用业务会话 ID，不因此获得跨重启 checkpoint。`run-store.ts` 已在 `.records` 保存运行证据、在 `.sessions` 保存消息和装配快照，下一轮由 runtime 恢复已有历史；失败或中断只恢复证据，不恢复待执行图任务。会话固定快照已实现。新增设计已确定将 checkpoint 存入 SQLite，并按 run 隔离、按业务 thread 聚合导出；该持久化与诊断上传尚未接入，见[运维与诊断上传](./requirements-walkthrough/09-运维与诊断上传.md)。
 
-## 完整装配的目标：由清单选择具体文件，再交给 LangGraph.js
+## 完整装配：当前本地实现与后续服务端接入
 
-后续可以把装配入口命名为 `langgraph.ts`，但该名称不会让框架自动扫描文件。应用先解析 Agent 清单、补齐物料并固定运行快照，再显式把已选 Skill 的根目录传给 Deep Agents。框架 `skills` 参数接收虚拟 POSIX 路径；`backend` 决定这些虚拟路径如何对应实际文件。不能直接把包含全部历史版本的 `.omnimind-ops/skills` 当成一次运行的 Skill 搜索目录，因为同名 Skill 的多个来源存在覆盖次序。[Deep Agents 的 `skills` 参数](https://reference.langchain.com/javascript/deepagents/index/CreateDeepAgentParams)
+`assembly.ts` 已从当前本地清单选择具体文件并固定快照，`langgraph.ts` 显式把已选 Skill 的根目录传给 Deep Agents；后续仍需补齐远端版本核对和缺包下载。框架 `skills` 参数接收虚拟 POSIX 路径；`backend` 决定这些虚拟路径如何对应实际文件。一次运行只挂载选中的快照，不把包含全部历史版本的 `.omnimind-ops/skills` 作为搜索目录，避免同名 Skill 相互覆盖。[Deep Agents 的 `skills` 参数](https://reference.langchain.com/javascript/deepagents/index/CreateDeepAgentParams)
 
 Agent 发布清单中的引用应固定内容 ID，标签只供人查看。例如：
 
@@ -162,11 +167,11 @@ Agent 发布清单中的引用应固定内容 ID，标签只供人查看。例�
 }
 ```
 
-一次会话的装配目录应放在 `.omnimind-ops/runs/<sessionId>/`，与 Skill 发布缓存分开。把清单指定的官方完整包或本地完整快照复制到该会话的 `skills/<mountName>/`，保持包内相对路径；同时保存运行清单。已运行会话继续使用自己的快照，后来编辑本地文件或同步新官方版本不改变它。日志和实验截图另存该会话的产物目录，不写回 Skill。
+一次会话的装配已保存在 `.omnimind-ops/runs/<sha256(threadId)>/`，与 Skill 发布缓存分开。清单指定的官方完整包或本地完整快照复制到该会话的 `skills/<mountName>/`，保持包内相对路径，并写入 `assembly.json`。已运行会话继续使用自己的快照，后来编辑本地文件或缓存新官方版本不改变它；快照损坏时拒绝继续，不能重新捕获成另一份内容。脚本和截图等产物存于会话工作目录的独立位置，不写回只读 Skill。
 
-接入 Deep Agents 时，明确设置 `FilesystemBackend({ rootDir: snapshot.directory, virtualMode: true })`，把虚拟路径限制在会话快照目录；再通过 `permissions` 只允许读取 `/skills/**`，拒绝其他读写。`FilesystemBackend` 本身提供读写能力，仅指定 `rootDir` 不等同于只读。[FilesystemBackend API](https://reference.langchain.com/javascript/deepagents/backends/FilesystemBackend)
+当前 Deep Agents 配置使用 `FilesystemBackend({ rootDir: snapshot.directory, virtualMode: true })`，把虚拟路径限制在会话快照目录；通过 `permissions` 只允许读取 `/skills/**`，拒绝其他读写，并在工具中间件限制实际能力。`FilesystemBackend` 本身提供读写能力，仅指定 `rootDir` 不等同于只读。[FilesystemBackend API](https://reference.langchain.com/javascript/deepagents/backends/FilesystemBackend)
 
-下面给出将来 `langgraph.ts` 的配置形状，已核对项目锁定的 Deep Agents 1.15.0 类型定义。`snapshot`、工具解析和会话生命周期仍需接入，当前没有这个运行入口：
+下面摘示已接入的配置关系；完整实现还包括受控系统指令、能力白名单中间件、取消信号与工具排空，见 [`langgraph.ts`](../desktop/runtime/langgraph.ts)：
 
 ```ts
 import { createDeepAgent, FilesystemBackend } from "deepagents"
@@ -178,7 +183,7 @@ const backend = new FilesystemBackend({
 
 const graph = createDeepAgent({
   model,
-  systemPrompt: snapshot.agent.instructions,
+  systemPrompt: snapshot.agent.configuration.instructions,
   tools: resolvedBuiltinAndMcpTools,
   backend,
   permissions: [
@@ -190,14 +195,14 @@ const graph = createDeepAgent({
 })
 
 await graph.stream(input, {
-  configurable: { thread_id: sessionId },
+  configurable: { thread_id: threadId },
   signal,
 })
 ```
 
 Deep Agents 会发现所选 Skill 的元信息，并按需读取入口和引用文件；应用负责把版本和权限约束变成实际可读的文件集合。LangGraph 的 `thread_id` 对应图状态，版本仍由应用自己的 Agent／Skill 清单固定。[Skill middleware](https://reference.langchain.com/javascript/deepagents/node/createSkillsMiddleware)；[LangGraph 图与 thread_id](https://docs.langchain.com/oss/javascript/langgraph/thinking-in-langgraph)
 
-### 运行模型：目标会话固定装配
+### 运行模型：待接入的官方调用与下载
 
 ```mermaid
 sequenceDiagram
@@ -224,7 +229,7 @@ sequenceDiagram
     Note over C,G: 任何校验或装配失败即结束，不使用其他版本代替
 ```
 
-手动会话也先完成相同装配；后续轮次继续使用已有快照。服务端每次远端调用新建独立会话，因此每次调用都核对指定版本。这个设计不要求客户端实现服务端高可用、任务调度或发布审批。
+本地手动会话已完成完整装配，后续轮次继续使用已有快照。上图的服务端远端调用、HTTPS 下载和结果回传仍是待接入流程；目标为每次远端调用新建独立会话并核对指定版本。这个设计不要求客户端实现服务端高可用、任务调度或发布审批。
 
 ## 服务端需要配合
 
