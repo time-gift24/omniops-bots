@@ -61,7 +61,7 @@ export interface ExecuteRequest<I, O> {
 }
 export interface Execution {
   readonly records: RunRecords;
-  isBusy(): boolean;
+  isBusy(threadId?: string): boolean;
   execute<I, O>(request: ExecuteRequest<I, O>): Promise<ExecutionOutcome<O>>;
   close(): Promise<void>;
 }
@@ -79,10 +79,11 @@ export async function createExecution(options: { recordsDirectory: string; check
   try { records = await createRunRecords(options.recordsDirectory); }
   catch (error) { throw new ExecutionError('storage', error); }
   let closed = false;
-  let active: { stop: () => void; done: Promise<unknown> } | undefined;
-  const leases = new AsyncLocalStorage<{ lease: { tail: Promise<unknown>; closed: boolean }; action?: true }>();
+  const active = new Map<string, { stop: () => void; done: Promise<unknown> }>();
+  const busyThreads = new Set<string>();
 
   async function run<I, O>(request: ExecuteRequest<I, O>, controller: AbortController): Promise<ExecutionOutcome<O>> {
+    const leases = new AsyncLocalStorage<{ lease: { tail: Promise<unknown>; closed: boolean }; action?: true }>();
     const identity: RunIdentity = { threadId: request.threadId, runId: request.runId, graphThreadId: randomUUID() };
     const record: RunRecord = { ...identity, status: 'preparing', startedAt: new Date().toISOString() };
     const cleanupErrors: unknown[] = [];
@@ -280,7 +281,7 @@ export async function createExecution(options: { recordsDirectory: string; check
         catch (error) { throw new ExecutionError('invalid-request', error); }
       },
     },
-    isBusy: () => !!active,
+    isBusy: threadId => threadId === undefined ? active.size > 0 : busyThreads.has(threadId),
     execute<I, O>(request: ExecuteRequest<I, O>): Promise<ExecutionOutcome<O>> {
       let rejected: ExecutionErrorKind | undefined;
       if (closed) rejected = 'closed';
@@ -288,21 +289,26 @@ export async function createExecution(options: { recordsDirectory: string; check
           !Number.isSafeInteger(request.timeoutMs) || request.timeoutMs <= 0 || request.timeoutMs > 2_147_483_647 ||
           typeof request.prepare !== 'function' || (request.signal !== undefined && !(request.signal instanceof AbortSignal)) ||
           (request.details !== undefined && !validDetails(request.details))) rejected = 'invalid-request';
-      else if (active) rejected = 'busy';
-      else if (records.has(request.runId)) rejected = 'duplicate-run';
+      else if (active.has(request.runId) || records.has(request.runId)) rejected = 'duplicate-run';
+      else if (busyThreads.has(request.threadId)) rejected = 'busy';
       if (rejected) return Promise.resolve({ ok: false, error: new ExecutionError(rejected) });
       const controller = new AbortController();
       // Reserve synchronously, before record initialization or async graph preparation.
       const entry = { stop: () => controller.abort(new ExecutionError('cancelled')), done: Promise.resolve() as Promise<unknown> };
-      active = entry;
-      const done = run(request, controller).finally(() => { if (active === entry) active = undefined; });
+      active.set(request.runId, entry);
+      busyThreads.add(request.threadId);
+      const done = run(request, controller).finally(() => {
+        active.delete(request.runId);
+        busyThreads.delete(request.threadId);
+      });
       entry.done = done;
       return done;
     },
     async close() {
       closed = true;
-      active?.stop();
-      await active?.done;
+      const pending = [...active.values()];
+      for (const entry of pending) entry.stop();
+      await Promise.allSettled(pending.map(entry => entry.done));
     },
   };
 }

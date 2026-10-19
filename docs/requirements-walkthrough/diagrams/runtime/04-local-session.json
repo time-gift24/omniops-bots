@@ -87,7 +87,7 @@
       "from": "client",
       "to": "chrome",
       "y": 434,
-      "label": "取得执行名额，按快照执行",
+      "label": "绑定会话页面，按快照执行",
       "variant": "emphasis"
     },
     {

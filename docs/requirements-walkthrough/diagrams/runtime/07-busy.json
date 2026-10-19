@@ -2,7 +2,7 @@
   "schema_version": 1,
   "diagram_type": "sequence",
   "meta": {
-    "title": "Chrome 正忙：本轮拒绝执行",
+    "title": "会话或并发容量已满：本轮拒绝执行",
     "locale": "zh-CN",
     "quality_profile": "showcase",
     "column_fit": "spread",
@@ -42,7 +42,7 @@
       "from": "client",
       "to": "control",
       "y": 290,
-      "label": "申请 Chrome 执行名额",
+      "label": "检查会话运行状态与并发容量",
       "variant": "default"
     },
     {
@@ -50,7 +50,7 @@
       "from": "control",
       "to": "client",
       "y": 400,
-      "label": "已有任务运行：返回忙",
+      "label": "同会话运行中或容量已满：返回忙",
       "variant": "return"
     },
     {
@@ -73,10 +73,10 @@
     },
     {
       "dot": "cyan",
-      "title": "每轮重新检查",
+      "title": "不同会话可以并发",
       "items": [
-        "手动会话等待输入时释放名额",
-        "下一轮仍使用原快照并重新检查"
+        "每个会话绑定独立页面，默认最多 4 轮并发",
+        "等待输入释放运行容量，页面与快照继续保留"
       ]
     }
   ]

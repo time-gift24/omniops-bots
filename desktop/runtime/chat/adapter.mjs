@@ -92,7 +92,8 @@ export function createChatRun({ run, execution, history, browser, workspace, wor
       }
       snapshot = previous ? { ...previous.snapshot, directory: session.directory } : clean({ ...session, model: run.input.model, modelParameters, desktopVersion,
         tools: [...session.agent.configuration.toolIds, ...mcp.tools.map(tool => tool.name)], mcpTools: mcp.manifests });
-      const currentWorkspace = workspaceFactory ? await workspaceFactory(session) : workspace;
+      const currentWorkspace = workspaceFactory ? await workspaceFactory(session, browser) : workspace;
+      scope.defer(async () => { if (signal.aborted) await browser.stop?.(); });
       signal.throwIfAborted();
       metadata = { providerName: '本地配置模型', protocolName: 'deepagents', requestedModel: snapshot.model };
       const graph = createBrowserAgent({ model: modelFactory(snapshot.model, snapshot.modelParameters), scope,

@@ -1,12 +1,11 @@
-import { chromium } from 'playwright-core';
-import { selectBrowserTarget } from './browser-target.mjs';
+import { connectBrowserTarget, selectBrowserTarget } from './browser-target.mjs';
 import { httpUrl } from '../input.mjs';
 import { RuntimeError } from '../errors.mjs';
 
 export const emptyBrowser = () => ({ url: '', title: '浏览器未打开', status: 'empty', canGoBack: false, canGoForward: false });
 
-/** The host owns Chromium. This service only attaches to its one selected page. */
-export function createBrowserService(config) {
+/** Each connection keeps its original target even when the UI selects another page. */
+function createPageService(config) {
   let connection, current, page, session, revision = 0;
   let state = emptyBrowser();
   let publish = () => {};
@@ -25,7 +24,7 @@ export function createBrowserService(config) {
 
   async function ensure() {
     if (!connection) {
-      connection = chromium.connectOverCDP(config.endpoint, { timeout: 5000, noDefaults: true }).then(async browser => {
+      connection = connectBrowserTarget(config.endpoint, config.targetId).then(async browser => {
         try {
           const selected = await selectBrowserTarget(browser, config.targetId);
           current = browser;
@@ -42,9 +41,12 @@ export function createBrowserService(config) {
           page.on('request', request => { if (request.isNavigationRequest() && request.frame() === page?.mainFrame()) update({ status: 'loading', error: undefined }); });
           page.on('requestfailed', request => { if (request.isNavigationRequest() && request.frame() === page?.mainFrame()) update({ status: 'error', error: '页面未能加载，请重试。' }); });
           await refresh();
-          return { browser, ...selected, endpoint: config.endpoint, targetId: config.targetId };
+          return { browser, ...selected, session, endpoint: config.endpoint, targetId: config.targetId };
         } catch (error) { await browser.close().catch(() => {}); throw error; }
-      }).catch(() => { connection = undefined; throw new RuntimeError('unavailable', '内置浏览器尚未就绪或目标页面已关闭，请重新打开应用。'); });
+      }).catch(error => {
+        connection = undefined;
+        throw Object.assign(new RuntimeError('unavailable', '内置浏览器尚未就绪或目标页面已关闭，请重新打开应用。'), { cause: error });
+      });
     }
     const result = await connection;
     if (result.page.isClosed()) throw new RuntimeError('unavailable', '内置浏览器页面已关闭，请重新打开应用。');
@@ -58,7 +60,7 @@ export function createBrowserService(config) {
     let stoppedUrl;
     const abort = () => {
       stoppedUrl = target.page.url();
-      cancellation = Promise.race([session?.send('Page.stopLoading').catch(() => {}), new Promise(resolve => setTimeout(resolve, 250))])
+      cancellation = Promise.race([target.session.send('Page.stopLoading').catch(() => {}), new Promise(resolve => setTimeout(resolve, 250))])
         .finally(() => target.browser.close().catch(() => {}));
     };
     signal?.addEventListener('abort', abort, { once: true });
@@ -116,6 +118,90 @@ export function createBrowserService(config) {
         return { title: await target.page.title(), url: target.page.url(), accessibility: (await target.page.locator('body').ariaSnapshot({ timeout: 5000 })).slice(0, 12000), interactive };
       });
     },
+    async stop() {
+      if (session) await session.send('Page.stopLoading').catch(() => {});
+    },
     async close() { await (await connection?.catch(() => undefined))?.browser.close().catch(() => {}); },
+  };
+}
+
+/** A thread owns a page; changing the visible page never changes a run's binding. */
+export function createBrowserService(config, host) {
+  const pages = new Map();
+  const manual = createPageService(config);
+  let selected = null, publish = () => {}, selecting = Promise.resolve(), closed = false, closePromise;
+  manual.subscribe(state => { if (selected === null) publish(state); });
+
+  function forThread(threadId) {
+    if (closed) throw new RuntimeError('unavailable', '浏览器已关闭。');
+    if (threadId === null) return manual;
+    if (threadId === '__manual__') throw new RuntimeError('invalid-request', '会话编号为浏览器保留编号。');
+    if (pages.has(threadId)) return pages.get(threadId);
+    let pending, service, attempted = false;
+    const get = () => pending ??= Promise.resolve().then(async () => {
+      attempted = true;
+      const connection = await host('create', threadId);
+      service = createPageService(connection);
+      service.subscribe(state => { if (selected === threadId) publish(state); });
+      return service;
+    }).catch(error => {
+      pending = undefined;
+      throw error;
+    });
+    const page = {
+      getState: () => service?.getState() ?? emptyBrowser(),
+      ensure: async () => (await get()).ensure(),
+      inspect: async (input, signal) => (await get()).inspect(input, signal),
+      assertAutomationReady: async () => (await get()).assertAutomationReady(),
+      refresh: async () => { if (pending) await (await pending).refresh(); },
+      navigation: async (method, url) => (await get()).navigation(method, url),
+      stop: async () => { if (pending) await (await pending).stop(); },
+      async close() {
+        if (!attempted) return;
+        try { if (pending) await (await pending).close(); }
+        finally { await host('release', threadId); }
+      },
+    };
+    pages.set(threadId, page);
+    return page;
+  }
+
+  const current = () => selected === null ? manual : forThread(selected);
+  return {
+    forThread,
+    getState: () => current().getState(),
+    getThreadId: () => selected,
+    subscribe(listener) { publish = listener; },
+    ensure: () => current().ensure(),
+    inspect: (input, signal) => current().inspect(input, signal),
+    assertAutomationReady: () => current().assertAutomationReady(),
+    refresh: () => current().refresh(),
+    async select(threadId) {
+      if (closed) throw new RuntimeError('unavailable', '浏览器已关闭。');
+      const work = selecting.catch(() => {}).then(async () => {
+        if (threadId !== null) await forThread(threadId).ensure();
+        await host('select', threadId ?? '__manual__');
+        selected = threadId;
+        publish(current().getState());
+      });
+      selecting = work;
+      return work;
+    },
+    navigation: (method, url) => current().navigation(method, url),
+    close() {
+      if (closePromise) return closePromise;
+      closed = true;
+      closePromise = (async () => {
+        await selecting.catch(() => {});
+        const errors = [];
+        // Retained threads may outnumber the host's bounded IPC request capacity.
+        for (const page of pages.values()) {
+          try { await page.close(); } catch (error) { errors.push(error); }
+        }
+        await manual.close();
+        if (errors.length) throw errors[0];
+      })();
+      return closePromise;
+    },
   };
 }

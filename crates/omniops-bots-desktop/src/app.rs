@@ -11,7 +11,7 @@ use error::{Error, IpcError};
 use serde::Deserialize;
 use serde_json::{Value, json};
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     path::PathBuf,
     sync::{
         Arc, Mutex,
@@ -41,8 +41,9 @@ struct Inner {
     ready: bool,
     error: Option<IpcError>,
     pending: HashMap<u64, oneshot::Sender<Reply>>,
-    starting: Option<u64>,
-    preparing: Option<String>,
+    starting: HashSet<u64>,
+    preparing: HashSet<String>,
+    browser_requests: HashSet<u64>,
     task_active: bool,
     shutting_down: bool,
     exit_allowed: bool,
@@ -56,8 +57,9 @@ impl Runtime {
                 ready: false,
                 error: None,
                 pending: HashMap::new(),
-                starting: None,
-                preparing: None,
+                starting: HashSet::new(),
+                preparing: HashSet::new(),
+                browser_requests: HashSet::new(),
                 task_active: false,
                 shutting_down: false,
                 exit_allowed: false,
@@ -77,21 +79,16 @@ impl Runtime {
         if let Some(error) = &inner.error {
             return Err(Error::Remote(error.clone()));
         }
-        if inner.task_active
-            || inner.starting.is_some()
-            || inner.preparing.as_ref().is_some_and(|id| id != &run_id)
-        {
-            return Err(Error::Unavailable("Another task is still running"));
+        if inner.preparing.len() >= 64 && !inner.preparing.contains(&run_id) {
+            return Err(Error::Unavailable("Too many desktop preparations"));
         }
-        inner.preparing = Some(run_id);
+        inner.preparing.insert(run_id);
         Ok(())
     }
 
     fn release_run(&self, run_id: &str) {
         let mut inner = self.inner.lock().unwrap();
-        if inner.preparing.as_deref() == Some(run_id) {
-            inner.preparing = None;
-        }
+        inner.preparing.remove(run_id);
     }
 
     fn begin_shutdown(&self) -> Result<bool, Error> {
@@ -99,7 +96,7 @@ impl Runtime {
         if inner.shutting_down || inner.exit_allowed {
             return Ok(false);
         }
-        if inner.preparing.is_some() || inner.starting.is_some() || inner.task_active {
+        if !inner.preparing.is_empty() || !inner.starting.is_empty() || inner.task_active {
             return Err(Error::Unavailable("A task is still running"));
         }
         inner.shutting_down = true;
@@ -110,8 +107,9 @@ impl Runtime {
         let mut inner = self.inner.lock().unwrap();
         inner.ready = false;
         inner.error = Some(error.clone());
-        inner.starting = None;
-        inner.preparing = None;
+        inner.starting.clear();
+        inner.preparing.clear();
+        inner.browser_requests.clear();
         inner.task_active = false;
         for (_, sender) in inner.pending.drain() {
             let _ = sender.send(Err(error.clone()));
@@ -176,15 +174,6 @@ impl Runtime {
             if inner.pending.len() >= 64 {
                 return Err(Error::Unavailable("Too many desktop requests"));
             }
-            if method == "chat_start"
-                && (inner.task_active
-                    || inner.starting.is_some()
-                    || inner.preparing.as_deref().is_some_and(|run_id| {
-                        params.get("runId").and_then(Value::as_str) != Some(run_id)
-                    }))
-            {
-                return Err(Error::Unavailable("Another task is still running"));
-            }
             let child = inner
                 .child
                 .as_mut()
@@ -197,8 +186,10 @@ impl Runtime {
             }
             child.write(&line)?;
             if method == "chat_start" {
-                inner.preparing = None;
-                inner.starting = Some(id);
+                if let Some(run_id) = params.get("runId").and_then(Value::as_str) {
+                    inner.preparing.remove(run_id);
+                }
+                inner.starting.insert(id);
             }
             inner.pending.insert(id, sender);
         }
@@ -218,11 +209,32 @@ impl Runtime {
             return Err(Error::InvalidInput("Runtime response is too large"));
         }
         let message: Value = serde_json::from_slice(line)?;
+        if message["event"] == "browser_host_request" {
+            let id = message["id"]
+                .as_u64()
+                .filter(|id| *id > 0 && *id <= 9_007_199_254_740_991)
+                .ok_or(Error::InvalidInput("Browser host request ID is invalid"))?;
+            if !matches!(
+                message["method"].as_str(),
+                Some("create" | "select" | "release")
+            ) || message["pageId"].as_str().is_none_or(|page_id| {
+                page_id.trim().is_empty()
+                    || page_id.len() > 256
+                    || page_id.chars().any(char::is_control)
+            }) {
+                return Err(Error::InvalidInput("Browser host request is invalid"));
+            }
+            let mut inner = self.inner.lock().unwrap();
+            if inner.browser_requests.len() >= 64 || !inner.browser_requests.insert(id) {
+                return Err(Error::InvalidInput(
+                    "Too many or duplicate browser host requests",
+                ));
+            }
+            return Ok(Some(message));
+        }
         if let Some(id) = message["id"].as_u64() {
             let mut inner = self.inner.lock().unwrap();
-            if inner.starting == Some(id) {
-                inner.starting = None;
-            }
+            inner.starting.remove(&id);
             if let Some(sender) = inner.pending.remove(&id) {
                 let result = if let Some(error) = message.get("error") {
                     let error =
@@ -248,18 +260,41 @@ impl Runtime {
                 Ok(Some(message))
             }
             Some("desktop_state") => {
-                let task = message["state"]
-                    .get("task")
+                let tasks = message["state"]["tasks"]
+                    .as_array()
                     .ok_or(Error::InvalidInput("Runtime task state is missing"))?;
-                if !task.is_null() && !task.is_object() {
+                if tasks.iter().any(|task| {
+                    !task.is_object()
+                        || task["runId"].as_str().is_none()
+                        || task["threadId"].as_str().is_none()
+                }) {
                     return Err(Error::InvalidInput("Runtime task state is invalid"));
                 }
-                self.inner.lock().unwrap().task_active = !task.is_null();
+                self.inner.lock().unwrap().task_active = !tasks.is_empty();
                 Ok(Some(message))
             }
             Some("chat_event" | "runtime_exit" | "exit") => Ok(Some(message)),
             _ => Ok(None),
         }
+    }
+
+    fn browser_response(&self, id: u64, result: Result<Value, Error>) -> Result<(), Error> {
+        let mut inner = self.inner.lock().unwrap();
+        if !inner.browser_requests.remove(&id) {
+            return Ok(());
+        }
+        let message = match result {
+            Ok(result) => json!({ "browserHostResponse": id, "result": result }),
+            Err(error) => json!({ "browserHostResponse": id, "error": IpcError::from(error) }),
+        };
+        let mut line = serde_json::to_vec(&message)?;
+        line.push(b'\n');
+        inner
+            .child
+            .as_mut()
+            .ok_or(Error::Unavailable("Agent runtime is unavailable"))?
+            .write(&line)?;
+        Ok(())
     }
 
     fn terminated(&self) {
@@ -349,7 +384,7 @@ async fn runtime_request(method: String, params: Value, runtime: State<'_, Arc<R
         .map_err(Into::into)
 }
 
-#[derive(Clone, Copy, Deserialize)]
+#[derive(Clone, Deserialize)]
 struct BrowserBounds {
     x: f64,
     y: f64,
@@ -357,18 +392,23 @@ struct BrowserBounds {
     height: f64,
     visible: bool,
     interactive: bool,
+    #[serde(rename = "pageId")]
+    page_id: Option<String>,
 }
 
 #[tauri::command]
 async fn browser_set_bounds(app: tauri::AppHandle, bounds: BrowserBounds) -> Result<(), IpcError> {
     native_browser::set_bounds(
         app,
-        bounds.x,
-        bounds.y,
-        bounds.width,
-        bounds.height,
-        bounds.visible,
-        bounds.interactive,
+        bounds.page_id.unwrap_or_else(|| "__manual__".to_owned()),
+        native_browser::Bounds {
+            x: bounds.x,
+            y: bounds.y,
+            width: bounds.width,
+            height: bounds.height,
+            visible: bounds.visible,
+            interactive: bounds.interactive,
+        },
     )
     .await
     .inspect_err(|error| {
@@ -454,6 +494,28 @@ async fn host_confirm(app: tauri::AppHandle, message: String) -> Result<bool, Ip
     .map_err(|_| Error::Unavailable("Confirmation dialog was interrupted").into())
 }
 
+async fn browser_host_request(app: tauri::AppHandle, runtime: Arc<Runtime>, message: Value) {
+    let (Some(id), Some(page_id)) = (message["id"].as_u64(), message["pageId"].as_str()) else {
+        return;
+    };
+    let page_id = page_id.to_owned();
+    let result = match message["method"].as_str() {
+        Some("create") if runtime.inner.lock().unwrap().shutting_down => {
+            Err(Error::Unavailable("Desktop is shutting down"))
+        }
+        Some("create") => native_browser::create_page(app, page_id).await
+            .map(|connection| json!({ "endpoint": connection.endpoint, "targetId": connection.target_id })),
+        Some("select") => native_browser::select_page(app, page_id).await
+            .map(|()| json!({ "selected": true })),
+        Some("release") => native_browser::release_page(app, page_id).await
+            .map(|()| json!({ "released": true })),
+        _ => Err(Error::InvalidInput("Browser host operation is invalid")),
+    };
+    if let Err(error) = runtime.browser_response(id, result) {
+        runtime.fail(error.into());
+    }
+}
+
 fn start_runtime(
     app: &tauri::AppHandle,
     runtime: Arc<Runtime>,
@@ -486,6 +548,13 @@ fn start_runtime(
         while let Some(event) = receiver.recv().await {
             match event {
                 CommandEvent::Stdout(line) => match runtime.receive(&line) {
+                    Ok(Some(message)) if message["event"] == "browser_host_request" => {
+                        tauri::async_runtime::spawn(browser_host_request(
+                            app.clone(),
+                            runtime.clone(),
+                            message,
+                        ));
+                    }
                     Ok(Some(message)) => {
                         let _ = app.emit_to("main", "runtime-event", message);
                     }
@@ -542,6 +611,86 @@ fn start_runtime(
         let _ = app.emit_to("main", "runtime-event", json!({"event":"runtime_exit"}));
     });
     Ok(())
+}
+
+#[cfg(debug_assertions)]
+async fn smoke_native_pages(app: tauri::AppHandle) -> Result<Value, Error> {
+    let first = native_browser::create_page(app.clone(), "smoke-a".into()).await?;
+    let second = native_browser::create_page(app.clone(), "smoke-b".into()).await?;
+    if first.target_id == second.target_id {
+        return Err("CEF smoke pages share a target".into());
+    }
+    native_browser::select_page(app.clone(), "smoke-a".into()).await?;
+    native_browser::set_bounds(
+        app.clone(),
+        "smoke-a".into(),
+        native_browser::Bounds {
+            x: 400.,
+            y: 100.,
+            width: 640.,
+            height: 480.,
+            visible: true,
+            interactive: false,
+        },
+    )
+    .await?;
+    native_browser::smoke_navigate(
+        app.clone(),
+        "smoke-b".into(),
+        "data:text/html,<title>hidden-b</title><p>page-b</p>".into(),
+    )
+    .await?;
+    let deadline = Instant::now() + Duration::from_secs(5);
+    let hidden = loop {
+        let value = native_browser::smoke_evaluate(app.clone(), "smoke-b".into(),
+            "({title:document.title,text:document.body?.textContent,width:innerWidth,height:innerHeight,visibility:document.visibilityState})".into()).await?;
+        if value["title"] == "hidden-b" && value["text"] == "page-b" {
+            break value;
+        }
+        if Instant::now() >= deadline {
+            return Err("CEF hidden page did not load".into());
+        }
+        tokio::time::sleep(Duration::from_millis(25)).await;
+    };
+    if hidden["width"].as_u64().unwrap_or(0) == 0 || hidden["height"].as_u64().unwrap_or(0) == 0 {
+        return Err("CEF hidden page viewport is empty".into());
+    }
+    native_browser::select_page(app.clone(), "smoke-b".into()).await?;
+    native_browser::set_bounds(
+        app.clone(),
+        "smoke-b".into(),
+        native_browser::Bounds {
+            x: 400.,
+            y: 100.,
+            width: 640.,
+            height: 480.,
+            visible: true,
+            interactive: false,
+        },
+    )
+    .await?;
+    let isolated = native_browser::smoke_evaluate(
+        app.clone(),
+        "smoke-a".into(),
+        "({title:document.title,url:location.href})".into(),
+    )
+    .await?;
+    if isolated["title"] == "hidden-b" || isolated["url"] != "about:blank" {
+        return Err("CEF smoke pages are not isolated".into());
+    }
+    native_browser::release_page(app.clone(), "smoke-a".into()).await?;
+    let remaining =
+        native_browser::smoke_evaluate(app.clone(), "smoke-b".into(), "document.title".into())
+            .await?;
+    if remaining != "hidden-b" {
+        return Err("Releasing one CEF page affected its sibling".into());
+    }
+    native_browser::release_page(app.clone(), "smoke-b".into()).await?;
+    native_browser::select_page(app, "__manual__".into()).await?;
+    Ok(
+        json!({"firstTarget":first.target_id,"secondTarget":second.target_id,
+        "hiddenPage":hidden,"isolatedPage":isolated,"remainingTitle":remaining,"released":true}),
+    )
 }
 
 async fn close_native_browser(app: &tauri::AppHandle) {
@@ -627,6 +776,22 @@ fn run_app() -> Result<i32, Error> {
             }
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
+                #[cfg(debug_assertions)]
+                if let Some(report_path) = std::env::var_os("OMNIOPS_BOTS_BROWSER_SMOKE_REPORT") {
+                    let result = match native_browser::wait_ready(Duration::from_secs(15)).await {
+                        Ok(_) => smoke_native_pages(handle.clone()).await,
+                        Err(error) => Err(error),
+                    };
+                    let (code, report) = match result {
+                        Ok(report) => (0, json!({"ok":true,"report":report})),
+                        Err(error) => (1, json!({"ok":false,"error":IpcError::from(error)})),
+                    };
+                    let written = serde_json::to_vec_pretty(&report)
+                        .ok()
+                        .is_some_and(|bytes| std::fs::write(report_path, bytes).is_ok());
+                    handle.exit(if written { code } else { 1 });
+                    return;
+                }
                 let result = match native_browser::wait_ready(Duration::from_secs(15)).await {
                     Ok(connection) => start_runtime(&handle, runtime.clone(), data_dir, connection),
                     Err(error) => Err(error),
@@ -719,6 +884,9 @@ mod tests {
     fn task_preparation_and_shutdown_cannot_both_acquire_the_host() {
         let runtime = Runtime::new();
         runtime.prepare_run("preparing".into()).unwrap();
+        runtime.prepare_run("parallel".into()).unwrap();
+        assert!(runtime.begin_shutdown().is_err());
+        runtime.release_run("parallel");
         assert!(runtime.begin_shutdown().is_err());
         runtime.release_run("stale");
         assert!(runtime.begin_shutdown().is_err());
@@ -746,24 +914,24 @@ mod tests {
     fn exit_waits_for_start_acknowledgement_and_backend_task_cleanup() {
         let runtime = Runtime::new();
         // A lost/timed-out RPC receiver must not make an unacknowledged start safe to exit.
-        runtime.inner.lock().unwrap().starting = Some(1);
+        runtime.inner.lock().unwrap().starting.insert(1);
         assert!(runtime.begin_shutdown().is_err());
         runtime
-            .receive(br#"{"event":"desktop_state","state":{"task":{"runId":"run"}}}"#)
+            .receive(br#"{"event":"desktop_state","state":{"task":null,"tasks":[{"runId":"run","threadId":"thread"}]}}"#)
             .unwrap();
         runtime
             .receive(br#"{"id":1,"result":{"runId":"run"}}"#)
             .unwrap();
         assert!(runtime.begin_shutdown().is_err());
         runtime
-            .receive(br#"{"event":"desktop_state","state":{"task":null}}"#)
+            .receive(br#"{"event":"desktop_state","state":{"task":null,"tasks":[]}}"#)
             .unwrap();
         assert!(runtime.begin_shutdown().unwrap());
 
         let runtime = Runtime::new();
-        runtime.inner.lock().unwrap().starting = Some(2);
+        runtime.inner.lock().unwrap().starting.insert(2);
         runtime
-            .receive(br#"{"event":"desktop_state","state":{"task":null}}"#)
+            .receive(br#"{"event":"desktop_state","state":{"task":null,"tasks":[]}}"#)
             .unwrap();
         assert!(runtime.begin_shutdown().is_err());
         runtime
@@ -831,6 +999,19 @@ mod tests {
         assert!(logs.contains("phase=\"ipc\""));
         assert!(logs.contains("error_kind=\"runtime\""));
         assert!(!logs.contains("SECRET"));
+    }
+
+    #[test]
+    fn host_requests_are_routed_before_normal_rpc_replies_and_bounded() {
+        let runtime = Runtime::new();
+        let request =
+            br#"{"event":"browser_host_request","id":1,"method":"create","pageId":"thread-a"}"#;
+        let message = runtime.receive(request).unwrap().unwrap();
+        assert_eq!(message["pageId"], "thread-a");
+        assert!(runtime.receive(request).is_err());
+        assert!(runtime.receive(br#"{"event":"browser_host_request","id":2,"method":"close","pageId":"thread-a"}"#).is_err());
+        assert!(runtime.receive(br#"{"event":"browser_host_request","id":2,"method":"create","pageId":"bad\npage"}"#).is_err());
+        assert_eq!(runtime.inner.lock().unwrap().browser_requests.len(), 1);
     }
 
     #[test]

@@ -1,0 +1,30 @@
+{
+  "lifecycle": {
+    "ok": true,
+    "report": {
+      "firstTarget": "AE5A84DBD3140AC3138BAA5C13BE9C34",
+      "hiddenPage": {
+        "height": 800,
+        "text": "page-b",
+        "title": "hidden-b",
+        "visibility": "hidden",
+        "width": 1280
+      },
+      "isolatedPage": {
+        "title": "",
+        "url": "about:blank"
+      },
+      "released": true,
+      "remainingTitle": "hidden-b",
+      "secondTarget": "55E9E2D1E811FCAB85480E9ADE81E992"
+    }
+  },
+  "scopedTransport": {
+    "ok": true,
+    "engine": "CEF",
+    "targetId": "A6B87D3FF314D4A296CE256B0C907A49",
+    "pages": 1,
+    "title": "CEF scoped transport",
+    "endpoint": "http://127.0.0.1:64957"
+  }
+}

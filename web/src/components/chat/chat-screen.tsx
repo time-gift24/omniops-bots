@@ -9,6 +9,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react"
 
 import { useAppDependencies } from "@/app/dependencies"
+import { threadTask } from "@/desktop/runtime"
 import { useThreadStore } from "@/chat/react.ts"
 import { ChatComposer } from "@/components/chat/chat-composer"
 import {
@@ -48,8 +49,8 @@ export function ChatScreen({
     modelSnapshot?.threadId === threadId ? modelSnapshot.model : null
   const desktopTask = React.useSyncExternalStore(
     desktop.subscribe,
-    () => desktop.getState().task,
-    () => desktop.getState().task
+    () => threadTask(desktop.getState(), threadId),
+    () => threadTask(desktop.getState(), threadId)
   )
   const store = useThreadStore(threadId, threads)
   const empty = React.useSyncExternalStore(
@@ -162,7 +163,7 @@ export function ChatScreen({
                       size="sm"
                       className="rounded-full"
                       onClick={() => {
-                        if (desktop.getState().task) return
+                        if (threadTask(desktop.getState(), threadId)) return
                         preloadChatThread()
                         store.send(
                           suggestion,

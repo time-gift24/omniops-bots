@@ -67,6 +67,7 @@ export function BrowserView({
   onRetry,
   visible = true,
   interactive = true,
+  browserThreadId = null,
   setBrowserViewport,
 }: {
   browser: BrowserSnapshot
@@ -75,6 +76,7 @@ export function BrowserView({
   onRetry: () => void
   visible?: boolean
   interactive?: boolean
+  browserThreadId?: string | null
   setBrowserViewport?: DesktopRuntime["setBrowserViewport"]
 }) {
   const { ref: viewportRef, error: viewportError } = useBrowserViewport(
@@ -82,7 +84,8 @@ export function BrowserView({
       !simulated &&
       (browser.status === "ready" || browser.status === "loading"),
     interactive,
-    simulated ? undefined : setBrowserViewport
+    simulated ? undefined : setBrowserViewport,
+    browserThreadId
   )
   return (
     <section

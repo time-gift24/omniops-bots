@@ -22,6 +22,7 @@
   const root = createRoot(fixture)
   const listeners = new Set()
   const calls = []
+  const pendingNavigations = new Map()
   let snapshot = {
     simulated: true,
     task: null,
@@ -65,6 +66,8 @@
     async navigate(url) {
       calls.push(["navigate", url])
       if (!/^https?:\/\//.test(url)) throw new Error("请输入有效的网址。")
+      const pending = pendingNavigations.get(snapshot.browserThreadId)
+      if (pending) { await pending.promise; return }
       update({ browser: page(url) })
     },
     async back() {
@@ -240,6 +243,33 @@
       "Forward did not update history"
     )
 
+    const firstNavigation = Promise.withResolvers(), secondNavigation = Promise.withResolvers()
+    pendingNavigations.set("first-thread", firstNavigation)
+    pendingNavigations.set("second-thread", secondNavigation)
+    update({ browserThreadId: "first-thread" })
+    const pendingUrl = "https://example.test/pending"
+    write(address(), pendingUrl); submit()
+    assert(address().disabled, "The first page must retain its pending navigation")
+    update({ browserThreadId: "second-thread" })
+    assert(!address().disabled && address().value === currentPage, "Another idle page must not inherit the first page navigation or draft")
+    write(address(), pendingUrl); submit()
+    firstNavigation.resolve()
+    await new Promise(resolve => setTimeout(resolve, 40))
+    assert(address().disabled && address().value === pendingUrl, "Old page completion must preserve the new page pending state and identical draft")
+    secondNavigation.resolve()
+    await until(() => !address().disabled, "The second page navigation did not settle")
+    pendingNavigations.clear()
+    const staleFailure = Promise.withResolvers()
+    pendingNavigations.set("first-thread", staleFailure)
+    update({ browserThreadId: "first-thread" })
+    write(address(), pendingUrl); submit()
+    update({ browserThreadId: "second-thread" })
+    staleFailure.reject(new Error("Old page navigation failed"))
+    await new Promise(resolve => setTimeout(resolve, 40))
+    assert(!fixture.textContent.includes("Old page navigation failed") && !address().disabled, "Old page failures must not replace the selected page state")
+    pendingNavigations.clear()
+    update({ browserThreadId: null })
+
     update({ task: pendingTask })
     const beforeApproval = calls.length
     assert(
@@ -376,7 +406,7 @@
       "Simulated page must not impersonate an embedded remote browser"
     )
     result.textContent =
-      "PASS: singleton browser, runtime preview, navigation/history, task lock, approval target, collapse/tab lifecycle, loading/error/retry, keyboard and narrow layout"
+      "PASS: singleton browser, runtime preview, navigation/history, concurrent page state, task lock, approval target, collapse/tab lifecycle, loading/error/retry, keyboard and narrow layout"
     result.dataset.status = "passed"
   } catch (error) {
     result.textContent = `FAIL: ${error.stack || error}`

@@ -39,7 +39,7 @@
     },
     {
       "id": "chrome",
-      "label": "Chrome 名额",
+      "label": "会话页面绑定",
       "type": "external"
     },
     {
@@ -142,7 +142,7 @@
       "from": "client",
       "to": "chrome",
       "y": 632,
-      "label": "取得本轮执行名额",
+      "label": "检查容量并绑定会话页面",
       "variant": "emphasis"
     },
     {

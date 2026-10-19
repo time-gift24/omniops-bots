@@ -16,10 +16,34 @@ import { storageId, writeJson } from '../json-store.mjs';
 import { chatRecord } from '../chat/adapter.mjs';
 import { chatInput, httpUrl } from '../input.mjs';
 import { embeddedBrowserConfig, selectBrowserTarget } from '../browser/browser-target.mjs';
+import { createBrowserService } from '../browser/browser.mjs';
 import { safeError } from '../errors.mjs';
 
 const call = (id, args = {}) => ({ id, name: 'inspect_browser', args });
 const request = { messages: [{ role: 'user', text: '检查浏览器' }] };
+
+test('page creation can recover on a later explicit request and shutdown bounds historical page releases', async () => {
+  let creates = 0, releasing = 0, peak = 0, released = 0;
+  const browser = createBrowserService({}, async method => {
+    if (method === 'create') { creates++; throw new Error('temporary host failure'); }
+    if (method === 'release') {
+      peak = Math.max(peak, ++releasing);
+      await delay(1);
+      releasing--; released++;
+    }
+  });
+  const first = browser.forThread('first');
+  await assert.rejects(first.ensure(), /temporary/);
+  await assert.rejects(first.ensure(), /temporary/);
+  assert.equal(creates, 2);
+  await Promise.all(Array.from({ length: 64 }, async (_unused, index) => {
+    await assert.rejects(browser.forThread(`historical-${index}`).ensure(), /temporary/);
+  }));
+  await browser.close();
+  await browser.close();
+  assert.equal(peak, 1);
+  assert.equal(released, 65);
+});
 async function until(check) {
   for (let i = 0; i < 500; i++) { const value = await check(); if (value) return value; await delay(10); }
   throw new Error('Timed out waiting for runtime state');
@@ -34,7 +58,7 @@ async function writable(directory) {
 async function fixture(t, toolCalls = [], options = {}) {
   const homeDir = await mkdtemp(join(tmpdir(), 'omniops-bots-runtime-test-'));
   const runsDir = join(homeDir, 'runs');
-  const events = [], inspected = [], navigated = [], models = [], modelInputs = [], terminalRecords = [];
+  const events = [], inspected = [], navigated = [], models = [], modelInputs = [], terminalRecords = [], boundThreads = [];
   const files = new Map();
   const workspace = {
     async list() { return [...files.values()]; },
@@ -47,6 +71,15 @@ async function fixture(t, toolCalls = [], options = {}) {
     subscribe() {}, refresh: async () => {}, close: async () => {},
     async inspect(args, signal) { inspected.push(args); return options.inspect ? options.inspect(args, signal) : { title: 'Fixture', url: args.url ?? '' }; },
     async navigation(method, url) { navigated.push({ method, url }); },
+  };
+  const pages = new Map();
+  browser.forThread = threadId => {
+    if (!pages.has(threadId)) pages.set(threadId, { ...browser, async inspect(args, signal) {
+      boundThreads.push(threadId);
+      inspected.push(args);
+      return options.inspect ? options.inspect(args, signal, threadId) : { title: 'Fixture', url: args.url ?? '' };
+    } });
+    return pages.get(threadId);
   };
   class Model extends FakeToolCallingModel {
     bindTools(tools) {
@@ -85,7 +118,7 @@ async function fixture(t, toolCalls = [], options = {}) {
   const start = (id = 'run-1', extra = {}) => runtime.dispatch('chat_start', { runId: id, threadId: 'agent-test:test', request, ...extra });
   return {
     get runtime() { return runtime; }, get resources() { return resources; }, get checkpoints() { return checkpoints; },
-    homeDir, runsDir, events, inspected, navigated, models, modelInputs, terminalRecords, workspace, start,
+    homeDir, runsDir, events, inspected, navigated, models, modelInputs, terminalRecords, boundThreads, workspace, start,
     async reopen(overrides) { await runtime.close(); await checkpoints?.close(); await open(overrides); },
     async settled(id = 'run-1') { await until(() => runtime.getState().task === null); return runtime.dispatch('run_get', { runId: id }); },
   };
@@ -145,6 +178,53 @@ test('chat uses persistent native checkpoints while every explicit continuation 
   assert.equal(f.inspected.length, 1, 'saved graph tasks must never replay on continuation');
 });
 
+test('distinct threads overlap with bound pages; cancelling one does not stop another', async t => {
+  const entered = new Set();
+  const release = Promise.withResolvers();
+  const f = await fixture(t, [[call('bound')], []], { inspect: async (_args, signal, threadId) => {
+    entered.add(threadId);
+    if (threadId === 'thread-a') {
+      await new Promise((resolve, reject) => {
+        if (signal.aborted) reject(signal.reason);
+        else signal.addEventListener('abort', () => reject(signal.reason), { once: true });
+      });
+    } else await release.promise;
+    return { title: threadId };
+  } });
+  try {
+    f.start('a', { threadId: 'thread-a' });
+    f.start('b', { threadId: 'thread-b' });
+    await until(() => entered.size === 2);
+    assert.equal(f.runtime.getState().tasks.length, 2);
+    assert.throws(() => f.start('same-thread', { threadId: 'thread-a' }), /此会话/);
+    assert.throws(() => f.start('a', { threadId: 'third' }), error => error.kind === 'duplicate-run');
+    await f.runtime.dispatch('stop', { runId: 'a' });
+    assert.deepEqual(f.runtime.getState().tasks.map(task => task.runId), ['b']);
+    assert.equal(f.runtime.dispatch('run_get', { runId: 'a' }).status, 'cancelled');
+    release.resolve();
+    assert.equal((await f.settled('b')).status, 'completed');
+    assert.deepEqual(f.boundThreads.sort(), ['thread-a', 'thread-b']);
+  } finally { release.resolve(); }
+});
+
+test('capacity covers preparation and rejected calls can be explicitly resubmitted', async t => {
+  const entered = Promise.withResolvers(), release = Promise.withResolvers();
+  const f = await fixture(t, [], { runtime: { maxConcurrentRuns: 2 }, beforeGenerate: async () => {
+    entered.resolve(); await release.promise;
+  } });
+  try {
+    f.start('a', { threadId: 'a' });
+    f.start('b', { threadId: 'b' });
+    assert.equal(f.runtime.getState().tasks.length, 2);
+    assert.throws(() => f.start('c', { threadId: 'c' }), /并发任务已达上限/);
+    await entered.promise;
+    release.resolve();
+    await until(() => f.runtime.getState().tasks.length === 0);
+    f.start('c', { threadId: 'c' });
+    assert.equal((await f.settled('c')).status, 'completed');
+  } finally { release.resolve(); }
+});
+
 test('stop during preparation persists cancellation without invoking the model or browser', async t => {
   const f = await fixture(t, [[call('must-not-run')], []]);
   f.start();
@@ -175,7 +255,7 @@ test('stop acknowledgement waits for tool drain and stale stop cannot cancel the
     releases[0].resolve(); await stopping;
     assert.equal((await f.settled()).status, 'cancelled');
     f.start('run-2'); await until(() => entered === 2);
-    await assert.rejects(f.runtime.dispatch('stop', { runId: 'run-1' }), /当前任务/);
+    await f.runtime.dispatch('stop', { runId: 'run-1' });
     assert.equal(f.runtime.getState().task.runId, 'run-2');
     releases[1].resolve();
     assert.equal((await f.settled('run-2')).status, 'completed');

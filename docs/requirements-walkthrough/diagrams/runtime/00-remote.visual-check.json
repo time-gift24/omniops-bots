@@ -7,8 +7,8 @@
   "visualReview": "pending",
   "artifact": {
     "path": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/00-remote.html",
-    "sha256": "cfc6f345a65c7314f00b88ac2dfa4979f6cbdc65c00a6cadb935bdc129b55f4b",
-    "bytes": 704795
+    "sha256": "e44c82f589382abdd75a3445648d0fdafc9e6d8f4925b3d9b589a5a0490a83fb",
+    "bytes": 704807
   },
   "state": {
     "detail": "read",

@@ -5,7 +5,8 @@ import type { BrowserViewport, DesktopRuntime } from "@/desktop/runtime"
 export function useBrowserViewport(
   visible: boolean,
   interactive: boolean,
-  setViewport: DesktopRuntime["setBrowserViewport"] | undefined
+  setViewport: DesktopRuntime["setBrowserViewport"] | undefined,
+  browserThreadId: string | null = null
 ) {
   const ref = useRef<HTMLDivElement>(null)
   const [error, setError] = useState<string>()
@@ -46,7 +47,7 @@ export function useBrowserViewport(
         if (width >= 1 && height >= 1)
           bounds = { x, y, width, height, interactive }
       }
-      const key = JSON.stringify(bounds)
+      const key = JSON.stringify({ bounds, browserThreadId })
       if (key === previous) return
       previous = key
       void setViewport(bounds).then(
@@ -89,6 +90,6 @@ export function useBrowserViewport(
       document.removeEventListener("visibilitychange", schedule)
       void setViewport(null).catch(() => {})
     }
-  }, [visible, interactive, setViewport])
+  }, [visible, interactive, setViewport, browserThreadId])
   return { ref, error }
 }

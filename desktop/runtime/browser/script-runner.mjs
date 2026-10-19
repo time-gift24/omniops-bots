@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { pathToFileURL } from 'node:url';
 import * as playwright from 'playwright-core';
-import { selectBrowserTarget } from './browser-target.mjs';
+import { connectBrowserTarget, selectBrowserTarget } from './browser-target.mjs';
 
 const [endpoint, scriptPath, artifactsDir, parametersJSON = '{}', targetId] = process.argv.slice(2);
 const report = { result: null };
@@ -16,11 +16,9 @@ try {
   assert.ok(endpoint && targetId && scriptPath && artifactsDir, 'Browser endpoint, target ID, script path and artifacts directory are required');
   assert.ok(process.permission, 'Script runner requires Node --permission');
   const parameters = JSON.parse(parametersJSON);
-  browser = await playwright.chromium.connectOverCDP(endpoint, { timeout: 5_000, artifactsDir, noDefaults: true });
+  browser = await connectBrowserTarget(endpoint, targetId, { artifactsDir });
   ({ context, page } = await selectBrowserTarget(browser, targetId));
   assert.ok(context, 'The browser has no default context');
-  context.setDefaultTimeout(10_000);
-  context.setDefaultNavigationTimeout(20_000);
   page.setDefaultTimeout(10_000);
   page.setDefaultNavigationTimeout(20_000);
 

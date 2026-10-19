@@ -3,6 +3,7 @@
 import { memo, useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
 import { useAppDependencies } from "@/app/dependencies";
+import { threadTask } from "@/desktop/runtime";
 import type { ThreadStore } from "@/chat/thread-store.ts";
 import type { ChatMessageView } from "@/chat/fold.ts";
 import { useThreadState } from "@/chat/react.ts";
@@ -129,11 +130,11 @@ export function ChatThread({
   const { desktop } = useAppDependencies();
   const desktopBusy = useSyncExternalStore(
     desktop.subscribe,
-    () => desktop.getState().task !== null,
-    () => desktop.getState().task !== null,
+    () => threadTask(desktop.getState(), store.getState().threadId) !== null,
+    () => threadTask(desktop.getState(), store.getState().threadId) !== null,
   );
   const onRetry = useCallback((messageId: string) => {
-    if (desktop.getState().task || store.appendOnly) return;
+    if (threadTask(desktop.getState(), store.getState().threadId) || store.appendOnly) return;
     store.retry(messageId);
   }, [desktop, store]);
   const state = useThreadState(store);

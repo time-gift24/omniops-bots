@@ -106,6 +106,155 @@ test('admission is synchronous and cancellation during async prepare waits for a
   assert.equal(f.execution.records.get('prepare').status, 'cancelled');
 });
 
+test('distinct threads execute browser actions concurrently while thread and run reservations stay exclusive', async t => {
+  const f = await fixture(t);
+  const started = [deferred(), deferred()], release = [deferred(), deferred()];
+  const prepare = index => scope => ({ graph: graph(scope, async (_state, config) => scope.browserOperation(config.signal, async () => {
+    started[index].resolve();
+    await release[index].promise;
+    return { answer: `thread:${index}` };
+  })), input: { question: 'x' } });
+  const first = f.execution.execute(request('concurrent-one', prepare(0), { threadId: 'thread-one' }));
+  assert.equal(f.execution.records.has('concurrent-one'), false, 'admission must reserve the run before its first disk write');
+  assert.equal(f.execution.isBusy('thread-one'), true);
+  assert.equal((await f.execution.execute(request('concurrent-one', () => assert.fail('duplicate run prepared'), { threadId: 'other-thread' }))).error.kind, 'duplicate-run');
+  assert.equal((await f.execution.execute(request('same-thread', () => assert.fail('busy thread prepared'), { threadId: 'thread-one' }))).error.kind, 'busy');
+  const second = f.execution.execute(request('concurrent-two', prepare(1), { threadId: 'thread-two' }));
+  try {
+    await Promise.race([
+      Promise.all(started.map(item => item.promise)),
+      second.then(() => assert.fail('the second thread must start before either browser action finishes')),
+    ]);
+    assert.equal(f.execution.isBusy(), true);
+    assert.equal(f.execution.isBusy('thread-two'), true);
+    assert.equal(f.execution.isBusy('unrelated-thread'), false);
+    release[0].resolve();
+    const outcome = await first;
+    assert.equal(outcome.ok, true);
+    assert.deepEqual(outcome.output, { answer: 'thread:0' });
+    assert.equal(f.execution.isBusy('thread-one'), false);
+    assert.equal(f.execution.isBusy('thread-two'), true);
+  } finally { release.forEach(item => item.resolve()); }
+  const outcome = await second;
+  assert.equal(outcome.ok, true);
+  assert.deepEqual(outcome.output, { answer: 'thread:1' });
+  assert.equal(f.execution.isBusy(), false);
+  assert.notEqual(f.execution.records.get('concurrent-one').graphThreadId, outcome.run.graphThreadId);
+  assert.equal(f.execution.records.get('concurrent-one').status, 'completed');
+  assert.equal(f.execution.records.get('concurrent-two').status, 'completed');
+});
+
+test('a run started inside another run browser flow receives its own lease', async t => {
+  const f = await fixture(t), actions = [];
+  const result = await f.execution.execute(request('outer-run', async scope => {
+    await scope.browserFlow(undefined, async () => {
+      actions.push('outer:start');
+      const inner = await f.execution.execute(request('inner-run', async innerScope => {
+        await innerScope.browserFlow(undefined, signal => innerScope.browserOperation(signal, async () => { actions.push('inner'); }));
+        return { graph: graph(innerScope), input: { question: 'inner' } };
+      }, { threadId: 'inner-thread' }));
+      assert.equal(inner.ok, true, inner.error?.cause?.stack);
+      assert.deepEqual(inner.output, { answer: 'inner:ok' });
+      actions.push('outer:end');
+    });
+    return { graph: graph(scope), input: { question: 'outer' } };
+  }));
+  assert.equal(result.ok, true, result.error?.cause?.stack);
+  assert.deepEqual(actions, ['outer:start', 'inner', 'outer:end']);
+});
+
+test('cancellation and settlement retain only their own thread reservation', async t => {
+  const f = await fixture(t), started = deferred(), aborted = deferred(), drain = deferred(), settling = deferred(), commit = deferred();
+  const otherStarted = deferred(), otherRelease = deferred();
+  const controller = new AbortController(), actions = [];
+  const pending = f.execution.execute(request('cancel-isolated', scope => ({ graph: graph(scope, async (_state, config) => scope.browserOperation(config.signal, async signal => {
+    started.resolve();
+    if (!signal.aborted) await new Promise(resolve => signal.addEventListener('abort', resolve, { once: true }));
+    aborted.resolve();
+    await drain.promise;
+    actions.push('cancelled operation drained');
+    signal.throwIfAborted();
+    return { answer: 'bad' };
+  })), input: { question: 'x' } }), { threadId: 'cancelled-thread', signal: controller.signal, settle: async outcome => {
+    actions.push('cancelled settlement started');
+    assert.equal(outcome.error.kind, 'cancelled');
+    settling.resolve();
+    await commit.promise;
+    actions.push('cancelled settlement committed');
+  } }));
+  const otherPending = f.execution.execute(request('unaffected', scope => ({ graph: graph(scope, async (_state, config) => scope.browserOperation(config.signal, async signal => {
+    otherStarted.resolve();
+    await otherRelease.promise;
+    signal.throwIfAborted();
+    return { answer: 'unaffected' };
+  })), input: { question: 'other' } }), { threadId: 'other-thread' }));
+  try {
+    await Promise.all([started.promise, otherStarted.promise]);
+    controller.abort();
+    await aborted.promise;
+    otherRelease.resolve();
+    const other = await otherPending;
+    assert.equal(other.ok, true, 'other threads can complete while cancellation drains');
+    assert.equal(f.execution.isBusy('cancelled-thread'), true);
+    assert.equal(f.execution.isBusy('other-thread'), false);
+    drain.resolve();
+    await settling.promise;
+    assert.equal((await f.execution.execute(request('too-soon', () => assert.fail('settling thread prepared'), { threadId: 'cancelled-thread' }))).error.kind, 'busy');
+    assert.equal(f.execution.records.get('cancel-isolated').status, 'running');
+  } finally { drain.resolve(); commit.resolve(); otherRelease.resolve(); }
+  assert.equal((await pending).error.kind, 'cancelled');
+  assert.deepEqual(actions, ['cancelled operation drained', 'cancelled settlement started', 'cancelled settlement committed']);
+  const replacement = await f.execution.execute(request('after-commit', scope => ({ graph: graph(scope), input: { question: 'next' } }), { threadId: 'cancelled-thread' }));
+  assert.equal(replacement.ok, true);
+  assert.equal(f.execution.records.get('cancel-isolated').status, 'cancelled');
+  assert.equal(f.execution.records.get('unaffected').status, 'completed');
+});
+
+test('close cancels every running thread and waits for every drain and frozen settlement', async t => {
+  const f = await fixture(t);
+  const started = [deferred(), deferred()], aborted = [deferred(), deferred()], drain = [deferred(), deferred()];
+  const settling = deferred(), commit = deferred();
+  const pending = [0, 1].map(index => f.execution.execute(request(`close-${index}`, scope => ({ graph: graph(scope, async (_state, config) => scope.operation(config.signal, async signal => {
+    started[index].resolve();
+    if (!signal.aborted) await new Promise(resolve => signal.addEventListener('abort', resolve, { once: true }));
+    aborted[index].resolve();
+    await drain[index].promise;
+    signal.throwIfAborted();
+    return { answer: 'bad' };
+  })), input: { question: 'x' } }), { threadId: `close-thread-${index}` })));
+  const settled = f.execution.execute(request('close-settling', scope => ({ graph: graph(scope), input: { question: 'committing' } }), {
+    threadId: 'settling-thread', settle: async outcome => {
+      assert.equal(outcome.ok, true);
+      settling.resolve();
+      await commit.promise;
+    },
+  }));
+  let closed = false;
+  try {
+    await Promise.all([...started.map(item => item.promise), settling.promise]);
+    const closing = f.execution.close().then(() => { closed = true; });
+    await Promise.all(aborted.map(item => item.promise));
+    assert.equal((await f.execution.execute(request('after-closing', () => assert.fail('closed engine prepared')))).error.kind, 'closed');
+    drain[0].resolve();
+    assert.equal((await pending[0]).error.kind, 'cancelled');
+    assert.equal(f.execution.isBusy('close-thread-0'), false);
+    assert.equal(f.execution.isBusy('close-thread-1'), true);
+    assert.equal(closed, false);
+    drain[1].resolve();
+    assert.equal((await pending[1]).error.kind, 'cancelled');
+    assert.equal(f.execution.isBusy('settling-thread'), true);
+    assert.equal(closed, false);
+    commit.resolve();
+    assert.equal((await settled).ok, true, 'close cannot change an outcome already being committed');
+    await closing;
+  } finally { drain.forEach(item => item.resolve()); commit.resolve(); }
+  assert.equal(closed, true);
+  assert.equal(f.execution.isBusy(), false);
+  assert.equal(f.execution.records.get('close-0').status, 'cancelled');
+  assert.equal(f.execution.records.get('close-1').status, 'cancelled');
+  assert.equal(f.execution.records.get('close-settling').status, 'completed');
+});
+
 test('unhandled parallel node failure cancels siblings and drains launched operations before settlement', async t => {
   const f = await fixture(t), started = deferred(), observedAbort = deferred(), release = deferred();
   const original = new Error('first node error');

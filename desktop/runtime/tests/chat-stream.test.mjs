@@ -51,7 +51,7 @@ test('chat publishes native v3 text before completion and final snapshot does no
     runtime = await createDesktopRuntime({
       runsDir: join(directory, 'runs'), resources: createResources({ homeDir: directory }), checkpointer: new MemorySaver(),
       modelName: 'fixture', modelFactory: fixture.model, emit: event => events.push(event), workspace: {},
-      browser: { getState: () => ({}), subscribe() {}, async close() {} },
+      browser: { getState: () => ({}), forThread() { return this; }, subscribe() {}, async close() {} },
     });
     runtime.dispatch('chat_start', { runId: 'stream', threadId: 'stream', request: { messages: [{ role: 'user', text: 'stream-proof' }] } });
     await until(() => events.some(event => event.data?.type === 'delta'));

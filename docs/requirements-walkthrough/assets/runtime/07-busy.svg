@@ -285,7 +285,7 @@ svg[data-theme="light"] { --bg: #f8fafc; --grid: #e2e8f0; --text: #0f172a; --tex
 svg[data-theme="dark"] { --bg: #020617; --grid: #1e293b; --text: #ffffff; --text-muted: #94a3b8; --text-dim: #475569; --text-faint: #7d8da1; --panel: rgba(15, 23, 42, 0.5); --panel-border: #1e293b; --lane-fill: rgba(15, 23, 42, 0.22); --lane-stroke: #334155; --arrow: #64748b; --arrow-emphasis: #34d399; --mask: #0f172a; --frontend-fill: rgba(8, 51, 68, 0.4); --frontend-stroke: #22d3ee; --backend-fill: rgba(6, 78, 59, 0.4); --backend-stroke: #34d399; --database-fill: rgba(76, 29, 149, 0.4); --database-stroke: #a78bfa; --cloud-fill: rgba(120, 53, 15, 0.3); --cloud-stroke: #fbbf24; --security-fill: rgba(136, 19, 55, 0.4); --security-stroke: #fb7185; --messagebus-fill: rgba(251, 146, 60, 0.3); --messagebus-stroke: #fb923c; --external-fill: rgba(30, 41, 59, 0.5); --external-stroke: #94a3b8; --toolbar-bg: rgba(15, 23, 42, 0.8); --toolbar-border: #334155; --toolbar-text: #e2e8f0; --toolbar-hover: rgba(15, 23, 42, 0.95); --toolbar-menu-bg: #0f172a; }
 rect.c-bg-rect { fill: var(--bg); }
 </style><rect width="100%" height="100%" class="c-bg-rect"/>
-        <title id="archify-diagram-title">Chrome 正忙：本轮拒绝执行</title>
+        <title id="archify-diagram-title">会话或并发容量已满：本轮拒绝执行</title>
         <desc id="archify-diagram-description">由 Archify 生成的时序图。</desc>
         <!-- Definitions -->
         <defs>
@@ -329,19 +329,19 @@ rect.c-bg-rect { fill: var(--bg); }
         </g>
         </g>
 
-        <g data-edge-from="client" data-edge-to="control" data-edge-label="申请 Chrome 执行名额" data-edge-key="1" data-edge-id="m-07-busy-1">
+        <g data-edge-from="client" data-edge-to="control" data-edge-label="检查会话运行状态与并发容量" data-edge-key="1" data-edge-id="m-07-busy-1">
           <path data-composition-edge-from="client" data-composition-edge-to="control" data-composition-edge-id="m-07-busy-1" data-composition-points="568,290;958,290" d="M 568 290 L 958 290" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
         <g>
-          <rect x="705" y="270" width="116" height="16" rx="3" class="c-mask"/>
-          <text x="763" y="280" class="t-backend" font-size="9" text-anchor="middle">申请 Chrome 执行名额</text>
+          <rect x="689.4" y="270" width="147.20000000000002" height="16" rx="3" class="c-mask"/>
+          <text x="763" y="280" class="t-backend" font-size="9" text-anchor="middle">检查会话运行状态与并发容量</text>
         </g>
         </g>
 
-        <g data-edge-from="control" data-edge-to="client" data-edge-label="已有任务运行：返回忙" data-edge-key="2" data-edge-id="m-07-busy-2">
+        <g data-edge-from="control" data-edge-to="client" data-edge-label="同会话运行中或容量已满：返回忙" data-edge-key="2" data-edge-id="m-07-busy-2">
           <path data-composition-edge-from="control" data-composition-edge-to="client" data-composition-edge-id="m-07-busy-2" data-composition-points="958,400;568,400" d="M 958 400 L 568 400" class="a-default" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
         <g>
-          <rect x="705" y="380" width="116" height="16" rx="3" class="c-mask"/>
-          <text x="763" y="390" class="t-muted" font-size="9" text-anchor="middle">已有任务运行：返回忙</text>
+          <rect x="679" y="380" width="168" height="16" rx="3" class="c-mask"/>
+          <text x="763" y="390" class="t-muted" font-size="9" text-anchor="middle">同会话运行中或容量已满：返回忙</text>
         </g>
         </g>
 

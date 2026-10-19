@@ -1,0 +1,112 @@
+[
+  {
+    "source": "diagrams/07-execution.html",
+    "source_sha256": "8797db8a342998f4810cdbfe413f64366679dfac3ca8aa9824fb42a11ac64717",
+    "file": "assets/07-execution.svg",
+    "format": "svg",
+    "canonical": "true",
+    "bytes": "53124",
+    "normalization": "Trim trailing whitespace and add final newline",
+    "checked_in_sha256": "bc94860b737db9baf3203ff69f09f0dad2b519a4b4eb534a3d84f31954d13e0b",
+    "checked_in_bytes": 53104
+  },
+  {
+    "source": "diagrams/runtime/00-manual.html",
+    "source_sha256": "a03d4c8fa6f169993b52fb73fac3170e393fbaac0acdf53201cb97d417656ccd",
+    "file": "assets/runtime/00-manual.svg",
+    "format": "svg",
+    "canonical": "true",
+    "bytes": "48323",
+    "normalization": "Trim trailing whitespace and add final newline",
+    "checked_in_sha256": "fe46277467a4c75bb899857780f4773bca036b168b9c36722230ed5d62d5f2ba",
+    "checked_in_bytes": 48303
+  },
+  {
+    "source": "diagrams/runtime/01-skill-experiment.html",
+    "source_sha256": "7001c5e8706b9d45d7b722eb331e87ece30b69ffb538af922d6ca583c772560c",
+    "file": "assets/runtime/01-skill-experiment.svg",
+    "format": "svg",
+    "canonical": "true",
+    "bytes": "48280",
+    "normalization": "Trim trailing whitespace and add final newline",
+    "checked_in_sha256": "d865e70a94824f40841ee561b9ea588a0c98b327d80ea6e3f4eecbb48343026a",
+    "checked_in_bytes": 48260
+  },
+  {
+    "source": "diagrams/runtime/03-builtintool-ready.html",
+    "source_sha256": "a37f76f649f27019d1396acd345b34807d4300e078742b23486e4bb7e7428876",
+    "file": "assets/runtime/03-builtintool-ready.svg",
+    "format": "svg",
+    "canonical": "true",
+    "bytes": "48220",
+    "normalization": "Trim trailing whitespace and add final newline",
+    "checked_in_sha256": "b4d1a9d9fc3c38385adb7fab5050d47c91452f422496d310f223a211d9871467",
+    "checked_in_bytes": 48200
+  },
+  {
+    "source": "diagrams/runtime/04-assembly-ready.html",
+    "source_sha256": "9311612d6c834ea01531c6050c37928020476471941e9be8dc7484574c2524ff",
+    "file": "assets/runtime/04-assembly-ready.svg",
+    "format": "svg",
+    "canonical": "true",
+    "bytes": "58469",
+    "normalization": "Trim trailing whitespace and add final newline",
+    "checked_in_sha256": "3223e27d20313e932367b40f10a5880a12c36af0a9379ff0beb1f535a55400b2",
+    "checked_in_bytes": 58449
+  },
+  {
+    "source": "diagrams/runtime/00-remote.html",
+    "source_sha256": "e44c82f589382abdd75a3445648d0fdafc9e6d8f4925b3d9b589a5a0490a83fb",
+    "file": "assets/runtime/00-remote.svg",
+    "format": "svg",
+    "canonical": "true",
+    "bytes": "49162",
+    "normalization": "Trim trailing whitespace and add final newline",
+    "checked_in_sha256": "b321f1d411c128f285fe5e38396e182f547d71f25c96fd91d334e6e742530000",
+    "checked_in_bytes": 49142
+  },
+  {
+    "source": "diagrams/runtime/07-login.html",
+    "source_sha256": "de55ff6d0e0be0154e85f84fa43953876b82353ae2fa8148c8ccb6f6f66f7167",
+    "file": "assets/runtime/07-login.svg",
+    "format": "svg",
+    "canonical": "true",
+    "bytes": "48418",
+    "normalization": "Trim trailing whitespace and add final newline",
+    "checked_in_sha256": "bd69b0cfe369e1f470295580fa1cc93b798b8d9abca243957cd4a89565e81889",
+    "checked_in_bytes": 48398
+  },
+  {
+    "source": "diagrams/runtime/04-assembly-failure.html",
+    "source_sha256": "f189e9133331ee757815e568371ee2887bc2a6390485de0300d7fecc36dcac3e",
+    "file": "assets/runtime/04-assembly-failure.svg",
+    "format": "svg",
+    "canonical": "true",
+    "bytes": "49783",
+    "normalization": "Trim trailing whitespace and add final newline",
+    "checked_in_sha256": "9d9d0a2d88f9a223a26bfc68c7f43772132bd497c90fe04bfc08c23219f43116",
+    "checked_in_bytes": 49763
+  },
+  {
+    "source": "diagrams/runtime/04-local-session.html",
+    "source_sha256": "08d1fa77e15bdd17a9228bc1fe5a6eba902ec63c2d71f4dba7d2f9d7cb636283",
+    "file": "assets/runtime/04-local-session.svg",
+    "format": "svg",
+    "canonical": "true",
+    "bytes": "49788",
+    "normalization": "Trim trailing whitespace and add final newline",
+    "checked_in_sha256": "c199c416bc805de8f9b5ebbea7f29e7e7a4879df053e1a590a817afc0b8d9e27",
+    "checked_in_bytes": 49768
+  },
+  {
+    "source": "diagrams/runtime/07-busy.html",
+    "source_sha256": "b52eda4dd95f9a92f6064d8d31d897f2bb3da0c9b56241bbe3d31fda355624c8",
+    "file": "assets/runtime/07-busy.svg",
+    "format": "svg",
+    "canonical": "true",
+    "bytes": "45674",
+    "normalization": "Trim trailing whitespace and add final newline",
+    "checked_in_sha256": "7cb1fe12e2d90f716af4faed9da58902b770f286be6eb60abd3f33ef49a79f66",
+    "checked_in_bytes": 45654
+  }
+]

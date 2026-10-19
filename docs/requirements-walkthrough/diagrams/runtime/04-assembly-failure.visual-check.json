@@ -7,8 +7,8 @@
   "visualReview": "pending",
   "artifact": {
     "path": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-assembly-failure.html",
-    "sha256": "846042b572940dd9701cfff2826e6d116cc44defc32a36cf15b4e869b845392b",
-    "bytes": 705399
+    "sha256": "f189e9133331ee757815e568371ee2887bc2a6390485de0300d7fecc36dcac3e",
+    "bytes": 705391
   },
   "state": {
     "detail": "read",

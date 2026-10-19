@@ -55,7 +55,7 @@
       "from": "client",
       "to": "chrome",
       "y": 313,
-      "label": "准备完成且空闲，执行任务",
+      "label": "容量可用，绑定本会话页面执行",
       "variant": "emphasis"
     },
     {

@@ -12,6 +12,7 @@ import { createDesktopRuntime } from '../runtime.mjs';
 import { createResources } from '../resources.mjs';
 import { createModelFixture } from './model-fixture.mjs';
 import { setTimeout as delay } from 'node:timers/promises';
+import { browserHostFixture } from './browser-host-fixture.mjs';
 
 async function writable(directory) {
   if (!(await lstat(directory)).isDirectory()) return;
@@ -39,7 +40,8 @@ test('real CDP scripts retain source/hash, filesystem/process/network permission
     const session = await context.newCDPSession(page);
     const { targetInfo } = await session.send('Target.getTargetInfo');
     await session.detach();
-    service = createBrowserService({ endpoint, targetId: targetInfo.targetId });
+    const host = browserHostFixture(context, endpoint);
+    service = createBrowserService({ endpoint, targetId: targetInfo.targetId }, host.request);
     const events = [];
     const workspace = await createScriptWorkspace({ dataDir: directory, ensureBrowser: service.ensure, signalEvent: event => events.push(event), redact: String });
     const forbidden = join(directory, 'credential.env');
@@ -77,14 +79,19 @@ test('real CDP scripts retain source/hash, filesystem/process/network permission
 
     // Only the model is synthetic; LangGraph, immutable assembly and Playwright execute locally.
     const chat = [];
-    runtime = await createDesktopRuntime({ browser: service, workspace, resources: createResources({ homeDir: directory }), runsDir: join(directory, '.omnimind-ops/runs'), checkpointer: new MemorySaver(), modelName: fixture.model, emit: event => chat.push(event), modelFactory: () => new ChatOpenAI({ model: fixture.model, apiKey: 'fixture-key', configuration: { baseURL: fixture.baseURL }, useResponsesApi: false, maxRetries: 0 }) });
+    runtime = await createDesktopRuntime({ browser: service, workspace,
+      workspaceFactory: (_session, boundBrowser) => createScriptWorkspace({ dataDir: directory, ensureBrowser: boundBrowser.ensure, signalEvent: event => events.push(event), redact: String }),
+      resources: createResources({ homeDir: directory }), runsDir: join(directory, '.omnimind-ops/runs'), checkpointer: new MemorySaver(), modelName: fixture.model, emit: event => chat.push(event), modelFactory: () => new ChatOpenAI({ model: fixture.model, apiKey: 'fixture-key', configuration: { baseURL: fixture.baseURL }, useResponsesApi: false, maxRetries: 0 }) });
     runtime.dispatch('chat_start', { runId: 'real-local', threadId: 'agent-test:local', request: { messages: [{ role: 'user', text: '填写本地搜索框，不提交' }] } });
-    await until(() => runtime.getState().task === null);
+    await until(() => runtime.getState().tasks.length === 0);
     assert.equal(chat.some(event => event.state?.task?.phase === 'awaiting-approval'), false);
     assert.equal(runtime.dispatch('run_get', { runId: 'real-local' }).status, 'completed');
     assert.equal(chat.findLast(event => event.event === 'chat_event').data.type, 'completed', JSON.stringify(chat.findLast(event => event.event === 'chat_event')));
-    assert.equal(await page.getByRole('searchbox').inputValue(), 'abcd');
-    assert.equal(new URL(page.url()).searchParams.has('q'), false);
+    const taskPage = host.pages.get('agent-test:local');
+    assert.notEqual(taskPage, page);
+    assert.equal(await taskPage.getByRole('searchbox').inputValue(), 'abcd');
+    assert.equal(new URL(taskPage.url()).searchParams.has('q'), false);
+    await runtime.dispatch('browser_select', { threadId: 'agent-test:local' });
     await runtime.dispatch('navigate', { url: `${fixture.pageURL}?second=1` });
     assert.equal(runtime.getState().browser.canGoBack, true);
     await runtime.dispatch('back');
@@ -93,15 +100,15 @@ test('real CDP scripts retain source/hash, filesystem/process/network permission
     await runtime.dispatch('forward');
     assert.equal(runtime.getState().browser.url, `${fixture.pageURL}?second=1`);
 
-    await page.setContent('<label>Password<input type="password"></label>');
+    await taskPage.setContent('<label>Password<input type="password"></label>');
     await assert.rejects(service.inspect({}, new AbortController().signal), error => error.kind === 'human-required');
-    await page.goto(fixture.pageURL);
+    await taskPage.goto(fixture.pageURL);
 
     runtime.dispatch('chat_start', { runId: 'stop-model', threadId: 'local', request: { messages: [{ role: 'user', text: '[hold-model]' }] } });
     await delay(100);
-    assert.equal(runtime.getState().task.phase, 'running');
+    assert.equal(runtime.getState().tasks[0].phase, 'running');
     await Promise.race([runtime.dispatch('stop', { runId: 'stop-model' }), delay(3000).then(() => { throw new Error('Model cancellation did not complete'); })]);
-    assert.equal(runtime.getState().task, null);
+    assert.equal(runtime.getState().tasks.length, 0);
   } finally {
     await runtime?.close(); await service?.close(); await control?.close(); await server?.close();
     await fixture.close(); await writable(directory); await rm(directory, { recursive: true, force: true });

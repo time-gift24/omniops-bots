@@ -30,6 +30,13 @@
     assert(calls.at(-1).y > rect.y, "native content leaves the header visible")
     assert(calls.at(-1).height < rect.height, "native content excludes header chrome")
     assert(calls.at(-1).interactive === true, "idle browser accepts manual input")
+    let beforeSelection = calls.length
+    render({ browserThreadId: "first-thread" })
+    await wait(() => calls.length > beforeSelection && calls.at(-1)?.interactive === true)
+    beforeSelection = calls.length
+    render({ browserThreadId: "second-thread" })
+    await wait(() => calls.length > beforeSelection && calls.at(-1)?.interactive === true)
+    assert(calls.at(-1).width > 0, "equally idle pages must each receive fresh visible bounds after selection")
     render({ interactive: false })
     await wait(() => calls.at(-1)?.interactive === false)
     assert(calls.at(-1).width > 0, "task input lock keeps the live page visible")
@@ -68,7 +75,7 @@
     await wait(() => calls.at(-1)?.width > 0)
     flushSync(() => root.unmount())
     await wait(() => calls.at(-1) === null)
-    document.querySelector("#result").textContent = "PASS: native bounds, dialogs/menus, hide/reopen, resize, error, simulated regression, cleanup"
+    document.querySelector("#result").textContent = "PASS: native bounds, idle page selection, dialogs/menus, hide/reopen, resize, error, simulated regression, cleanup"
   } catch (error) {
     document.querySelector("#result").textContent = `FAIL: ${error.stack}`
     throw error

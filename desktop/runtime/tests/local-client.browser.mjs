@@ -13,6 +13,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { z } from 'zod';
 import { createModelFixture } from './model-fixture.mjs';
+import { browserHostFixture } from './browser-host-fixture.mjs';
 
 async function until(check) {
   const deadline = Date.now() + 15_000;
@@ -55,7 +56,7 @@ async function mcpFixture() {
     http.closeAllConnections(); await new Promise(resolve => http.close(resolve));
   } };
 }
-async function client(directory, endpoint, targetId, model) {
+async function client(directory, endpoint, targetId, model, host) {
   const child = spawn(process.env.OMNIOPS_BOTS_TEST_NODE_EXECUTABLE || process.execPath, ['main.mjs'], {
     cwd: process.env.OMNIOPS_BOTS_TEST_RUNTIME_DIRECTORY || new URL('..', import.meta.url), env: {
     ...process.env, OMNIOPS_BOTS_DATA_DIR: join(directory, 'app'), OMNIOPS_BOTS_LOCAL_ROOT: join(directory, 'local'),
@@ -69,6 +70,13 @@ async function client(directory, endpoint, targetId, model) {
   child.on('exit', code => { exited.resolve(code); ready.reject(new Error(`Runtime exited: ${code} ${stderr}`)); for (const request of pending.values()) request.reject(new Error('Runtime exited')); });
   readline.createInterface({ input: child.stdout }).on('line', line => {
     const message = JSON.parse(line);
+    if (message.event === 'browser_host_request') {
+      void host.request(message.method, message.pageId).then(
+        result => child.stdin.write(JSON.stringify({ browserHostResponse: message.id, result }) + '\n'),
+        error => child.stdin.write(JSON.stringify({ browserHostResponse: message.id, error: { message: error.message } }) + '\n'),
+      );
+      return;
+    }
     if (message.event) events.push(message);
     if (message.event === 'ready') ready.resolve();
     const request = pending.get(message.id);
@@ -123,7 +131,8 @@ test('client JSONL runs complete pinned Skills and real MCP through LangGraph an
     const other = await context.newPage();
     const session = await context.newCDPSession(page);
     const { targetInfo } = await session.send('Target.getTargetInfo'); await session.detach();
-    runtime = await client(directory, endpoint, targetInfo.targetId, model);
+    const host = browserHostFixture(context, endpoint);
+    runtime = await client(directory, endpoint, targetInfo.targetId, model, host);
     const rpc = (...args) => runtime.rpc(...args);
     const skill = await rpc('skill_library_create', { name: 'browser-proof', description: 'Read references/query.txt and use MCP before browser operations.' });
     await rpc('skill_library_mkdir', { id: skill.id, path: 'references' });
@@ -141,7 +150,8 @@ test('client JSONL runs complete pinned Skills and real MCP through LangGraph an
       return rpc('run_get', { runId });
     }
     const first = await run('one', 'stable-session');
-    assert.equal(await page.getByRole('searchbox').inputValue(), 'version-one');
+    assert.equal(await host.pages.get('stable-session').getByRole('searchbox').inputValue(), 'version-one');
+    assert.equal(page.url(), 'about:blank');
     assert.equal(other.url(), 'about:blank');
     assert.equal(first.status, 'completed');
     assert.ok(first.result.assistant.parts.some(part => part.type === 'tool-call' && part.call.name === 'mcp_local_lookup'));
@@ -151,15 +161,16 @@ test('client JSONL runs complete pinned Skills and real MCP through LangGraph an
     await rpc('agent_save', { id: agent.id, configuration: { ...configuration, instructions: 'Updated prompt for new sessions.' } });
     await runtime.close();
     const requestCount = model.requests.length;
-    runtime = await client(directory, endpoint, targetInfo.targetId, model);
+    runtime = await client(directory, endpoint, targetInfo.targetId, model, host);
     assert.equal((await rpc('runs_list')).length, 1);
     assert.deepEqual(await rpc('session_snapshot', { threadId: 'stable-session' }), first.snapshot);
     await delay(50); assert.equal(model.requests.length, requestCount);
     const second = await run('two', 'stable-session');
-    assert.equal(await page.getByRole('searchbox').inputValue(), 'version-one');
+    assert.equal(await host.pages.get('stable-session').getByRole('searchbox').inputValue(), 'version-one');
     assert.deepEqual(second.snapshot, first.snapshot);
     const third = await run('three', 'fresh-session');
-    assert.equal(await page.getByRole('searchbox').inputValue(), 'version-two');
+    assert.equal(await host.pages.get('fresh-session').getByRole('searchbox').inputValue(), 'version-two');
+    assert.equal(await host.pages.get('stable-session').getByRole('searchbox').inputValue(), 'version-one');
     assert.notEqual(third.snapshot.skills[0].contentId, first.snapshot.skills[0].contentId);
     assert.deepEqual(mcp.calls, ['version-one', 'version-one', 'version-two']);
     await assert.rejects(rpc('chat_start', { runId: 'one', threadId: 'stable-session', request: { messages: [{ role: 'user', text: 'duplicate' }] } }), error => error.kind === 'duplicate-run');
@@ -167,7 +178,7 @@ test('client JSONL runs complete pinned Skills and real MCP through LangGraph an
     await until(() => runtime.events.some(event => event.runId === 'interrupted' && event.data?.type === 'started'));
     await runtime.close(true);
     const beforeRestart = model.requests.length;
-    runtime = await client(directory, endpoint, targetInfo.targetId, model);
+    runtime = await client(directory, endpoint, targetInfo.targetId, model, host);
     const interrupted = await rpc('run_get', { runId: 'interrupted' });
     assert.equal(interrupted.status, 'interrupted');
     assert.match(interrupted.error.message, /结果未知/);

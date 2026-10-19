@@ -35,7 +35,7 @@ builtinTool 的实现随桌面应用版本交付，不建立独立工具包发�
 
 ### 运行模型一：所需工具齐全
 
-**条件：** 客户端收到一轮任务，按固定的 Agent 装配检查所需 builtinTool。调用方可以是用户或服务端；物料准备、其他运行检查均成功且 Chrome 空闲。
+**条件：** 客户端收到一轮任务，按固定的 Agent 装配检查所需 builtinTool。调用方可以是用户或服务端；物料准备、其他运行检查均成功，本会话空闲且并发容量可用。
 
 ![运行模型：所需 builtinTool 齐全时执行](./assets/runtime/03-builtintool-ready.svg)
 

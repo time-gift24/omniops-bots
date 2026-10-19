@@ -27,6 +27,7 @@ import type { ModelChoice } from "@/models/source"
 import { useBackendData } from "@/components/workbench/use-backend-data"
 import { ChatScreen } from "@/components/chat/chat-screen"
 import { TaskBanner } from "@/components/desktop/task-banner"
+import type { DesktopTask } from "@/desktop/runtime"
 import { MorphicTooltip } from "@/components/premium/morphic-tooltip/morphic-tooltip"
 import {
   defaultSections,
@@ -327,6 +328,28 @@ function WorkspaceApp({
   const activeWorkspace = state.workspaces.find(
     (workspace) => workspace.id === activeSession?.workspaceId
   )
+  const browserThreadId =
+    view.kind === "session"
+      ? view.threadId
+      : view.kind === "chat"
+        ? (activeSession?.id ?? null)
+        : null
+  useEffect(() => {
+    let current = true
+    void desktop
+      .selectBrowserThread?.(browserThreadId)
+      .catch((error: unknown) => {
+        if (current)
+          setActionError(
+            error instanceof Error ? error.message : "浏览器页面切换失败。"
+          )
+      })
+    return () => {
+      current = false
+    }
+  }, [desktop, browserThreadId])
+  const activeTasks =
+    desktopState.tasks ?? (desktopState.task ? [desktopState.task] : [])
   const activeSkill = skillCatalog.find((skill) => skill.id === openedSkillId)
   const activeSectionId =
     view.kind === "session"
@@ -610,8 +633,7 @@ function WorkspaceApp({
     if (!store.startSession(workspaceId)) setPicker("choose")
   }
 
-  function returnToTask() {
-    const task = desktop.getState().task
+  function returnToTask(task: DesktopTask | null = desktop.getState().task) {
     if (!task) return
     if (
       runs &&
@@ -767,7 +789,7 @@ function WorkspaceApp({
             }
             models={models}
             onClose={() => setWorkbenchOpen(false)}
-            onReturnToApproval={returnToTask}
+            onReturnToApproval={() => returnToTask()}
           />
         }
         headerOverlay={
@@ -827,17 +849,23 @@ function WorkspaceApp({
               {actionError}
             </p>
           ) : null}
-          {desktopState.task && (
+          {activeTasks.map((task) => (
             <TaskBanner
-              task={desktopState.task}
+              key={task.runId}
+              task={task}
               simulated={desktopState.simulated}
-              onReturn={returnToTask}
+              onReturn={() => returnToTask(task)}
               onStop={() => {
-                const task = desktop.getState().task
-                if (task) threads.get(task.threadId).stop()
+                void desktop.stop(task.runId).catch((error: unknown) => {
+                  setActionError(
+                    error instanceof Error
+                      ? error.message
+                      : "停止未能完成，请重试。"
+                  )
+                })
               }}
             />
-          )}
+          ))}
           <main
             id={contentId}
             ref={contentRef}

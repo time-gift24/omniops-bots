@@ -5,6 +5,7 @@ import { ArrowUp01Icon, StopIcon } from "@hugeicons-pro/core-stroke-rounded"
 import { HugeiconsIcon } from "@hugeicons/react"
 
 import { useAppDependencies } from "@/app/dependencies"
+import { threadTask } from "@/desktop/runtime"
 import type { ThreadStore } from "@/chat/thread-store.ts"
 import { ApprovalPanel } from "@/components/chat/approval-panel"
 import { AgentChatCredits } from "@/components/premium/agent-chat-input/agent-chat-credits"
@@ -73,7 +74,7 @@ export function ChatComposer({
   )
   const model =
     models.find((choice) => choice.id === draft.model)?.id ?? models[0]?.id
-  const task = desktopState.task
+  const task = threadTask(desktopState, store.getState().threadId)
   const ownsTask = task?.threadId === store.getState().threadId
   const approval = ownsTask ? task?.approval : undefined
   const stopping = task?.phase === "stopping" || status === "stopping"
@@ -108,7 +109,10 @@ export function ChatComposer({
           </span>
         </div>
       ) : !desktopState.simulated && !models.length ? (
-        <p role="alert" className="absolute inset-x-0 bottom-[calc(100%+12px)] text-xs text-muted-foreground">
+        <p
+          role="alert"
+          className="absolute inset-x-0 bottom-[calc(100%+12px)] text-xs text-muted-foreground"
+        >
           尚未配置模型。请设置本地模型配置并重新打开应用；目录与浏览器仍可使用。
         </p>
       ) : null}
@@ -131,7 +135,8 @@ export function ChatComposer({
         }
         onStop={() => store.stop()}
         onSubmit={(text, sent) => {
-          if (desktop.getState().task) return false
+          if (threadTask(desktop.getState(), store.getState().threadId))
+            return false
           const accepted = store.send(
             text,
             sent.map((attachment) => ({

@@ -1,0 +1,185 @@
+{
+  "artifact": {
+    "path": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/index.html",
+    "sha256": "3360d89e1ef67ebbe1e125627658184d2a2e722e40ecee7c5861f982a6621193"
+  },
+  "checks": [
+    {
+      "width": 1440,
+      "height": 900,
+      "scrollWidth": 1440,
+      "article": "00-overview",
+      "ok": true
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "scrollWidth": 1440,
+      "article": "01-skill",
+      "ok": true
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "scrollWidth": 1440,
+      "article": "02-mcp",
+      "ok": true
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "scrollWidth": 1440,
+      "article": "03-builtintool",
+      "ok": true
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "scrollWidth": 1440,
+      "article": "04-agent",
+      "ok": true
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "scrollWidth": 1440,
+      "article": "05-updater",
+      "ok": true
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "scrollWidth": 1440,
+      "article": "06-sync",
+      "ok": true
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "scrollWidth": 1440,
+      "article": "07-execution",
+      "ok": true
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "scrollWidth": 1440,
+      "article": "08-frontend",
+      "ok": true
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "scrollWidth": 1440,
+      "article": "09-operations",
+      "ok": true
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "scrollWidth": 1440,
+      "article": "10-server-api",
+      "ok": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "article": "00-overview",
+      "ok": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "article": "01-skill",
+      "ok": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "article": "02-mcp",
+      "ok": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "article": "03-builtintool",
+      "ok": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "article": "04-agent",
+      "ok": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "article": "05-updater",
+      "ok": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "article": "06-sync",
+      "ok": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "article": "07-execution",
+      "ok": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "article": "08-frontend",
+      "ok": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "article": "09-operations",
+      "ok": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "article": "10-server-api",
+      "ok": true
+    }
+  ],
+  "content": [
+    {
+      "phrase": "threadId",
+      "ok": true
+    },
+    {
+      "phrase": "targetId",
+      "ok": true
+    },
+    {
+      "phrase": "默认最多 4 轮并发",
+      "ok": true
+    },
+    {
+      "phrase": "其他 run 继续执行",
+      "ok": true
+    },
+    {
+      "phrase": "弹窗不自动成为任务目标",
+      "ok": true
+    }
+  ],
+  "status": "pass"
+}

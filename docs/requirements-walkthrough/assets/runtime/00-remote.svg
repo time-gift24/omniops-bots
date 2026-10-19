@@ -338,11 +338,11 @@ rect.c-bg-rect { fill: var(--bg); }
         </g>
         </g>
 
-        <g data-edge-from="client" data-edge-to="chrome" data-edge-label="准备完成且空闲，执行任务" data-edge-key="2" data-edge-id="m-00-remote-2">
+        <g data-edge-from="client" data-edge-to="chrome" data-edge-label="容量可用，绑定本会话页面执行" data-edge-key="2" data-edge-id="m-00-remote-2">
           <path data-composition-edge-from="client" data-composition-edge-to="chrome" data-composition-edge-id="m-00-remote-2" data-composition-points="433.3333333333333,313;688.6666666666666,313" d="M 433.3333333333333 313 L 688.6666666666666 313" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
         <g>
-          <rect x="492.6" y="293" width="136.8" height="16" rx="3" class="c-mask"/>
-          <text x="561" y="303" class="t-backend" font-size="9" text-anchor="middle">准备完成且空闲，执行任务</text>
+          <rect x="482.2" y="293" width="157.6" height="16" rx="3" class="c-mask"/>
+          <text x="561" y="303" class="t-backend" font-size="9" text-anchor="middle">容量可用，绑定本会话页面执行</text>
         </g>
         </g>
 

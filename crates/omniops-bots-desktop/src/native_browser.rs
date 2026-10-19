@@ -16,6 +16,7 @@ use objc2_foundation::{
 };
 use std::{
     cell::{Cell, RefCell},
+    collections::HashMap,
     ffi::CString,
     net::{Ipv4Addr, TcpListener},
     os::unix::fs::PermissionsExt,
@@ -35,9 +36,25 @@ pub enum Initialization {
     AlreadyRunning,
 }
 
+const MANUAL_PAGE: &str = "__manual__";
+
+#[derive(Default)]
+struct PageStatus {
+    target_id: Option<String>,
+    error: Option<String>,
+    closing: bool,
+    #[cfg(debug_assertions)]
+    evaluation: Option<tokio::sync::oneshot::Sender<Result<serde_json::Value, Error>>>,
+}
+
+struct NativePage {
+    browser: Browser,
+    observer: Option<Registration>,
+}
+
 struct Shared {
     endpoint: String,
-    target_id: Option<String>,
+    pages: HashMap<String, PageStatus>,
     error: Option<String>,
     closing: bool,
     closed: bool,
@@ -45,7 +62,7 @@ struct Shared {
 static SHARED: LazyLock<Mutex<Shared>> = LazyLock::new(|| {
     Mutex::new(Shared {
         endpoint: String::new(),
-        target_id: None,
+        pages: HashMap::new(),
         error: None,
         closing: false,
         closed: true,
@@ -55,15 +72,14 @@ static APP_HANDLE: OnceLock<tauri::AppHandle> = OnceLock::new();
 static ORIGINAL_SEND_EVENT: OnceLock<Imp> = OnceLock::new();
 thread_local! {
     static HANDLING_EVENT: Cell<ObjcBool> = const { Cell::new(ObjcBool::NO) };
-    static BROWSER: RefCell<Option<Browser>> = const { RefCell::new(None) };
-    static OBSERVER: RefCell<Option<Registration>> = const { RefCell::new(None) };
+    static PAGES: RefCell<HashMap<String, NativePage>> = RefCell::new(HashMap::new());
+    static SELECTED_PAGE: RefCell<String> = RefCell::new(MANUAL_PAGE.to_owned());
     static PARENT: Cell<*mut NSView> = const { Cell::new(std::ptr::null_mut()) };
     static UI_VIEW: RefCell<Option<Retained<NSView>>> = const { RefCell::new(None) };
-    static REMOVE_VIEW: Cell<*mut NSView> = const { Cell::new(std::ptr::null_mut()) };
+    static REMOVE_VIEWS: RefCell<Vec<Retained<NSView>>> = const { RefCell::new(Vec::new()) };
     static TIMER: RefCell<Option<Retained<NSTimer>>> = const { RefCell::new(None) };
     static INITIALIZED: Cell<bool> = const { Cell::new(false) };
     static CONTEXT_READY: Cell<bool> = const { Cell::new(false) };
-    static CREATE_PENDING: Cell<bool> = const { Cell::new(false) };
     static PUMPING: Cell<bool> = const { Cell::new(false) };
     static LAST_BOUNDS: Cell<Bounds> = const { Cell::new(Bounds { x:0., y:0., width:0., height:0., visible:false, interactive:false }) };
 }
@@ -151,7 +167,7 @@ fn blocks_browser_input(event: &NSEvent) -> bool {
     if LAST_BOUNDS.get().interactive {
         return false;
     }
-    let browser = BROWSER.with(|slot| slot.borrow().clone());
+    let browser = selected_browser();
     let Some(host) = browser.and_then(|browser| browser.host()) else {
         return false;
     };
@@ -263,55 +279,96 @@ fn install_cef_application_protocol() -> Result<(), Error> {
     Ok(())
 }
 
+fn page_fail(page_id: &str, message: impl Into<Error>) {
+    if let Some(page) = SHARED.lock().unwrap().pages.get_mut(page_id) {
+        page.error = Some(message.into().to_string());
+    }
+}
+
+fn selected_browser() -> Option<Browser> {
+    SELECTED_PAGE.with(|selected| {
+        PAGES.with(|pages| {
+            pages
+                .borrow()
+                .get(&*selected.borrow())
+                .map(|page| page.browser.clone())
+        })
+    })
+}
+
 wrap_dev_tools_message_observer! {
-    struct TargetObserver;
+    struct TargetObserver { page_id: String }
     impl DevToolsMessageObserver {
         fn on_dev_tools_method_result(&self, _browser: Option<&mut Browser>, message_id: i32,
             success: i32, result: Option<&[u8]>) {
+            #[cfg(debug_assertions)]
+            if message_id >= 2 {
+                let sender = SHARED.lock().unwrap().pages.get_mut(&self.page_id)
+                    .and_then(|page| page.evaluation.take());
+                if let Some(sender) = sender {
+                    let result = if success == 1 {
+                        result.and_then(|bytes| serde_json::from_slice::<serde_json::Value>(bytes).ok())
+                            .ok_or_else(|| Error::from("CEF smoke evaluation returned invalid JSON"))
+                    } else { Err(Error::from("CEF smoke evaluation failed")) };
+                    let _ = sender.send(result);
+                }
+                return;
+            }
             if message_id != 1 { return; }
             let parsed = result.and_then(|bytes| serde_json::from_slice::<serde_json::Value>(bytes).ok());
             let target = parsed.as_ref().and_then(|value| value["targetInfo"]["targetId"].as_str());
             match (success, target.filter(|id| !id.is_empty())) {
-                (1, Some(id)) => SHARED.lock().unwrap().target_id = Some(id.to_owned()),
-                _ => fail("CEF did not return a DevTools target ID"),
+                (1, Some(id)) => {
+                    if let Some(page) = SHARED.lock().unwrap().pages.get_mut(&self.page_id) {
+                        page.target_id = Some(id.to_owned());
+                    }
+                }
+                _ => page_fail(&self.page_id, "CEF did not return a DevTools target ID"),
             }
         }
     }
 }
 
 wrap_life_span_handler! {
-    struct BrowserLife;
+    struct BrowserLife { page_id: String }
     impl LifeSpanHandler {
         fn on_after_created(&self, browser: Option<&mut Browser>) {
-            CREATE_PENDING.set(false);
-            let Some(browser) = browser else { fail("CEF created no browser"); return; };
-            BROWSER.with(|slot| *slot.borrow_mut() = Some(browser.clone()));
-            let Some(host) = browser.host() else { fail("CEF browser host unavailable"); return; };
-            if SHARED.lock().unwrap().closing { host.close_browser(1); return; }
+            let Some(browser) = browser else { page_fail(&self.page_id, "CEF created no browser"); return; };
+            PAGES.with(|pages| {
+                pages.borrow_mut().insert(self.page_id.clone(), NativePage {
+                    browser: browser.clone(), observer: None,
+                });
+            });
+            let Some(host) = browser.host() else { page_fail(&self.page_id, "CEF browser host unavailable"); return; };
+            let closing = {
+                let state = SHARED.lock().unwrap();
+                state.closing || state.pages.get(&self.page_id).is_none_or(|page| page.closing)
+            };
+            if closing { host.close_browser(1); return; }
             host.set_accessibility_state(cef::State::ENABLED);
-            if let Err(error) = apply_bounds(LAST_BOUNDS.get()) { fail(error); }
-            let registration = host.add_dev_tools_message_observer(Some(&mut TargetObserver::new()));
-            if registration.is_none() { fail("CEF DevTools observer registration failed"); return; }
-            // Registration must live until browser close; dropping it unsubscribes.
-            OBSERVER.with(|slot| *slot.borrow_mut() = registration);
+            if let Err(error) = apply_bounds(LAST_BOUNDS.get()) { page_fail(&self.page_id, error); }
+            let registration = host.add_dev_tools_message_observer(Some(&mut TargetObserver::new(self.page_id.clone())));
+            if registration.is_none() { page_fail(&self.page_id, "CEF DevTools observer registration failed"); return; }
+            PAGES.with(|pages| {
+                if let Some(page) = pages.borrow_mut().get_mut(&self.page_id) { page.observer = registration; }
+            });
             if host.execute_dev_tools_method(1, Some(&"Target.getTargetInfo".into()), None) != 1 {
-                fail("CEF rejected the DevTools target query");
+                page_fail(&self.page_id, "CEF rejected the DevTools target query");
             }
         }
         fn do_close(&self, browser: Option<&mut Browser>) -> i32 {
-            // CEF's default closes the whole parent NSWindow. Detach only our child.
-            if let Some(host) = browser.and_then(|browser| browser.host()) {
-                REMOVE_VIEW.set(host.window_handle().cast());
+            // CEF's default closes the parent application window. Remove only this child.
+            if let Some(host) = browser.and_then(|browser| browser.host())
+                && let Some(view) = unsafe { Retained::<NSView>::retain(host.window_handle().cast()) } {
+                REMOVE_VIEWS.with(|views| views.borrow_mut().push(view));
             }
             1
         }
         fn on_before_close(&self, _browser: Option<&mut Browser>) {
-            REMOVE_VIEW.set(std::ptr::null_mut());
-            BROWSER.with(|slot| slot.borrow_mut().take());
+            PAGES.with(|pages| pages.borrow_mut().remove(&self.page_id));
             let mut state = SHARED.lock().unwrap();
-            state.target_id = None;
-            state.closed = true;
-
+            state.pages.remove(&self.page_id);
+            state.closed = state.closing && state.pages.is_empty();
         }
         fn on_before_popup(&self, _browser: Option<&mut Browser>, _frame: Option<&mut Frame>,
             _popup_id: i32, _target_url: Option<&CefString>, _target_frame_name: Option<&CefString>,
@@ -325,22 +382,22 @@ wrap_life_span_handler! {
 }
 
 wrap_focus_handler! {
-    struct BrowserFocus;
+    struct BrowserFocus { page_id: String }
     impl FocusHandler {
         fn on_set_focus(&self, _browser: Option<&mut Browser>, source: FocusSource) -> i32 {
-            // A navigation or script must not steal the first responder from chat.
-            // This controls native focus only; approved CDP input still reaches the renderer.
+            // Only the selected, explicitly unlocked page can receive native input.
             i32::from(source == FocusSource::NAVIGATION || !LAST_BOUNDS.get().visible
-                || !LAST_BOUNDS.get().interactive || SHARED.lock().unwrap().closing)
+                || !LAST_BOUNDS.get().interactive || SHARED.lock().unwrap().closing
+                || SELECTED_PAGE.with(|selected| *selected.borrow() != self.page_id))
         }
     }
 }
 
 wrap_client! {
-    struct BrowserClient;
+    struct BrowserClient { page_id: String }
     impl Client {
-        fn life_span_handler(&self) -> Option<LifeSpanHandler> { Some(BrowserLife::new()) }
-        fn focus_handler(&self) -> Option<FocusHandler> { Some(BrowserFocus::new()) }
+        fn life_span_handler(&self) -> Option<LifeSpanHandler> { Some(BrowserLife::new(self.page_id.clone())) }
+        fn focus_handler(&self) -> Option<FocusHandler> { Some(BrowserFocus::new(self.page_id.clone())) }
     }
 }
 
@@ -370,16 +427,9 @@ wrap_browser_process_handler! {
                 SHARED.lock().unwrap().closed = true;
                 return;
             }
-            let mut info = WindowInfo { runtime_style: RuntimeStyle::ALLOY, ..Default::default() }
-                .set_as_child(PARENT.get().cast(), &Rect { x:0, y:0, width:1, height:1 });
-            // set_as_child sets hidden=0, so override it after creating the child attributes.
-            info.hidden = 1;
-            CREATE_PENDING.set(true);
-            if browser_host_create_browser(Some(&info), Some(&mut BrowserClient::new()),
-                Some(&"about:blank".into()), Some(&BrowserSettings::default()), None, None) != 1 {
-                CREATE_PENDING.set(false);
+            if let Err(error) = create_page_on_main(MANUAL_PAGE) {
                 SHARED.lock().unwrap().closed = true;
-                fail("CEF rejected native browser creation");
+                fail(error);
             }
         }
         fn on_schedule_message_pump_work(&self, _delay_ms: i64) {
@@ -426,9 +476,8 @@ fn pump_tick() {
         }
     }
     let _reset = Reset;
-    if let Some(view) =
-        unsafe { Retained::<NSView>::retain(REMOVE_VIEW.replace(std::ptr::null_mut())) }
-    {
+    let views = REMOVE_VIEWS.with(|views| std::mem::take(&mut *views.borrow_mut()));
+    for view in views {
         view.removeFromSuperview();
     }
     cef::do_message_loop_work();
@@ -492,7 +541,11 @@ pub fn initialize(window: &tauri::WebviewWindow) -> Result<Initialization, Error
         .map_err(|_| "Native browser application handle is already set")?;
     install_cef_application_protocol()?;
     PARENT.set(window.ns_view()?.cast());
-    let root_cache = window.app_handle().path().app_data_dir()?.join("cef");
+    let cache_dir = window.app_handle().path().app_data_dir()?;
+    let root_cache = std::env::var_os("OMNIOPS_BOTS_SMOKE_DATA_DIR")
+        .map(std::path::PathBuf::from)
+        .unwrap_or(cache_dir)
+        .join("cef");
     let profile = root_cache.join("browser-profile");
     std::fs::create_dir_all(&profile)?;
     for directory in [&root_cache, &profile] {
@@ -503,7 +556,7 @@ pub fn initialize(window: &tauri::WebviewWindow) -> Result<Initialization, Error
     let endpoint = format!("http://127.0.0.1:{port}");
     *SHARED.lock().unwrap() = Shared {
         endpoint,
-        target_id: None,
+        pages: HashMap::new(),
         error: None,
         closing: false,
         closed: false,
@@ -547,6 +600,65 @@ pub fn initialize(window: &tauri::WebviewWindow) -> Result<Initialization, Error
 
 /// Safe from an async worker; never waits on the CEF UI thread.
 pub async fn wait_ready(timeout: Duration) -> Result<Connection, Error> {
+    wait_page(MANUAL_PAGE, timeout).await
+}
+
+fn validate_page_id(page_id: &str) -> Result<(), Error> {
+    if page_id.trim().is_empty() || page_id.len() > 256 || page_id.chars().any(char::is_control) {
+        return Err(Error::InvalidInput("Browser page ID is invalid"));
+    }
+    Ok(())
+}
+
+fn create_page_on_main(page_id: &str) -> Result<bool, Error> {
+    main_thread()?;
+    {
+        let mut state = SHARED.lock().unwrap();
+        if state.closing || !CONTEXT_READY.get() {
+            return Err("Native browser is unavailable".into());
+        }
+        if let Some(page) = state.pages.get(page_id) {
+            return if page.closing {
+                Err("Browser page is closing".into())
+            } else {
+                Ok(false)
+            };
+        }
+        state
+            .pages
+            .insert(page_id.to_owned(), PageStatus::default());
+    }
+    let mut info = WindowInfo {
+        runtime_style: RuntimeStyle::ALLOY,
+        ..Default::default()
+    }
+    .set_as_child(
+        PARENT.get().cast(),
+        &Rect {
+            x: 0,
+            y: 0,
+            width: 1280,
+            height: 800,
+        },
+    );
+    info.hidden = 1;
+    // The default CEF RequestContext shares the dedicated profile's login state.
+    if browser_host_create_browser(
+        Some(&info),
+        Some(&mut BrowserClient::new(page_id.to_owned())),
+        Some(&"about:blank".into()),
+        Some(&BrowserSettings::default()),
+        None,
+        None,
+    ) != 1
+    {
+        SHARED.lock().unwrap().pages.remove(page_id);
+        return Err("CEF rejected native browser page creation".into());
+    }
+    Ok(true)
+}
+
+async fn wait_page(page_id: &str, timeout: Duration) -> Result<Connection, Error> {
     let deadline = Instant::now() + timeout;
     loop {
         {
@@ -557,11 +669,21 @@ pub async fn wait_ready(timeout: Duration) -> Result<Connection, Error> {
             if state.closing || state.closed {
                 return Err("Native browser is closing or unavailable".into());
             }
-            if let Some(target_id) = &state.target_id {
-                return Ok(Connection {
-                    endpoint: state.endpoint.clone(),
-                    target_id: target_id.clone(),
-                });
+            if let Some(page) = state.pages.get(page_id) {
+                if let Some(error) = &page.error {
+                    return Err(Error::Native(error.clone()));
+                }
+                if page.closing {
+                    return Err("Browser page is closing".into());
+                }
+                if let Some(target_id) = &page.target_id {
+                    return Ok(Connection {
+                        endpoint: state.endpoint.clone(),
+                        target_id: target_id.clone(),
+                    });
+                }
+            } else if page_id != MANUAL_PAGE {
+                return Err("Browser page is unavailable".into());
             }
         }
         let remaining = deadline.saturating_duration_since(Instant::now());
@@ -570,6 +692,194 @@ pub async fn wait_ready(timeout: Duration) -> Result<Connection, Error> {
         }
         tokio::time::sleep(remaining.min(Duration::from_millis(25))).await;
     }
+}
+
+pub async fn create_page(app: tauri::AppHandle, page_id: String) -> Result<Connection, Error> {
+    validate_page_id(&page_id)?;
+    let requested = page_id.clone();
+    let (tx, rx) = tokio::sync::oneshot::channel();
+    app.run_on_main_thread(move || {
+        let _ = tx.send(create_page_on_main(&requested));
+    })?;
+    let created = rx
+        .await
+        .map_err(|_| "Native browser page callback was cancelled".to_owned())??;
+    match wait_page(&page_id, Duration::from_secs(15)).await {
+        Ok(connection) => Ok(connection),
+        Err(error) => {
+            if created && page_id != MANUAL_PAGE {
+                let _ = release_page(app, page_id).await;
+            }
+            Err(error)
+        }
+    }
+}
+
+pub async fn select_page(app: tauri::AppHandle, page_id: String) -> Result<(), Error> {
+    validate_page_id(&page_id)?;
+    let (tx, rx) = tokio::sync::oneshot::channel();
+    app.run_on_main_thread(move || {
+        let result = (|| {
+            let state = SHARED.lock().unwrap();
+            let page = state
+                .pages
+                .get(&page_id)
+                .ok_or("Browser page is unavailable")?;
+            if state.closing || page.closing || page.target_id.is_none() {
+                return Err("Browser page is unavailable".into());
+            }
+            drop(state);
+            SELECTED_PAGE.with(|selected| *selected.borrow_mut() = page_id);
+            // A bounds update from the new page must explicitly unlock native input.
+            apply_bounds(Bounds {
+                interactive: false,
+                ..LAST_BOUNDS.get()
+            })
+        })();
+        let _ = tx.send(result);
+    })?;
+    rx.await
+        .map_err(|_| "Native browser selection callback was cancelled".to_owned())?
+}
+
+pub async fn release_page(app: tauri::AppHandle, page_id: String) -> Result<(), Error> {
+    validate_page_id(&page_id)?;
+    if page_id == MANUAL_PAGE {
+        return Err(Error::InvalidInput(
+            "The manual browser page cannot be released",
+        ));
+    }
+    let released = page_id.clone();
+    let (tx, rx) = tokio::sync::oneshot::channel();
+    app.run_on_main_thread(move || {
+        let result = {
+            {
+                let mut state = SHARED.lock().unwrap();
+                if let Some(page) = state.pages.get_mut(&page_id) {
+                    page.closing = true;
+                }
+            }
+            if SELECTED_PAGE.with(|selected| *selected.borrow() == page_id) {
+                SELECTED_PAGE.with(|selected| *selected.borrow_mut() = MANUAL_PAGE.to_owned());
+            }
+            let browser = PAGES.with(|pages| {
+                pages
+                    .borrow()
+                    .get(&page_id)
+                    .map(|page| page.browser.clone())
+            });
+            if let Some(host) = browser.and_then(|browser| browser.host()) {
+                host.close_browser(1);
+            }
+            apply_bounds(LAST_BOUNDS.get())
+        };
+        let _ = tx.send(result);
+    })?;
+    rx.await
+        .map_err(|_| "Native browser release callback was cancelled".to_owned())??;
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while SHARED.lock().unwrap().pages.contains_key(&released) {
+        if Instant::now() >= deadline {
+            return Err("Native browser page release timed out".into());
+        }
+        tokio::time::sleep(Duration::from_millis(25)).await;
+    }
+    Ok(())
+}
+
+#[cfg(debug_assertions)]
+pub async fn smoke_navigate(
+    app: tauri::AppHandle,
+    page_id: String,
+    url: String,
+) -> Result<(), Error> {
+    let (tx, rx) = tokio::sync::oneshot::channel();
+    app.run_on_main_thread(move || {
+        let result = (|| {
+            let frame = PAGES
+                .with(|pages| {
+                    pages
+                        .borrow()
+                        .get(&page_id)
+                        .and_then(|page| page.browser.main_frame())
+                })
+                .ok_or_else(|| Error::from("Smoke page frame is unavailable"))?;
+            frame.load_url(Some(&url.as_str().into()));
+            Ok(())
+        })();
+        let _ = tx.send(result);
+    })?;
+    rx.await
+        .map_err(|_| Error::from("Smoke navigation callback was cancelled"))?
+}
+
+/// Debug-only real CEF check; no browser/model service or external network is required.
+#[cfg(debug_assertions)]
+pub async fn smoke_evaluate(
+    app: tauri::AppHandle,
+    page_id: String,
+    expression: String,
+) -> Result<serde_json::Value, Error> {
+    static NEXT_ID: std::sync::atomic::AtomicI32 = std::sync::atomic::AtomicI32::new(2);
+    let message_id = NEXT_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let (tx, rx) = tokio::sync::oneshot::channel();
+    let (started_tx, started_rx) = tokio::sync::oneshot::channel();
+    app.run_on_main_thread(move || {
+        let result: Result<(), Error> = (|| {
+            let browser = PAGES
+                .with(|pages| {
+                    pages
+                        .borrow()
+                        .get(&page_id)
+                        .map(|page| page.browser.clone())
+                })
+                .ok_or("Smoke browser page is unavailable")?;
+            let host = browser.host().ok_or("Smoke browser host is unavailable")?;
+            {
+                let mut state = SHARED.lock().unwrap();
+                state
+                    .pages
+                    .get_mut(&page_id)
+                    .ok_or("Smoke page state is unavailable")?
+                    .evaluation = Some(tx);
+            }
+            let mut params = dictionary_value_create()
+                .ok_or("CEF smoke evaluation parameters are unavailable")?;
+            params.set_string(
+                Some(&"expression".into()),
+                Some(&expression.as_str().into()),
+            );
+            params.set_bool(Some(&"returnByValue".into()), 1);
+            let assigned = host.execute_dev_tools_method(
+                message_id,
+                Some(&"Runtime.evaluate".into()),
+                Some(&mut params),
+            );
+            if assigned != message_id {
+                return Err(format!(
+                    "CEF rejected smoke evaluation: expected {message_id}, assigned {assigned}"
+                )
+                .into());
+            }
+            Ok(())
+        })();
+        let _ = started_tx.send(result);
+    })?;
+    started_rx
+        .await
+        .map_err(|_| Error::from("CEF smoke callback was cancelled"))??;
+    let result = tokio::time::timeout(Duration::from_secs(5), rx)
+        .await
+        .map_err(|_| {
+            Error::from(format!(
+                "CEF smoke evaluation response timed out (request {message_id})"
+            ))
+        })?
+        .map_err(|_| Error::from("CEF smoke evaluation was cancelled"))??;
+    if result.get("exceptionDetails").is_some() {
+        return Err("CEF smoke JavaScript failed".into());
+    }
+    Ok(result["result"]["value"].clone())
 }
 
 /// Run on the main thread after Node and its CDP clients have disconnected.
@@ -581,12 +891,22 @@ pub fn begin_close() -> Result<(), Error> {
             return Ok(());
         }
         state.closing = true;
+        for page in state.pages.values_mut() {
+            page.closing = true;
+        }
+        state.closed = CONTEXT_READY.get() && state.pages.is_empty();
     }
-    let browser = BROWSER.with(|slot| slot.borrow().clone());
-    if let Some(host) = browser.and_then(|browser| browser.host()) {
-        host.close_browser(1);
-    } else if CONTEXT_READY.get() && !CREATE_PENDING.get() {
-        SHARED.lock().unwrap().closed = true;
+    let browsers: Vec<_> = PAGES.with(|pages| {
+        pages
+            .borrow()
+            .values()
+            .map(|page| page.browser.clone())
+            .collect()
+    });
+    for browser in browsers {
+        if let Some(host) = browser.host() {
+            host.close_browser(1);
+        }
     }
     Ok(())
 }
@@ -619,8 +939,7 @@ pub fn finish_shutdown() -> Result<(), Error> {
         }
     });
     INITIALIZED.set(false);
-    OBSERVER.with(|slot| slot.borrow_mut().take());
-    BROWSER.with(|slot| slot.borrow_mut().take());
+    PAGES.with(|pages| pages.borrow_mut().clear());
     cef::shutdown();
     UI_VIEW.with(|slot| slot.borrow_mut().take());
     PARENT.set(std::ptr::null_mut());
@@ -628,13 +947,13 @@ pub fn finish_shutdown() -> Result<(), Error> {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-struct Bounds {
-    x: f64,
-    y: f64,
-    width: f64,
-    height: f64,
-    visible: bool,
-    interactive: bool,
+pub(crate) struct Bounds {
+    pub(crate) x: f64,
+    pub(crate) y: f64,
+    pub(crate) width: f64,
+    pub(crate) height: f64,
+    pub(crate) visible: bool,
+    pub(crate) interactive: bool,
 }
 
 fn validate_bounds(bounds: Bounds) -> Result<(), Error> {
@@ -719,8 +1038,30 @@ fn webview_content_rect(view: &NSView) -> NSRect {
 fn apply_bounds(bounds: Bounds) -> Result<(), Error> {
     main_thread()?;
     LAST_BOUNDS.set(bounds);
-    let browser = BROWSER.with(|slot| slot.borrow().clone());
-    let Some(host) = browser.and_then(|browser| browser.host()) else {
+    let selected = SELECTED_PAGE.with(|selected| selected.borrow().clone());
+    let pages: Vec<_> = PAGES.with(|pages| {
+        pages
+            .borrow()
+            .iter()
+            .map(|(id, page)| (id.clone(), page.browser.clone()))
+            .collect()
+    });
+    for (id, browser) in pages {
+        let owned = id == selected;
+        apply_page_bounds(
+            browser,
+            Bounds {
+                visible: bounds.visible && owned,
+                interactive: bounds.interactive && owned,
+                ..bounds
+            },
+        )?;
+    }
+    Ok(())
+}
+
+fn apply_page_bounds(browser: Browser, bounds: Bounds) -> Result<(), Error> {
+    let Some(host) = browser.host() else {
         return Ok(());
     };
     let view = unsafe { Retained::<NSView>::retain(host.window_handle().cast()) }
@@ -757,23 +1098,12 @@ fn apply_bounds(bounds: Bounds) -> Result<(), Error> {
     Ok(())
 }
 
-pub async fn set_bounds(
+pub(crate) async fn set_bounds(
     app: tauri::AppHandle,
-    x: f64,
-    y: f64,
-    width: f64,
-    height: f64,
-    visible: bool,
-    interactive: bool,
+    page_id: String,
+    bounds: Bounds,
 ) -> Result<(), Error> {
-    let bounds = Bounds {
-        x,
-        y,
-        width,
-        height,
-        visible,
-        interactive,
-    };
+    validate_page_id(&page_id)?;
     validate_bounds(bounds)?;
     if SHARED.lock().unwrap().closing {
         return Err("Native browser is closing".into());
@@ -786,7 +1116,12 @@ pub async fn set_bounds(
             UI_VIEW.with(|slot| {
                 *slot.borrow_mut() = unsafe { Retained::<NSView>::retain(platform.inner().cast()) };
             });
-            let _ = tx.send(apply_bounds(bounds));
+            let result = if SELECTED_PAGE.with(|selected| *selected.borrow() == page_id) {
+                apply_bounds(bounds)
+            } else {
+                Ok(())
+            };
+            let _ = tx.send(result);
         })?;
     rx.await
         .map_err(|_| "Native browser bounds callback was cancelled".to_owned())?
@@ -795,6 +1130,16 @@ pub async fn set_bounds(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn browser_page_ids_are_validated_at_the_host_boundary() {
+        assert!(validate_page_id(MANUAL_PAGE).is_ok());
+        assert!(validate_page_id("thread-a").is_ok());
+        for page_id in ["", " ", "thread\nother"] {
+            assert!(validate_page_id(page_id).is_err());
+        }
+        assert!(validate_page_id(&"x".repeat(257)).is_err());
+    }
+
     #[test]
     fn task_input_lock_blocks_browser_but_preserves_chat_and_system_events() {
         for kind in [

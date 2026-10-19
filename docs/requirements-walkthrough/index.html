@@ -84,7 +84,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 <tr>
 <td>浏览器执行底座</td>
-<td>随包提供 Playwright 与内置 Chrome，连接同一个工作台页面，保留专用登录态</td>
+<td>随包提供 Playwright 与内置 Chrome，按会话绑定独立页面并保留专用登录态</td>
 <td>通过任务协议调用客户端；浏览器与网站登录态保留在本机</td>
 </tr>
 <tr>
@@ -124,7 +124,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 <tr>
 <td>本地 Node.js／LangGraph runtime</td>
-<td>装配固定快照、调用模型与所选工具，控制单任务执行、停止和超时</td>
+<td>装配固定快照、调用模型与所选工具，按会话管理并发运行、停止和超时</td>
 </tr>
 <tr>
 <td>Playwright</td>
@@ -136,7 +136,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 </tbody></table>
 <p>Node.js、Playwright 和 CEF 随桌面整包交付，用户无需另行安装 Chrome 或自动化运行环境。业务界面仍使用 Tauri 的系统 WebView；网站页面使用内置 CEF 浏览器，不把业务 UI 当作运维目标页面。浏览器版本与工具实现由桌面版本确定，更新规则见第 05 章。</p>
-<p>页面检查、脚本保存与执行都在本机完成。脚本执行时保存源码快照并核对调用方指定的内容摘要，结果、截图等产物关联执行记录；脚本沿用宿主指定的页面。任务从准备到停止排空期间独占浏览器，用户可以查看过程，手动导航和页面输入等待任务结束。遇到人工登录或验证，本轮结束；用户在同一浏览器完成操作后显式发起新一轮。停止不回滚已发生的外部操作，也不自动续跑。</p>
+<p>页面检查、脚本保存与执行都在本机完成。脚本执行时保存源码快照并核对调用方指定的内容摘要，结果、截图等产物关联执行记录；脚本沿用该轮绑定的页面。任务从准备到停止排空期间只占用所属页面，不锁住其他会话页面；工作台可切换查看不同会话或手动页面，切换不会改变已启动任务的目标。用户对运行中页面的手动导航和输入等待该会话本轮结束，其他空闲页面仍可操作。遇到人工登录或验证，本轮结束；用户在同一浏览器完成操作后显式发起新一轮。停止不回滚已发生的外部操作，也不自动续跑。</p>
 <p><strong>打包客户端已具备内置浏览器截图保存能力。</strong> <code>run_playwright_script</code> 在脚本结束时尝试截取同一个 CEF 页面的当前视口，将 <code>screenshot.png</code> 保存到该会话的脚本执行产物目录；普通脚本报错也会尝试保存。取消／超时导致进程强制结束或浏览器崩溃时，截图可能缺失。当前会话展示工具结果，截图文件留在本地产物中，尚未直接作为聊天图片显示。</p>
 <p>专用 profile 与用户日常浏览器隔离，网站 Cookie、登录态及本地 CDP 地址不作为服务端任务材料上传。故障时按第 09 章导出指定 thread 的脱敏证据，不上传整个浏览器 profile。</p>
 <p>当前本地链路的代码依据：<a href="../../desktop/runtime/browser/browser.mjs">浏览器连接</a>、<a href="../../desktop/runtime/browser/browser-target.mjs">页面匹配</a>、<a href="../../desktop/runtime/browser/script-workspace.mjs">脚本执行</a>、<a href="../../crates/omniops-bots-desktop/src/native_browser.rs">macOS 原生视图</a>与 <a href="../../crates/omniops-bots-desktop/src/native_browser_windows.rs">Windows 原生视图</a>。服务端远端调用仍为待接入能力，接口汇总见<a href="#10-server-api">服务端 API</a>。</p>
@@ -210,7 +210,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <li>提供 Skill 文件编辑与上传、Agent 提示词及装配调整、选 Agent 实验的连贯入口；未上传内容也能反复实验，官方已发布配置只读。</li>
 <li>围绕提示词和 Skill 的每周改进保存草稿、实验记录及发布引用，展示本次 Agent 实际装配；发布过程不增加审批。</li>
 <li>新会话同步清单，按需下载缺失物料；调用前核对版本，失败不拿旧版代替。</li>
-<li>运行前固定装配快照，检查所需内置工具；Playwright 连接内置 Chrome 的指定页面，同一浏览器每轮只执行一个任务，忙时直接返回。</li>
+<li>运行前固定装配快照，检查所需内置工具；Playwright 按会话绑定内置 Chrome 的指定页面，不同会话可并发；同会话已有运行、其页面正在手动导航或并发容量已满时返回忙。</li>
 <li>展示过程、保存结果并补传；正常任务交付只向服务端发送状态、最终结果和运行快照。</li>
 <li>用户需要排查时，另行选择一个 thread，通过 HTTPS 上传脱敏后的 SQLite checkpoint、过程与关联材料。服务端确认接收后展示诊断编号，具体见<a href="#09-operations">运维与诊断上传</a>。</li>
 </ul>
@@ -222,11 +222,11 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <p>图中的“按需保存完整草稿修订”只保存编辑进度，不发布、不联动 Agent；这一步也可以在本地实验之后进行。正式发布前固定本次完整修订，服务端以该修订生成版本，之后继续编辑不会改变已提交内容。只改提示词时发布新的 Agent 并复用原 Skill；Skill 改动则与受影响 Agent 一起发布，所有新标签由运维手填。</p>
 <p>结果：一次本地改进成为团队可复用、可追溯的正式资产，新会话使用所选新版，旧会话保持原快照。周内反复迭代，按周发布已确认内容，执行反馈继续推动下一次改进。图示为目标业务流程；当前草稿实验与本地完整会话快照已实现，官方发布同步仍待接入，完成情况见第 08 章。</p>
 <h3>场景二：用户主动发起会话</h3>
-<p>前提：用户选择官方 Agent，准备检查成功，Chrome 执行名额空闲。本地 Agent 使用本地装配；引用官方 Skill 时仍需补齐对应版本。</p>
+<p>前提：用户选择官方 Agent，准备检查成功，本会话没有活动轮次且并发容量可用。本地 Agent 使用本地装配；引用官方 Skill 时仍需补齐对应版本。</p>
 <figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/00-manual.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/00-manual.svg" alt="用户主动发起会话"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/00-manual.html">打开顺序图：用户主动发起会话</a></p>
-<p>结果：客户端保存并展示本轮结果，等待用户继续输入时释放 Chrome 名额；同一会话继续使用开始时的快照。</p>
+<p>结果：客户端保存并展示本轮结果，等待用户继续输入时释放运行容量；同一会话保留页面并继续使用开始时的快照，其他会话可以并发执行。</p>
 <h3>场景三：客户端接收远端调用</h3>
-<p>前提：客户端收到对官方 Agent 的调用，指定版本准备成功且 Chrome 空闲。</p>
+<p>前提：客户端收到对官方 Agent 的调用，指定版本准备成功且并发容量可用；新会话绑定独立页面。</p>
 <figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/00-remote.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/00-remote.svg" alt="远端独立任务与结果确认"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/00-remote.html">打开顺序图：远端独立任务与结果确认</a></p>
 <p>结果：每次调用新建独立、只读会话，逐条过程在客户端展示。结果与快照先落本地，再向服务端回传，确认前保留。断线继续执行，重连只补传；重启后未完成任务报告“执行中断、结果未知”。</p>
 <p>验收从客户端操作或远端调用进入，覆盖“编辑发布 → 同步装配 → 调用执行 → 结果恢复”的完整结果。<a href="https://github.com/time-gift24/omniops-bots/issues/3">规格依据：Issue #3</a>。</p>
@@ -352,7 +352,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/01-skill-file-conflict.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/01-skill-file-conflict.svg" alt="运行模型：同名文件替换失败时保留原内容"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/01-skill-file-conflict.html">打开交互顺序图：同名冲突与写入失败</a></p>
 <p><strong>结果：</strong> 原文件保持可读，失败项展示原因，不能标为已保存。用户重试时仍以明确的目标路径写入；选择跳过则不写入该项。批次中其他已成功文件不撤销。新建、编辑、重命名和删除失败也保留可恢复的原内容与当前未保存编辑，不生成新的完整包版本。</p>
 <h3>运行模型三：在客户端实验草稿</h3>
-<p><strong>条件：</strong> 用户在 Skill 页面勾选现有 Agent 作为模板；草稿可以尚未上传。客户端准备好其他物料、完成工具检查，并取得 Chrome 执行名额后开始实验。</p>
+<p><strong>条件：</strong> 用户在 Skill 页面勾选现有 Agent 作为模板；草稿可以尚未上传。客户端准备好其他物料、完成工具检查，并在并发容量可用时绑定实验会话自己的页面后开始实验。</p>
 <figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/01-skill-experiment.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/01-skill-experiment.svg" alt="运行模型：在客户端实验未上传的 Skill 草稿"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/01-skill-experiment.html">打开交互顺序图：Skill 草稿实验</a></p>
 <p><strong>结果：</strong> 实验使用运行前固定的完整装配快照，过程与结果展示在本地实验会话。原 Agent 和已发布 Skill 不变，不要求发布标签；日志、截图等产物另存，不混入 Skill 文件包。</p>
 <h3>运行模型四：上传草稿修订</h3>
@@ -439,7 +439,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </ul>
 <h2 id="03-builtintool-详细设计">详细设计</h2>
 <h3>运行模型一：所需工具齐全</h3>
-<p><strong>条件：</strong> 客户端收到一轮任务，按固定的 Agent 装配检查所需 builtinTool。调用方可以是用户或服务端；物料准备、其他运行检查均成功且 Chrome 空闲。</p>
+<p><strong>条件：</strong> 客户端收到一轮任务，按固定的 Agent 装配检查所需 builtinTool。调用方可以是用户或服务端；物料准备、其他运行检查均成功，本会话空闲且并发容量可用。</p>
 <figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/03-builtintool-ready.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/03-builtintool-ready.svg" alt="运行模型：所需 builtinTool 齐全时执行"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/03-builtintool-ready.html">打开交互顺序图：builtinTool 齐全</a></p>
 <p><strong>结果：</strong> 客户端固定运行快照后执行本轮任务，展示过程并保存结果；远端任务按回传规则返回结果。快照记录当次工具清单与桌面端版本，工具实现由该桌面版本确定。</p>
 <h3>运行模型二：缺少所需工具</h3>
@@ -602,12 +602,12 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 <tr>
 <td>7. 构造并执行</td>
-<td>取得 Chrome 执行名额后，把系统提示词、合并工具、只读 Skill 后端和所选 Skill 路径显式交给运行引擎</td>
+<td>确认本会话空闲且并发容量可用，绑定会话页面后，把系统提示词、合并工具、只读 Skill 后端和所选 Skill 路径显式交给运行引擎</td>
 <td>LangGraph.js / Deep Agents 按固定装配执行；忙时直接返回，不开始模型或 Chrome 操作</td>
 </tr>
 </tbody></table>
 <p>系统提示词描述 Agent 的任务与边界；Skill 通过只读文件后端提供方法和资料，模型按需读取入口与引用文件。包内脚本不会因为被上传而自动执行；需要执行操作时仍通过实际装配的工具入口完成。builtinTool 在客户端调用，MCP 工具通过已配置的连接调用远端，二者的结果回到同一次 Agent 运行。MCP 返回的 resource、prompt 与 tool 是不同能力，不把 resource／prompt 自动注册成工具，也不自动覆盖 Agent 系统提示词。</p>
-<p><strong>结果：</strong> 本次运行获得明确的提示词、可读 Skill 文件集合和可调用工具集合。不能把包含所有历史版本的 Skill 根目录直接作为本次搜索范围。手动会话后续轮次复用原 Agent／Skill 快照及配置；MCP 连接可以重新建立，但这不代表外部服务行为被快照冻结。每轮仍重新检查 Chrome 是否空闲。</p>
+<p><strong>结果：</strong> 本次运行获得明确的提示词、可读 Skill 文件集合和可调用工具集合。不能把包含所有历史版本的 Skill 根目录直接作为本次搜索范围。手动会话后续轮次复用原 Agent／Skill 快照及配置；MCP 连接可以重新建立，但这不代表外部服务行为被快照冻结。每轮仍重新检查本会话的运行状态、页面手动导航状态与总并发容量，浏览器目标保持为本会话页面。</p>
 <h3>运行模型二：装配失败时停止</h3>
 <p><strong>条件：</strong> Agent 与 Skill 已解析，但所需 MCP 无法连接或鉴权失败。图中只展示这一条失败路径，其他失败按下表处理。</p>
 <figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/04-assembly-failure.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/04-assembly-failure.svg" alt="装配失败：MCP 接入失败，不构造或执行 Agent"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/04-assembly-failure.html">打开运行模型：Agent 装配失败</a></p>
@@ -643,13 +643,13 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <td>记录准备失败，不进入模型与 Chrome 操作</td>
 </tr>
 <tr>
-<td>Chrome 正被另一任务占用</td>
+<td>同一会话正在执行、其页面正在手动导航或总并发容量已满</td>
 <td>返回“忙”，由用户或服务端重新安排，不排入客户端任务队列</td>
 </tr>
 </tbody></table>
-<p><strong>结果：</strong> 客户端展示失败环节和原因；远端任务按原调用 ID 回传失败。若已取得 Chrome 名额则释放，已有缓存与未同步编辑保留，不自动重试整次任务。此处沿用已确认的状态、错误与运行快照观测边界，本次文档补充不新增日志、span 或指标要求。</p>
+<p><strong>结果：</strong> 客户端展示失败环节和原因；远端任务按原调用 ID 回传失败。若已受理则释放该轮运行容量，已有缓存与未同步编辑保留，不自动重试整次任务。此处沿用已确认的状态、错误与运行快照观测边界，本次文档补充不新增日志、span 或指标要求。</p>
 <h3>运行模型三：编辑本地 Agent 后开始会话</h3>
-<p>**条件：**用户编辑本地 Agent 并保存；本次所需物料已准备好，builtinTool 检查通过。客户端在取得 Chrome 执行名额后执行。</p>
+<p>**条件：**用户编辑本地 Agent 并保存；本次所需物料已准备好，builtinTool 检查通过。客户端在并发容量可用并绑定本会话页面后执行。</p>
 <figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/04-local-session.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/04-local-session.svg" alt="本地 Agent 运行顺序：保存装配、读取物料、固定快照、执行"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/04-local-session.html">打开运行模型</a></p>
 <p>**结果：**本轮按确定的 Agent、Skill 和运行条件执行。之后再编辑本地 Agent，也不会改变这个会话已经固定的快照；修改从新会话生效。本地 Agent 不设发布标签，也不接受服务端调用。缺包、缺少工具和忙时的处理分别见<a href="#06-sync">同步与装配</a>、<a href="#03-builtintool">builtinTool</a>与<a href="#07-execution">任务执行与恢复</a>。</p>
 <h3>运行模型四：官方发布新版，已有会话继续使用原快照</h3>
@@ -808,7 +808,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/06-sync-failure.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/06-sync-failure.svg" alt="同步失败运行顺序：请求失败、保留缓存、反馈本次失败"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/06-sync-failure.html">打开运行模型</a></p>
 <p>**结果：**客户端展示明确原因，本次调用失败，不降级到旧版，不使用不完整装配。远端调用按原调用 ID 记录并回传失败；本地已有缓存与未同步编辑保留。用户或服务端处理原因后重新发起。</p>
 <p>物料齐备但缺少所需 builtinTool 时同样不能执行：客户端提示更新桌面端，不通过 Skill 同步补装内置工具，具体顺序见<a href="#03-builtintool">builtinTool</a>。未上传的本地草稿实验直接固定完整快照，不要求先经过官方同步。</p>
-<p>MVP 不引入 Git 仓库、全量历史镜像或自动清理机制。Skill 磁盘布局已确定：本地包位于 <code>local/&lt;localId&gt;</code>，两端官方完整版本均位于 <code>releases/&lt;skillId&gt;/&lt;contentId&gt;</code>；会话完整包快照另存 <code>.omnimind-ops/runs/&lt;sha256(threadId)&gt;/skills/&lt;mountName&gt;/</code>。准备完成后的运行互斥、结果补传和重启恢复见<a href="#07-execution">任务执行与恢复</a>。</p>
+<p>MVP 不引入 Git 仓库、全量历史镜像或自动清理机制。Skill 磁盘布局已确定：本地包位于 <code>local/&lt;localId&gt;</code>，两端官方完整版本均位于 <code>releases/&lt;skillId&gt;/&lt;contentId&gt;</code>；会话完整包快照另存 <code>.omnimind-ops/runs/&lt;sha256(threadId)&gt;/skills/&lt;mountName&gt;/</code>。准备完成后的页面绑定与运行并发、结果补传和重启恢复见<a href="#07-execution">任务执行与恢复</a>。</p>
 <h2 id="06-sync-服务端配合">服务端配合</h2>
 <p>为支持客户端核对版本与按需装配，服务端需要：</p>
 <ul>
@@ -827,18 +827,20 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/07-debug.jpg" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/07-debug.jpg" alt="打包客户端实拍：Playwright 工具执行过程与内置浏览器同屏"></a><figcaption>macOS 桌面包实拍，展开真实执行的 <code>inspect_browser</code>、<code>write_playwright_script</code> 和 <code>run_playwright_script</code>；右侧 CEF 搜索框已填入 <code>abcd</code>，未提交。模型与目标页面为本地测试夹具。</figcaption></figure>
 <p>会话展示消息与工具调用过程，任务横条展示执行状态。服务端发起的会话明确标识来源并保持只读。执行记录包含调用 ID、起止时间、结果或错误、运行快照，以及结果待确认、已交付或重启中断状态。</p>
 <ol>
-<li>作为用户，我希望本地与远端任务共用专用 Chrome，保留登录态且不并发操作。</li>
+<li>作为用户，我希望本地与远端任务共用专用 Chrome，保留登录态，并让不同会话在各自标签页并发执行。</li>
 <li>作为用户，我希望客户端明确展示忙、取消、超时等状态，并把远端任务的结果回传给服务端。</li>
 <li>作为使用者，我希望断线时任务继续执行，恢复连接后能取得结果。</li>
 <li>作为用户，我希望重启后知道哪些任务已经完成、哪些执行中断，不自动重做操作。</li>
 </ol>
 <figure class="usecase"><a class="screenshot-link" href="./assets/07-execution-usecase.svg" target="_blank" rel="noopener" aria-label="放大用例图"><img src="./assets/07-execution-usecase.svg" alt="执行用例图：发起任务、查看过程、取消任务、接收结果"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure>
 <h2 id="07-execution-简要设计">简要设计</h2>
-<p>客户端管理一个专用 Chrome 环境，本地、实验和远端任务共用，每轮只允许一个任务执行。忙时直接返回“忙”，客户端不排队。手动会话等待用户输入时释放执行名额，下一轮重新检查；会话和固定快照继续保留。</p>
+<p>客户端管理一个专用 Chrome 环境。本地、实验和远端任务按 <code>threadId</code> 绑定各自标签页，以精确 <code>targetId</code> 寻址；不同会话可以并发，同一会话同时只接纳一轮。默认最多 4 轮并发，运行时可配置上限；同一会话已有运行、其绑定页面正在手动导航或总容量已满时返回“忙”，客户端不排队。手动会话等待用户输入时释放运行容量，标签页与固定快照继续保留，下一轮复用同一页面。</p>
+<p>会话页面与手动页面分开管理。任务结束、失败、取消或超时后仍保留所属页面，供查看与后续轮次复用；runtime 关闭时只释放它创建的会话页面，不关闭外部或手动页面。页面丢失时本次操作失败，不回退到当前选中页或其他会话页面。</p>
+<p>所有标签页仍使用同一专用 profile，共享 Cookie、登录态和站点状态；独立页面不代表独立账号或后端业务资源，退出登录和切换账号可能影响其他会话。脚本沿用既有页面约束，不新增创建页面或 BrowserContext 的能力；弹窗不自动成为任务目标。</p>
 <p>一轮任务可以包含多次模型调用，单次模型输出结束不等于任务结束。任务终止与结果交付分别处理：执行已结束但尚未收到服务端确认时，保留结果等待补传。</p>
-<p>图编排由代码定义并随 desktop 发版，Agent 配置只负责提示词、Skill 和工具选择。每张图拥有自己的 input、state 和 output，不强制包含 messages；execution 统一管理生命周期、取消和 checkpoint，聊天展示与历史由 chat adapter 转换。图内允许原生并行分支，桌面仍同时只接纳一个 run。</p>
-<p>使用同一浏览器的完整分支通过 <code>scope.browserFlow</code> 串行，锁覆盖导航、读取、模型判断、操作与验证；<code>scope.browserOperation</code> 复用已持有的流程范围并串行执行页面动作，独立调用时为本次动作取得流程范围。浏览器回调逸出的异常立即终止 run，关闭后续动作入口；可恢复业务失败须在该回调内转换为结果。普通 <code>scope.operation</code> 的业务失败仍可由图捕获并转换为 state 或分支结果。</p>
-<p>未处理异常取消其他分支，锁定首个终止原因；等待已启动操作、连接清理与 checkpoint 写入排空后，单次调用 <code>settle</code> 保存历史或中止证据，再写最终 run 记录、发布 terminal 并释放执行名额。进入 <code>settle</code> 前冻结本轮取消与超时；稍后的 stop 等待结算完成，不改变已交给结算阶段的执行结果。</p>
+<p>图编排由代码定义并随 desktop 发版，Agent 配置只负责提示词、Skill 和工具选择。每张图拥有自己的 input、state 和 output，不强制包含 messages；execution 统一管理生命周期、取消和 checkpoint，聊天展示与历史由 chat adapter 转换。图内允许原生并行分支，桌面也允许不同 thread 的 run 同时执行；每个 run 的浏览器目标在受理时绑定，之后不可随界面切换而改变。</p>
+<p>使用同一目标页面的完整分支通过 <code>scope.browserFlow</code> 串行，锁覆盖导航、读取、模型判断、操作与验证；<code>scope.browserOperation</code> 复用已持有的流程范围并串行执行页面动作，独立调用时为本次动作取得流程范围。浏览器回调逸出的异常立即终止 run，关闭后续动作入口；可恢复业务失败须在该回调内转换为结果。普通 <code>scope.operation</code> 的业务失败仍可由图捕获并转换为 state 或分支结果。</p>
+<p>未处理异常取消其他分支，锁定首个终止原因；等待已启动操作、连接清理与 checkpoint 写入排空后，单次调用 <code>settle</code> 保存历史或中止证据，再写最终 run 记录、发布 terminal 并释放该轮容量；其他会话继续运行，所属标签页保留供后续轮次查看和复用。进入 <code>settle</code> 前冻结本轮取消与超时；稍后的 stop 等待结算完成，不改变已交给结算阶段的执行结果。</p>
 <details>
 <summary>任务状态与结果交付状态概览</summary><figure class="diagram"><a class="screenshot-link" href="diagrams/07-execution.html" target="_blank" rel="noopener" aria-label="打开可缩放设计图"><img src="./assets/07-execution.svg" alt="任务状态与结果交付状态"></a><figcaption>结构或状态概览 · 点击缩放查看</figcaption></figure>
 <p><a href="./diagrams/07-execution.html">打开状态概览</a></p>
@@ -851,11 +853,11 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </ul>
 <h2 id="07-execution-详细设计">详细设计</h2>
 <p>以下每张顺序图对应一个独立运行场景。正常执行与结果确认见<a href="#00-overview">客户端总体设计</a>。</p>
-<h3>场景一：Chrome 正忙</h3>
-<p>本地、实验和远端任务共用一个 Chrome 执行名额。图中已有任务尚未结束。</p>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-busy.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-busy.svg" alt="场景一：Chrome 正忙"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
-<p><a href="./diagrams/runtime/07-busy.html">打开顺序图：场景一：Chrome 正忙</a></p>
-<p>本轮返回忙，不排队、不自动重试。手动会话及固定快照保留，等待输入时不占用名额；下一轮重新检查。</p>
+<h3>场景一：同会话运行中或并发容量已满</h3>
+<p>本地、实验和远端任务使用同一并发上限，但各自绑定独立标签页。图中表示同一会话已有任务，或默认 4 个运行容量已全部占用；仅有另一会话运行时，不应拒绝新任务。本会话绑定页面若正在手动导航，也暂时拒绝本会话新运行；其他页面仍可接纳任务。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-busy.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-busy.svg" alt="场景一：同会话运行中或并发容量已满"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
+<p><a href="./diagrams/runtime/07-busy.html">打开顺序图：场景一：同会话运行中或并发容量已满</a></p>
+<p>本轮返回忙，不排队、不自动重试。等待输入时不占运行容量，保留所属标签页与快照；下一轮重新检查。不同会话的任务仍可同时运行在各自页面，切换当前展示页面不影响执行目标。</p>
 <h3>场景二：执行中 WebSocket 断线</h3>
 <p>客户端进程仍在运行。图中任务先执行完成，连接随后恢复；退避重连与执行可以并行。</p>
 <figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-disconnect.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-disconnect.svg" alt="场景二：执行中 WebSocket 断线"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
@@ -876,12 +878,12 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <p>远端任务正在执行，客户端收到取消请求。</p>
 <figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-cancel.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-cancel.svg" alt="场景五：服务端按调用 ID 取消"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
 <p><a href="./diagrams/runtime/07-cancel.html">打开顺序图：场景五：服务端按调用 ID 取消</a></p>
-<p>停止后续步骤，保存并回传取消结果；已完成操作不回滚。客户端远端会话保持只读。</p>
+<p>只停止该调用所属 run 的后续步骤并排空其已启动操作，保存并回传取消结果；已完成操作不回滚，其他 run 继续执行。所属页面保留供查看，客户端远端会话保持只读。</p>
 <h3>场景六：本轮执行超时</h3>
 <p>每轮使用统一、可配置的客户端兜底超时。图中展示远端任务的结果交付。</p>
 <figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-timeout.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-timeout.svg" alt="场景六：本轮执行超时"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
 <p><a href="./diagrams/runtime/07-timeout.html">打开顺序图：场景六：本轮执行超时</a></p>
-<p>停止后续步骤，记录并回传“执行超时”；本地会话展示相同终止原因。已完成操作不回滚，不自动重试。</p>
+<p>只停止超时 run 的后续步骤，记录并回传“执行超时”；本地会话展示相同终止原因。其他 run 继续执行，所属页面保留；已完成操作不回滚，不自动重试。</p>
 <h3>场景七：需要人工登录或验证</h3>
 <p>图中为远端任务：Chrome 操作触发需要人处理的登录或验证。</p>
 <figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-login.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-login.svg" alt="场景七：需要人工登录或验证"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
@@ -915,7 +917,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <ol>
 <li><strong>资源身份与发布</strong>：Skill、Agent 页面区分本地与官方资源，管理版本、只读配置、草稿实验、运维上传和手填标签发布。</li>
 <li><strong>同步与开始运行</strong>：在新会话入口展示版本核对、缺失物料下载和工具检查；准备失败说明原因，准备完成固定快照。</li>
-<li><strong>执行与结果交付</strong>：会话与任务横条展示执行过程；服务端会话只读，执行记录呈现快照、结果待确认与重启中断状态。</li>
+<li><strong>执行与结果交付</strong>：按会话分别展示运行状态、执行过程和停止入口；工作台切换对应会话页面，切换不改变后台运行目标。不同会话可并发，同会话运行中、其页面正在手动导航或总容量已满时显示忙；服务端会话只读，执行记录呈现快照、结果待确认与重启中断状态。</li>
 <li><strong>故障诊断上传</strong>：从执行记录选择指定 thread，查看 checkpoint 与材料清单，提交后以服务端持久保存的回执确认接收。</li>
 </ol>
 <p>设置中的桌面更新入口计划展示检查、下载、待安装和失败状态，尚未实现。</p>
@@ -973,7 +975,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 <tr>
 <td>07 执行恢复</td>
-<td>流式对话、真实工具过程、任务横条、忙时限制、停止、超时/中断提示；执行记录含 run/thread ID、起止时间、结果/错误、运行快照，可继续原会话</td>
+<td>流式对话、真实工具过程、按会话运行状态与停止、独立浏览器页面及切换；不同会话默认最多 4 轮并发，同会话运行中、其页面手动导航中或容量满时拒绝；超时/中断提示，执行记录含 run/thread ID、起止时间、结果/错误、运行快照，可继续原会话</td>
 <td>远端会话来源及只读流程、结果待确认/已交付状态</td>
 <td>WebSocket 任务与取消、结果确认与补传；本地记录/会话持久化、兜底超时、重启标记中断且不自动重跑已接入</td>
 </tr>
@@ -992,6 +994,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <ul>
 <li><strong>审批不属于本期 MVP 流程。</strong> 真实本地运行不经过操作审批；旧截图和演示适配器中的审批内容不代表桌面执行流程，正式发布也无审核环节。</li>
 <li><strong>本地草稿实验已完成。</strong> 先保存当前编辑，再选择 Agent 新建实验会话；运行时固定完整草稿，不修改模板 Agent 或已有会话。</li>
+<li><strong>本地多会话并发已接入。</strong> 每个 thread 固定浏览器页面；切换工作台不改变运行目标，停止仅作用于所选 run。真实 CDP 回归已覆盖一个页面导航阻塞时另一任务与脚本完成、独立取消、共享登录态及下一轮复用原页面；macOS 原生 CEF 隐藏页面的创建、切换与释放也已单独检查。历史单会话截图不作为这些并发行为的验证依据。</li>
 <li><strong>本地会话持久化不等于 checkpoint 持久化。</strong> <code>.sessions</code> 保存消息和装配快照，<code>.records</code> 保存运行证据；图状态已由 execution 使用原生 SQLite saver 单独保存，诊断导出与上传仍待实现，见第 09 章。</li>
 <li><strong>服务端接入与桌面更新仍未完成。</strong> 登录权限、官方同步/发布、WebSocket 任务与结果交付不能以本地链路通过作为完成依据。</li>
 </ul>
@@ -1274,7 +1277,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <tr>
 <td>远端任务</td>
 <td>WebSocket 下发调用／取消，持久接收结果并确认</td>
-<td>专用 Chrome 执行互斥、过程展示、结果落盘与补传</td>
+<td>按会话页面并发执行、过程展示、结果落盘与补传</td>
 </tr>
 <tr>
 <td>桌面更新</td>
@@ -1521,7 +1524,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <tr>
 <td><code>task.accepted</code></td>
 <td>客户端 → 服务端</td>
-<td><code>callId</code>、<code>threadId</code>、<code>runId</code>、接收时间；去重记录落盘且取得本轮执行名额后发送，只表示受理</td>
+<td><code>callId</code>、<code>threadId</code>、<code>runId</code>、接收时间；去重记录落盘且确认会话空闲与并发容量可用后发送，只表示受理</td>
 </tr>
 <tr>
 <td><code>task.status</code></td>
@@ -1550,8 +1553,8 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 </tbody></table>
 <h3>调用去重与忙时处理</h3>
-<p>客户端在鉴权范围和安装身份内持久记录 <code>callId</code> 与不可变调用内容，<strong>先检查重复，再争用执行名额</strong>。重复投递同一调用时，只返回已知受理状态或原结果，不开始第二次模型、MCP 或 Chrome 操作；同 ID 不同内容明确拒绝为 <code>call-conflict</code>。</p>
-<p>新调用只创建一个独立的客户端 thread／run。本地、实验与远端任务共用同一名额，准备和停止排空期间也占用；忙时保存并返回 <code>busy</code>，不进入客户端队列。服务端如决定重试执行，使用新 <code>callId</code>；重新发送已返回忙的旧 ID 仍得到原拒绝结果。</p>
+<p>客户端在鉴权范围和安装身份内持久记录 <code>callId</code> 与不可变调用内容，<strong>先检查重复，再检查会话状态与并发容量</strong>。重复投递同一调用时，只返回已知受理状态或原结果，不开始第二次模型、MCP 或 Chrome 操作；同 ID 不同内容明确拒绝为 <code>call-conflict</code>。</p>
+<p>新调用只创建一个独立的客户端 thread／run，并绑定自己的 Chrome 页面。本地、实验与远端任务共用有界并发容量，默认最多 4 轮，准备和停止排空期间也占用；同一 thread 已有运行、其绑定页面正在手动导航或总容量已满时保存并返回 <code>busy</code>，不进入客户端队列。不同 thread 的任务可以同时执行；切换工作台显示页不改变各 run 绑定的目标。服务端如决定重试执行，使用新 <code>callId</code>；重新发送已返回忙的旧 ID 仍得到原拒绝结果。</p>
 <p>去重记录不能在服务端仍可能重投时提前清理；清理期限覆盖约定的最大重投窗口，过期调用明确拒绝，不能当成新任务。过期、权限不足、版本不匹配和准备失败均有明确结果，不用“收到消息”代替成功执行。</p>
 <h3>终态、结果补传与取消</h3>
 <p>执行终态区分 <code>completed</code>、<code>failed</code>、<code>cancelled</code>、<code>timed-out</code>、<code>interrupted-unknown</code>；未受理调用另返回 <code>busy</code> 等拒绝类别。终态和结果交付状态分别保存，运行结束先落盘，再发送结果。结果包含实际 Agent／Skill、启用工具／MCP、桌面版本及模型参数，排除凭据。</p>

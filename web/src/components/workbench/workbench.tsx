@@ -210,9 +210,18 @@ export function WorkbenchPanel({
     desktop.getState
   )
   const { browser, task } = desktopState
+  const browserThreadId = desktopState.browserThreadId ?? null
   const { copy } = useCopyToClipboard()
-  const [hostError, setHostError] = useState("")
-  const [navigating, setNavigating] = useState(false)
+  const [hostFailure, setHostFailure] = useState<{
+    threadId: string | null
+    message: string
+  } | null>(null)
+  const hostError =
+    hostFailure?.threadId === browserThreadId ? hostFailure.message : ""
+  const [navigatingPages, setNavigatingPages] = useState<
+    ReadonlySet<string | null>
+  >(() => new Set())
+  const navigating = navigatingPages.has(browserThreadId)
   const reduce = useReducedMotion()
   const counter = useRef(1)
   const [width, setWidth] = useState(DEFAULT_WIDTH)
@@ -236,6 +245,7 @@ export function WorkbenchPanel({
   const [activeId, setActiveId] = useState("tab-1")
   const [addressDraft, setAddressDraft] = useState<{
     tabId: string
+    threadId: string | null
     url: string
     value: string
   } | null>(null)
@@ -247,7 +257,7 @@ export function WorkbenchPanel({
     )
     setActiveId("browser")
     setAddressDraft(null)
-    setHostError("")
+    setHostFailure(null)
   }, [])
   useImperativeHandle(
     ref,
@@ -278,7 +288,10 @@ export function WorkbenchPanel({
   const browserView = view.type === "start" || view.type === "browser"
   const currentUrl = view.type === "browser" ? browser.url : ""
   const draftUrl =
-    !task && addressDraft?.tabId === activeId && addressDraft.url === currentUrl
+    !task &&
+    addressDraft?.tabId === activeId &&
+    addressDraft.threadId === browserThreadId &&
+    addressDraft.url === currentUrl
       ? addressDraft.value
       : currentUrl
   const navigationDisabled =
@@ -287,7 +300,7 @@ export function WorkbenchPanel({
   function selectTab(id: string) {
     setActiveId(id)
     setAddressDraft(null)
-    setHostError("")
+    setHostFailure(null)
   }
 
   function updateActiveView(next: WorkbenchView) {
@@ -329,25 +342,41 @@ export function WorkbenchPanel({
     const value = url.trim()
     if (!value || navigationDisabled) return
     openBrowser()
-    setAddressDraft({ tabId: "browser", url: browser.url, value })
+    setAddressDraft({
+      tabId: "browser",
+      threadId: browserThreadId,
+      url: browser.url,
+      value,
+    })
     void runBrowserAction(async () => {
       await desktop.navigate(value)
-      setAddressDraft((current) => (current?.value === value ? null : current))
+      setAddressDraft((current) =>
+        current?.threadId === browserThreadId && current.value === value
+          ? null
+          : current
+      )
     })
   }
 
   async function runBrowserAction(action: () => Promise<void>) {
     if (navigationDisabled) return
-    setHostError("")
-    setNavigating(true)
+    setHostFailure(null)
+    setNavigatingPages((current) => new Set(current).add(browserThreadId))
     try {
       await action()
     } catch (error) {
-      setHostError(
-        error instanceof Error ? error.message : "页面操作失败，请重试。"
-      )
+      if ((desktop.getState().browserThreadId ?? null) === browserThreadId)
+        setHostFailure({
+          threadId: browserThreadId,
+          message:
+            error instanceof Error ? error.message : "页面操作失败，请重试。",
+        })
     } finally {
-      setNavigating(false)
+      setNavigatingPages((current) => {
+        const next = new Set(current)
+        next.delete(browserThreadId)
+        return next
+      })
     }
   }
 
@@ -551,6 +580,7 @@ export function WorkbenchPanel({
                   onChange={(event) =>
                     setAddressDraft({
                       tabId: activeId,
+                      threadId: browserThreadId,
                       url: currentUrl,
                       value: event.target.value,
                     })
@@ -592,12 +622,17 @@ export function WorkbenchPanel({
                   disabled={view.type !== "browser" || !browser.url}
                   onSelect={() => {
                     if (view.type === "browser") {
-                      setHostError("")
-                      void host
-                        .openExternal(browser.url)
-                        .catch(() =>
-                          setHostError("无法打开链接，请检查权限后重试。")
+                      setHostFailure(null)
+                      void host.openExternal(browser.url).catch(() => {
+                        if (
+                          (desktop.getState().browserThreadId ?? null) ===
+                          browserThreadId
                         )
+                          setHostFailure({
+                            threadId: browserThreadId,
+                            message: "无法打开链接，请检查权限后重试。",
+                          })
+                      })
                     }
                   }}
                 >
@@ -656,6 +691,7 @@ export function WorkbenchPanel({
               simulated={desktopState.simulated}
               visible={open}
               interactive={!desktopState.task}
+              browserThreadId={browserThreadId}
               setBrowserViewport={desktop.setBrowserViewport}
               canRetry={!navigationDisabled && Boolean(browser.url)}
               onRetry={() => void runBrowserAction(() => desktop.reload())}

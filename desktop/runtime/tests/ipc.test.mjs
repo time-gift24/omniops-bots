@@ -33,7 +33,9 @@ test('JSONL entry returns structured safe errors, exact snapshots and clean shut
   try {
     await ready.promise;
     const status = (await rpc('status')).result;
-    assert.deepEqual(Object.keys(status).sort(), ['browser', 'browserRequest', 'simulated', 'task']);
+    assert.deepEqual(Object.keys(status).sort(), ['browser', 'browserRequest', 'browserThreadId', 'simulated', 'task', 'tasks']);
+    assert.deepEqual(status.tasks, []);
+    assert.equal(status.browserThreadId, null);
     assert.equal(status.simulated, false);
     assert.deepEqual((await rpc('models_list')).result, []);
     assert.equal((await rpc('run_get', { runId: 'missing' })).error.kind, 'invalid-request');

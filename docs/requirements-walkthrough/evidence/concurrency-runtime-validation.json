@@ -1,0 +1,128 @@
+{
+  "verifiedAt": "2026-10-19T10:04:21.343Z",
+  "model": {
+    "browserBinding": "threadId -> persistent targetId",
+    "maxConcurrentRunsDefault": 4,
+    "sameThread": "one active run, including preparation/drain/settlement",
+    "sharedLogin": true,
+    "shutdown": "release owned pages only"
+  },
+  "checks": [
+    {
+      "name": "Rust workspace",
+      "passed": true,
+      "unitTests": 71,
+      "commands": [
+        "cargo fmt --all -- --check",
+        "SQLX_OFFLINE=true cargo check --workspace --all-targets --all-features --locked",
+        "SQLX_OFFLINE=true cargo clippy --workspace --all-targets --all-features --locked -- -D warnings",
+        "SQLX_OFFLINE=true cargo test --workspace --lib --bins --all-features --locked"
+      ],
+      "environment": {
+        "CEF_PATH": "/Users/wanyaozhong/Library/Caches/tauri-cef",
+        "TAURI_FRONTEND_PATH": "/Users/wanyaozhong/Projects/omniops-bots/web"
+      }
+    },
+    {
+      "name": "Node runtime",
+      "passed": true,
+      "unitTests": 86,
+      "browserTests": 3,
+      "commands": [
+        "npm test",
+        "npm run typecheck",
+        "npm run test:browser"
+      ],
+      "directory": "desktop/runtime"
+    },
+    {
+      "name": "Frontend",
+      "passed": true,
+      "unitTests": 121,
+      "commands": [
+        "npm run typecheck",
+        "npm run lint",
+        "npm test",
+        "npm run build"
+      ],
+      "directory": "web",
+      "existingWarning": "Vite chunk size exceeds 500 kB"
+    },
+    {
+      "name": "Browser interaction",
+      "passed": true,
+      "cases": [
+        "runtime-concurrency",
+        "native-browser-viewport",
+        "browser-workbench at 1280 and 390",
+        "local-runtime full App at 1440 with independent task banners and stop acknowledgements",
+        "chat-concurrency at 1280 and 390",
+        "retry-lock",
+        "composer",
+        "chat-subscriptions"
+      ]
+    },
+    {
+      "name": "Native CEF",
+      "passed": true,
+      "report": "concurrency-native-cef.json",
+      "cases": [
+        "two distinct native targets",
+        "hidden page loads/evaluates while sibling shown",
+        "selection and independent release",
+        "current scoped Playwright transport via CEF HTTP endpoint"
+      ]
+    },
+    {
+      "name": "Windows source check",
+      "passed": true,
+      "runtimeExecuted": false,
+      "command": "cargo xwin check -p omniops-bots-desktop --target x86_64-pc-windows-msvc --release --all-targets --all-features --locked --offline",
+      "existingWarning": "prepare_bootstrap is unused in stub binary"
+    },
+    {
+      "name": "Walkthrough",
+      "passed": true,
+      "readerLayoutChecks": 22,
+      "contentChecks": 5,
+      "diagrams": 10,
+      "reports": [
+        "concurrency-reader-browser.json",
+        "concurrency-diagram-browser.json",
+        "concurrency-diagram-delivery.json",
+        "concurrency-svg-exports.json",
+        "concurrency-visual-review.json"
+      ]
+    }
+  ],
+  "knownHarnessLimitation": "Optional full App local-runtime fixture at 390px fails in a pre-existing sidebar lookup before the new concurrency section. New chat and workbench concurrency regressions pass at 390px.",
+  "preserved": [
+    "existing unrelated working tree edits",
+    "AGENTS.md",
+    "CONTEXT.md",
+    "web/AGENTS.md"
+  ],
+  "sourceHashes": "concurrency-source-hashes.json",
+  "isolatedCommitValidation": {
+    "verifiedAt": "2026-10-19T12:48:51.515912+00:00",
+    "scope": "Exported Git index excluding pre-existing sidebar/resource/assembly edits; working tree was not modified.",
+    "frontend": {
+      "typecheck": true,
+      "lint": true,
+      "unitTests": 121,
+      "build": true
+    },
+    "runtime": {
+      "unitTests": 85,
+      "typecheck": true
+    },
+    "browserFixturesAt1440": [
+      "runtime-concurrency",
+      "chat-concurrency",
+      "native-browser-viewport",
+      "browser-workbench",
+      "local-runtime"
+    ],
+    "fixtureNotes": "Temporary Git metadata was initialized in the exported snapshot for repository configuration tests. Symlinked font assets were blocked by the temporary Vite allow list; functional browser assertions passed."
+  }
+}

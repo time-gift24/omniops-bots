@@ -12,6 +12,7 @@ const deferred = () => Promise.withResolvers()
 const tick = () => new Promise(resolve => setTimeout(resolve, 0))
 const metadata = { providerName: "test", protocolName: "deepagents", requestedModel: "test-model" }
 const empty = () => ({ simulated: false, task: null, browserRequest: 0, browser: { url: "", title: "", status: "empty", canGoBack: false, canGoForward: false } })
+const snapshot = (tasks, browserThreadId = null) => ({ ...empty(), tasks, browserThreadId })
 const input = { messages: [{ role: "user", text: "browse" }] }
 const completed = text => ({ type: "completed", response: { assistant: { parts: [{ type: "text", text }] }, metadata, usage: {}, finish: { reason: "stop" } } })
 function bridge(handler = () => null) {
@@ -40,6 +41,7 @@ test("events before start acknowledgement are buffered; stop waits for acknowled
   })
   const runtime = createTauriRuntime(host)
   await runtime.initialize()
+  await runtime.desktop.selectBrowserThread("owner")
   const gateway = runtime.gatewayFor("owner")
   const stream = gateway.stream(input)[Symbol.asyncIterator]()
   assert.equal((await stream.next()).value.type, "started")
@@ -57,7 +59,7 @@ test("events before start acknowledgement are buffered; stop waits for acknowled
   host.emit({ event: "chat_event", runId: args.runId, threadId: "owner", data: { type: "failed", error: { kind: "aborted", message: "stopped" } } })
   host.emit({ event: "desktop_state", state: empty() })
   assert.equal(runtime.desktop.getState().task.phase, "stopping", "terminal and null state cannot release the slot before acknowledgement")
-  const collision = await runtime.gatewayFor("other").stream(input)[Symbol.asyncIterator]().next()
+  const collision = await runtime.gatewayFor("owner").stream(input)[Symbol.asyncIterator]().next()
   assert.equal(collision.value.error.kind, "invalid-request")
   cleaned.resolve({ stopped: true })
   await stopping
@@ -76,6 +78,7 @@ test("failed stop acknowledgement remains retryable after the stream is terminal
   })
   const runtime = createTauriRuntime(host)
   await runtime.initialize()
+  await runtime.desktop.selectBrowserThread("t")
   const gateway = runtime.gatewayFor("t")
   const iterator = gateway.stream(input)[Symbol.asyncIterator]()
   await iterator.next()
@@ -92,14 +95,15 @@ test("failed stop acknowledgement remains retryable after the stream is terminal
   assert.equal(runtime.desktop.getState().task, null)
 })
 
-test("one slot is acquired before asynchronous input preparation, and unsubscribing does not stop a task", async t => {
+test("thread reservation precedes asynchronous input preparation, and unsubscribing does not stop a task", async t => {
   const { createTauriRuntime } = await load(t)
   const context = deferred()
   const host = bridge((_command, args) => args.method === "chat_start" ? { runId: args.params.runId } : {})
   const runtime = createTauriRuntime(host)
   await runtime.initialize()
+  await runtime.desktop.selectBrowserThread("a")
   runtime.setContextResolver(() => context.promise)
-  const first = runtime.gatewayFor("a"), second = runtime.gatewayFor("b")
+  const first = runtime.gatewayFor("a"), second = runtime.gatewayFor("a")
   const iterator = first.stream(input)[Symbol.asyncIterator]()
   const firstEvent = iterator.next()
   const unsubscribe = runtime.desktop.subscribe(() => {})
@@ -112,6 +116,102 @@ test("one slot is acquired before asynchronous input preparation, and unsubscrib
   await stopped
   assert.equal((await firstEvent).value.error.kind, "aborted")
   assert.equal(host.calls.some(([, args]) => args?.method === "chat_start"), false)
+})
+
+test("concurrent preparations retain each thread through snapshots and cancelling one leaves the other runnable", async t => {
+  const { createTauriRuntime } = await load(t)
+  const preparation = new Map([["a", deferred()], ["b", deferred()]])
+  const accepted = new Map()
+  const host = bridge((command, args) => {
+    if (command === "runtime_prepare_run") return preparation.get(args.threadId).promise
+    if (args.method === "chat_start") {
+      const run = args.params
+      accepted.set(run.threadId, run)
+      host.emit({ event: "chat_event", runId: run.runId, threadId: run.threadId, data: { type: "started", metadata } })
+      return { runId: run.runId }
+    }
+  })
+  const runtime = createTauriRuntime(host)
+  await runtime.initialize()
+  await runtime.desktop.selectBrowserThread("b")
+  const first = runtime.gatewayFor("a"), second = runtime.gatewayFor("b")
+  const a = first.stream(input)[Symbol.asyncIterator](), b = second.stream(input)[Symbol.asyncIterator]()
+  const firstEvent = a.next(), secondEvent = b.next()
+  const preparing = runtime.desktop.getState().tasks
+  assert.deepEqual(preparing.map(task => [task.threadId, task.phase]), [["a", "preparing"], ["b", "preparing"]])
+  assert.deepEqual(host.calls.filter(([command]) => command === "runtime_prepare_run").map(([, args]) => args.threadId), ["a", "b"])
+  const collision = await runtime.gatewayFor("a").stream(input)[Symbol.asyncIterator]().next()
+  assert.equal(collision.value.error.kind, "invalid-request")
+  host.emit({ event: "desktop_state", state: snapshot([], "b") })
+  assert.equal(runtime.desktop.getState().tasks.length, 2, "queued empty snapshot cannot erase either local preparation")
+  assert.equal(runtime.desktop.getState().task.threadId, "b")
+  await assert.rejects(runtime.desktop.navigate("https://example.com"), /等待/)
+  await runtime.desktop.selectBrowserThread(null)
+  await runtime.desktop.navigate("https://example.com")
+  assert.equal(runtime.desktop.getState().task, null, "the manual page is independent from preparing tasks")
+  const stopped = first.abort()
+  assert.equal(runtime.desktop.getState().tasks.find(task => task.threadId === "a").phase, "stopping")
+  preparation.get("a").resolve()
+  await stopped
+  assert.equal((await firstEvent).value.error.kind, "aborted")
+  assert.equal((await a.next()).done, true)
+  assert.deepEqual(runtime.desktop.getState().tasks.map(task => task.threadId), ["b"])
+  preparation.get("b").resolve()
+  assert.equal((await secondEvent).value.type, "started")
+  assert.equal(accepted.has("a"), false)
+  assert.equal(accepted.has("b"), true)
+  const run = accepted.get("b")
+  host.emit({ event: "chat_event", runId: run.runId, threadId: "a", data: completed("wrong thread") })
+  assert.equal(runtime.desktop.getState().tasks.length, 1, "event identity includes both run and thread")
+  host.emit({ event: "chat_event", runId: run.runId, threadId: "b", data: completed("finished b") })
+  assert.equal((await b.next()).value.response.assistant.parts[0].text, "finished b")
+  assert.equal((await b.next()).done, true)
+  host.emit({ event: "desktop_state", state: snapshot(preparing, "b") })
+  assert.deepEqual(runtime.desktop.getState().tasks, [], "late snapshots cannot resurrect runs after their streams have been removed")
+})
+
+test("concurrent stops retain separate acknowledgements and terminal events clear only their own task", async t => {
+  const { createTauriRuntime } = await load(t)
+  const accepted = new Map(), cleanup = new Map(), stopCounts = new Map()
+  const host = bridge((_command, args) => {
+    if (args.method === "chat_start") {
+      const run = args.params
+      accepted.set(run.threadId, run)
+      cleanup.set(run.runId, deferred())
+      host.emit({ event: "chat_event", runId: run.runId, threadId: run.threadId, data: { type: "started", metadata } })
+      return { runId: run.runId }
+    }
+    if (args.method === "stop") {
+      stopCounts.set(args.params.runId, (stopCounts.get(args.params.runId) ?? 0) + 1)
+      return cleanup.get(args.params.runId).promise
+    }
+  })
+  const runtime = createTauriRuntime(host)
+  await runtime.initialize()
+  await runtime.desktop.selectBrowserThread("b")
+  const a = runtime.gatewayFor("a"), b = runtime.gatewayFor("b")
+  const streams = [a.stream(input)[Symbol.asyncIterator](), b.stream(input)[Symbol.asyncIterator]()]
+  await Promise.all(streams.map(stream => stream.next()))
+  const stoppingA = a.abort(), stoppingB = b.abort()
+  assert.equal(a.abort(), stoppingA)
+  assert.equal(b.abort(), stoppingB)
+  await tick()
+  const before = runtime.desktop.getState().tasks
+  assert.deepEqual(before.map(task => task.phase), ["stopping", "stopping"])
+  for (const run of accepted.values()) host.emit({ event: "chat_event", runId: run.runId, threadId: run.threadId, data: { type: "failed", error: { kind: "aborted", message: "stopped" } } })
+  host.emit({ event: "desktop_state", state: snapshot([], "b") })
+  assert.equal(runtime.desktop.getState().tasks.length, 2, "each terminal event still needs its own stop acknowledgement")
+  cleanup.get(accepted.get("a").runId).resolve({ stopped: true })
+  await stoppingA
+  assert.deepEqual(runtime.desktop.getState().tasks.map(task => task.threadId), ["b"])
+  assert.equal(runtime.desktop.getState().task.phase, "stopping")
+  host.emit({ event: "desktop_state", state: snapshot(before, "b") })
+  assert.deepEqual(runtime.desktop.getState().tasks.map(task => task.threadId), ["b"])
+  cleanup.get(accepted.get("b").runId).resolve({ stopped: true })
+  await stoppingB
+  assert.deepEqual([...stopCounts.values()], [1, 1])
+  assert.deepEqual(runtime.desktop.getState().tasks, [])
+  for (const stream of streams) { assert.equal((await stream.next()).value.error.kind, "aborted"); assert.equal((await stream.next()).done, true) }
 })
 
 test("approval submission locks synchronously, failed stale submission cannot replace newer approval", async t => {
@@ -198,10 +298,51 @@ test("native viewport writes coalesce while pending and hiding never stops a tas
   pending.resolve({})
   await first
   assert.equal(host.calls.length, 2)
-  assert.deepEqual(host.calls.at(-1)[1].bounds, { x: 5, y: 6, width: 500, height: 600, visible: true, interactive: false })
+  assert.deepEqual(host.calls.at(-1)[1].bounds, { x: 5, y: 6, width: 500, height: 600, pageId: "__manual__", visible: true, interactive: false })
   await runtime.desktop.setBrowserViewport(null)
   assert.equal(host.calls.at(-1)[1].bounds.visible, false)
   assert.equal(host.calls.some(([, args]) => args?.method === "stop"), false)
+})
+
+test("browser selection resends unchanged viewport bounds with the selected page identity", async t => {
+  const { createTauriRuntime } = await load(t)
+  const pending = deferred()
+  let writes = 0
+  const host = bridge(command => command === "browser_set_bounds" && writes++ === 0 ? pending.promise : {})
+  const runtime = createTauriRuntime(host)
+  await runtime.initialize()
+  const bounds = { x: 5, y: 6, width: 500, height: 600, interactive: false }
+  const initial = runtime.desktop.setBrowserViewport(bounds)
+  await runtime.desktop.selectBrowserThread("a")
+  await runtime.desktop.selectBrowserThread("b")
+  pending.resolve({})
+  await initial
+  const sent = host.calls.filter(([command]) => command === "browser_set_bounds")
+  assert.deepEqual(sent.map(([, args]) => args.bounds.pageId), ["__manual__", "b"])
+  assert.deepEqual(sent.at(-1)[1].bounds, { ...bounds, pageId: "b", visible: true })
+  assert.equal(runtime.desktop.getState().browserThreadId, "b")
+  await runtime.desktop.selectBrowserThread(null)
+  await tick()
+  assert.equal(host.calls.at(-1)[1].bounds.pageId, "__manual__")
+})
+
+test("navigation captures its page identity and an outstanding page does not block another page", async t => {
+  const { createTauriRuntime } = await load(t)
+  const waiting = deferred()
+  const host = bridge((_command, args) => args.method === "navigate" && args.params.threadId === "a" ? waiting.promise : {})
+  const runtime = createTauriRuntime(host)
+  await runtime.initialize()
+  await runtime.desktop.selectBrowserThread("a")
+  const first = runtime.desktop.navigate("https://example.com/a")
+  await runtime.desktop.selectBrowserThread("b")
+  await runtime.desktop.navigate("https://example.com/b")
+  assert.deepEqual(host.calls.filter(([, args]) => args?.method === "navigate").map(([, args]) => args.params.threadId), ["a", "b"])
+  await runtime.desktop.selectBrowserThread("a")
+  await assert.rejects(runtime.desktop.reload(), /等待/)
+  waiting.resolve({ navigated: true })
+  await first
+  await runtime.desktop.reload()
+  assert.deepEqual(host.calls.filter(([, args]) => args?.method === "reload").at(-1)[1].params, { threadId: "a" })
 })
 
 test("workspace binding failure only blocks Changes, can retry, and file operations retain exact scopes", async t => {
@@ -249,6 +390,7 @@ test("native preparation gate precedes context and cancellation releases it with
   const host = bridge((command) => command === "runtime_prepare_run" ? preparation.promise : null)
   const runtime = createTauriRuntime(host)
   await runtime.initialize()
+  await runtime.desktop.selectBrowserThread("preparing")
   runtime.setContextResolver(async () => { contextCalls++; return {} })
   const gateway = runtime.gatewayFor("preparing")
   const iterator = gateway.stream(input)[Symbol.asyncIterator]()

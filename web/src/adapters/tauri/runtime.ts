@@ -5,6 +5,7 @@ import type {
   BrowserViewport,
   DesktopRuntime,
   DesktopSnapshot,
+  DesktopTask,
 } from "@/desktop/runtime"
 import {
   object,
@@ -41,6 +42,8 @@ type PendingRun = {
 }
 const initialState: DesktopSnapshot = {
   simulated: false,
+  tasks: [],
+  browserThreadId: null,
   task: null,
   browserRequest: 0,
   browser: {
@@ -72,22 +75,55 @@ export function createTauriRuntime(bridge: TauriBridge) {
   ) => Promise<RunContext> = async () => ({})
   const listeners = new Set<() => void>()
   const runs = new Map<string, PendingRun>()
-  let pendingStop: { runId: string; confirmation?: Promise<void> } | undefined
+  const pendingStop = new Map<string, { confirmation?: Promise<void> }>()
+  const terminalRuns = new Set<string>()
   const request = (method: string, params: Record<string, unknown> = {}) =>
     bridge.invoke("runtime_request", { method, params })
+  const tasksOf = (snapshot = state) =>
+    snapshot.tasks ?? (snapshot.task ? [snapshot.task] : [])
   const publish = (next: DesktopSnapshot) => {
-    state = next
+    const tasks = tasksOf(next)
+    const browserThreadId =
+      next.browserThreadId === undefined
+        ? (next.task?.threadId ?? null)
+        : next.browserThreadId
+    const selectionChanged = state.browserThreadId !== browserThreadId
+    state = {
+      ...next,
+      tasks,
+      browserThreadId,
+      task: tasks.find((task) => task.threadId === browserThreadId) ?? null,
+    }
     version++
     for (const listener of [...listeners]) listener()
+    if (selectionChanged)
+      void setBrowserViewport(
+        viewport ? { ...viewport, interactive: false } : null
+      ).catch(() => {})
   }
+  const updateTask = (task: DesktopTask) =>
+    publish({
+      ...state,
+      tasks: tasksOf().map((current) =>
+        current.runId === task.runId ? task : current
+      ),
+    })
   const clearTask = (runId: string) => {
-    if (state.task?.runId === runId) publish({ ...state, task: null, closeBlocked: false })
+    terminalRuns.add(runId)
+    const tasks = tasksOf().filter((task) => task.runId !== runId)
+    if (tasks.length !== tasksOf().length)
+      publish({
+        ...state,
+        tasks,
+        closeBlocked: tasks.length ? state.closeBlocked : false,
+      })
   }
   const push = (run: PendingRun, event: ChatEvent) => {
     if (run.terminal) return
     run.events.push(event)
     if (event.type === "completed" || event.type === "failed") {
       run.terminal = true
+      terminalRuns.add(run.runId)
       if (!run.stopping) clearTask(run.runId)
     }
     run.wake?.()
@@ -96,10 +132,11 @@ export function createTauriRuntime(bridge: TauriBridge) {
   const disconnected = (message: string) => {
     connected = false
     unavailable = true
-    pendingStop = undefined
+    pendingStop.clear()
     for (const run of runs.values()) push(run, failure(message))
     publish({
       ...state,
+      tasks: [],
       task: null,
       closeBlocked: false,
       browser: { ...state.browser, status: "error", error: message },
@@ -115,20 +152,33 @@ export function createTauriRuntime(bridge: TauriBridge) {
       }
       if (event.event === "desktop_state") {
         const snapshot = readDesktopSnapshot(event.state)
-        if (pendingStop && state.task?.runId === pendingStop.runId) {
-          publish({ ...snapshot, task: { ...state.task, phase: "stopping" } })
-          return
+        if (object(event.state).browserThreadId === undefined)
+          snapshot.browserThreadId =
+            state.browserThreadId ?? snapshot.browserThreadId
+        const tasks = tasksOf(snapshot).filter(
+          (task) => !terminalRuns.has(task.runId)
+        )
+        for (const task of tasksOf()) {
+          const run = runs.get(task.runId)
+          const stopping = pendingStop.get(task.runId)
+          if (stopping || (run && (!run.terminal || run.stopping))) {
+            const index = tasks.findIndex(
+              (current) => current.runId === task.runId
+            )
+            const retained = stopping?.confirmation
+              ? { ...task, phase: "stopping" as const }
+              : task
+            if (index < 0) tasks.push(retained)
+            else if (stopping || run?.stopping) tasks[index] = retained
+          }
         }
-        // A queued final state must not resurrect a run already settled locally.
-        if (snapshot.task && runs.get(snapshot.task.runId)?.terminal) return
-        const preparing = [...runs.values()].find(
-          (run) => !run.started && !run.terminal
-        )
-        publish(
-          !snapshot.task && preparing && state.task?.runId === preparing.runId
-            ? { ...snapshot, task: state.task }
-            : snapshot
-        )
+        publish({
+          ...snapshot,
+          tasks,
+          closeBlocked: tasks.length
+            ? state.closeBlocked || snapshot.closeBlocked
+            : false,
+        })
       } else if (event.event === "chat_event") {
         const run = runs.get(string(event.runId))
         if (run && run.threadId === event.threadId)
@@ -143,27 +193,22 @@ export function createTauriRuntime(bridge: TauriBridge) {
     }
   }
   const stop = (runId: string): Promise<void> => {
-    if (pendingStop?.runId === runId && pendingStop.confirmation)
-      return pendingStop.confirmation
+    const pending = pendingStop.get(runId)?.confirmation
+    if (pending) return pending
     const run = runs.get(runId)
-    if (state.task?.runId !== runId)
-      return Promise.reject(new Error("这个任务已结束。"))
+    const previous = tasksOf().find((task) => task.runId === runId)
+    if (!previous) return Promise.reject(new Error("这个任务已结束。"))
     const owner = {
-      runId,
       confirmation: undefined as Promise<void> | undefined,
     }
-    pendingStop = owner
+    pendingStop.set(runId, owner)
     if (run) run.stopping = true
-    const previous = state.task
-    publish({
-      ...state,
-      task: { ...previous, phase: "stopping", error: undefined },
-    })
+    updateTask({ ...previous, phase: "stopping", error: undefined })
     const stopping = (async () => {
       if (run) await run.start
       // Even a terminal stream event cannot substitute for the stop acknowledgement.
       if (!run || run.started) await request("stop", { runId })
-      if (pendingStop === owner) pendingStop = undefined
+      if (pendingStop.get(runId) === owner) pendingStop.delete(runId)
       if (run) {
         run.stopping = false
         if (!run.terminal) push(run, failure("任务已停止。", "aborted"))
@@ -171,51 +216,51 @@ export function createTauriRuntime(bridge: TauriBridge) {
       }
       clearTask(runId)
     })().catch(() => {
-      if (pendingStop === owner) pendingStop = undefined
+      if (pendingStop.get(runId) === owner) owner.confirmation = undefined
       if (unavailable) {
         clearTask(runId)
         return
       }
-      if (run) run.stopping = false
-      if (state.task?.runId === runId)
-        publish({
-          ...state,
-          task: {
-            ...previous,
-            ...(run?.terminal ? { phase: "running", approval: undefined } : {}),
-            error: "停止未能完成，请重试。",
-          },
+      if (tasksOf().some((task) => task.runId === runId))
+        updateTask({
+          ...previous,
+          ...(run?.terminal ? { phase: "running", approval: undefined } : {}),
+          error: "停止未能完成，请重试。",
         })
       throw new Error("停止未能完成，请重试。")
     })
     owner.confirmation = stopping
     return stopping
   }
-  let navigating = false
+  const navigating = new Set<string | null>()
   const navigate = async (method: string, params?: Record<string, unknown>) => {
     if (!connected) throw new Error("桌面服务未连接。")
-    if (state.task || navigating)
+    const threadId = state.browserThreadId ?? null
+    if (state.task || navigating.has(threadId))
       throw new Error("请等待当前任务或页面加载结束。")
-    navigating = true
+    navigating.add(threadId)
     try {
-      await request(method, params)
+      await request(method, { ...params, threadId })
     } catch {
       throw new Error("浏览器操作未能完成，请重试。")
     } finally {
-      navigating = false
+      navigating.delete(threadId)
     }
   }
   let viewport: BrowserViewport | null = null
+  let viewportPageId = "__manual__"
   let viewportKey = ""
   let viewportWrite: Promise<void> | undefined
   let viewportVersion = 0
   const setBrowserViewport = (
     bounds: BrowserViewport | null
   ): Promise<void> => {
-    const key = JSON.stringify(bounds)
+    const pageId = state.browserThreadId ?? "__manual__"
+    const key = JSON.stringify({ bounds, pageId })
     if (key === viewportKey) return viewportWrite ?? Promise.resolve()
     viewportKey = key
     viewport = bounds
+    viewportPageId = pageId
     viewportVersion++
     if (!viewportWrite) {
       let complete!: () => void
@@ -231,10 +276,12 @@ export function createTauriRuntime(bridge: TauriBridge) {
           while (sent !== viewportVersion) {
             sent = viewportVersion
             const bounds = viewport
+            const pageId = viewportPageId
             await bridge.invoke("browser_set_bounds", {
               bounds: bounds
-                ? { ...bounds, visible: true }
+                ? { ...bounds, pageId, visible: true }
                 : {
+                    pageId,
                     x: 0,
                     y: 0,
                     width: 0,
@@ -256,6 +303,7 @@ export function createTauriRuntime(bridge: TauriBridge) {
     }
     return viewportWrite
   }
+  let browserSelection = 0
   const desktop: DesktopRuntime = {
     getState: () => state,
     subscribe: (listener) => {
@@ -265,8 +313,19 @@ export function createTauriRuntime(bridge: TauriBridge) {
       }
     },
     setBrowserViewport,
+    async selectBrowserThread(threadId) {
+      if (!connected || disposed) throw new Error("桌面服务未连接。")
+      const selection = ++browserSelection
+      try {
+        await request("browser_select", { threadId })
+        if (selection === browserSelection && !unavailable)
+          publish({ ...state, browserThreadId: threadId })
+      } catch {
+        throw new Error("浏览器会话切换失败，请重试。")
+      }
+    },
     decide: async (decision: ApprovalDecision) => {
-      const task = state.task
+      const task = tasksOf().find((task) => task.runId === decision.runId)
       if (
         !task ||
         task.runId !== decision.runId ||
@@ -274,19 +333,18 @@ export function createTauriRuntime(bridge: TauriBridge) {
         task.phase !== "awaiting-approval"
       )
         throw new Error("此操作已更新，请查看当前待批准操作。")
-      publish({
-        ...state,
-        task: { ...task, phase: "submitting", error: undefined },
-      })
+      updateTask({ ...task, phase: "submitting", error: undefined })
       try {
         await request("decide", { ...decision })
       } catch {
-        if (
-          state.task?.runId === task.runId &&
-          state.task.approval?.id === task.approval?.id &&
-          state.task.phase === "submitting"
+        const current = tasksOf().find(
+          (current) => current.runId === task.runId
         )
-          publish({ ...state, task })
+        if (
+          current?.approval?.id === task.approval?.id &&
+          current?.phase === "submitting"
+        )
+          updateTask(task)
         throw new Error("审批未能提交，内容已保留，请重试。")
       }
     },
@@ -305,11 +363,11 @@ export function createTauriRuntime(bridge: TauriBridge) {
           yield failure("桌面服务未连接，请重新打开应用。")
           return
         }
-        if (state.task || navigating) {
-          yield failure(
-            "其他会话有任务正在执行，请等待结束。",
-            "invalid-request"
-          )
+        if (
+          tasksOf().some((task) => task.threadId === threadId) ||
+          navigating.has(threadId)
+        ) {
+          yield failure("此会话有任务正在执行，请等待结束。", "invalid-request")
           return
         }
         const run: PendingRun = {
@@ -324,18 +382,24 @@ export function createTauriRuntime(bridge: TauriBridge) {
         currentRun = run
         publish({
           ...state,
-          task: {
-            runId: run.runId,
-            threadId,
-            title: input.messages.at(-1)?.text.slice(0, 80) ?? "正在执行任务",
-            phase: "preparing",
-          },
+          tasks: [
+            ...tasksOf(),
+            {
+              runId: run.runId,
+              threadId,
+              title: input.messages.at(-1)?.text.slice(0, 80) ?? "正在执行任务",
+              phase: "preparing",
+            },
+          ],
           closeBlocked: false,
         })
         run.start = (async () => {
           let serialized, context
           try {
-            await bridge.invoke("runtime_prepare_run", { runId: run.runId })
+            await bridge.invoke("runtime_prepare_run", {
+              runId: run.runId,
+              threadId,
+            })
             serialized = await serializeRequest(input)
             context = await resolveContext(threadId)
           } catch (error) {

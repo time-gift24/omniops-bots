@@ -38,10 +38,25 @@ export interface DesktopTask {
 export interface DesktopSnapshot {
   closeBlocked?: boolean
   simulated: boolean
+  /** Active runs across all threads. Older demo adapters expose only task. */
+  tasks?: DesktopTask[]
+  /** Thread owning the visible page; null selects the manual browser page. */
+  browserThreadId?: string | null
+  /** Active task on the selected browser page. */
   task: DesktopTask | null
   browser: BrowserSnapshot
   /** Increments once for each new browser call, including before approval. */
   browserRequest: number
+}
+
+/** Legacy demo adapters retain their single shared task slot. */
+export function threadTask(
+  snapshot: DesktopSnapshot,
+  threadId: string
+): DesktopTask | null {
+  return snapshot.tasks === undefined
+    ? snapshot.task
+    : (snapshot.tasks.find((task) => task.threadId === threadId) ?? null)
 }
 
 export interface ApprovalDecision {
@@ -62,6 +77,8 @@ export interface BrowserViewport {
 }
 
 export interface DesktopRuntime {
+  /** Selects a thread page without stopping work on other pages. */
+  selectBrowserThread?(threadId: string | null): Promise<void>
   /** Null hides the native surface without navigating or stopping a task. */
   setBrowserViewport(bounds: BrowserViewport | null): Promise<void>
   /** Stable immutable snapshot; scoped to this adapter instance. */
@@ -72,7 +89,7 @@ export interface DesktopRuntime {
   decide(decision: ApprovalDecision): Promise<void>
   /** Resolves only when this run is stopped and its task slot is released. */
   stop(runId: string): Promise<void>
-  /** Manual navigation rejects while a task or another navigation owns the browser. */
+  /** Manual navigation rejects while a task or navigation owns the selected page. */
   navigate(url: string): Promise<void>
   back(): Promise<void>
   forward(): Promise<void>

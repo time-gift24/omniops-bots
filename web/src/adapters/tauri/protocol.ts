@@ -6,7 +6,7 @@ import type {
   ChatError,
   FinishReason,
 } from "@/chat/dto"
-import type { DesktopSnapshot } from "@/desktop/runtime"
+import type { DesktopSnapshot, DesktopTask } from "@/desktop/runtime"
 
 export function object(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value))
@@ -188,44 +188,64 @@ export function readChatEvent(value: unknown): ChatEvent {
       throw new Error("桌面服务返回了无效聊天事件。")
   }
 }
+function readTask(value: unknown): DesktopTask {
+  const entry = object(value)
+  const task: DesktopTask = {
+    runId: string(entry.runId),
+    threadId: string(entry.threadId),
+    title: string(entry.title),
+    phase: choice(entry.phase, [
+      "preparing",
+      "running",
+      "awaiting-approval",
+      "submitting",
+      "stopping",
+    ] as const),
+    error: optional(entry.error),
+  }
+  if (entry.approval !== undefined) {
+    const approval = object(entry.approval)
+    task.approval = {
+      id: string(approval.id),
+      callId: string(approval.callId),
+      title: string(approval.title),
+      description: string(approval.description),
+      targetUrl: optional(approval.targetUrl),
+      toolName: string(approval.toolName),
+      parameters: string(approval.parameters),
+      code: optional(approval.code),
+    }
+  }
+  return task
+}
 export function readDesktopSnapshot(value: unknown): DesktopSnapshot {
   const raw = object(value),
     browser = object(raw.browser)
   if (raw.simulated !== false) throw new Error("桌面服务未连接真实浏览器。")
-  let task: DesktopSnapshot["task"] = null
-  if (raw.task !== null) {
-    const entry = object(raw.task)
-    task = {
-      runId: string(entry.runId),
-      threadId: string(entry.threadId),
-      title: string(entry.title),
-      phase: choice(entry.phase, [
-        "preparing",
-        "running",
-        "awaiting-approval",
-        "submitting",
-        "stopping",
-      ] as const),
-      error: optional(entry.error),
-    }
-    if (entry.approval !== undefined) {
-      const approval = object(entry.approval)
-      task.approval = {
-        id: string(approval.id),
-        callId: string(approval.callId),
-        title: string(approval.title),
-        description: string(approval.description),
-        targetUrl: optional(approval.targetUrl),
-        toolName: string(approval.toolName),
-        parameters: string(approval.parameters),
-        code: optional(approval.code),
-      }
-    }
-  }
+  const legacyTask = raw.task === null ? null : readTask(raw.task)
+  const tasks =
+    raw.tasks === undefined
+      ? legacyTask
+        ? [legacyTask]
+        : []
+      : array(raw.tasks, readTask)
+  if (
+    new Set(tasks.map((task) => task.runId)).size !== tasks.length ||
+    new Set(tasks.map((task) => task.threadId)).size !== tasks.length
+  )
+    throw new Error("桌面服务返回了重复任务。")
+  const browserThreadId =
+    raw.browserThreadId === undefined
+      ? (legacyTask?.threadId ?? null)
+      : raw.browserThreadId === null
+        ? null
+        : string(raw.browserThreadId)
   return {
     simulated: false,
     ...(raw.closeBlocked === true ? { closeBlocked: true } : {}),
-    task,
+    tasks,
+    browserThreadId,
+    task: tasks.find((task) => task.threadId === browserThreadId) ?? null,
     browserRequest: number(raw.browserRequest),
     browser: {
       url: string(browser.url),

@@ -5,17 +5,30 @@ import { chatInput, httpUrl, identifier } from './input.mjs';
 import { invalid, RuntimeError } from './errors.mjs';
 
 export async function createDesktopRuntime({ browser, workspace, workspaceFactory, modelFactory, modelName, resources, runsDir, checkpointer,
-  timeoutMs = 300_000, desktopVersion = '0.1.0', modelParameters = { temperature: 0 }, emit = () => {}, redact = String, env = process.env }) {
+  timeoutMs = 300_000, maxConcurrentRuns = 4, desktopVersion = '0.1.0', modelParameters = { temperature: 0 }, emit = () => {}, redact = String, env = process.env }) {
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 3_600_000) throw invalid('每轮执行超时必须在 1ms 到一小时之间。');
   if (!checkpointer) throw invalid('执行必须配置 checkpoint 存储。');
+  if (typeof browser?.forThread !== 'function') throw invalid('浏览器必须支持按会话绑定页面。');
+  if (!Number.isSafeInteger(maxConcurrentRuns) || maxConcurrentRuns < 1 || maxConcurrentRuns > 64) throw invalid('并发任务上限必须在 1 到 64 之间。');
   const execution = await createExecution({ recordsDirectory: runsDir, checkpointer });
   const history = await createChatHistory(runsDir);
   const seen = new Set(execution.records.list().map(record => record.runId));
-  let state = { simulated: false, task: null, browser: browser.getState(), browserRequest: 0 };
-  let active, navigation, closing = false;
+  let state = { simulated: false, tasks: [], task: null, browserThreadId: null, browser: browser.getState(), browserRequest: 0 };
+  const active = new Map(), navigations = new Map();
+  let closing = false;
   const publish = patch => { state = { ...state, ...patch }; emit({ event: 'desktop_state', state }); };
-  browser.subscribe(snapshot => publish({ browser: snapshot }));
-  const updateTask = (run, patch) => { if (active === run) publish({ task: { ...state.task, ...patch } }); };
+  const selectedThread = () => browser.getThreadId ? browser.getThreadId() : [...active.values()].at(-1)?.threadId ?? null;
+  const publishTasks = (patch = {}) => {
+    const tasks = [...active.values()].map(run => run.task);
+    const browserThreadId = selectedThread();
+    publish({ tasks, task: tasks.find(task => task.threadId === browserThreadId) ?? null, browserThreadId, ...patch });
+  };
+  browser.subscribe(snapshot => publishTasks({ browser: snapshot }));
+  const updateTask = (run, patch) => {
+    if (active.get(run.id) !== run) return;
+    run.task = { ...run.task, ...patch };
+    publishTasks();
+  };
   async function execute(run) {
     const chat = run.chat;
     try {
@@ -23,36 +36,41 @@ export async function createDesktopRuntime({ browser, workspace, workspaceFactor
         signal: run.controller.signal, details: chat.details, prepare: chat.prepare, onEvent: chat.onEvent, settle: chat.settle });
       emit({ event: 'chat_event', runId: run.id, threadId: run.threadId, data: chat.terminal(outcome) });
     } finally {
-      if (active === run) { active = undefined; publish({ task: null }); }
+      active.delete(run.id);
+      publishTasks();
       run.done.resolve();
     }
   }
   function start({ runId, threadId, request, agentId, experimentSkillId } = {}) {
     if (closing) throw new RuntimeError('unavailable', '应用正在关闭。');
-    if (active || navigation || execution.isBusy()) throw new RuntimeError('unavailable', '另一项任务或导航仍在进行，请先停止或等待完成。');
     identifier(runId, 'runId'); identifier(threadId, 'threadId');
+    if (threadId === '__manual__') throw invalid('会话编号为浏览器保留编号。');
     if (seen.has(runId)) throw new RuntimeError('duplicate-run', '这次调用已接收，不能重复执行；请查看原执行记录。');
+    if ([...active.values()].some(run => run.threadId === threadId) || navigations.has(threadId) || execution.isBusy(threadId)) {
+      throw new RuntimeError('unavailable', '此会话另一项任务或导航仍在进行，请先停止或等待完成。');
+    }
+    if (active.size >= maxConcurrentRuns) throw new RuntimeError('unavailable', '并发任务已达上限，请等待任务完成后重新发起。');
     const input = chatInput(request, modelName);
     if (agentId !== undefined) identifier(agentId, 'agentId');
     if (experimentSkillId !== undefined) identifier(experimentSkillId, 'experimentSkillId');
     const run = { id: runId, threadId, agentId, experimentSkillId, input, request, inputCount: request.messages.length,
-      controller: new AbortController(), done: Promise.withResolvers() };
-    run.chat = createChatRun({ run, execution, history, browser, workspace, workspaceFactory, modelFactory, resources,
+      controller: new AbortController(), done: Promise.withResolvers(), task: { runId, threadId, title: input.title, phase: 'preparing' } };
+    const boundBrowser = browser.forThread(threadId);
+    run.chat = createChatRun({ run, execution, history, browser: boundBrowser, workspace, workspaceFactory, modelFactory, resources,
       desktopVersion, modelParameters, redact, env, emit,
       running: () => updateTask(run, { phase: 'running' }),
       stopping: () => updateTask(run, { phase: 'stopping' }),
       browserRequested: () => publish({ browserRequest: state.browserRequest + 1 }),
     });
-    seen.add(runId); active = run;
-    publish({ task: { runId, threadId, title: input.title, phase: 'preparing' } });
+    seen.add(runId); active.set(runId, run);
+    publishTasks();
     queueMicrotask(() => void execute(run));
     return { runId };
   }
   async function stop({ runId } = {}) {
     identifier(runId, 'runId');
-    const run = active;
+    const run = active.get(runId);
     if (!run) return { stopped: true };
-    if (run.id !== runId) throw invalid('这项任务已结束，请停止当前任务。');
     if (!run.controller.signal.aborted) {
       updateTask(run, { phase: 'stopping' });
       run.controller.abort(new DOMException('Stopped', 'AbortError'));
@@ -61,11 +79,19 @@ export async function createDesktopRuntime({ browser, workspace, workspaceFactor
     return { stopped: true };
   }
   async function navigate(method, params) {
-    if (closing || active || navigation || execution.isBusy()) throw new RuntimeError('unavailable', '请先停止当前任务或等待导航完成。');
+    const threadId = params && Object.hasOwn(params, 'threadId')
+      ? params.threadId === null ? null : identifier(params.threadId, 'threadId')
+      : selectedThread();
+    if (threadId === '__manual__') throw invalid('会话编号为浏览器保留编号。');
+    if (closing || navigations.has(threadId) || [...active.values()].some(run => run.threadId === threadId)) {
+      throw new RuntimeError('unavailable', '请先停止当前任务或等待导航完成。');
+    }
     const url = method === 'navigate' ? httpUrl(params?.url, { normalize: true }) : undefined;
-    navigation = Promise.resolve().then(() => browser.navigation(method, url));
+    const page = browser.forThread(threadId);
+    const navigation = Promise.resolve().then(() => page.navigation(method, url));
+    navigations.set(threadId, navigation);
     publish({ browserRequest: state.browserRequest + 1 });
-    try { await navigation; return { navigated: true }; } finally { navigation = undefined; }
+    try { await navigation; return { navigated: true }; } finally { navigations.delete(threadId); }
   }
   return {
     getState: () => state,
@@ -74,6 +100,12 @@ export async function createDesktopRuntime({ browser, workspace, workspaceFactor
       if (method === 'models_list') return modelName ? [{ id: modelName, label: modelName }] : [];
       if (method === 'chat_start') return start(params);
       if (method === 'stop') return stop(params);
+      if (method === 'browser_select') {
+        if (closing) throw new RuntimeError('unavailable', '应用正在关闭。');
+        const threadId = params?.threadId === null ? null : identifier(params?.threadId, 'threadId');
+        if (threadId === '__manual__') throw invalid('会话编号为浏览器保留编号。');
+        return browser.select(threadId).then(() => { publishTasks(); return { selected: true }; });
+      }
       if (method === 'runs_list') return execution.records.list().map(chatRecord);
       if (method === 'run_get') {
         const runId = identifier(params?.runId, 'runId');
@@ -86,9 +118,9 @@ export async function createDesktopRuntime({ browser, workspace, workspaceFactor
     },
     async close() {
       closing = true;
-      if (active) await stop({ runId: active.id });
+      await Promise.all([...active.keys()].map(runId => stop({ runId })));
       await execution.close();
-      await navigation?.catch(() => {});
+      await Promise.allSettled([...navigations.values()]);
       await browser.close();
     },
   };

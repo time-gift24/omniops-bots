@@ -1,0 +1,242 @@
+[
+  {
+    "artifact": {
+      "sha256": "8797db8a342998f4810cdbfe413f64366679dfac3ca8aa9824fb42a11ac64717",
+      "bytes": 710018
+    },
+    "path": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/07-execution.html",
+    "viewports": [
+      [
+        2048,
+        1320
+      ]
+    ],
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "screenshots": [
+      "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/07-execution.visual-check.2048x1320.light.png",
+      "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/07-execution.visual-check.2048x1320.dark.png"
+    ],
+    "visual_review": "passed",
+    "observations": "Inspected actual rendered screenshots. Updated labels and cards remain readable, with no clipping, collisions, or ambiguous message routing. Existing geometry retained.",
+    "correction_rounds": 0
+  },
+  {
+    "artifact": {
+      "sha256": "a03d4c8fa6f169993b52fb73fac3170e393fbaac0acdf53201cb97d417656ccd",
+      "bytes": 703979
+    },
+    "path": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/00-manual.html",
+    "viewports": [
+      [
+        2048,
+        1320
+      ]
+    ],
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "screenshots": [
+      "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/00-manual.visual-check.2048x1320.light.png",
+      "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/00-manual.visual-check.2048x1320.dark.png"
+    ],
+    "visual_review": "passed",
+    "observations": "Inspected actual rendered screenshots. Updated labels and cards remain readable, with no clipping, collisions, or ambiguous message routing. Existing geometry retained.",
+    "correction_rounds": 0
+  },
+  {
+    "artifact": {
+      "sha256": "7001c5e8706b9d45d7b722eb331e87ece30b69ffb538af922d6ca583c772560c",
+      "bytes": 703966
+    },
+    "path": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/01-skill-experiment.html",
+    "viewports": [
+      [
+        2048,
+        1320
+      ]
+    ],
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "screenshots": [
+      "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/01-skill-experiment.visual-check.2048x1320.light.png",
+      "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/01-skill-experiment.visual-check.2048x1320.dark.png"
+    ],
+    "visual_review": "passed",
+    "observations": "Inspected actual rendered screenshots. Updated labels and cards remain readable, with no clipping, collisions, or ambiguous message routing. Existing geometry retained.",
+    "correction_rounds": 0
+  },
+  {
+    "artifact": {
+      "sha256": "a37f76f649f27019d1396acd345b34807d4300e078742b23486e4bb7e7428876",
+      "bytes": 703902
+    },
+    "path": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/03-builtintool-ready.html",
+    "viewports": [
+      [
+        2048,
+        1320
+      ]
+    ],
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "screenshots": [
+      "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/03-builtintool-ready.visual-check.2048x1320.light.png",
+      "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/03-builtintool-ready.visual-check.2048x1320.dark.png"
+    ],
+    "visual_review": "passed",
+    "observations": "Inspected actual rendered screenshots. Updated labels and cards remain readable, with no clipping, collisions, or ambiguous message routing. Existing geometry retained.",
+    "correction_rounds": 0
+  },
+  {
+    "artifact": {
+      "sha256": "9311612d6c834ea01531c6050c37928020476471941e9be8dc7484574c2524ff",
+      "bytes": 714261
+    },
+    "path": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-assembly-ready.html",
+    "viewports": [
+      [
+        2048,
+        1320
+      ]
+    ],
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "screenshots": [
+      "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-assembly-ready.visual-check.2048x1320.light.png",
+      "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-assembly-ready.visual-check.2048x1320.dark.png"
+    ],
+    "visual_review": "passed",
+    "observations": "Inspected actual rendered screenshots. Updated labels and cards remain readable, with no clipping, collisions, or ambiguous message routing. Existing geometry retained.",
+    "correction_rounds": 0
+  },
+  {
+    "artifact": {
+      "sha256": "e44c82f589382abdd75a3445648d0fdafc9e6d8f4925b3d9b589a5a0490a83fb",
+      "bytes": 704807
+    },
+    "path": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/00-remote.html",
+    "viewports": [
+      [
+        2048,
+        1320
+      ]
+    ],
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "screenshots": [
+      "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/00-remote.visual-check.2048x1320.light.png",
+      "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/00-remote.visual-check.2048x1320.dark.png"
+    ],
+    "visual_review": "passed",
+    "observations": "Inspected actual rendered screenshots. Updated labels and cards remain readable, with no clipping, collisions, or ambiguous message routing. Existing geometry retained.",
+    "correction_rounds": 0
+  },
+  {
+    "artifact": {
+      "sha256": "de55ff6d0e0be0154e85f84fa43953876b82353ae2fa8148c8ccb6f6f66f7167",
+      "bytes": 704089
+    },
+    "path": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/07-login.html",
+    "viewports": [
+      [
+        2048,
+        1320
+      ]
+    ],
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "screenshots": [
+      "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/07-login.visual-check.2048x1320.light.png",
+      "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/07-login.visual-check.2048x1320.dark.png"
+    ],
+    "visual_review": "passed",
+    "observations": "Inspected actual rendered screenshots. Updated labels and cards remain readable, with no clipping, collisions, or ambiguous message routing. Existing geometry retained.",
+    "correction_rounds": 0
+  },
+  {
+    "artifact": {
+      "sha256": "f189e9133331ee757815e568371ee2887bc2a6390485de0300d7fecc36dcac3e",
+      "bytes": 705391
+    },
+    "path": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-assembly-failure.html",
+    "viewports": [
+      [
+        2048,
+        1320
+      ]
+    ],
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "screenshots": [
+      "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-assembly-failure.visual-check.2048x1320.light.png",
+      "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-assembly-failure.visual-check.2048x1320.dark.png"
+    ],
+    "visual_review": "passed",
+    "observations": "Inspected actual rendered screenshots. Updated labels and cards remain readable, with no clipping, collisions, or ambiguous message routing. Existing geometry retained.",
+    "correction_rounds": 0
+  },
+  {
+    "artifact": {
+      "sha256": "08d1fa77e15bdd17a9228bc1fe5a6eba902ec63c2d71f4dba7d2f9d7cb636283",
+      "bytes": 704777
+    },
+    "path": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-local-session.html",
+    "viewports": [
+      [
+        2048,
+        1320
+      ]
+    ],
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "screenshots": [
+      "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-local-session.visual-check.2048x1320.light.png",
+      "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-local-session.visual-check.2048x1320.dark.png"
+    ],
+    "visual_review": "passed",
+    "observations": "Inspected actual rendered screenshots. Updated labels and cards remain readable, with no clipping, collisions, or ambiguous message routing. Existing geometry retained.",
+    "correction_rounds": 0
+  },
+  {
+    "artifact": {
+      "sha256": "b52eda4dd95f9a92f6064d8d31d897f2bb3da0c9b56241bbe3d31fda355624c8",
+      "bytes": 701289
+    },
+    "path": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/07-busy.html",
+    "viewports": [
+      [
+        2048,
+        1320
+      ]
+    ],
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "screenshots": [
+      "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/07-busy.visual-check.2048x1320.light.png",
+      "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/07-busy.visual-check.2048x1320.dark.png"
+    ],
+    "visual_review": "passed",
+    "observations": "Inspected actual rendered screenshots. Updated labels and cards remain readable, with no clipping, collisions, or ambiguous message routing. Existing geometry retained.",
+    "correction_rounds": 0
+  }
+]

@@ -15,12 +15,14 @@ import { createAppDependencies } from "/src/app/dependencies.tsx"
 import { withTestTheme } from "/tests/support.tsx"
 const result = document.querySelector("#result"), fixture = document.querySelector("#fixture")
 const root = createRoot(fixture), calls = [], records = [], sessions = new Map()
+const activeTasks = new Map(), stopAcknowledgements = new Map()
+let browserThreadId = null
 const metadata = { providerName: "fixture", protocolName: "langgraph", requestedModel: "test-model" }
 const configuration = { name: "本地巡检", description: "执行检查", instructions: "# 巡检\n检查运行状态。", skillIds: [], toolIds: ["browser"], mcpServerIds: [] }
 let agents = [{ id: "local", source: "local", contentId: "local-v1", configuration }, { id: "official", source: "official", contentId: "official-v1", releaseTag: "v1", configuration: { ...configuration, name: "官方巡检" } }]
 let servers = [], listener, starts = [], skillText = "# 实验技能\n原始内容", failedMcp = true, failedSkillWrite = true
 const managed = () => ({ id: "skill", name: "实验技能", description: "验证完整草稿", origin: "local", contentId: "skill-v1", readOnly: false, modifiedAt: null, entries: [{ path: "SKILL.md", kind: "file", size: 20, mimeType: "text/markdown", modifiedAt: null }] })
-const empty = () => ({ simulated: false, task: null, browserRequest: 0, browser: { url: "", title: "", status: "empty", canGoBack: false, canGoForward: false } })
+const empty = () => ({ simulated: false, tasks: [...activeTasks.values()], task: [...activeTasks.values()].find(task => task.threadId === browserThreadId) ?? null, browserThreadId, browserRequest: 0, browser: { url: "", title: "", status: "empty", canGoBack: false, canGoForward: false } })
 const response = text => ({ assistant: { parts: [{ type: "text", text }] }, finish: { reason: "stop" }, usage: {}, metadata })
 const bridge = {
   async listen(_name, handler) { listener = handler; return () => { listener = undefined } },
@@ -31,6 +33,13 @@ const bridge = {
     const { method, params } = args
     switch (method) {
       case "status": return empty()
+      case "browser_select": browserThreadId = params.threadId; listener?.({ event: "desktop_state", state: empty() }); return { selected: true }
+      case "stop": {
+        await stopAcknowledgements.get(params.runId)?.promise
+        activeTasks.delete(params.runId)
+        listener?.({ event: "desktop_state", state: empty() })
+        return { stopped: true }
+      }
       case "skill_library_info": return { kind: "desktop", root: "/tmp/test/skills" }
       case "agents_load": return { agents, resources: { tools: [{ id: "browser", name: "浏览器", description: "页面操作" }], skills: [{ id: "skill", name: "实验技能", description: "完整草稿", contentId: "skill-v1" }], mcpServers: servers.map(server => ({ ...server, capabilities: { tools: [], resources: [], prompts: [] } })) } }
       case "agent_create": { const agent = { id: `new-${agents.length}`, source: "local", contentId: `new-${agents.length}-v1`, configuration: { ...(params.copyFrom ? agents.find(a => a.id === params.copyFrom).configuration : configuration), name: "新建巡检" } }; agents = [...agents, agent]; return agent }
@@ -150,7 +159,30 @@ try {
   assert(controlBounds.top >= listHeaderBounds.bottom && !create.closest("header"), "Creation control must float in the body below the breadcrumb")
   create.focus(); assert(document.activeElement === create, "Creation control must accept keyboard focus")
   click(create); await until(() => agents.length === 4 && button("编辑"), "Icon creation must still open a new local Agent")
-  result.textContent = "PASS: official read-only/copy, Agent-bound unique sessions, native gate, MCP save/test failure/success, Skill draft-save failure/retry and experiment, persisted history/snapshot, restore without execution, continuation"
+  assert(!fixture.textContent.includes("浏览器会话切换失败"), "Selecting pages through the App must not display a bridge error")
+  const taskA = { runId: "concurrent-banner-a", threadId: firstThread, title: "并行任务 A", phase: "running" }
+  const taskB = { runId: "concurrent-banner-b", threadId: starts[1].threadId, title: "并行任务 B", phase: "running" }
+  const stoppedA = Promise.withResolvers()
+  stopAcknowledgements.set(taskA.runId, stoppedA)
+  activeTasks.set(taskA.runId, taskA); activeTasks.set(taskB.runId, taskB)
+  flushSync(() => listener({ event: "desktop_state", state: empty() }))
+  const banner = task => [...fixture.querySelectorAll(`[title="${task.title}"]`)].map(element => element.parentElement).find(element => button("停止任务", element))
+  await until(() => banner(taskA) && banner(taskB), "The App must display both concurrent task banners")
+  assert(button("停止任务", banner(taskA)) && button("停止任务", banner(taskB)), "Every task banner needs its own stop control")
+  click(button("停止任务", banner(taskA)))
+  await until(() => button("停止任务", banner(taskA))?.disabled, "Only the requested task must enter stopping")
+  assert(!button("停止任务", banner(taskB)).disabled, "Stopping A must not lock B's banner")
+  click(button("返回任务", banner(taskB)))
+  await until(() => browserThreadId === taskB.threadId, "Returning to B must select B's browser page")
+  assert(banner(taskA) && banner(taskB), "Changing the selected page must preserve both task banners")
+  stoppedA.resolve()
+  await until(() => !banner(taskA) && banner(taskB), "Acknowledging A must remove only A's banner")
+  assert(calls.filter(([, args]) => args?.method === "stop").at(-1)[1].params.runId === taskA.runId, "The stop RPC must retain the clicked banner's run identity")
+  assert(!button("停止任务", banner(taskB)).disabled && starts.length === 4, "B must remain available without replaying any task")
+  activeTasks.delete(taskB.runId)
+  flushSync(() => listener({ event: "desktop_state", state: empty() }))
+  await until(() => !banner(taskB), "Completing B must release its own banner")
+  result.textContent = "PASS: official read-only/copy, Agent-bound unique sessions, native gate, MCP save/test failure/success, Skill draft-save failure/retry and experiment, persisted history/snapshot, restore without execution, continuation, concurrent App banners and isolated stop/page selection"
   result.dataset.passed = "true"
 } catch (error) { result.textContent = `FAIL: ${error.stack}`; result.dataset.passed = "false"; throw error }
 </script>
