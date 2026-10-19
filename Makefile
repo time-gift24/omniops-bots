@@ -20,11 +20,12 @@ HOST_OS := $(shell uname -s)
 NPM ?= npm
 endif
 
-.PHONY: help install check-node build-web package package-macos package-debug package-windows install-windows-cross
+.PHONY: help install check-node build-web dev package package-macos package-debug package-windows install-windows-cross
 
 help:
 	@echo make install                Install locked web, runtime and Cargo dependencies
 	@echo make build-web              Build web/dist on Windows or Unix
+	@echo make dev                    Run the macOS client with Vite hot updates
 	@echo make package                Build the release package for this host
 	@echo make package-macos          Build macOS ARM64 .app and .dmg
 	@echo make package-debug          Build macOS ARM64 debug .app
@@ -63,6 +64,9 @@ package:
 endif
 
 ifeq ($(HOST_OS),Darwin)
+dev: check-node
+	"$(PYTHON)" desktop/scripts/build-native-macos.py --dev
+
 package-macos: check-node
 	"$(PYTHON)" desktop/scripts/build-native-macos.py $(MACOS_ARGS)
 
@@ -75,7 +79,7 @@ install-windows-cross: check-node
 	rustup target add x86_64-pc-windows-msvc
 	cargo install cargo-xwin --locked
 else
-package-macos package-debug install-windows-cross:
+dev package-macos package-debug install-windows-cross:
 	@echo This target requires macOS ARM64.
 	@exit 1
 endif
