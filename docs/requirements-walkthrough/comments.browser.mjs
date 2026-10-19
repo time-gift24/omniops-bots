@@ -8,7 +8,7 @@ import { test } from 'node:test';
 
 const { chromium } = createRequire(new URL('../../desktop/runtime/package.json', import.meta.url))('playwright-core');
 const root = fileURLToPath(new URL('.', import.meta.url));
-const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.woff2': 'font/woff2' };
+const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.woff2': 'font/woff2' };
 
 test('document comments work across chapters, reloads, narrow screens, and storage failures', { timeout: 60000 }, async () => {
   const server = createServer(async (request, response) => {
@@ -65,15 +65,18 @@ test('document comments work across chapters, reloads, narrow screens, and stora
     await page.getByRole('button', { name: '关闭文档评论' }).click();
     await page.getByLabel('章节', { exact: true }).selectOption('09-operations');
     await page.locator('[id="09-operations"]').waitFor({ state: 'visible' });
-    assert.equal(await page.locator('#progress').textContent(), '10 / 10');
-    assert.equal(await page.locator('#next').isDisabled(), true);
     assert.match(await page.locator('article:not([hidden])').textContent(), /SQLite/);
+    await page.getByRole('button', { name: '下一章', exact: true }).click();
+    await page.locator('[id="10-server-api"]').waitFor({ state: 'visible' });
+    assert.equal(await page.locator('#progress').textContent(), '11 / 11');
+    assert.equal(await page.locator('#next').isDisabled(), true);
+    assert.match(await page.locator('article:not([hidden])').textContent(), /latest\.json/);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     await page.getByRole('button', { name: '本章评论', exact: true }).click();
     await page.getByLabel('记录本章意见').fill('待保存草稿');
     await page.getByRole('button', { name: '关闭文档评论' }).click();
     await page.getByLabel('章节', { exact: true }).selectOption('01-skill');
-    await page.getByLabel('章节', { exact: true }).selectOption('09-operations');
+    await page.getByLabel('章节', { exact: true }).selectOption('10-server-api');
     await page.getByRole('button', { name: '本章评论', exact: true }).click();
     assert.equal(await page.getByLabel('记录本章意见').inputValue(), '待保存草稿');
     await page.evaluate(() => {

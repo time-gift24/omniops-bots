@@ -1,18 +1,26 @@
 [
   {
     "id": "00-workspace",
-    "file": "assets/screenshots/00-workspace.png",
-    "note": "首次打开，工作区、会话与右侧工作台",
-    "url": "http://127.0.0.1:5173/",
-    "viewport": {
-      "width": 1600,
-      "height": 1000
+    "file": "assets/screenshots/00-workspace.jpg",
+    "note": "打包客户端会话结果与内置 CEF 页面同屏，真实填写 abcd，未提交",
+    "url": "tauri://localhost",
+    "pixelSize": {
+      "width": 2498,
+      "height": 1720
     },
-    "mode": "现有 Web 页面，demo adapters",
-    "capturedAt": "2026-10-18T15:02:55.478Z",
-    "sha256": "6fd8b26687dfa9529b75284938e9ab6b25ab631bd759eba5a46139c4227b583e",
-    "origin": "Origin: Direct Playwright screenshot of existing OmniOps Bots Web UI at http://127.0.0.1:5173/, 1600x1000, official light theme, demo adapters. 首次打开，工作区、会话与右侧工作台. No UI mockup or generated visual.",
-    "bytes": 68632
+    "mode": "macOS packaged desktop app; local test model and test page; real Playwright + CEF execution",
+    "capturedAt": "2026-10-19T00:37:58.958250Z",
+    "sha256": "153e817683481457a6615ac4e7872977a804c35f44e7d609d8e2e1edec1e0790",
+    "origin": "Direct native app-window screenshot of omniops-bots 0.1.0 debug bundle, including its embedded CEF child view. No compositing, generated UI or image retouching.",
+    "bytes": 225874,
+    "execution": {
+      "model": "omniops-bots-fixture",
+      "page": "loopback-only test page",
+      "status": "completed",
+      "inputValue": "abcd",
+      "submitted": false,
+      "scriptViewportScreenshotSaved": true
+    }
   },
   {
     "id": "04-agent",
@@ -61,18 +69,26 @@
   },
   {
     "id": "07-debug",
-    "file": "assets/screenshots/07-debug.png",
-    "note": "已有 Agent 调试会话入口，不代表草稿实验已实现",
-    "url": "http://127.0.0.1:5173/",
-    "viewport": {
-      "width": 1600,
-      "height": 1000
+    "file": "assets/screenshots/07-debug.jpg",
+    "note": "展开 inspect_browser、write_playwright_script、run_playwright_script，右侧为同一个真实 CEF 页面",
+    "url": "tauri://localhost",
+    "pixelSize": {
+      "width": 2498,
+      "height": 1720
     },
-    "mode": "现有 Web 页面，demo adapters",
-    "capturedAt": "2026-10-18T15:02:57.427Z",
-    "sha256": "06b50b221b85086ed336566b210eab8dabdf3b2eb1f154fa746bb51dee05afbf",
-    "origin": "Origin: Direct Playwright screenshot of existing OmniOps Bots Web UI at http://127.0.0.1:5173/, 1600x1000, official light theme, demo adapters. 已有 Agent 调试会话入口，不代表草稿实验已实现. No UI mockup or generated visual.",
-    "bytes": 113091
+    "mode": "macOS packaged desktop app; local test model and test page; real Playwright + CEF execution",
+    "capturedAt": "2026-10-19T00:38:18.372954Z",
+    "sha256": "484389fd8335818c7591b221e7c57b01d7feca37076714aea4929b3108ed35da",
+    "origin": "Direct native app-window screenshot of omniops-bots 0.1.0 debug bundle, including its embedded CEF child view. No compositing, generated UI or image retouching.",
+    "bytes": 243703,
+    "execution": {
+      "model": "omniops-bots-fixture",
+      "page": "loopback-only test page",
+      "status": "completed",
+      "inputValue": "abcd",
+      "submitted": false,
+      "scriptViewportScreenshotSaved": true
+    }
   },
   {
     "id": "01-skill",

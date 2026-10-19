@@ -29,7 +29,7 @@
       "id": "executor",
       "type": "frontend",
       "label": "客户端 Agent",
-      "sublabel": "装配快照 · 执行 · 回传",
+      "sublabel": "LangGraph · Playwright",
       "pos": [
         450,
         70
@@ -41,9 +41,9 @@
     },
     {
       "id": "chrome",
-      "type": "external",
-      "label": "专用 Chrome",
-      "sublabel": "保留登录态 · 单任务",
+      "type": "frontend",
+      "label": "内置 Chrome",
+      "sublabel": "CEF / Chromium",
       "pos": [
         860,
         70
@@ -106,7 +106,7 @@
     {
       "from": "executor",
       "to": "chrome",
-      "label": "浏览器操作",
+      "label": "本地 CDP 控制",
       "variant": "emphasis"
     },
     {
@@ -138,7 +138,7 @@
       "dot": "emerald",
       "title": "客户端负责",
       "items": [
-        "编辑、实验、同步和执行",
+        "专用 profile 保留登录态",
         "结果确认前持久化保留"
       ]
     },

@@ -858,9 +858,9 @@
       "bytes": 46909
     },
     {
-      "path": "assets/screenshots/00-workspace.png",
-      "sha256": "6fd8b26687dfa9529b75284938e9ab6b25ab631bd759eba5a46139c4227b583e",
-      "bytes": 68632
+      "path": "assets/screenshots/00-workspace.jpg",
+      "sha256": "153e817683481457a6615ac4e7872977a804c35f44e7d609d8e2e1edec1e0790",
+      "bytes": 225874
     },
     {
       "path": "assets/screenshots/01-file-manager-reference.png",
@@ -913,9 +913,9 @@
       "bytes": 167566
     },
     {
-      "path": "assets/screenshots/07-debug.png",
-      "sha256": "06b50b221b85086ed336566b210eab8dabdf3b2eb1f154fa746bb51dee05afbf",
-      "bytes": 113091
+      "path": "assets/screenshots/07-debug.jpg",
+      "sha256": "484389fd8335818c7591b221e7c57b01d7feca37076714aea4929b3108ed35da",
+      "bytes": 243703
     },
     {
       "path": "diagrams/00-overview.html",
@@ -3289,8 +3289,8 @@
     },
     {
       "path": "evidence/web-screenshots.json",
-      "sha256": "478ee5aebf240174760154440ed89427c53afdccf981677cbce6655905f5e346",
-      "bytes": 5730
+      "sha256": "e5057c4d4b1d8291c2015959f0135721cefeed78d213b6ca8c6efb069a10fb9e",
+      "bytes": 6238
     },
     {
       "path": "evidence/验收记录.md",
@@ -3432,5 +3432,14 @@
       "Official download and checksum validation not connected",
       "Runtime currently loads SKILL.md per round; full package backend and fixed session snapshot pending"
     ]
+  },
+  "native_screenshot_update": {
+    "date": "2026-10-19",
+    "source": "evidence/web-screenshots.json",
+    "replaced": [
+      "00-workspace",
+      "07-debug"
+    ],
+    "scope": "Native desktop window capture including real CEF browser. Local fixture model and page; actual Playwright operation and generated viewport screenshot verified. Earlier delivery checks remain historical."
   }
 }

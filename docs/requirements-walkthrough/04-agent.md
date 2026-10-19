@@ -43,7 +43,7 @@ Agent 的内容 ID 根据系统提示词、固定 Skill 版本、所选 builtinT
 
 Agent 提示词和 Skill 是持续改进的核心资产。只修改提示词时，发布新的 Agent，原 Skill 包继续复用；修改 Skill 时，正式发布完整新包，并一次更新所有受影响官方 Agent 的引用、内容 ID 和人工新标签。周内编辑与保存草稿不联动，按周选择已确认的改进发布；详见[总体设计中的周迭代](./00-总体架构.md)。
 
-以下完整装配为目标设计。当前代码已支持内置工具选择，并在每轮读取所选 `SKILL.md` 后拼接指令；Agent 配置仍在 runtime 内存中，MCP 连接、官方版本发布、完整 Skill 后端与会话固定快照尚未接入。当前仓库也没有 `langgraph.ts` 文件，实际入口和未来配置示例见[Skill 存储与运行加载](../skill-storage-and-loading.md)。
+以下描述完整装配流程。当前本地实现已支持 Agent 配置持久化、完整 Skill 包捕获与只读挂载、会话固定快照、builtinTool 白名单和真实 MCP 连接；`langgraph.ts` 负责图装配，浏览器工具经 Playwright 操作内置 Chrome。官方版本发布、远端下载同步与 WebSocket 调用仍待接入。实际入口见[Skill 存储与运行加载](../skill-storage-and-loading.md)，服务端契约汇总见 [10 · 服务端 API](./10-服务端API.md)。
 
 <details>
 <summary>Agent 装配与运行快照的关系</summary>
