@@ -18,6 +18,7 @@ export default defineConfig([
   globalIgnores(['dist']),
   {
     files: ['**/*.{ts,tsx}'],
+    ignores: ['vendor/**'],
     extends: [
       js.configs.recommended,
       tseslint.configs.recommended,
@@ -33,6 +34,20 @@ export default defineConfig([
         'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
+    },
+  },
+  {
+    // Third-party source provenance and adaptations: vendor/beui-templates/UPSTREAM.md.
+    // TypeScript checks every vendor module; product rules above remain unchanged.
+    files: ['vendor/beui-templates/**/*.{ts,tsx}'],
+    languageOptions: { parser: tseslint.parser, globals: globals.browser },
+    rules: {
+      ...js.configs.recommended.rules,
+      'no-undef': 'off',
+      'no-unused-vars': 'off',
+      'no-redeclare': 'off',
+      'no-unexpected-multiline': 'off',
+      'no-useless-assignment': 'off',
     },
   },
   {

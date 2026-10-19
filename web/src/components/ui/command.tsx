@@ -3,14 +3,12 @@
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Search01Icon } from "@hugeicons-pro/core-stroke-rounded";
 import { Command as CommandPrimitive } from "cmdk";
-import { useRef, type ComponentProps, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useRef, type ComponentProps, type RefObject } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  AnimatedModal,
+  AnimatedModalDescription,
+  AnimatedModalTitle,
+} from "@/components/motion/animated-modal";
 import { cn } from "@/lib/utils";
 
 function Command({
@@ -36,8 +34,10 @@ function CommandDialog({
   className,
   showCloseButton = false,
   fallbackFocusRef,
+  open,
+  onOpenChange,
   ...props
-}: ComponentProps<typeof Dialog> & {
+}: Pick<ComponentProps<typeof AnimatedModal>, "open" | "onOpenChange" | "children"> & {
   title?: string;
   description?: string;
   className?: string;
@@ -45,36 +45,55 @@ function CommandDialog({
   fallbackFocusRef?: RefObject<HTMLElement | null>;
 }) {
   const previousFocus = useRef<HTMLElement | null>(null);
+  const commandRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    if (open) {
+      const active = document.activeElement;
+      if (active instanceof HTMLElement && active !== document.body && !commandRef.current?.contains(active)) {
+        previousFocus.current = active;
+      }
+    }
+  }, [open]);
+  useEffect(() => {
+    if (!open) return;
+    // Search keeps its input focus on touch devices, where Headless UI focuses the dialog.
+    const frame = requestAnimationFrame(() => {
+      commandRef.current?.querySelector<HTMLInputElement>('[data-slot="command-input"]')?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [open]);
 
   return (
-    <Dialog {...props}>
-      <DialogHeader className="sr-only">
-        <DialogTitle>{title}</DialogTitle>
-        <DialogDescription>{description}</DialogDescription>
-      </DialogHeader>
-      <DialogContent
-        className={cn("overflow-hidden p-0", className)}
-        showCloseButton={showCloseButton}
-        onOpenAutoFocus={() => {
-          previousFocus.current = document.activeElement instanceof HTMLElement
-            ? document.activeElement
-            : null;
-        }}
-        onCloseAutoFocus={(event) => {
-          event.preventDefault();
-          const previous = previousFocus.current;
-          // The opener may now belong to a closed drawer or desktop peek.
-          const target = previous?.isConnected && !previous.closest("[inert]")
-            ? previous
-            : fallbackFocusRef?.current;
+    <AnimatedModal
+      {...props}
+      open={open}
+      onOpenChange={onOpenChange}
+      panelClassName={cn("overflow-hidden p-0", className)}
+      panelDataSlot="dialog-content"
+      showCloseButton={showCloseButton}
+      onExitComplete={() => {
+        const previous = previousFocus.current;
+        // The opener may now belong to a closed drawer or desktop peek.
+        const target = previous?.isConnected && !previous.closest("[inert]") && previous.getClientRects().length
+          ? previous
+          : fallbackFocusRef?.current;
+        const active = document.activeElement;
+        // Headless UI may already restore focus before this animation callback.
+        // Preserve any visible control the user has reached since then.
+        if (!(active instanceof HTMLElement) || active === document.body || active.closest("[inert]") || !active.getClientRects().length) {
           target?.focus({ preventScroll: true });
-        }}
-      >
-        <Command className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]]:px-2 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 **:data-[slot=command-input-wrapper]:h-12 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3">
-          {children}
-        </Command>
-      </DialogContent>
-    </Dialog>
+        }
+        previousFocus.current = null;
+      }}
+    >
+      <div className="sr-only">
+        <AnimatedModalTitle>{title}</AnimatedModalTitle>
+        <AnimatedModalDescription>{description}</AnimatedModalDescription>
+      </div>
+      <Command ref={commandRef} className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]]:px-2 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 **:data-[slot=command-input-wrapper]:h-12 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3">
+        {children}
+      </Command>
+    </AnimatedModal>
   );
 }
 
@@ -100,6 +119,7 @@ function CommandInput({
         className="shrink-0 text-muted-foreground"
       />
       <CommandPrimitive.Input
+        data-autofocus
         data-slot="command-input"
         className={cn(
           "flex h-full w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50",

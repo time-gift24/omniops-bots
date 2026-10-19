@@ -14,11 +14,11 @@ import {
 import { useRef } from "react"
 import { Button } from "@/components/motion/button"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+  AnimatedDropdown as DropdownMenu,
+  AnimatedDropdownContent as DropdownMenuContent,
+  AnimatedDropdownItem as DropdownMenuItem,
+  AnimatedDropdownTrigger as DropdownMenuTrigger,
+} from "@/components/premium/animated-dropdown"
 import { cn } from "@/lib/utils"
 import type { SkillEntry } from "@/skills/library"
 import { fileSize, modifiedLabel, nameOf } from "./file-manager-data"
@@ -127,17 +127,17 @@ export function FileEntryCard({
                 onRename(trigger.current)
               }}
             >
-              <Pencil aria-hidden="true" />
+              <Pencil className="size-4" aria-hidden="true" />
               重命名
             </DropdownMenuItem>
             <DropdownMenuItem
-              variant="destructive"
+              destructive
               onSelect={() => {
                 selectedAction.current = true
                 onDelete(trigger.current)
               }}
             >
-              <Trash2 aria-hidden="true" />
+              <Trash2 className="size-4" aria-hidden="true" />
               删除
             </DropdownMenuItem>
           </DropdownMenuContent>

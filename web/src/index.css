@@ -5,6 +5,7 @@
 @import "@fontsource-variable/geist";
 @import "@fontsource-variable/geist-mono";
 @import "misans";
+@source "../vendor/beui-templates";
 
 @custom-variant dark (&:is(.dark *));
 

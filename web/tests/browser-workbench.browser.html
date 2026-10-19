@@ -162,7 +162,11 @@
   const address = () => fixture.querySelector('[aria-label="地址栏"]')
   const browserTabs = () =>
     [...fixture.querySelectorAll('[role="tab"]')].filter(
-      (tab) => tab.textContent.trim() === "浏览器"
+      (tab) => {
+        const label = tab.cloneNode(true)
+        label.querySelectorAll('[aria-hidden="true"]').forEach(node => node.remove())
+        return label.textContent.trim() === "浏览器"
+      }
     )
   const click = (element) => {
     assert(element && !element.disabled, "Expected enabled control")
@@ -405,8 +409,50 @@
       !fixture.querySelector("iframe"),
       "Simulated page must not impersonate an embedded remote browser"
     )
+    const pairedFixture = document.createElement("div")
+    pairedFixture.className = "flex h-96"
+    document.body.append(pairedFixture)
+    const pairedRoot = createRoot(pairedFixture)
+    try {
+      const pairedDependencies = [0, 1].map((index) =>
+        createAppDependencies(createDemoAdapters({ backendId: `paired-workbench-${index}` }))
+      )
+      flushSync(() => pairedRoot.render(React.createElement(React.Fragment, null,
+        ...pairedDependencies.map((value, index) => React.createElement(
+          "section", { key: index, "data-workbench-instance": index, className: "flex min-w-0 flex-1" },
+          React.createElement(AppDependenciesProvider, { value }, React.createElement(WorkbenchPanel, {
+            open: true, onClose() {}, backend: value.workbench, scope: null, models: [],
+          })),
+        )),
+      )))
+      const panels = [...pairedFixture.querySelectorAll("section[data-workbench-instance]")]
+      for (const panel of panels) click(panel.querySelector('button[aria-label="新建标签页"]'))
+      const tabs = [...pairedFixture.querySelectorAll('[role="tab"]')]
+      assert(tabs.length === 4, "Each independent workbench must own its new tab")
+      const identified = [...pairedFixture.querySelectorAll('[role="tab"], [role="tabpanel"]')]
+      assert(identified.every((element) => element.id) && new Set(identified.map((element) => element.id)).size === identified.length,
+        "Workbench tab and panel DOM IDs must be unique across instances")
+      for (const panel of panels) {
+        const active = panel.querySelector('[role="tab"][aria-selected="true"]')
+        const content = document.getElementById(active.getAttribute("aria-controls"))
+        assert(content && panel.contains(content) && content.getAttribute("role") === "tabpanel" && content.getAttribute("aria-labelledby") === active.id,
+          "Each active workbench tab must label and control its own instance panel")
+      }
+      const firstActive = panels[0].querySelector('[role="tab"][aria-selected="true"]')
+      const secondActive = panels[1].querySelector('[role="tab"][aria-selected="true"]')
+      const closeActive = secondActive.closest('[class~="group/tab"]').querySelector('button[aria-label^="关闭标签页"]')
+      closeActive.focus()
+      click(closeActive)
+      await until(() => panels[1].querySelectorAll('[role="tab"]').length === 1 &&
+        panels[1].contains(document.activeElement) && document.activeElement.getAttribute("role") === "tab",
+        "Closing the second workbench active tab must keep focus in the second workbench")
+      assert(firstActive.getAttribute("aria-selected") === "true", "Closing a tab must not change the first workbench selection")
+    } finally {
+      flushSync(() => pairedRoot.unmount())
+      pairedFixture.remove()
+    }
     result.textContent =
-      "PASS: singleton browser, runtime preview, navigation/history, concurrent page state, task lock, approval target, collapse/tab lifecycle, loading/error/retry, keyboard and narrow layout"
+      "PASS: singleton browser, runtime preview, navigation/history, concurrent page state, task lock, approval target, collapse/tab lifecycle, loading/error/retry, keyboard and narrow layout; independent workbench tab IDs, ARIA links and close focus"
     result.dataset.status = "passed"
   } catch (error) {
     result.textContent = `FAIL: ${error.stack || error}`

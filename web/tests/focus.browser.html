@@ -108,6 +108,14 @@
       await until(() => !dialog() && document.activeElement === origin, "Shortcut dismissal did not restore keyboard origin");
       passed.push("keyboard shortcut preserves input focus");
 
+      key("k", { ctrlKey: true });
+      await until(() => document.activeElement === searchInput(), "Rapid keyboard search did not open");
+      key("Escape");
+      key("k", { ctrlKey: true });
+      await until(() => document.activeElement === searchInput(), "Rapid keyboard search did not reopen");
+      key("Escape");
+      await until(() => !dialog() && document.activeElement === origin, "Rapid keyboard reopen must preserve the original input opener");
+
       if (!mobile) {
         click(toggle());
         document.querySelector('button[aria-label="工作区"]').focus();

@@ -102,7 +102,7 @@ export function AgentConfigurationPanel({
           <p className="mb-1 text-[13px] font-medium">能力</p>
           <Tabs value={tab} onValueChange={setTab} variant="underline">
             <TabsList aria-label="Agent 能力" className="w-full gap-4">
-              {SECTIONS.map((section, index) => (
+              {SECTIONS.map((section) => (
                 <TabsTrigger
                   key={section.id}
                   value={section.id}
@@ -111,28 +111,6 @@ export function AgentConfigurationPanel({
                   tabIndex={tab === section.id ? 0 : -1}
                   indicatorClassName="h-0.5 rounded-full"
                   className="min-h-9 gap-1.5 px-0 pb-2.5 text-[13px] focus-visible:outline-2 focus-visible:outline-ring"
-                  onKeyDown={(event) => {
-                    if (
-                      !["ArrowLeft", "ArrowRight", "Home", "End"].includes(
-                        event.key
-                      )
-                    )
-                      return
-                    event.preventDefault()
-                    const next =
-                      SECTIONS[
-                        event.key === "Home"
-                          ? 0
-                          : event.key === "End"
-                            ? SECTIONS.length - 1
-                            : (index +
-                                (event.key === "ArrowRight" ? 1 : -1) +
-                                SECTIONS.length) %
-                              SECTIONS.length
-                      ]
-                    setTab(next.id)
-                    document.getElementById(`${id}-${next.id}`)?.focus()
-                  }}
                 >
                   {section.label}
                   <span className="text-[11px] text-muted-foreground tabular-nums">

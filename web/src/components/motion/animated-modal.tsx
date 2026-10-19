@@ -8,7 +8,10 @@ import {
   DialogTitle,
 } from "@headlessui/react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import type { ReactNode } from "react";
+import { useLayoutEffect, useRef, type ReactNode, type RefObject } from "react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Cancel01Icon } from "@hugeicons-pro/core-stroke-rounded";
+import { Button } from "@/components/motion/button";
 import { EASE_IN_OUT, EASE_OUT, SPRING_MODAL } from "@/lib/ease";
 import { cn } from "@/lib/utils";
 
@@ -20,31 +23,49 @@ export type AnimatedModalProps = {
   onOpenChange: (open: boolean) => void;
   /** Runs after the closing animation completes. */
   onExitComplete?: () => void;
+  initialFocus?: RefObject<HTMLElement | null>;
+  showCloseButton?: boolean;
   children: ReactNode;
   className?: string;
   backdropClassName?: string;
   viewportClassName?: string;
   panelClassName?: string;
+  panelDataSlot?: string;
 };
 
 export function AnimatedModal({
   open,
   onOpenChange,
   onExitComplete,
+  initialFocus,
+  showCloseButton = false,
   children,
   className,
   backdropClassName,
   viewportClassName,
   panelClassName,
+  panelDataSlot,
 }: AnimatedModalProps) {
   const reduce = useReducedMotion();
+  const currentlyOpen = useRef(open);
+  useLayoutEffect(() => {
+    currentlyOpen.current = open;
+  }, [open]);
 
   return (
-    <AnimatePresence onExitComplete={onExitComplete}>
+    <AnimatePresence
+      onExitComplete={() => {
+        // Headless UI restores focus when its trap unmounts after the exit.
+        if (onExitComplete) requestAnimationFrame(() => {
+          if (!currentlyOpen.current) onExitComplete();
+        });
+      }}
+    >
       {open ? (
         <Dialog
           key="animated-modal"
           open
+          initialFocus={initialFocus}
           onClose={() => onOpenChange(false)}
           className={cn("relative z-[100]", className)}
         >
@@ -76,6 +97,7 @@ export function AnimatedModal({
           >
             <div className="flex min-h-full items-center justify-center">
               <MotionPanel
+                data-slot={panelDataSlot}
                 initial={reduce ? false : { opacity: 0, y: 10, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{
@@ -88,11 +110,22 @@ export function AnimatedModal({
                 }}
                 transition={reduce ? { duration: 0 } : SPRING_MODAL}
                 className={cn(
-                  "chat-modal-panel max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-background text-foreground will-change-transform",
+                  "chat-modal-panel relative max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-background text-foreground will-change-transform",
                   panelClassName,
                 )}
               >
                 {children}
+                {showCloseButton ? (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="关闭"
+                    onClick={() => onOpenChange(false)}
+                    className="absolute top-4 right-4 size-9 rounded-full text-muted-foreground"
+                  >
+                    <HugeiconsIcon icon={Cancel01Icon} size={16} aria-hidden="true" />
+                  </Button>
+                ) : null}
               </MotionPanel>
             </div>
           </div>

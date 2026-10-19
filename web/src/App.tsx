@@ -60,12 +60,10 @@ import { McpManager } from "@/components/premium/agent-builder/mcp-manager"
 import { replayRuns } from "@/runs/replay"
 import type { RunRecord } from "@/runs/source"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+  AnimatedModal,
+  AnimatedModalDescription,
+  AnimatedModalTitle,
+} from "@/components/motion/animated-modal"
 
 const AgentBuilder = lazy(() =>
   import("@/components/premium/agent-builder/agent-builder").then((module) => ({
@@ -1214,56 +1212,57 @@ function WorkspaceApp({
           </main>
         </div>
       </SidebarRail>
-      <Dialog
+      <AnimatedModal
         open={experimentSkillId !== null}
         onOpenChange={(open) => {
           if (!open) setExperimentSkillId(null)
         }}
+        panelClassName="grid gap-4 p-6"
+        panelDataSlot="dialog-content"
+        showCloseButton
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>选择实验 Agent</DialogTitle>
-            <DialogDescription>
-              在全新会话中使用此 Skill 的完整当前版本，已有会话的快照保持固定。
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2 text-sm">
-            <p>Agent</p>
-            <Select
-              label="实验 Agent"
-              className="block w-full"
-              buttonClassName="w-full"
-              options={agents.map((agent) => ({
-                id: agent.id,
-                label: agent.configuration.name,
-              }))}
-              value={experimentAgentId}
-              onValueChange={setExperimentAgentId}
-              disabled={!agents.length}
-              portal={false}
-            />
-          </div>
-          {!agents.length ? (
-            <p className="text-sm text-muted-foreground">
-              请先创建一个本地 Agent。
-            </p>
-          ) : null}
-          <Button
-            disabled={!experimentAgentId}
-            onClick={() => {
-              const agent = agents.find(
-                (entry) => entry.id === experimentAgentId
-              )
-              if (agent && experimentSkillId) {
-                startAgentSession(agent, experimentSkillId)
-                setExperimentSkillId(null)
-              }
-            }}
-          >
-            开始实验会话
-          </Button>
-        </DialogContent>
-      </Dialog>
+        <div className="flex flex-col gap-2 pr-8 text-center sm:text-left">
+          <AnimatedModalTitle className="text-lg leading-none font-medium">选择实验 Agent</AnimatedModalTitle>
+          <AnimatedModalDescription className="text-sm text-muted-foreground">
+            在全新会话中使用此 Skill 的完整当前版本，已有会话的快照保持固定。
+          </AnimatedModalDescription>
+        </div>
+        <div className="space-y-2 text-sm">
+          <p>Agent</p>
+          <Select
+            label="实验 Agent"
+            className="block w-full"
+            buttonClassName="w-full"
+            options={agents.map((agent) => ({
+              id: agent.id,
+              label: agent.configuration.name,
+            }))}
+            value={experimentAgentId}
+            onValueChange={setExperimentAgentId}
+            disabled={!agents.length}
+            portal
+          />
+        </div>
+        {!agents.length ? (
+          <p className="text-sm text-muted-foreground">
+            请先创建一个本地 Agent。
+          </p>
+        ) : null}
+        <Button
+          disabled={!experimentAgentId}
+          onClick={() => {
+            const agent = agents.find(
+              (entry) => entry.id === experimentAgentId
+            )
+            if (agent && experimentSkillId) {
+              startAgentSession(agent, experimentSkillId)
+              setExperimentSkillId(null)
+            }
+          }}
+        >
+          开始实验会话
+        </Button>
+      </AnimatedModal>
       <CommandDialog
         open={skillSearchOpen}
         onOpenChange={setSkillSearchOpen}
@@ -1302,7 +1301,6 @@ function WorkspaceApp({
         </CommandList>
       </CommandDialog>
       <WorkspacePicker
-        key={picker ?? "closed"}
         open={picker !== null}
         onOpenChange={(open) => {
           if (!open) setPicker(null)

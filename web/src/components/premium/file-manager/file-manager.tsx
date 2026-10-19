@@ -23,11 +23,11 @@ import {
 import { Button } from "@/components/motion/button"
 import { Input } from "@/components/motion/input"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+  AnimatedDropdown as DropdownMenu,
+  AnimatedDropdownContent as DropdownMenuContent,
+  AnimatedDropdownItem as DropdownMenuItem,
+  AnimatedDropdownTrigger as DropdownMenuTrigger,
+} from "@/components/premium/animated-dropdown"
 import type { SkillEntry } from "@/skills/library"
 import { cn } from "@/lib/utils"
 import { FileEntryCard } from "./file-entry-card"
@@ -324,7 +324,7 @@ export function FileManager({
                     begin({ kind: "file" })
                   }}
                 >
-                  <FilePlus2 aria-hidden="true" />
+                  <FilePlus2 className="size-4" aria-hidden="true" />
                   新建文件
                 </DropdownMenuItem>
                 <DropdownMenuItem
@@ -333,7 +333,7 @@ export function FileManager({
                     begin({ kind: "folder" })
                   }}
                 >
-                  <FolderPlus aria-hidden="true" />
+                  <FolderPlus className="size-4" aria-hidden="true" />
                   新建文件夹
                 </DropdownMenuItem>
               </DropdownMenuContent>

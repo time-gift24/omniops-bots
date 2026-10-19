@@ -6,7 +6,7 @@ import {
   ArrowLeft01Icon,
   ArrowRight01Icon,
 } from "@hugeicons-pro/core-stroke-rounded";
-import { cancelFrame, frame, motion, MotionConfig, useReducedMotion, useSpring, type MotionValue, type Transition } from "motion/react";
+import { cancelFrame, frame, motion, MotionConfig, useReducedMotion, useSpring, type MotionValue, type Transition, type HTMLMotionProps } from "motion/react";
 import {
   createContext,
   useCallback,
@@ -128,6 +128,7 @@ export function TabsList({
   children,
   className,
   wrapperClassName,
+  onKeyDown,
   ...props
 }: {
   wrapperClassName?: string;
@@ -331,7 +332,23 @@ export function TabsList({
           if (event.target instanceof HTMLElement && event.target.getAttribute("role") === "tab") reveal(event.target);
         }}
       >
-        <div {...props} ref={listRef} role="tablist" className={cn(listClasses[variant], "w-max", tracked && "relative", className)}>
+        <div {...props} ref={listRef} role="tablist" className={cn(listClasses[variant], "w-max", tracked && "relative", className)}
+          onKeyDown={(event) => {
+            onKeyDown?.(event);
+            if (event.defaultPrevented || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+            const target = event.target instanceof Element ? event.target.closest<HTMLElement>('[role="tab"]') : null;
+            if (!target || !event.currentTarget.contains(target)) return;
+            const tabs = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('button[role="tab"]:not(:disabled)'));
+            const index = tabs.indexOf(target as HTMLButtonElement);
+            if (index < 0) return;
+            event.preventDefault();
+            const forward = event.key === "ArrowRight" ? 1 : -1;
+            const direction = getComputedStyle(event.currentTarget).direction === "rtl" ? -forward : forward;
+            const next = tabs[event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (index + direction + tabs.length) % tabs.length];
+            next?.focus();
+            next?.click();
+          }}
+        >
           {children}
         </div>
       </motion.div>
@@ -420,6 +437,7 @@ export function TabsTrigger({
         type="button"
         role="tab"
         aria-selected={active}
+        tabIndex={props.tabIndex ?? (active ? 0 : -1)}
         onClick={(event) => {
           onClick?.(event);
           if (!event.defaultPrevented) setValue(value);
@@ -482,6 +500,7 @@ export function TabsTrigger({
         type="button"
         role="tab"
         aria-selected={active}
+        tabIndex={props.tabIndex ?? (active ? 0 : -1)}
         data-tabs-value={value}
         onClick={(event) => {
           onClick?.(event);
@@ -509,25 +528,17 @@ export function TabsTrigger({
   );
 }
 
-export function TabsContent({ value, children, className }: { value: string; children: ReactNode; className?: string }) {
+export function TabsContent({ value, children, className, ...props }: { value: string } & Omit<HTMLMotionProps<"div">, "children"> & { children?: ReactNode }) {
   const { value: current } = useTabs();
   const reduce = useReducedMotion();
   const active = current === value;
-  // Inactive panels stay mounted but hidden, so their content (e.g. source
-  // code) is present in the server-rendered HTML for crawlers and assistive
-  // tech, instead of being dropped from the DOM.
-  if (!active) {
-    return (
-      <div hidden className={className}>
-        {children}
-      </div>
-    );
-  }
   return (
     <motion.div
-      key={value}
-      initial={{ opacity: 0, y: reduce ? 0 : 4 }}
-      animate={{ opacity: 1, y: 0 }}
+      {...props}
+      role="tabpanel"
+      hidden={!active}
+      initial={false}
+      animate={{ opacity: active ? 1 : 0, y: active || reduce ? 0 : 4 }}
       transition={{ duration: 0.18, ease: EASE_OUT }}
       className={cn("mt-4", className)}
     >

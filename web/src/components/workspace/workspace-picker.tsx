@@ -1,15 +1,13 @@
-import { useEffect, useId, useRef, useState, type RefObject } from "react"
+import { useEffect, useId, useLayoutEffect, useRef, useState, type RefObject } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Folder01Icon } from "@hugeicons-pro/core-stroke-rounded"
 import { Button } from "@/components/motion/button"
 import { Input } from "@/components/motion/input"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+  AnimatedModal,
+  AnimatedModalDescription,
+  AnimatedModalTitle,
+} from "@/components/motion/animated-modal"
 import type { Workspace } from "@/workspace/store"
 import type { WorkspaceDirectory } from "@/workspace/access"
 import { useAppDependencies } from "@/app/dependencies"
@@ -34,7 +32,7 @@ export function WorkspacePicker({
 }) {
   const { workspaceAccess, desktop } = useAppDependencies()
   const directories = useBackendData(
-    "directories",
+    `${open}:${addOnly}`,
     () => workspaceAccess.listDirectories(),
     workspaceAccess
   )
@@ -48,6 +46,14 @@ export function WorkspacePicker({
   const attempt = useRef(0)
   const previousFocus = useRef<HTMLElement | null>(null)
   const picked = useRef(false)
+  useLayoutEffect(() => {
+    if (open) {
+      previousFocus.current = document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null
+      picked.current = false
+    }
+  }, [open])
   useEffect(
     () => () => {
       attempt.current += 1
@@ -58,6 +64,8 @@ export function WorkspacePicker({
   function close() {
     attempt.current += 1
     setBusy(false)
+    setPath(null)
+    setError(null)
     onOpenChange(false)
   }
 
@@ -83,158 +91,150 @@ export function WorkspacePicker({
   }
 
   return (
-    <Dialog
+    <AnimatedModal
       open={open}
       onOpenChange={(next) => {
         if (!next) close()
       }}
+      panelClassName="grid gap-4 p-6 border-border bg-popover shadow-none"
+      panelDataSlot="dialog-content"
+      showCloseButton
+      onExitComplete={() => {
+        const previous = previousFocus.current
+        const editor = picked.current
+          ? fallbackFocusRef.current?.querySelector<HTMLElement>(
+              '[contenteditable="true"]'
+            )
+          : null
+        ;(
+          editor ??
+          (previous?.isConnected &&
+          !previous.closest("[inert]") &&
+          previous.getClientRects().length
+            ? previous
+            : fallbackFocusRef.current)
+        )?.focus({ preventScroll: true })
+      }}
     >
-      <DialogContent
-        className="max-h-[calc(100dvh-2rem)] overflow-y-auto border-border bg-popover shadow-none"
-        onOpenAutoFocus={() => {
-          previousFocus.current =
-            document.activeElement instanceof HTMLElement
-              ? document.activeElement
-              : null
-        }}
-        onCloseAutoFocus={(event) => {
+      <div className="flex flex-col gap-2 pr-8 text-left">
+        <AnimatedModalTitle className="text-lg leading-none font-medium">{addOnly ? "添加工作区" : "选择工作区"}</AnimatedModalTitle>
+        <AnimatedModalDescription className="text-sm text-muted-foreground">
+          选择一个目录，集中管理这项工作的会话。
+        </AnimatedModalDescription>
+      </div>
+      {!addOnly && workspaces.length > 0 ? (
+        <div className="grid gap-1" aria-label="已有工作区">
+          {workspaces.map((workspace) => (
+            <Button
+              key={workspace.id}
+              variant="ghost"
+              disabled={busy}
+              className="h-auto min-h-12 min-w-0 justify-start gap-3 rounded-lg px-3 py-2 text-left"
+              onClick={() => {
+                onPick(workspace.id)
+                picked.current = true
+                close()
+              }}
+            >
+              <HugeiconsIcon
+                icon={Folder01Icon}
+                size={18}
+                aria-hidden="true"
+              />
+              <span className="min-w-0">
+                <span className="block truncate">{workspace.name}</span>
+                <span className="block truncate text-xs font-normal text-muted-foreground">
+                  {workspace.path}
+                </span>
+              </span>
+            </Button>
+          ))}
+        </div>
+      ) : null}
+      <form
+        onSubmit={(event) => {
           event.preventDefault()
-          const previous = previousFocus.current
-          const editor = picked.current
-            ? fallbackFocusRef.current?.querySelector<HTMLElement>(
-                '[contenteditable="true"]'
-              )
-            : null
-          ;(
-            editor ??
-            (previous?.isConnected &&
-            !previous.closest("[inert]") &&
-            previous.getClientRects().length
-              ? previous
-              : fallbackFocusRef.current)
-          )?.focus({ preventScroll: true })
+          void add()
         }}
+        className="grid min-w-0 gap-3"
       >
-        <DialogHeader className="pr-8 text-left">
-          <DialogTitle>{addOnly ? "添加工作区" : "选择工作区"}</DialogTitle>
-          <DialogDescription>
-            选择一个目录，集中管理这项工作的会话。
-          </DialogDescription>
-        </DialogHeader>
-        {!addOnly && workspaces.length > 0 ? (
-          <div className="grid gap-1" aria-label="已有工作区">
-            {workspaces.map((workspace) => (
+        <div className="flex items-center justify-between gap-2">
+          <label htmlFor={inputId} className="text-sm font-medium">
+            目录
+          </label>
+          <span className="text-xs text-muted-foreground">可用目录</span>
+        </div>
+        <Input
+          id={inputId}
+          value={path}
+          disabled={busy}
+          onChange={(value) => {
+            setPath(value)
+            setError(null)
+          }}
+          error={Boolean(error)}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? `${inputId}-error` : undefined}
+          classNames={{ field: "h-9", input: "text-sm" }}
+          autoComplete="off"
+        />
+        <div className="grid gap-1">
+          {(directories.status === "ready" ? directories.data : []).map(
+            (directory) => (
               <Button
-                key={workspace.id}
+                key={directory.path}
+                type="button"
                 variant="ghost"
                 disabled={busy}
-                className="h-auto min-h-12 min-w-0 justify-start gap-3 rounded-lg px-3 py-2 text-left"
+                aria-pressed={path === directory.path}
                 onClick={() => {
-                  onPick(workspace.id)
-                  picked.current = true
-                  close()
+                  setPath(directory.path)
+                  setError(null)
                 }}
+                className="h-9 min-w-0 justify-start gap-2 rounded-lg px-3 font-normal aria-pressed:bg-accent"
               >
                 <HugeiconsIcon
                   icon={Folder01Icon}
-                  size={18}
+                  size={16}
                   aria-hidden="true"
                 />
-                <span className="min-w-0">
-                  <span className="block truncate">{workspace.name}</span>
-                  <span className="block truncate text-xs font-normal text-muted-foreground">
-                    {workspace.path}
-                  </span>
-                </span>
+                <span className="truncate">{directory.path}</span>
               </Button>
-            ))}
-          </div>
-        ) : null}
-        <form
-          onSubmit={(event) => {
-            event.preventDefault()
-            void add()
-          }}
-          className="grid min-w-0 gap-3"
-        >
-          <div className="flex items-center justify-between gap-2">
-            <label htmlFor={inputId} className="text-sm font-medium">
-              目录
-            </label>
-            <span className="text-xs text-muted-foreground">可用目录</span>
-          </div>
-          <Input
-            id={inputId}
-            value={path}
-            disabled={busy}
-            onChange={(value) => {
-              setPath(value)
-              setError(null)
-            }}
-            error={Boolean(error)}
-            aria-invalid={Boolean(error)}
-            aria-describedby={error ? `${inputId}-error` : undefined}
-            classNames={{ field: "h-9", input: "text-sm" }}
-            autoComplete="off"
-          />
-          <div className="grid gap-1">
-            {(directories.status === "ready" ? directories.data : []).map(
-              (directory) => (
-                <Button
-                  key={directory.path}
-                  type="button"
-                  variant="ghost"
-                  disabled={busy}
-                  aria-pressed={path === directory.path}
-                  onClick={() => {
-                    setPath(directory.path)
-                    setError(null)
-                  }}
-                  className="h-9 min-w-0 justify-start gap-2 rounded-lg px-3 font-normal aria-pressed:bg-accent"
-                >
-                  <HugeiconsIcon
-                    icon={Folder01Icon}
-                    size={16}
-                    aria-hidden="true"
-                  />
-                  <span className="truncate">{directory.path}</span>
-                </Button>
-              )
-            )}
-          </div>
-          {error ? (
-            <p
-              id={`${inputId}-error`}
-              role="alert"
-              className="text-sm text-destructive"
-            >
-              {error}
-            </p>
-          ) : null}
-          <p className="text-xs leading-relaxed text-muted-foreground">
-            {desktop.getState().simulated
-              ? "当前为演示环境，工作区与会话在刷新后重置。"
-              : "工作区与会话在重新打开应用后重置。"}
+            )
+          )}
+        </div>
+        {error ? (
+          <p
+            id={`${inputId}-error`}
+            role="alert"
+            className="text-sm text-destructive"
+          >
+            {error}
           </p>
-          <div className="flex justify-end gap-2 pt-1">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={close}
-              className="rounded-full"
-            >
-              取消
-            </Button>
-            <Button
-              type="submit"
-              disabled={busy || !path.trim()}
-              className="rounded-full"
-            >
-              {busy ? "正在添加…" : error ? "重试" : "打开工作区"}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+        ) : null}
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          {desktop.getState().simulated
+            ? "当前为演示环境，工作区与会话在刷新后重置。"
+            : "工作区与会话在重新打开应用后重置。"}
+        </p>
+        <div className="flex justify-end gap-2 pt-1">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={close}
+            className="rounded-full"
+          >
+            取消
+          </Button>
+          <Button
+            type="submit"
+            disabled={busy || !path.trim()}
+            className="rounded-full"
+          >
+            {busy ? "正在添加…" : error ? "重试" : "打开工作区"}
+          </Button>
+        </div>
+      </form>
+    </AnimatedModal>
   )
 }

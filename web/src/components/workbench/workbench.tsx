@@ -5,6 +5,8 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useId,
+  useLayoutEffect,
   useRef,
   useState,
   useSyncExternalStore,
@@ -29,12 +31,13 @@ import {
 import { Button } from "@/components/motion/button"
 import { ChatScreen } from "@/components/chat/chat-screen"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+  AnimatedDropdown as DropdownMenu,
+  AnimatedDropdownContent as DropdownMenuContent,
+  AnimatedDropdownItem as DropdownMenuItem,
+  AnimatedDropdownTrigger as DropdownMenuTrigger,
+} from "@/components/premium/animated-dropdown"
 import { Input } from "@/components/motion/input"
+import { Tabs, TabsList, TabsTrigger } from "@/components/motion/tabs"
 import { MorphicTooltip } from "@/components/premium/morphic-tooltip/morphic-tooltip"
 import { SPRING_PANEL } from "@/lib/ease"
 import { cn } from "@/lib/utils"
@@ -119,62 +122,44 @@ function viewIcon(view: WorkbenchView): IconSvgElement {
 }
 
 function TabButton({
+  namespace,
   tab,
   active,
-  onSelect,
   onClose,
 }: {
+  namespace: string
   tab: WorkbenchTab
   active: boolean
-  onSelect: () => void
   onClose?: () => void
 }) {
-  const tabRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    if (active)
-      tabRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" })
-  }, [active])
   return (
-    <div
-      ref={tabRef}
-      role="tab"
-      aria-selected={active}
-      tabIndex={0}
-      onClick={onSelect}
-      onKeyDown={(event) => {
-        if (event.target !== event.currentTarget) return
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault()
-          onSelect()
-        }
-      }}
-      className={cn(
-        "group/tab flex h-8 max-w-36 min-w-0 shrink-0 cursor-default items-center gap-1.5 rounded-full pr-1.5 pl-3 text-xs outline-none select-none focus-visible:ring-2 focus-visible:ring-ring",
-        active
-          ? "bg-accent font-medium text-accent-foreground"
-          : "text-muted-foreground hover:bg-muted hover:text-foreground"
-      )}
-    >
-      <HugeiconsIcon
-        icon={viewIcon(tab.view)}
-        size={13}
-        strokeWidth={1.7}
-        aria-hidden="true"
-        className="shrink-0 text-muted-foreground"
-      />
-      <span className="min-w-0 flex-1 truncate">{viewTitle(tab.view)}</span>
+    <div className="group/tab relative min-w-0 shrink-0">
+      <TabsTrigger
+        value={tab.id}
+        id={`${namespace}-tab-${tab.id}`}
+        aria-controls={`${namespace}-panel-${tab.id}`}
+        className={cn(
+          "h-8 max-w-36 gap-1.5 py-0 pl-3 text-xs focus-visible:ring-2 focus-visible:ring-ring",
+          onClose ? "pr-7" : "pr-3"
+        )}
+        indicatorClassName="bg-accent"
+        icon={<HugeiconsIcon icon={viewIcon(tab.view)} size={13} aria-hidden="true" />}
+      >
+        <span className="min-w-0 truncate">{viewTitle(tab.view)}</span>
+      </TabsTrigger>
       {onClose ? (
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="icon-xs"
           aria-label={`关闭标签页 ${viewTitle(tab.view)}`}
-          onClick={(event) => {
-            event.stopPropagation()
-            onClose()
-          }}
-          className="grid size-4.5 shrink-0 place-items-center rounded-full text-muted-foreground opacity-0 transition-opacity outline-none group-focus-within/tab:opacity-100 group-hover/tab:opacity-100 hover:bg-foreground/10 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
+          onClick={onClose}
+          className={cn(
+            "absolute top-1/2 right-1 size-5 -translate-y-1/2 text-muted-foreground transition-opacity group-focus-within/tab:opacity-100 group-hover/tab:opacity-100 focus-visible:opacity-100 motion-reduce:transition-none",
+            active ? "opacity-100" : "opacity-0"
+          )}
         >
           <HugeiconsIcon icon={Cancel01Icon} size={10} aria-hidden="true" />
-        </button>
+        </Button>
       ) : null}
     </div>
   )
@@ -199,6 +184,7 @@ export function WorkbenchPanel({
   scope: WorkbenchScope | null
   models: readonly ModelChoice[]
 }) {
+  const namespace = useId()
   const { host, desktop } = useAppDependencies()
   const desktopState = useSyncExternalStore(
     desktop.subscribe,
@@ -239,6 +225,12 @@ export function WorkbenchPanel({
     { id: "tab-1", view: { type: "start" } },
   ])
   const [activeId, setActiveId] = useState("tab-1")
+  const pendingTabFocus = useRef<string | null>(null)
+  useLayoutEffect(() => {
+    if (!pendingTabFocus.current) return
+    document.getElementById(`${namespace}-tab-${pendingTabFocus.current}`)?.focus()
+    pendingTabFocus.current = null
+  }, [activeId, tabs, namespace])
   const [addressDraft, setAddressDraft] = useState<{
     tabId: string
     threadId: string | null
@@ -323,10 +315,12 @@ export function WorkbenchPanel({
       const next = remaining.length
         ? remaining
         : [{ id: "tab-1", view: { type: "start" as const } }]
+      pendingTabFocus.current = activeId
       if (id === activeId) {
         const neighbor = next[Math.min(index, next.length - 1)]
         if (neighbor) {
           setActiveId(neighbor.id)
+          pendingTabFocus.current = neighbor.id
           setAddressDraft(null)
         }
       }
@@ -474,17 +468,14 @@ export function WorkbenchPanel({
               />
             </Button>
           </MorphicTooltip>
-          <div
-            role="tablist"
-            aria-label="工作台标签页"
-            className="flex min-w-0 flex-1 [scrollbar-width:none] items-center gap-0.5 overflow-x-auto"
-          >
+          <Tabs value={activeId} onValueChange={selectTab} variant="segment" className="min-w-0 flex-1">
+            <TabsList aria-label="工作台标签页" className="gap-0.5 bg-transparent p-0">
             {tabs.map((tab) => (
               <TabButton
                 key={tab.id}
+                namespace={namespace}
                 tab={tab}
                 active={tab.id === activeId}
-                onSelect={() => selectTab(tab.id)}
                 onClose={
                   tabs.length > 1 || tab.view.type === "browser"
                     ? () => closeTab(tab.id)
@@ -492,7 +483,8 @@ export function WorkbenchPanel({
                 }
               />
             ))}
-          </div>
+            </TabsList>
+          </Tabs>
           <MorphicTooltip content="新建标签页" side="bottom" align="end">
             <Button
               variant="ghost"
@@ -673,7 +665,11 @@ export function WorkbenchPanel({
             onReturnToApproval={onReturnToApproval}
           />
         ) : null}
-        <div className="@container min-h-0 flex-1 overflow-hidden">
+        <div className="@container min-h-0 flex-1 overflow-hidden"
+          role={view.type === "agent-debug" ? undefined : "tabpanel"}
+          id={view.type === "agent-debug" ? undefined : `${namespace}-panel-${activeId}`}
+          aria-labelledby={view.type === "agent-debug" ? undefined : `${namespace}-tab-${activeId}`}
+        >
           {view.type === "start" ? (
             <StartPage
               sites={sites}
@@ -709,6 +705,8 @@ export function WorkbenchPanel({
               <div
                 key={tab.id}
                 role="tabpanel"
+                id={`${namespace}-panel-${tab.id}`}
+                aria-labelledby={`${namespace}-tab-${tab.id}`}
                 aria-label={viewTitle(tab.view)}
                 className={tab.id === activeId ? "h-full min-h-0" : "hidden"}
               >

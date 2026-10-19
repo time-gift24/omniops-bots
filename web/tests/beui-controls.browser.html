@@ -1,11 +1,12 @@
 <!doctype html>
 <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>beUI controls behavior regression</title>
 <!-- Run npm run dev, then open /tests/beui-controls.browser.html.
      After PASS, press Enter in #enter-input using real browser input; #enter-count must become 1.
      Then click #toggle-enter-submit and press Enter again; the count must stay 1.
      Synthetic KeyboardEvent cannot exercise a browser's native implicit form submission. -->
-<style>#fixture { padding: 24px; } form { display: flex; gap: 12px; margin-bottom: 16px; } #result { white-space: pre-wrap; }</style>
+<style>#fixture { padding: 24px; } form { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; } #result { white-space: pre-wrap; }</style>
 <div id="fixture"></div>
 <pre id="result">Running…</pre>
 <script type="module">
@@ -15,9 +16,10 @@
   import "/src/index.css";
   import { Button } from "/src/components/motion/button.tsx";
   import { Input } from "/src/components/motion/input.tsx";
+  import { Tabs, TabsList, TabsTrigger, TabsContent } from "/src/components/motion/tabs.tsx";
   import { Select } from "/src/components/premium/select/select.tsx";
-  import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogTrigger } from "/src/components/ui/dialog.tsx";
-  import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "/src/components/ui/dropdown-menu.tsx";
+  import { AnimatedModal, AnimatedModalTitle, AnimatedModalDescription } from "/src/components/motion/animated-modal.tsx";
+  import { AnimatedDropdown as DropdownMenu, AnimatedDropdownTrigger as DropdownMenuTrigger, AnimatedDropdownContent as DropdownMenuContent, AnimatedDropdownItem as DropdownMenuItem } from "/src/components/premium/animated-dropdown/index.tsx";
 
   const h = React.createElement;
   const result = document.querySelector("#result");
@@ -48,11 +50,32 @@
   let plainClicks = 0;
   let disabledClicks = 0;
   let enterSubmits = 0;
+  const paneMounts = { first: 0, second: 0 };
+  function RetainedPane({ name }) {
+    const [count, setCount] = React.useState(0);
+    React.useEffect(() => { paneMounts[name] += 1; }, [name]);
+    return h(Button, { id: `increment-${name}`, onClick: () => setCount(value => value + 1) }, `${name}: ${count}`);
+  }
+  function TabsFixture() {
+    const [selected, setSelected] = React.useState("first");
+    const [secondOpen, setSecondOpen] = React.useState(true);
+    return h(Tabs, { value: selected, onValueChange: setSelected, variant: "segment" },
+      h(TabsList, { "aria-label": "Fixture tabs" },
+        h(TabsTrigger, { value: "first", id: "tab-first", "aria-controls": "panel-first" }, "First"),
+        h(TabsTrigger, { value: "disabled", disabled: true, id: "tab-disabled" }, "Disabled"),
+        secondOpen ? h("div", { className: "flex" },
+          h(TabsTrigger, { value: "second", id: "tab-second", "aria-controls": "panel-second" }, "Second"),
+          h(Button, { id: "close-second", "aria-label": "Close second", onClick: () => { setSecondOpen(false); setSelected("first"); } }, "Close")) : null),
+      h(TabsContent, { value: "first", id: "panel-first", "aria-labelledby": "tab-first" }, h(RetainedPane, { name: "first" })),
+      secondOpen ? h(TabsContent, { value: "second", id: "panel-second", "aria-labelledby": "tab-second" }, h(RetainedPane, { name: "second" })) : null);
+  }
 
   function Fixture() {
+    const [dialogOpen, setDialogOpen] = React.useState(false);
     const [model, setModel] = React.useState("alpha");
     const [enterDisabled, setEnterDisabled] = React.useState(false);
     return h(React.Fragment, null,
+      h(TabsFixture),
       h("form", { id: "controls-form", onSubmit: event => { event.preventDefault(); submits += 1; } },
         h(Input, {
           id: "validated-input", ref: fieldRef, name: "name", required: true,
@@ -73,16 +96,15 @@
         h(Button, { id: "enter-submit", type: "submit", disabled: enterDisabled }, "Native Enter submit"),
         h("output", { id: "enter-count", "aria-label": "Native Enter submit count" }, "0")),
       h(Button, { id: "toggle-enter-submit", onClick: () => setEnterDisabled(disabled => !disabled) }, "Toggle native Enter submit disabled"),
-      h(Dialog, null,
-        h(DialogTrigger, { asChild: true }, h(Button, { id: "dialog-trigger" }, "Open model dialog")),
-        h(DialogContent, null,
-          h(DialogTitle, null, "Model selection"),
-          h(DialogDescription, null, "Choose a model without closing the dialog."),
+      h(Button, { id: "dialog-trigger", "aria-haspopup": "dialog", onClick: () => setDialogOpen(true) }, "Open model dialog"),
+      h(AnimatedModal, { open: dialogOpen, onOpenChange: setDialogOpen, panelClassName: "grid gap-4 p-6", showCloseButton: true },
+          h(AnimatedModalTitle, null, "Model selection"),
+          h(AnimatedModalDescription, null, "Choose a model without closing the dialog."),
           h(Select, {
             options: [{ id: "alpha", label: "Alpha" }, { id: "blocked", label: "Unavailable", disabled: true }, { id: "beta", label: "Beta" }],
-            value: model, onValueChange: setModel, label: "Fixture model",
+            value: model, onValueChange: setModel, label: "Fixture model", portal: true,
           }),
-          h("output", { id: "selected-model" }, model))),
+          h("output", { id: "selected-model" }, model)),
       h(DropdownMenu, null,
         h(DropdownMenuTrigger, { asChild: true }, h(Button, { id: "menu-trigger" }, "Open action menu")),
         h(DropdownMenuContent, null, h(DropdownMenuItem, null, "Menu action"))),
@@ -134,7 +156,7 @@
     const dialogTrigger = document.querySelector("#dialog-trigger");
     dialogTrigger.focus();
     click(dialogTrigger);
-    await until(() => document.querySelector('[role="dialog"]'), "DialogTrigger asChild must open with a beUI Button");
+    await until(() => document.querySelector('[role="dialog"]'), "AnimatedModal must open from a beUI Button");
     const modelTrigger = () => document.querySelector('button[aria-label="Fixture model"]');
     modelTrigger().focus();
     key("ArrowDown");
@@ -170,6 +192,25 @@
     key("Escape");
     await until(() => !document.querySelector('[role="menu"]') && document.activeElement === menuTrigger, "Keyboard-opened menu Escape must restore its beUI trigger");
     checks.push("DropdownMenu asChild pointer/keyboard opening and Escape focus restoration");
+
+    const first = document.querySelector("#tab-first");
+    click(document.querySelector("#increment-first"));
+    first.focus();
+    key("ArrowRight");
+    await until(() => document.activeElement?.id === "tab-second" && document.querySelector("#tab-second").getAttribute("aria-selected") === "true", "ArrowRight must skip disabled tabs and activate the next tab");
+    assert(document.querySelector("#panel-first").hidden && !document.querySelector("#panel-second").hidden, "Tab panels must expose the selected panel");
+    click(document.querySelector("#increment-second"));
+    document.querySelector("#tab-second").focus();
+    key("Home");
+    await until(() => document.activeElement === first && !document.querySelector("#panel-first").hidden, "Home must activate the first tab");
+    assert(document.querySelector("#increment-first").textContent === "first: 1" && paneMounts.first === 1 && paneMounts.second === 1, "Tab switches must retain child state and subscriptions without remounting");
+    key("End");
+    await until(() => document.activeElement?.id === "tab-second", "End must focus the final enabled tab");
+    assert(!document.querySelector("button button"), "Closable tabs must not nest interactive buttons");
+    click(document.querySelector("#close-second"));
+    await until(() => !document.querySelector("#tab-second") && !document.querySelector("#panel-first").hidden, "Closing a tab must preserve a valid selected panel");
+    assert(document.querySelector("#increment-first").textContent === "first: 1" && paneMounts.first === 1, "Closing a sibling tab must preserve the remaining panel state");
+    checks.push("Tabs keyboard navigation, disabled choices, retained panels and sibling close actions");
 
     result.dataset.passed = "true";
     result.textContent = `PASS: ${checks.join("; ")}. Native implicit Enter submission requires trusted browser input in #enter-input.`;

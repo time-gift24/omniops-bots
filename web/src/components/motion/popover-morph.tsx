@@ -113,7 +113,11 @@ export function MorphPopover({
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !e.defaultPrevented) close();
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      // A modal opened above this popover owns its Escape key.
+      if (e.target instanceof Element && e.target.closest('[aria-modal="true"]') && !contentRef.current?.contains(e.target)) return;
+      e.preventDefault();
+      close();
     };
     const onPointer = (e: PointerEvent) => {
       const target = e.target as Node;

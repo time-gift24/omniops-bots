@@ -2,12 +2,10 @@
 
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+  AnimatedModal,
+  AnimatedModalDescription,
+  AnimatedModalTitle,
+} from "@/components/motion/animated-modal"
 import type { McpCapability, McpServer } from "@/agents/source"
 import { agentResourceIcon } from "./agent-builder-data"
 
@@ -68,37 +66,41 @@ export function McpCapabilityDialog({
   onOpenChange: (open: boolean) => void
 }) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] grid-rows-[auto_minmax(0,1fr)] sm:max-w-xl">
-        {server ? (
-          <>
-            <DialogHeader className="flex-row items-center gap-3 space-y-0 text-left">
-              <span className="grid size-10 shrink-0 place-items-center rounded-full bg-accent text-accent-foreground">
-                <HugeiconsIcon
-                  icon={agentResourceIcon(server.id)}
-                  aria-hidden="true"
-                  size={18}
-                />
-              </span>
-              <span className="min-w-0">
-                <DialogTitle className="truncate">{server.name}</DialogTitle>
-                <DialogDescription className="mt-1">
-                  {server.description}
-                </DialogDescription>
-              </span>
-            </DialogHeader>
-            <div className="flex min-h-0 flex-col gap-5 overflow-y-auto pr-1">
-              {GROUPS.map(({ key, label }) => (
-                <CapabilityGroup
-                  key={key}
-                  label={label}
-                  items={server.capabilities[key]}
-                />
-              ))}
-            </div>
-          </>
-        ) : null}
-      </DialogContent>
-    </Dialog>
+    <AnimatedModal
+      open={open}
+      onOpenChange={onOpenChange}
+      panelClassName="grid gap-4 p-6 max-h-[85vh] grid-rows-[auto_minmax(0,1fr)] sm:max-w-xl"
+      panelDataSlot="dialog-content"
+      showCloseButton
+    >
+      {server ? (
+        <>
+          <div className="flex items-center gap-3 pr-8 text-left">
+            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-accent text-accent-foreground">
+              <HugeiconsIcon
+                icon={agentResourceIcon(server.id)}
+                aria-hidden="true"
+                size={18}
+              />
+            </span>
+            <span className="min-w-0">
+              <AnimatedModalTitle className="truncate text-lg leading-none font-medium">{server.name}</AnimatedModalTitle>
+              <AnimatedModalDescription className="mt-1 text-sm text-muted-foreground">
+                {server.description}
+              </AnimatedModalDescription>
+            </span>
+          </div>
+          <div className="flex min-h-0 flex-col gap-5 overflow-y-auto pr-1">
+            {GROUPS.map(({ key, label }) => (
+              <CapabilityGroup
+                key={key}
+                label={label}
+                items={server.capabilities[key]}
+              />
+            ))}
+          </div>
+        </>
+      ) : null}
+    </AnimatedModal>
   )
 }
