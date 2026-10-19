@@ -215,6 +215,7 @@
 <figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/01-skill-file-upload.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/01-skill-file-upload.png" alt="上传文件、编辑和保存后的实际界面"></a><figcaption>浏览器实测上传 Markdown 文件、修改后保存，刷新页面仍能读取。桌面文件系统另由 runtime 测试验证；此图不是桌面运行截图。</figcaption></figure>
 <p>目录与版本规则、当前运行加载路径及后续完整快照装配见<a href="../skill-storage-and-loading.md">客户端 Skill 文件管理、版本与运行加载</a>。本地包放在 <code>skills/local/&lt;localId&gt;</code>；官方版本放在 <code>skills/releases/&lt;skillId&gt;/&lt;contentId&gt;</code>，人工标签通过 <code>tags.json</code> 映射到内容 ID。正式发布和同步校验仍由后续服务端接入完成。</p>
 <h3>文件上传与版本的边界</h3>
+<p>服务端和客户端按相同的 <code>skills/releases/&lt;skillId&gt;/&lt;contentId&gt;/</code> 存放正式完整包，<code>SKILL.md</code> 直接位于版本目录内；<code>skills/releases/&lt;skillId&gt;/tags.json</code> 保存人工标签到内容 ID 的映射，位于各版本包之外。服务端保留正式历史，客户端只下载所需版本并保留已有缓存。草稿修订使用独立的 <code>drafts/&lt;skillId&gt;/revisions/&lt;draftRevisionId&gt;/</code>，未同步工作副本另放 <code>working/</code>。两端目录对照和运行顺序见 <a href="../skill-version-layout.md">Skill 版本文件布局</a>。</p>
 <table>
 <thead>
 <tr>
@@ -283,6 +284,7 @@
 <ul>
 <li>基于现有登录与 Token 返回用户身份和运维权限，并校验草稿上传、创建版本、正式发布请求。</li>
 <li>接收包含目录、相对路径及真实文件内容的完整草稿修订与不可变发布包，提供版本清单和 HTTPS 下载。文件级编辑发生在客户端，不新增文件级发布或服务端审批流程。</li>
+<li>正式版本、草稿修订与客户端使用相同的相对目录和包内结构；发布时按客户端一致的算法生成内容 ID，标签与系统发布元信息保存在包外，不通过传输改变文件字节。</li>
 <li>向客户端提供正式发布所影响的官方 Agent；按新 Skill 版本更新装配、生成新 Agent ID。</li>
 <li>接收客户端提交的 Skill 标签及各受影响 Agent 的手填新标签，一次完成联动发布。保存草稿不联动 Agent。</li>
 </ul>
@@ -638,6 +640,32 @@
 <figure class="usecase"><a class="screenshot-link" href="./assets/06-sync-usecase.svg" target="_blank" rel="noopener" aria-label="放大用例图"><img src="./assets/06-sync-usecase.svg" alt="同步用例图：同步清单、获取缺失物料、按指定装配运行"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure><h2 id="06-sync-简要设计">简要设计</h2>
 <p>客户端同步分两步：先获取版本清单，再按当前 Agent 的装配清单补齐缺失物料。不会为了同步清单下载全部历史包。官方资源按版本保存在本地，旧包不自动覆盖或清理；运行时选择对应版本装配。</p>
 <p>HTTPS 负责清单和物料传输。WebSocket 负责调用和结果，不承担文件包同步。未上传的本地草稿可以直接实验，运行前固定完整快照，不要求先上传为官方版本。</p>
+<h3>服务端版本库与客户端缓存一一对应</h3>
+<table>
+<thead>
+<tr>
+<th>同一个版本</th>
+<th>服务端</th>
+<th>客户端</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>完整文件包</td>
+<td><code>&lt;服务端根&gt;/skills/releases/&lt;skillId&gt;/&lt;contentId&gt;/</code></td>
+<td><code>&lt;客户端根&gt;/skills/releases/&lt;skillId&gt;/&lt;contentId&gt;/</code></td>
+</tr>
+<tr>
+<td>标签索引</td>
+<td><code>skills/releases/&lt;skillId&gt;/tags.json</code>，由正式发布新增映射</td>
+<td>相同相对路径，只接受服务端确认的映射</td>
+</tr>
+<tr>
+<td>包内路径与内容</td>
+<td><code>SKILL.md</code>、引用文件、脚本和资源原始字节</td>
+<td>相同路径、相同字节，下载后独立核对摘要</td>
+</tr>
+</tbody></table>
+<p>两端的物理根路径可以不同，版本相对路径不变。客户端只缓存当前需要的包，不镜像全部历史；标签清单可以包含尚未缓存的版本。完整包先在正式版本目录外暂存，通过摘要和来源校验后再提交；版本包内不增加发布元信息或传输清单。详细目录及失败处理见 <a href="../skill-version-layout.md">Skill 版本文件布局</a>。</p>
 <h2 id="06-sync-客户端">客户端</h2>
 <ul>
 <li>官方新会话同步版本清单；每次远端调用核对所需版本，不匹配或缺少物料就先同步。</li>
@@ -645,7 +673,7 @@
 <li>运行前检查所需 builtinTool；缺失时提示更新桌面端，不尝试通过 Skill 同步安装内置工具。</li>
 <li>Skill 文件固定保存在当前用户主目录下的 <code>.omnimind-ops/skills</code>（macOS 为 <code>~/.omnimind-ops/skills</code>）。本地可编辑包与官方版本缓存分开；Windows 当前同样使用用户主目录，不硬编码盘符。</li>
 </ul>
-<p>本轮已接入本地文件持久化与官方缓存读取，完整包同步、摘要校验和会话固定快照尚未实现。目录、内容 ID 与人工标签的对应关系，以及当前 LangGraph.js 加载路径见<a href="../skill-storage-and-loading.md">Skill 存储与运行加载</a>。</p>
+<p>当前已接入本地文件持久化、官方缓存完整包摘要校验和会话固定快照；服务端清单、完整包下载与来源验证仍待接入。目录、内容 ID 与人工标签的对应关系，以及当前 LangGraph.js 加载路径见<a href="../skill-storage-and-loading.md">Skill 存储与运行加载</a>。</p>
 <h2 id="06-sync-详细设计">详细设计</h2>
 <h3>运行模型一：所需版本已在本地</h3>
 <p>**条件：**用户发起官方 Agent 新会话；客户端从服务端核对版本清单后，发现本次所需完整物料都已缓存。远端调用也执行相同核对，但以服务端指定的 Agent 版本为准。</p>
@@ -660,11 +688,12 @@
 <figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/06-sync-failure.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/06-sync-failure.svg" alt="同步失败运行顺序：请求失败、保留缓存、反馈本次失败"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/06-sync-failure.html">打开运行模型</a></p>
 <p>**结果：**客户端展示明确原因，本次调用失败，不降级到旧版，不使用不完整装配。远端调用按原调用 ID 记录并回传失败；本地已有缓存与未同步编辑保留。用户或服务端处理原因后重新发起。</p>
 <p>物料齐备但缺少所需 builtinTool 时同样不能执行：客户端提示更新桌面端，不通过 Skill 同步补装内置工具，具体顺序见<a href="#03-builtintool">builtinTool</a>。未上传的本地草稿实验直接固定完整快照，不要求先经过官方同步。</p>
-<p>MVP 不引入 Git 仓库、全量历史镜像或自动清理机制。Skill 磁盘布局已确定：本地包位于 <code>local/&lt;localId&gt;</code>，官方完整版本位于 <code>releases/&lt;skillId&gt;/&lt;contentId&gt;</code>；运行快照计划另存 <code>.omnimind-ops/runs/&lt;sessionId&gt;</code>。准备完成后的运行互斥、结果补传和重启恢复见<a href="#07-execution">任务执行与恢复</a>。</p>
+<p>MVP 不引入 Git 仓库、全量历史镜像或自动清理机制。Skill 磁盘布局已确定：本地包位于 <code>local/&lt;localId&gt;</code>，两端官方完整版本均位于 <code>releases/&lt;skillId&gt;/&lt;contentId&gt;</code>；会话完整包快照另存 <code>.omnimind-ops/runs/&lt;sha256(threadId)&gt;/skills/&lt;mountName&gt;/</code>。准备完成后的运行互斥、结果补传和重启恢复见<a href="#07-execution">任务执行与恢复</a>。</p>
 <h2 id="06-sync-服务端配合">服务端配合</h2>
 <p>为支持客户端核对版本与按需装配，服务端需要：</p>
 <ul>
 <li>提供官方已发布 Agent、Skill 的版本清单和缺失物料下载；Agent 的 MCP 配置或引用随清单关联。</li>
+<li>使用与客户端相同的 Skill 版本相对目录、包内路径、内容 ID 算法及标签映射；只有完整包与关联 Agent 均可取得后才公布正式发布结果。</li>
 <li>远端调用明确所需 Agent 版本，客户端据此核对；具体字段和端点留到实现阶段确定。</li>
 <li>保留已发布版本和标签的不可变关系。Skill 发布产生新 Agent 装配，不改写历史版本。</li>
 <li>按现有身份体系开放相应读取和运维写入能力，不新增客户端账号体系。</li>
