@@ -11,9 +11,7 @@ import {
 import type { MessageState, PartView, ToolState } from "@/chat/fold.ts";
 import {
   Trace,
-  TraceCollapsible,
-  TraceCollapsibleContent,
-  TraceCollapsibleTrigger,
+  TraceDisclosure,
   TraceIcon,
   TraceLine,
   TraceTitle,
@@ -211,10 +209,9 @@ const ToolStep = React.memo(function ToolStep({
   if (!detail) return line;
 
   return (
-    <TraceCollapsible defaultOpen={part.state === "error"}>
-      <TraceCollapsibleTrigger>{line}</TraceCollapsibleTrigger>
-      <TraceCollapsibleContent>{detail}</TraceCollapsibleContent>
-    </TraceCollapsible>
+    <TraceDisclosure title={line} defaultOpen={part.state === "error"}>
+      {detail}
+    </TraceDisclosure>
   );
 });
 
@@ -246,17 +243,14 @@ function ReasoningStep({
   );
   if (!part.text) return line;
   return (
-    <TraceCollapsible open={open} onOpenChange={setOpen}>
-      <TraceCollapsibleTrigger>{line}</TraceCollapsibleTrigger>
-      <TraceCollapsibleContent>
-        <Markdown
-          streaming={status === "running"}
-          className="text-sm text-muted-foreground"
-        >
-          {part.text}
-        </Markdown>
-      </TraceCollapsibleContent>
-    </TraceCollapsible>
+    <TraceDisclosure title={line} open={open} onOpenChange={setOpen}>
+      <Markdown
+        streaming={status === "running"}
+        className="text-sm text-muted-foreground"
+      >
+        {part.text}
+      </Markdown>
+    </TraceDisclosure>
   );
 }
 
@@ -347,37 +341,33 @@ export function ChainOfThought({
 
   return (
     <Trace>
-      <TraceCollapsible open={expanded} onOpenChange={setOpen}>
-        <TraceCollapsibleTrigger>
+      <TraceDisclosure
+        open={expanded}
+        onOpenChange={setOpen}
+        onFocusCapture={() => setOpen(true)}
+        title={
           <TraceLine status={status}>
             <TraceIcon>
               <StatusIcon status={status} />
             </TraceIcon>
             <StepTitle title={summary} detail={expanded ? "" : summaryDetail} />
           </TraceLine>
-        </TraceCollapsibleTrigger>
-        {/* 保留子步骤状态；读者进入详情后，由手动开合接管，避免正文到达时藏起焦点。 */}
-        <TraceCollapsibleContent
-          forceMount
-          inert={!expanded}
-          aria-hidden={!expanded}
-          onFocusCapture={() => setOpen(true)}
-        >
-          <Trace>
-            {parts.map((part, index) =>
-              part.kind === "reasoning" ? (
-                <ReasoningStep
-                  key={index}
-                  part={part}
-                  messageState={messageState}
-                />
-              ) : part.kind === "tool" ? (
-                <ToolStep key={index} part={part} messageState={messageState} />
-              ) : null,
-            )}
-          </Trace>
-        </TraceCollapsibleContent>
-      </TraceCollapsible>
+        }
+      >
+        <Trace>
+          {parts.map((part, index) =>
+            part.kind === "reasoning" ? (
+              <ReasoningStep
+                key={index}
+                part={part}
+                messageState={messageState}
+              />
+            ) : part.kind === "tool" ? (
+              <ToolStep key={index} part={part} messageState={messageState} />
+            ) : null,
+          )}
+        </Trace>
+      </TraceDisclosure>
     </Trace>
   );
 }

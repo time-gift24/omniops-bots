@@ -66,8 +66,11 @@ export function FileEntryCard({
   const selectedAction = useRef(false)
   return (
     <article className="skill-file-table-row grid grid-cols-[minmax(0,1fr)_7rem_5rem_2rem] items-center gap-3 border-b border-border py-3.5 last:border-0">
-      <button
-        className="flex min-w-0 items-center gap-3 rounded-md text-left outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+      <Button
+        variant="plain"
+        whileHover={undefined}
+        whileTap={undefined}
+        className="flex min-w-0 items-center justify-start gap-3 rounded-md rounded-md! text-left outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
         onClick={onOpen}
         disabled={disabled}
       >
@@ -90,7 +93,7 @@ export function FileEntryCard({
             aria-hidden="true"
           />
         ) : null}
-      </button>
+      </Button>
       <span className="skill-file-table-date text-[11px] text-muted-foreground tabular-nums">
         {modifiedLabel(entry.modifiedAt)}
       </span>

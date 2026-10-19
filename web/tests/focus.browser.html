@@ -28,7 +28,7 @@
   ));
   const dialog = () => document.querySelector('[data-slot="dialog-content"]');
   const search = () => document.querySelector('button[aria-label="搜索导航"]');
-  const searchInput = () => document.querySelector('[cmdk-input]');
+  const searchInput = () => document.querySelector('[data-slot=command-input]');
   const toggle = () => document.querySelector('button[aria-label="展开导航"], button[aria-label="收起导航"]');
   const drawer = () => document.querySelector('[data-mobile="true"]');
   const modelTrigger = () => document.querySelector('button[aria-label^="Select model:"]');

@@ -30,7 +30,7 @@
     message: { id: "assistant", role: "assistant", state, parts: [tool, { kind: "text", text }] },
     streaming: state === "streaming", onRetry,
   })), dependencies)));
-  const triggers = () => fixture.querySelectorAll('[data-slot="trace-collapsible-trigger"]');
+  const triggers = () => fixture.querySelectorAll('[data-slot="trace-disclosure"] button[aria-expanded]');
 
   try {
     render();

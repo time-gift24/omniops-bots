@@ -993,8 +993,11 @@ export function SkillLibraryScreen({
           {visible.map((item) => (
             <div key={item.id} className="border-b border-border last:border-0">
               <div className="skill-catalog-row grid grid-cols-[minmax(0,1fr)_7rem_8rem_3rem] items-center gap-3 rounded-lg px-3 py-4 transition-colors hover:bg-muted/50">
-                <button
-                  className="flex min-w-0 items-center gap-3 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                <Button
+                  variant="plain"
+                  whileHover={undefined}
+                  whileTap={undefined}
+                  className="flex min-w-0 items-center justify-start gap-3 rounded-md rounded-md! text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   onClick={() => onOpenSkill(item.id)}
                 >
                   <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted text-primary">
@@ -1009,7 +1012,7 @@ export function SkillLibraryScreen({
                         `${item.entries.filter((value) => value.kind === "file").length} 个文件`}
                     </span>
                   </span>
-                </button>
+                </Button>
                 <div className="skill-catalog-source">
                   <SkillSourceLabel skill={item} />
                 </div>

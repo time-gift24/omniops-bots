@@ -45,6 +45,7 @@ export interface BouncyAccordionProps {
   collapsible?: boolean;
   className?: string;
   classNames?: BouncyAccordionClassNames;
+  transition?: Transition;
 }
 
 // Rows, cards and scale-corrected text share a transition so their edges
@@ -112,6 +113,7 @@ function BouncyAccordionRow({
   layoutTransition,
   layoutDependency,
   classNames,
+  transition,
   onToggle,
 }: {
   item: BouncyAccordionItem;
@@ -125,6 +127,7 @@ function BouncyAccordionRow({
   layoutTransition: Transition;
   layoutDependency: string | null;
   classNames?: BouncyAccordionClassNames;
+  transition?: Transition;
   onToggle: () => void;
 }) {
   const contentRef = useRef<HTMLDivElement>(null);
@@ -214,7 +217,7 @@ function BouncyAccordionRow({
           <motion.span
             aria-hidden
             animate={{ rotate: open ? 180 : 0 }}
-            transition={reduce ? { duration: 0 } : CHEVRON_TRANSITION}
+            transition={reduce ? { duration: 0 } : transition ?? CHEVRON_TRANSITION}
             className={cn(
               "grid h-6 w-6 shrink-0 place-items-center text-muted-foreground",
               classNames?.chevron,
@@ -242,7 +245,7 @@ function BouncyAccordionRow({
             initial={false}
             animate={{ opacity: open ? 1 : 0 }}
             transition={{
-              opacity: reduce ? { duration: 0 } : DESCRIPTION_TRANSITION,
+              opacity: reduce ? { duration: 0 } : transition ?? DESCRIPTION_TRANSITION,
               layout: layoutTransition,
             }}
             style={{ originY: 0 }}
@@ -271,6 +274,7 @@ export function BouncyAccordion({
   collapsible = true,
   className,
   classNames,
+  transition,
 }: BouncyAccordionProps) {
   const reduce = useReducedMotion();
   const baseId = useId();
@@ -281,10 +285,10 @@ export function BouncyAccordion({
   });
   const activeIndex = items.findIndex((item) => item.id === activeValue);
   const previousValue = useRef(activeValue);
-  const layoutTransition =
+  const layoutTransition = transition ?? (
     activeValue === null || previousValue.current !== null
       ? COLLAPSE_TRANSITION
-      : EXPAND_TRANSITION;
+      : EXPAND_TRANSITION);
   useLayoutEffect(() => {
     previousValue.current = activeValue;
   }, [activeValue]);
@@ -329,6 +333,7 @@ export function BouncyAccordion({
             layoutTransition={layoutTransition}
             layoutDependency={activeValue}
             classNames={classNames}
+            transition={transition}
             onToggle={() => toggleItem(item.id)}
           />
         );

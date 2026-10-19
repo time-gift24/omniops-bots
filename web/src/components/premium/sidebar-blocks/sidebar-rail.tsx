@@ -42,13 +42,9 @@ import { Button } from "@/components/motion/button"
 import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import { SharedLayoutBg } from "@/components/motion/shared-layout-bg"
 import {
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command"
+  MorphicCommandPalette,
+  MorphicCommandPaletteContent,
+} from "@beui-template/components/premium/morphic-command-palette/morphic-command-palette"
 import {
   MorphicTooltip,
   MorphicTooltipProvider,
@@ -617,71 +613,39 @@ function SidebarRailShell({
         </AnimatedSidebar>
       </motion.div>
 
-      <CommandDialog
+      <MorphicCommandPalette
         open={searchOpen}
         onOpenChange={setSearchOpen}
-        title="搜索导航"
-        description="搜索可用页面"
+        shortcut={false}
         fallbackFocusRef={toggleRef}
+        items={sections.flatMap((entry) => [
+          ...(entry.overviewLabel ? [{
+            id: `overview:${entry.id}`,
+            label: entry.overviewLabel,
+            group: "页面",
+            icon: <HugeiconsIcon icon={ListViewIcon} aria-hidden="true" size={16} />,
+            onSelect: () => selectOverview(entry),
+          }] : []),
+          ...entry.groups.flatMap((group) => group.items.map((item) => ({
+            id: `item:${entry.id}:${group.label}:${item.id}`,
+            label: item.label,
+            group: `${entry.label} · ${group.label}`,
+            keywords: [entry.label, group.label, entry.id, item.id],
+            icon: item.icon ? <HugeiconsIcon icon={item.icon} aria-hidden="true" size={16} strokeWidth={1.7} className="text-muted-foreground" /> : undefined,
+            onSelect: () => selectSearchItem(entry, item),
+          }))),
+        ])}
       >
-        <CommandInput
+        <MorphicCommandPaletteContent
+          title="搜索导航"
+          description="搜索可用页面"
           placeholder="查找页面…"
-          wrapperClassName="h-12 rounded-none border-0 border-b border-border bg-transparent px-4 focus-within:ring-0"
+          emptyMessage="没有找到页面。"
+          clearLabel="清空搜索"
+          closeLabel="关闭搜索"
+          footer={false}
         />
-        <CommandList className="max-h-[min(24rem,60dvh)]">
-          <CommandEmpty>没有找到页面。</CommandEmpty>
-          {sections.some((entry) => entry.overviewLabel) ? (
-            <CommandGroup heading="页面">
-              {sections
-                .filter((entry) => entry.overviewLabel)
-                .map((entry) => (
-                  <CommandItem
-                    key={entry.id}
-                    value={entry.overviewLabel}
-                    onSelect={() => selectOverview(entry)}
-                  >
-                    <HugeiconsIcon
-                      icon={ListViewIcon}
-                      aria-hidden="true"
-                      size={16}
-                    />
-                    <span>{entry.overviewLabel}</span>
-                  </CommandItem>
-                ))}
-            </CommandGroup>
-          ) : null}
-          {sections.map((entry) =>
-            entry.groups.map((group) => (
-              <CommandGroup
-                key={`${entry.id}:${group.label}`}
-                heading={`${entry.label} · ${group.label}`}
-              >
-                {group.items.map((item) => {
-                  const Icon = item.icon
-                  return (
-                    <CommandItem
-                      key={item.id}
-                      value={`${item.label} ${entry.label} ${group.label} ${entry.id} ${item.id}`}
-                      onSelect={() => selectSearchItem(entry, item)}
-                    >
-                      {Icon ? (
-                        <HugeiconsIcon
-                          icon={Icon}
-                          aria-hidden="true"
-                          size={16}
-                          strokeWidth={1.7}
-                          className="text-muted-foreground"
-                        />
-                      ) : null}
-                      <span className="truncate">{item.label}</span>
-                    </CommandItem>
-                  )
-                })}
-              </CommandGroup>
-            ))
-          )}
-        </CommandList>
-      </CommandDialog>
+      </MorphicCommandPalette>
 
       <div className="relative flex min-w-0 flex-1 flex-col">
         <header className="flex min-h-12 shrink-0 items-center gap-3 px-3 sm:px-4">

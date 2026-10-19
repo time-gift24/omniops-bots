@@ -369,9 +369,9 @@
       await checkPath("技能", DEMO_SKILLS[1].name);
       await openSection("技能");
       click(button("搜索技能", panel()));
-      await until(() => document.querySelector("[cmdk-input]"), "Skill search did not open");
-      setInput(document.querySelector("[cmdk-input]"), DEMO_SKILLS[0].name);
-      const match = () => [...document.querySelectorAll("[cmdk-item]")]
+      await until(() => document.querySelector("[data-slot=command-input]"), "Skill search did not open");
+      setInput(document.querySelector("[data-slot=command-input]"), DEMO_SKILLS[0].name);
+      const match = () => [...document.querySelectorAll("[data-slot=command-item]")]
         .find(element => visible(element) && label(element) === DEMO_SKILLS[0].name);
       await until(match, "Skill search did not find the requested skill");
       click(match());
@@ -524,14 +524,14 @@
 
       await openSection("工作区");
       click(button("搜索导航", panel()));
-      await until(() => document.querySelector("[cmdk-input]"), "Navigation search did not open");
-      for (const name of hiddenSections) assert(![...document.querySelectorAll("[cmdk-group-heading]")].some(element => label(element).startsWith(`${name} ·`)),
+      await until(() => document.querySelector("[data-slot=command-input]"), "Navigation search did not open");
+      for (const name of hiddenSections) assert(![...document.querySelectorAll("[data-slot=command-group-heading]")].some(element => label(element).startsWith(`${name} ·`)),
         `${name} placeholder must not appear in navigation search groups`);
-      for (const name of hiddenItems) assert(![...document.querySelectorAll("[cmdk-item]")].some(element => label(element) === name),
+      for (const name of hiddenItems) assert(![...document.querySelectorAll("[data-slot=command-item]")].some(element => label(element) === name),
         `${name} placeholder must not appear in navigation search results`);
       passed.push("placeholder sections and pages stay hidden in navigation and search");
-      setInput(document.querySelector("[cmdk-input]"), DEMO_SKILLS[1].name);
-      const navigationMatch = () => [...document.querySelectorAll("[cmdk-item]")]
+      setInput(document.querySelector("[data-slot=command-input]"), DEMO_SKILLS[1].name);
+      const navigationMatch = () => [...document.querySelectorAll("[data-slot=command-item]")]
         .find(element => visible(element) && label(element) === DEMO_SKILLS[1].name);
       await until(navigationMatch, "Navigation search did not find the requested skill");
       click(navigationMatch());

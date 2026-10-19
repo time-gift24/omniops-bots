@@ -89,9 +89,9 @@
   const searchSession = async title => {
     await navigation();
     click(labeled("搜索导航"));
-    await until(() => document.querySelector("[cmdk-input]"), "Navigation search did not open");
-    setInput(document.querySelector("[cmdk-input]"), title);
-    const match = () => [...document.querySelectorAll("[cmdk-item]")]
+    await until(() => document.querySelector("[data-slot=command-input]"), "Navigation search did not open");
+    setInput(document.querySelector("[data-slot=command-input]"), title);
+    const match = () => [...document.querySelectorAll("[data-slot=command-item]")]
       .find(element => element.textContent.trim() === title && !element.closest("[hidden]"));
     await until(match, "Search did not find the existing conversation");
     click(match());

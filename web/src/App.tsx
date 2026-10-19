@@ -39,13 +39,9 @@ import { Button } from "@/components/motion/button"
 import { Select } from "@/components/premium/select/select"
 import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import {
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command"
+  MorphicCommandPalette,
+  MorphicCommandPaletteContent,
+} from "@beui-template/components/premium/morphic-command-palette/morphic-command-palette"
 import {
   WorkbenchPanel,
   type WorkbenchHandle,
@@ -1263,43 +1259,34 @@ function WorkspaceApp({
           开始实验会话
         </Button>
       </AnimatedModal>
-      <CommandDialog
+      <MorphicCommandPalette
         open={skillSearchOpen}
         onOpenChange={setSkillSearchOpen}
-        title="搜索技能"
-        description="搜索并打开技能"
+        shortcut={false}
         fallbackFocusRef={contentRef}
+        items={skillCatalog.map((skill) => ({
+          id: skill.id,
+          label: skill.name,
+          group: "我的技能",
+          keywords: [skill.description],
+          icon: <HugeiconsIcon icon={PackageIcon} aria-hidden="true" size={16} strokeWidth={1.7} className="text-muted-foreground" />,
+          onSelect: () => {
+            setOpenedSkillId(skill.id)
+            setView({ kind: "skill" })
+            setSkillSearchOpen(false)
+          },
+        }))}
       >
-        <CommandInput
+        <MorphicCommandPaletteContent
+          title="搜索技能"
+          description="搜索并打开技能"
           placeholder="查找技能…"
-          wrapperClassName="h-12 rounded-none border-0 border-b border-border bg-transparent px-4 focus-within:ring-0"
+          emptyMessage="没有找到技能。"
+          clearLabel="清空搜索"
+          closeLabel="关闭搜索"
+          footer={false}
         />
-        <CommandList className="max-h-[min(24rem,60dvh)]">
-          <CommandEmpty>没有找到技能。</CommandEmpty>
-          <CommandGroup heading="我的技能">
-            {skillCatalog.map((skill) => (
-              <CommandItem
-                key={skill.id}
-                value={`${skill.name} ${skill.description}`}
-                onSelect={() => {
-                  setOpenedSkillId(skill.id)
-                  setView({ kind: "skill" })
-                  setSkillSearchOpen(false)
-                }}
-              >
-                <HugeiconsIcon
-                  icon={PackageIcon}
-                  aria-hidden="true"
-                  size={16}
-                  strokeWidth={1.7}
-                  className="text-muted-foreground"
-                />
-                <span className="truncate">{skill.name}</span>
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        </CommandList>
-      </CommandDialog>
+      </MorphicCommandPalette>
       <WorkspacePicker
         open={picker !== null}
         onOpenChange={(open) => {

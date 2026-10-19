@@ -1,9 +1,8 @@
 import * as React from "react"
 import { cn } from "cn"
 
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { ArrowRight01Icon } from "@hugeicons-pro/core-stroke-rounded"
+import { BouncyAccordion } from "@beui-template/components/motion/bouncy-accordion"
+import { EASE_OUT } from "@/lib/ease"
 
 function Trace({ className, ...props }: React.ComponentProps<"div">) {
   return (
@@ -78,83 +77,53 @@ function TraceDescription({
   )
 }
 
-function TraceCollapsible({
-  className,
-  ...props
-}: Omit<React.ComponentProps<typeof Collapsible>, "asChild" | "open"> &
-  (
-    | { open?: undefined }
-    | {
-        open: boolean
-        onOpenChange: NonNullable<
-          React.ComponentProps<typeof Collapsible>["onOpenChange"]
-        >
-      }
-  )) {
-  return (
-    <Collapsible
-      data-slot="trace-collapsible"
-      className={cn("flex w-full min-w-0 flex-col", className)}
-      {...props}
-    />
-  )
-}
-
-function TraceCollapsibleTrigger({
-  className,
+function TraceDisclosure({
+  title,
   children,
-  ...props
-}: Omit<React.ComponentProps<typeof CollapsibleTrigger>, "asChild">) {
+  open,
+  defaultOpen = false,
+  onOpenChange,
+  onFocusCapture,
+}: {
+  title: React.ReactNode
+  children: React.ReactNode
+  open?: boolean
+  defaultOpen?: boolean
+  onOpenChange?: (open: boolean) => void
+  onFocusCapture?: React.FocusEventHandler<HTMLDivElement>
+}) {
   return (
-    <CollapsibleTrigger
-      data-slot="trace-collapsible-trigger"
-      className={cn(
-        "group/trace-collapsible-trigger flex w-fit max-w-full min-w-0 cursor-pointer items-center gap-1 rounded-md text-left text-muted-foreground transition-colors motion-reduce:transition-none outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 has-[[data-status=error]]:text-destructive",
-        className
-      )}
-      {...props}
-    >
-      {children}
-      <TraceIcon className="transition-transform motion-reduce:transition-none group-aria-expanded/trace-collapsible-trigger:rotate-90">
-        <HugeiconsIcon icon={ArrowRight01Icon} />
-      </TraceIcon>
-    </CollapsibleTrigger>
-  )
-}
-
-function TraceCollapsibleContent({
-  className,
-  children,
-  forceMount,
-  ...props
-}: Omit<React.ComponentProps<typeof CollapsibleContent>, "asChild">) {
-  const content = (
-    <div
-      data-slot="trace-collapsible-content-inner"
-      className={cn(
-        "mt-2 mb-1 ml-[calc(--spacing(2)-1px)] min-w-0 border-l pr-1 pl-4 leading-normal wrap-break-word text-muted-foreground",
-        className
-      )}
-    >
-      {children}
+    <div data-slot="trace-disclosure" className="min-w-0">
+      <BouncyAccordion
+        items={[{
+          id: "detail",
+          title,
+          // beUI keeps this description mounted, preserving nested step state.
+          description: (
+            <div
+              data-slot="trace-disclosure-content"
+              onFocusCapture={onFocusCapture}
+              className="mt-2 mb-1 ml-[calc(--spacing(2)-1px)] min-w-0 border-l pr-1 pl-4 leading-normal wrap-break-word text-muted-foreground"
+            >
+              {children}
+            </div>
+          ),
+        }]}
+        value={open === undefined ? undefined : open ? "detail" : null}
+        defaultValue={defaultOpen ? "detail" : null}
+        onValueChange={(value) => onOpenChange?.(value === "detail")}
+        transition={{ duration: 0.2, ease: EASE_OUT }}
+        classNames={{
+          root: "min-w-0 [&>div>div>section>div]:px-0 [&>div>div>section>div]:pb-0",
+          item: "overflow-visible rounded-none! bg-transparent",
+          trigger: "min-h-0 w-fit max-w-full min-w-0 gap-1 rounded-md px-0 py-0 focus-visible:bg-transparent focus-visible:ring-3 focus-visible:ring-ring/50",
+          title: "min-w-0 flex-initial text-sm font-normal",
+          chevron: "size-4 shrink-0 [&>svg]:size-3.5",
+          content: "min-w-0 overflow-hidden transition-[height] duration-200 motion-reduce:transition-none",
+          description: "min-w-0 text-sm leading-normal",
+        }}
+      />
     </div>
-  )
-  return (
-    <CollapsibleContent
-      data-slot="trace-collapsible-content"
-      forceMount={forceMount}
-      className={forceMount
-        ? "group/trace-content min-w-0"
-        : "min-w-0 overflow-hidden duration-200 [--radix-accordion-content-height:var(--radix-collapsible-content-height)] motion-safe:data-open:animate-accordion-down motion-safe:data-closed:animate-accordion-up"}
-      {...props}
-    >
-      {forceMount ? (
-        // 在测量节点内部过渡，避免 Radix 测量尺寸时临时禁用 transition 造成骤然收起。
-        <div className="grid grid-rows-[0fr] opacity-0 transition-[grid-template-rows,opacity] duration-200 motion-reduce:transition-none group-data-[state=open]/trace-content:grid-rows-[1fr] group-data-[state=open]/trace-content:opacity-100">
-          <div className="min-h-0 overflow-hidden">{content}</div>
-        </div>
-      ) : content}
-    </CollapsibleContent>
   )
 }
 
@@ -164,7 +133,5 @@ export {
   TraceIcon,
   TraceTitle,
   TraceDescription,
-  TraceCollapsible,
-  TraceCollapsibleTrigger,
-  TraceCollapsibleContent,
+  TraceDisclosure,
 }

@@ -1,4 +1,5 @@
 import { type ReactNode } from "react"
+import { Button } from "@/components/motion/button"
 import { cn } from "@/lib/utils"
 
 export type BreadcrumbItem = {
@@ -31,14 +32,17 @@ export function Breadcrumbs({
           >
             {index > 0 ? <span aria-hidden="true">/</span> : null}
             {index < items.length - 1 && item.onSelect ? (
-              <button
+              <Button
                 type="button"
+                variant="plain"
+                whileHover={undefined}
+                whileTap={undefined}
                 onClick={item.onSelect}
                 title={typeof item.label === "string" ? item.label : undefined}
                 className="min-h-9 min-w-0 cursor-pointer truncate rounded-sm text-left underline-offset-4 transition-colors outline-none hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
               >
                 {item.label}
-              </button>
+              </Button>
             ) : typeof item.label === "string" ? (
               <span className="truncate" title={item.label}>
                 {item.label}

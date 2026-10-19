@@ -15,6 +15,8 @@
 - 28 个插画中的 `<style jsx[ global]>` 改为原生 `<style>`；逐个检查组件特定 class 和 keyframes 命名，无跨组件碰撞或 `:global` 语法，CSS 内容保留；IconMarquee 的减少动效规则补齐方向属性选择器，确保其优先级足以停止默认动画。
 - 公共组件补齐模板实际使用的契约：NumberTicker 支持关闭初次滚动且保留后续数值动画；MorphPopover 支持四向定位、居中、空间翻转与视口约束。
 - 其他兼容性修复包括 Vite 的开发环境标记、Effect options 构造类型、只读标题数组副本及过期 ESLint 注释移除；逐文件详情见 manifest。
+- MorphicCommandPalette 增加 ReactElement 图标、本地化文案、可隐藏页脚与稳定语义 slot；补齐触屏输入焦点和退出后安全恢复到原控件／调用方 fallback，保留快速重开与嵌套弹层行为。
+- 搜索保留中文输入法组合状态与 keyCode 229 确认键守卫；BouncyAccordion 允许调用方覆盖 transition，以复用组件时仍遵守产品无弹跳动效。
 - 外部 npm 依赖由宿主 Web 工程管理；本目录不包含模拟实现。
 - 三个官方展示资产的 URL、原始与安装哈希在 manifest 的 `assets` 数组。工作台 WebP 保留原始来源记录，并缩放重编码以符合仓库 1 MiB 文件限制。
 

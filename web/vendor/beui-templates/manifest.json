@@ -962,7 +962,7 @@
       "path": "components/motion/bouncy-accordion.tsx",
       "originalMirrorSha256": null,
       "sourceSha256": "c961fc1498478ca562f6261f83ee25aff55fd1956668a288931dd3cdf9208367",
-      "installedSha256": "10608ea05b45cdd85b6c9c0f1f020a164195e2e84d30576f6b338871e6c678ba",
+      "installedSha256": "a79ea42e7d99c51e755d0193eb77d85e5e486f36cce3f0e864a34b7ef9b103e8",
       "source": {
         "kind": "public-registry",
         "url": "https://proxy.collectui.pro/api/r/beui/bouncy-accordion.json",
@@ -974,7 +974,8 @@
           "from": "@/",
           "to": "@beui-template/",
           "count": 2
-        }
+        },
+        "Accept a caller-provided Transition for layout, chevron and description animation, preserving upstream defaults and allowing the product motion rules."
       ]
     },
     {
@@ -9877,7 +9878,7 @@
       "path": "components/premium/morphic-command-palette/morphic-command-palette.tsx",
       "originalMirrorSha256": "d0b944a98f17e957584f2d2ceb2c97aa62eacfc49f57d6bd419222c233cbf905",
       "sourceSha256": "d0b944a98f17e957584f2d2ceb2c97aa62eacfc49f57d6bd419222c233cbf905",
-      "installedSha256": "3266a2645dc1b92b98ed0ce53d69a63b49707bab794eb45bd4530593332c1645",
+      "installedSha256": "2f2deb122a5a7dbae4a8a133e0fb583e25b2042d4b83c9f042b119f1acce4fd3",
       "source": {
         "kind": "mirror",
         "path": "components/premium/morphic-command-palette/morphic-command-palette.tsx"
@@ -9888,7 +9889,9 @@
           "from": "@/",
           "to": "@beui-template/",
           "count": 10
-        }
+        },
+        "Support ReactElement icons, localized labels, optional footer, stable semantic slots, touch input focus and safe caller fallback focus after exit, preserving rapid reopen and nested modal behavior.",
+        "Preserve the legacy IME confirmation guard for isComposing and keyCode 229 before command navigation or selection."
       ]
     },
     {

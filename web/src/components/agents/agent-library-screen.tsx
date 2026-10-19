@@ -146,11 +146,14 @@ export function AgentLibraryScreen({
                     className="border-b border-border last:border-0"
                   >
                     <div className="grid grid-cols-[minmax(0,1fr)_3.5rem_2.75rem] items-center gap-2 rounded-lg py-4 transition-colors hover:bg-muted/50 @min-[640px]/agents:grid-cols-[minmax(0,1fr)_7rem_3rem] @min-[640px]/agents:gap-3 @min-[640px]/agents:px-3">
-                      <button
+                      <Button
                         type="button"
+                        variant="plain"
+                        whileHover={undefined}
+                        whileTap={undefined}
                         onClick={() => onOpen(agent.id)}
                         title={name}
-                        className="flex min-h-11 min-w-0 touch-manipulation items-center gap-3 rounded-md text-left outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
+                        className="flex min-h-11 min-w-0 touch-manipulation items-center justify-start gap-3 rounded-md rounded-md! text-left outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         <span className="sr-only">打开 </span>
                         <span className="hidden size-10 shrink-0 items-center justify-center rounded-xl bg-muted text-primary @min-[440px]/agents:flex">
@@ -170,7 +173,7 @@ export function AgentLibraryScreen({
                             </span>
                           ) : null}
                         </span>
-                      </button>
+                      </Button>
                       <div className="text-xs text-muted-foreground">
                         <span className="inline-flex rounded-full border border-border px-2 py-1">
                           {agent.source === "official" ? "官方" : "本地"}

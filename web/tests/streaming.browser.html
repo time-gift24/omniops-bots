@@ -116,13 +116,13 @@
     const props = { key: "disclosure", parts, streaming: true, answering: false };
     render(ChainOfThought, props);
     assert(fixture.textContent.includes("等待回复") && fixture.textContent.includes("已思考"), "Group stays running between completed steps");
-    let triggers = fixture.querySelectorAll('[data-slot="trace-collapsible-trigger"]');
+    let triggers = fixture.querySelectorAll('[data-slot="trace-disclosure"] button[aria-expanded]');
     triggers[1].focus();
     click(triggers[1]);
     render(ChainOfThought, { ...props, answering: true });
     assert(triggers[0].getAttribute("aria-expanded") === "true", "Automatic collapse must protect focused child");
     await wait(240);
-    const body = fixture.querySelector('[data-slot="trace-collapsible-content"]');
+    const body = document.getElementById(triggers[0].getAttribute("aria-controls"));
     const expandedHeight = body.getBoundingClientRect().height;
     triggers[0].focus();
     click(triggers[0]);
@@ -138,7 +138,7 @@
     assert(body.getBoundingClientRect().height < 1, "Closed group must not occupy height");
     assert(body.closest('[inert]') || body.querySelector('[inert]'), "Closed content must be inert");
     click(triggers[0]);
-    triggers = fixture.querySelectorAll('[data-slot="trace-collapsible-trigger"]');
+    triggers = fixture.querySelectorAll('[data-slot="trace-disclosure"] button[aria-expanded]');
     assert(triggers[1].getAttribute("aria-expanded") === "true", "Reopening must preserve child disclosure state");
     render(ChainOfThought, { key: "stopped", parts: [{ ...parts[0], state: "running" }], streaming: false, messageState: "stopped", answering: false });
     assert(fixture.textContent.includes("研究已停止") && !fixture.querySelector('.beui-ai-loader'), "Stop must remove group and step activity");
@@ -149,7 +149,7 @@
       ...previewProps, parts: [{ kind: "reasoning", text, state: "running" }],
     });
     renderReasoning("**先确认");
-    const reasoningTrigger = fixture.querySelectorAll('[data-slot="trace-collapsible-trigger"]')[1];
+    const reasoningTrigger = fixture.querySelectorAll('[data-slot="trace-disclosure"] button[aria-expanded]')[1];
     const pendingTitle = reasoningTrigger.textContent;
     renderReasoning("**先确认范围**");
     assert(reasoningTrigger.textContent === pendingTitle && !reasoningTrigger.querySelector('[data-slot="trace-detail"]'), "Incomplete first line must not change reasoning preview per token");
@@ -171,7 +171,7 @@
     const scan = fixture.querySelector('.beui-ai-loader[data-variant="scan"]');
     assert(scan?.querySelectorAll("rect").length === 25, "Tool step must use the scan grid");
     assert(getComputedStyle(scan.querySelector("rect")).animationName === (reduced || matchMedia("(prefers-reduced-motion: reduce)").matches ? "none" : "beui-ai-pixel"), "Scan must respect reduced motion");
-    const toolTrigger = fixture.querySelector('[data-slot="trace-collapsible-trigger"]');
+    const toolTrigger = fixture.querySelector('[data-slot="trace-disclosure"] button[aria-expanded]');
     click(toolTrigger);
     assert(toolTrigger.getAttribute("aria-expanded") === "false" && !toolTrigger.querySelector('[data-slot="trace-detail"]'), "Collapsed tool must wait for complete JSON before showing detail");
     assert(!fixture.textContent.includes("raw-fragment-should-not-render") && !fixture.textContent.includes('{"query"'), "Partial JSON must not leak into tool labels");

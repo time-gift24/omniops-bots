@@ -14,6 +14,7 @@ import {
 import { motion, useReducedMotion } from "motion/react"
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
 import { ArrowRight01Icon } from "@hugeicons-pro/core-stroke-rounded"
+import { Button } from "@/components/motion/button"
 import { SPRING_GLIDE } from "@/lib/ease"
 import "./branched-menu.css"
 
@@ -88,8 +89,11 @@ function MenuToggle({
 }) {
   const action = `${open ? "收起" : "展开"}${label}`
   return (
-    <button
+    <Button
       type="button"
+      variant="plain"
+      whileHover={undefined}
+      whileTap={undefined}
       className="branched-menu__toggle"
       aria-label={action}
       title={action}
@@ -98,8 +102,13 @@ function MenuToggle({
       tabIndex={tabIndex}
       onClick={onClick}
     >
-      <HugeiconsIcon icon={ArrowRight01Icon} size={12} aria-hidden="true" />
-    </button>
+      <HugeiconsIcon
+        icon={ArrowRight01Icon}
+        size={12}
+        className="size-3"
+        aria-hidden="true"
+      />
+    </Button>
   )
 }
 
@@ -301,9 +310,12 @@ export function BranchedMenu({
                 heads.current[index] = element
               }}
             >
-              <button
+              <Button
                 type="button"
-                className="branched-menu__head"
+                variant="plain"
+                whileHover={undefined}
+                whileTap={undefined}
+                className="branched-menu__head justify-start"
                 title={item.label}
                 aria-expanded={kids && !selectableParents ? isOpen : undefined}
                 aria-controls={
@@ -326,7 +338,7 @@ export function BranchedMenu({
                 {item.badge ? (
                   <span className="branched-menu__badge">{item.badge}</span>
                 ) : null}
-              </button>
+              </Button>
               {kids && selectableParents ? (
                 <MenuToggle
                   label={item.label}
@@ -402,9 +414,12 @@ export function BranchedMenu({
                           className="branched-menu__row"
                           data-disclosure={hasChildren ? "" : undefined}
                         >
-                          <button
+                          <Button
                             type="button"
-                            className="branched-menu__item"
+                            variant="plain"
+                            whileHover={undefined}
+                            whileTap={undefined}
+                            className="branched-menu__item justify-start"
                             title={kid.label}
                             style={
                               kid.depth
@@ -439,7 +454,7 @@ export function BranchedMenu({
                                 {kid.badge}
                               </span>
                             ) : null}
-                          </button>
+                          </Button>
                           {hasChildren ? (
                             <MenuToggle
                               label={kid.label}

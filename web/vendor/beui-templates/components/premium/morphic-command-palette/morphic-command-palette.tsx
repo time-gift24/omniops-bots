@@ -3,6 +3,7 @@
 import {
   Dialog,
   DialogBackdrop,
+  DialogDescription,
   DialogPanel,
   DialogTitle,
 } from "@headlessui/react";
@@ -24,6 +25,9 @@ import {
 import {
   createContext,
   type ReactNode,
+  type ReactElement,
+  type RefObject,
+  isValidElement,
   useCallback,
   useContext,
   useEffect,
@@ -53,7 +57,7 @@ export type MorphicCommandItem = {
   label: string;
   description?: string;
   group?: string;
-  icon?: LucideIcon;
+  icon?: LucideIcon | ReactElement;
   keywords?: string[];
   /** Display hint only; item shortcuts aren't registered globally. */
   hint?: string;
@@ -69,6 +73,7 @@ export type MorphicCommandPaletteProps = {
   onSelect?: (item: MorphicCommandItem) => void;
   /** Cmd/Ctrl + this key. Pass false to disable the global shortcut. */
   shortcut?: string | false;
+  fallbackFocusRef?: RefObject<HTMLElement | null>;
 };
 
 type PaletteContext = {
@@ -84,6 +89,7 @@ type PaletteContext = {
   moveTo: (id: string | null) => void;
   moveActive: (direction: 1 | -1) => void;
   select: (item: MorphicCommandItem) => void;
+  restoreFocus: () => void;
 };
 
 const PaletteContext = createContext<PaletteContext | null>(null);
@@ -106,6 +112,7 @@ export function MorphicCommandPalette({
   onOpenChange,
   onSelect,
   shortcut = "k",
+  fallbackFocusRef,
 }: MorphicCommandPaletteProps) {
   const id = useId();
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
@@ -116,38 +123,57 @@ export function MorphicCommandPalette({
   const setOpen = useCallback(
     (next: boolean) => {
       if (next && !open) {
-        returnFocusRef.current =
-          document.activeElement instanceof HTMLElement
-            ? document.activeElement
-            : null;
+        const target = document.activeElement;
+        if (target instanceof HTMLElement && target !== document.body && !document.getElementById(`${id}-dialog`)?.contains(target)) {
+          returnFocusRef.current = target;
+        }
       }
       if (!controlled) setInternalOpen(next);
       onOpenChange?.(next);
     },
-    [controlled, onOpenChange, open],
+    [controlled, id, onOpenChange, open],
   );
 
   // The shared trigger becomes hidden before the dialog's focus history is
   // captured. Keep its original focus target for the return morph as well.
   useLayoutEffect(() => {
-    if (!open || returnFocusRef.current) return;
+    if (!open) return;
     const target = document.activeElement;
     if (
-      target instanceof HTMLElement &&
+      target instanceof HTMLElement && target !== document.body &&
       !document.getElementById(`${id}-dialog`)?.contains(target)
     )
       returnFocusRef.current = target;
   }, [id, open]);
 
-  useEffect(() => {
-    if (open || !returnFocusRef.current) return;
-    const target = returnFocusRef.current;
-    returnFocusRef.current = null;
-    const frame = requestAnimationFrame(() => {
-      if (target.isConnected) target.focus({ preventScroll: true });
-    });
-    return () => cancelAnimationFrame(frame);
+  const openRef = useRef(open);
+  const restoreFrame = useRef<number | null>(null);
+  useLayoutEffect(() => {
+    openRef.current = open;
+    if (open && restoreFrame.current !== null) {
+      cancelAnimationFrame(restoreFrame.current);
+      restoreFrame.current = null;
+    }
   }, [open]);
+  useEffect(() => () => {
+    if (restoreFrame.current !== null) cancelAnimationFrame(restoreFrame.current);
+  }, []);
+  const restoreFocus = useCallback(() => {
+    restoreFrame.current = requestAnimationFrame(() => {
+      restoreFrame.current = null;
+      if (openRef.current) return;
+      const previous = returnFocusRef.current;
+      const target = previous?.isConnected && !previous.closest("[inert]") && previous.getClientRects().length
+        ? previous
+        : fallbackFocusRef?.current;
+      const active = document.activeElement;
+      // Headless UI may already have restored focus, or the user moved on.
+      if (!(active instanceof HTMLElement) || active === document.body || active.closest("[inert]") || !active.getClientRects().length) {
+        target?.focus({ preventScroll: true });
+      }
+      returnFocusRef.current = null;
+    });
+  }, [fallbackFocusRef]);
 
   const grouped = useMemo(() => {
     const searchable = items.map((item) => ({
@@ -217,6 +243,7 @@ export function MorphicCommandPalette({
         moveTo,
         moveActive,
         select,
+        restoreFocus,
       }}
     >
       <LayoutGroup id={id}>
@@ -292,6 +319,9 @@ export function MorphicCommandPaletteTrigger({
 
 export type MorphicCommandPaletteContentProps = {
   title?: string;
+  description?: string;
+  clearLabel?: string;
+  closeLabel?: string;
   placeholder?: string;
   emptyMessage?: string;
   footer?: ReactNode;
@@ -303,6 +333,9 @@ const MotionBackdrop = motion.create(DialogBackdrop);
 
 export function MorphicCommandPaletteContent({
   title = "Command palette",
+  description,
+  clearLabel = "Clear search",
+  closeLabel = "Close palette",
   placeholder = "Search commands…",
   emptyMessage = "No commands found.",
   footer,
@@ -320,6 +353,7 @@ export function MorphicCommandPaletteContent({
     moveTo,
     moveActive,
     select,
+    restoreFocus,
   } = usePalette();
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -329,6 +363,13 @@ export function MorphicCommandPaletteContent({
   const activeItem = rows[activeIndex];
 
   useEffect(() => {
+    if (!open) return;
+    // Preserve search input focus on touch devices as well as keyboard devices.
+    const frame = requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }));
+    return () => cancelAnimationFrame(frame);
+  }, [open]);
+
+  useEffect(() => {
     if (!open || !activeItem) return;
     listRef.current
       ?.querySelector<HTMLElement>(`[data-index="${activeIndex}"]`)
@@ -336,7 +377,7 @@ export function MorphicCommandPaletteContent({
   }, [activeIndex, open, activeItem]);
 
   return (
-    <AnimatePresence initial={false}>
+    <AnimatePresence initial={false} onExitComplete={restoreFocus}>
       {open ? (
         <PresenceGate key="palette">
           {({ isPresent, gate }) => (
@@ -360,6 +401,7 @@ export function MorphicCommandPaletteContent({
               <div className="pointer-events-none fixed inset-0 flex items-start justify-center px-3 pb-3 pt-[min(16vh,6rem)] sm:px-6 sm:pb-6">
                 <MotionPanel
                   {...gate}
+                  data-slot="dialog-content"
                   layout={!reduce}
                   layoutId={reduce ? undefined : `${id}-surface`}
                   initial={reduce ? false : { opacity: 0 }}
@@ -375,6 +417,7 @@ export function MorphicCommandPaletteContent({
                   )}
                 >
                   <motion.div
+                    data-slot="command"
                     layout={reduce ? false : "position"}
                     initial={reduce ? false : { opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -383,6 +426,7 @@ export function MorphicCommandPaletteContent({
                     className="flex min-h-0 flex-col"
                   >
                     <DialogTitle className="sr-only">{title}</DialogTitle>
+                    {description ? <DialogDescription className="sr-only">{description}</DialogDescription> : null}
                     <div className="flex shrink-0 items-center gap-2 border-b border-border p-3">
                       <div className="flex h-10 min-w-0 flex-1 items-center gap-3 rounded-full border border-border px-3 focus-within:border-ring">
                         <Search
@@ -391,6 +435,8 @@ export function MorphicCommandPaletteContent({
                         />
                         <input
                           ref={inputRef}
+                          data-slot="command-input"
+                          data-autofocus
                           value={query}
                           onChange={(event) => setQuery(event.target.value)}
                           placeholder={placeholder}
@@ -407,7 +453,7 @@ export function MorphicCommandPaletteContent({
                           autoComplete="off"
                           spellCheck={false}
                           onKeyDown={(event) => {
-                            if (event.nativeEvent.isComposing) return;
+                            if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
                             if (
                               event.key === "ArrowDown" ||
                               event.key === "ArrowUp"
@@ -434,11 +480,11 @@ export function MorphicCommandPaletteContent({
                           )}
                         />
                         {query ? (
-                          <MorphicTooltip content="Clear search" side="bottom">
+                          <MorphicTooltip content={clearLabel} side="bottom">
                             <Button
                               variant="ghost"
                               size="icon"
-                              aria-label="Clear search"
+                              aria-label={clearLabel}
                               onClick={() => {
                                 setQuery("");
                                 inputRef.current?.focus();
@@ -450,11 +496,11 @@ export function MorphicCommandPaletteContent({
                           </MorphicTooltip>
                         ) : null}
                       </div>
-                      <MorphicTooltip content="Close palette" side="bottom">
+                      <MorphicTooltip content={closeLabel} side="bottom">
                         <Button
                           variant="ghost"
                           onClick={() => setOpen(false)}
-                          aria-label="Close palette"
+                          aria-label={closeLabel}
                           className="h-9 shrink-0 rounded-full px-2 text-xs focus-visible:ring-2 focus-visible:ring-ring"
                         >
                           <kbd>Esc</kbd>
@@ -465,7 +511,7 @@ export function MorphicCommandPaletteContent({
                       ref={listRef}
                       id={`${id}-results`}
                       role="listbox"
-                      aria-label="Commands"
+                      aria-label={title}
                       className="min-h-0 max-h-[min(50dvh,24rem)] overflow-y-auto overscroll-contain p-2"
                     >
                       {rows.length ? (
@@ -477,6 +523,7 @@ export function MorphicCommandPaletteContent({
                           >
                             <p
                               aria-hidden
+                              data-slot="command-group-heading"
                               className="px-3 pb-1.5 pt-2 text-xs text-muted-foreground"
                             >
                               {label}
@@ -489,6 +536,7 @@ export function MorphicCommandPaletteContent({
                                 <button
                                   type="button"
                                   role="option"
+                                  data-slot="command-item"
                                   aria-selected={selected}
                                   id={`${id}-option-${index}`}
                                   data-index={index}
@@ -516,10 +564,10 @@ export function MorphicCommandPaletteContent({
                                       className="absolute inset-0 -z-10 rounded-full bg-muted"
                                     />
                                   ) : null}
-                                  <Icon
+                                  {isValidElement(Icon) ? Icon : <Icon
                                     aria-hidden
                                     className="size-4 shrink-0 text-muted-foreground"
-                                  />
+                                  />}
                                   <span className="min-w-0 flex-1">
                                     <span className="block truncate text-sm">
                                       {item.label}
@@ -551,7 +599,7 @@ export function MorphicCommandPaletteContent({
                         </div>
                       )}
                     </div>
-                    <div className="flex shrink-0 items-center gap-4 border-t border-border px-4 py-3 text-xs text-muted-foreground">
+                    {footer !== false ? <div className="flex shrink-0 items-center gap-4 border-t border-border px-4 py-3 text-xs text-muted-foreground">
                       {footer ?? (
                         <>
                           <span className="inline-flex items-center gap-1">
@@ -573,7 +621,7 @@ export function MorphicCommandPaletteContent({
                         {rows.length}{" "}
                         {rows.length === 1 ? "command" : "commands"} found.
                       </output>
-                    </div>
+                    </div> : null}
                   </motion.div>
                 </MotionPanel>
               </div>

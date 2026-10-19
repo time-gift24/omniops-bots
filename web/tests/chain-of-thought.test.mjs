@@ -16,11 +16,15 @@ test("思维链收起时隐藏内容并保留子步骤，运行中展开", async
       parts: [{ kind: "reasoning", text: "检查构建日志", state: streaming ? "running" : "done" }],
       streaming, answering: false,
     }));
-    const content = html.match(/<div[^>]*data-slot="trace-collapsible-content"[^>]*>/)?.[0];
+    const contentId = html.match(/<button[^>]*aria-controls="([^"]+)"/)?.[1];
+    const content = [...html.matchAll(/<section\b[^>]*>/g)]
+      .find(([tag]) => tag.includes(`id="${contentId}"`))?.[0];
     assert.ok(content);
     assert.equal(/\sinert(?:=|\s|>)/.test(content), !streaming);
     assert.equal(content.includes('aria-hidden="true"'), !streaming);
     assert.ok(!/\shidden(?:=|\s|>)/.test(content), "收起由布局过渡控制，不能立即 display:none");
+    assert.equal((html.match(/data-slot="trace-disclosure"/g) ?? []).length, 2,
+      "收起时仍保留组内思考子步骤");
     assert.match(html, streaming ? /正在思考…/ : /已思考/);
   }
 });

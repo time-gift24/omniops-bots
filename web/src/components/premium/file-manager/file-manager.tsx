@@ -258,29 +258,35 @@ export function FileManager({
               <PanelLeftOpen aria-hidden="true" />
             )}
           </Button>
-          <button
-            className="shrink-0 rounded px-1 py-1 text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          <Button
+            variant="plain"
+            whileHover={undefined}
+            whileTap={undefined}
+            className="shrink-0 rounded rounded! px-1 py-1 text-xs text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
             onClick={() => navigate("")}
             disabled={disabled || submitting}
             aria-current={!folderPath ? "page" : undefined}
           >
             全部文件
-          </button>
+          </Button>
           {breadcrumbs.map((item) => (
             <span key={item.path} className="flex shrink-0 items-center gap-1">
               <ChevronRight
                 className="size-3 text-muted-foreground"
                 aria-hidden="true"
               />
-              <button
-                className="max-w-40 truncate rounded px-1 py-1 outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
+              <Button
+                variant="plain"
+                whileHover={undefined}
+                whileTap={undefined}
+                className="max-w-40 truncate rounded rounded! px-1 py-1 text-xs outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
                 onClick={() => navigate(item.path)}
                 disabled={disabled || submitting}
                 aria-current={item.path === folderPath ? "page" : undefined}
                 title={item.name}
               >
                 {item.name}
-              </button>
+              </Button>
             </span>
           ))}
         </nav>
@@ -400,27 +406,33 @@ export function FileManager({
             <p className="mb-3 px-2 text-[11px] font-medium text-muted-foreground">
               文件夹
             </p>
-            <button
+            <Button
+              variant="plain"
+              whileHover={undefined}
+              whileTap={undefined}
               onClick={() => navigate("")}
               disabled={disabled || submitting}
               aria-current={!folderPath ? "page" : undefined}
               className={cn(
-                "flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring",
+                "flex w-full items-center justify-start gap-2 rounded-lg rounded-lg! px-2 py-2 text-left text-xs outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring",
                 !folderPath && "bg-muted text-primary"
               )}
             >
               <FolderOpen className="size-4 shrink-0" aria-hidden="true" />
               全部文件
-            </button>
+            </Button>
             {folders.map((item) => (
-              <button
+              <Button
                 key={item.path}
+                variant="plain"
+                whileHover={undefined}
+                whileTap={undefined}
                 onClick={() => navigate(item.path)}
                 disabled={disabled || submitting}
                 aria-current={folderPath === item.path ? "page" : undefined}
                 title={item.path}
                 className={cn(
-                  "flex w-full items-center gap-2 rounded-lg py-2 pr-2 text-left text-xs outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring",
+                  "flex w-full items-center justify-start gap-2 rounded-lg rounded-lg! py-2 pr-2 text-left text-xs outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring",
                   folderPath === item.path && "bg-muted text-primary"
                 )}
                 style={{
@@ -429,7 +441,7 @@ export function FileManager({
               >
                 <Folder className="size-3.5 shrink-0" aria-hidden="true" />
                 <span className="truncate">{nameOf(item.path)}</span>
-              </button>
+              </Button>
             ))}
           </aside>
         ) : null}
