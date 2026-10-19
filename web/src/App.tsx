@@ -54,6 +54,7 @@ import { WorkspacePicker } from "@/components/workspace/workspace-picker"
 import { EASE_OUT } from "@/lib/ease"
 import { ThemePicker } from "@/components/theme-picker"
 import { RunHistory } from "@/components/runs/run-history"
+import { ClientSettingsScreen } from "@/components/settings/client-settings"
 import { McpManager } from "@/components/premium/agent-builder/mcp-manager"
 import { replayRuns } from "@/runs/replay"
 import type { RunRecord } from "@/runs/source"
@@ -510,6 +511,18 @@ function WorkspaceApp({
       ],
     },
   ]
+  const settingsSection = defaultSections.find(
+    (section) => section.id === "settings"
+  )
+  if (settingsSection)
+    sections.push({
+      ...settingsSection,
+      groups: settingsSection.groups.map((group) => ({
+        ...group,
+        label: "客户端",
+        items: group.items.filter((item) => item.id === "preferences"),
+      })),
+    })
   const activeSection = sections.find(
     (section) => section.id === activeSectionId
   )
@@ -675,6 +688,7 @@ function WorkspaceApp({
       return
     }
     if (section.id !== "workspace") {
+      if (section.id === "settings") setWorkbenchOpen(false)
       setView({ kind: "page", sectionId: section.id, itemId: item.id })
       return
     }
@@ -708,6 +722,14 @@ function WorkspaceApp({
           if (compactWindow) setWorkbenchOpen(false)
           if (section.id === "workspace") setView({ kind: "chat" })
           if (section.id === "runs") openSection("runs")
+          if (section.id === "settings") {
+            setWorkbenchOpen(false)
+            setView({
+              kind: "page",
+              sectionId: "settings",
+              itemId: "preferences",
+            })
+          }
           if (section.id === "agents") openSection("agents")
           if (section.id === "skills") {
             setWorkbenchOpen(false)
@@ -756,6 +778,16 @@ function WorkspaceApp({
                       },
                     ]
                   : []),
+              ]}
+            />
+          ) : view.kind === "page" ? (
+            <Breadcrumbs
+              items={[
+                {
+                  label: activeSection?.label ?? "设置",
+                  onSelect: () => openSection(view.sectionId),
+                },
+                { label: activePage?.label ?? "偏好设置" },
               ]}
             />
           ) : view.kind === "section" ? (
@@ -1127,6 +1159,10 @@ function WorkspaceApp({
                   </p>
                 )}
               </section>
+            ) : view.kind === "page" &&
+              view.sectionId === "settings" &&
+              view.itemId === "preferences" ? (
+              <ClientSettingsScreen />
             ) : view.kind === "page" ? (
               <div className="grid h-full place-content-center gap-3 px-6 text-center">
                 <h1 className="text-xl font-medium">{activePage?.label}</h1>

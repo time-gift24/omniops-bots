@@ -15,6 +15,18 @@ async function load(t) {
     ...(await server.ssrLoadModule("/src/chat/thread-store.ts")),
   }
 }
+test("demo client settings default to four and remain isolated in memory", async t => {
+  const { createDemoDesktopRuntime } = await load(t)
+  const first = createDemoDesktopRuntime().desktop, second = createDemoDesktopRuntime().desktop
+  assert.deepEqual(await first.readSettings(), { maxConcurrentRuns: 4 })
+  const saved = await first.saveSettings({ maxConcurrentRuns: 64 })
+  saved.maxConcurrentRuns = 1
+  assert.deepEqual(await first.readSettings(), { maxConcurrentRuns: 64 })
+  assert.deepEqual(await second.readSettings(), { maxConcurrentRuns: 4 })
+  for (const maxConcurrentRuns of [0, 65, 4.5, "8", NaN]) await assert.rejects(first.saveSettings({ maxConcurrentRuns }))
+  assert.deepEqual(await first.readSettings(), { maxConcurrentRuns: 64 })
+})
+
 const request = (text = "[browser] 打开必应并填写 abcd，不提交") => ({
   messages: [{ role: "user", text }],
 })

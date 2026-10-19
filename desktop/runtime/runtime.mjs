@@ -3,15 +3,17 @@ import { createChatHistory } from './chat/history.mjs';
 import { chatRecord, createChatRun } from './chat/adapter.mjs';
 import { chatInput, httpUrl, identifier } from './input.mjs';
 import { invalid, RuntimeError } from './errors.mjs';
+import { join } from 'node:path';
+import { createClientSettings } from './settings.mjs';
 
 export async function createDesktopRuntime({ browser, workspace, workspaceFactory, modelFactory, modelName, resources, runsDir, checkpointer,
-  timeoutMs = 300_000, maxConcurrentRuns = 4, desktopVersion = '0.1.0', modelParameters = { temperature: 0 }, emit = () => {}, redact = String, env = process.env }) {
+  timeoutMs = 300_000, maxConcurrentRuns = 4, settingsFile = join(runsDir, '.settings.json'), desktopVersion = '0.1.0', modelParameters = { temperature: 0 }, emit = () => {}, redact = String, env = process.env }) {
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 3_600_000) throw invalid('每轮执行超时必须在 1ms 到一小时之间。');
   if (!checkpointer) throw invalid('执行必须配置 checkpoint 存储。');
   if (typeof browser?.forThread !== 'function') throw invalid('浏览器必须支持按会话绑定页面。');
-  if (!Number.isSafeInteger(maxConcurrentRuns) || maxConcurrentRuns < 1 || maxConcurrentRuns > 64) throw invalid('并发任务上限必须在 1 到 64 之间。');
   const execution = await createExecution({ recordsDirectory: runsDir, checkpointer });
   const history = await createChatHistory(runsDir);
+  const settings = await createClientSettings({ file: settingsFile, defaultMaxConcurrentRuns: maxConcurrentRuns });
   const seen = new Set(execution.records.list().map(record => record.runId));
   let state = { simulated: false, tasks: [], task: null, browserThreadId: null, browser: browser.getState(), browserRequest: 0 };
   const active = new Map(), navigations = new Map();
@@ -49,7 +51,7 @@ export async function createDesktopRuntime({ browser, workspace, workspaceFactor
     if ([...active.values()].some(run => run.threadId === threadId) || navigations.has(threadId) || execution.isBusy(threadId)) {
       throw new RuntimeError('unavailable', '此会话另一项任务或导航仍在进行，请先停止或等待完成。');
     }
-    if (active.size >= maxConcurrentRuns) throw new RuntimeError('unavailable', '并发任务已达上限，请等待任务完成后重新发起。');
+    if (active.size >= settings.current().maxConcurrentRuns) throw new RuntimeError('unavailable', '并发任务已达上限，请等待任务完成后重新发起。');
     const input = chatInput(request, modelName);
     if (agentId !== undefined) identifier(agentId, 'agentId');
     if (experimentSkillId !== undefined) identifier(experimentSkillId, 'experimentSkillId');
@@ -97,6 +99,11 @@ export async function createDesktopRuntime({ browser, workspace, workspaceFactor
     getState: () => state,
     dispatch(method, params) {
       if (method === 'status') return state;
+      if (method === 'settings_get') return settings.read();
+      if (method === 'settings_save') {
+        if (closing) throw new RuntimeError('unavailable', '应用正在关闭。');
+        return settings.save(params?.settings);
+      }
       if (method === 'models_list') return modelName ? [{ id: modelName, label: modelName }] : [];
       if (method === 'chat_start') return start(params);
       if (method === 'stop') return stop(params);
@@ -121,6 +128,7 @@ export async function createDesktopRuntime({ browser, workspace, workspaceFactor
       await Promise.all([...active.keys()].map(runId => stop({ runId })));
       await execution.close();
       await Promise.allSettled([...navigations.values()]);
+      await settings.close();
       await browser.close();
     },
   };

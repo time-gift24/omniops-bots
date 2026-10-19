@@ -1,0 +1,242 @@
+{
+  "date": "2026-10-19",
+  "scope": "并发任务上限设置的正文与阅读入口；不作为桌面产品行为或历史图形验收证据",
+  "artifact": {
+    "path": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/index.html",
+    "sha256": "c8a39c6fa1208cbb2a4630c710a3fab5dc6125a5079749a7d90995bbefd86b53"
+  },
+  "checks": [
+    {
+      "article": "00-overview",
+      "scrollWidth": 1440,
+      "viewport": 1440,
+      "width": 1440,
+      "ok": true
+    },
+    {
+      "article": "01-skill",
+      "scrollWidth": 1440,
+      "viewport": 1440,
+      "width": 1440,
+      "ok": true
+    },
+    {
+      "article": "02-mcp",
+      "scrollWidth": 1440,
+      "viewport": 1440,
+      "width": 1440,
+      "ok": true
+    },
+    {
+      "article": "03-builtintool",
+      "scrollWidth": 1440,
+      "viewport": 1440,
+      "width": 1440,
+      "ok": true
+    },
+    {
+      "article": "04-agent",
+      "scrollWidth": 1440,
+      "viewport": 1440,
+      "width": 1440,
+      "ok": true
+    },
+    {
+      "article": "05-updater",
+      "scrollWidth": 1440,
+      "viewport": 1440,
+      "width": 1440,
+      "ok": true
+    },
+    {
+      "article": "06-sync",
+      "scrollWidth": 1440,
+      "viewport": 1440,
+      "width": 1440,
+      "ok": true
+    },
+    {
+      "article": "07-execution",
+      "scrollWidth": 1440,
+      "viewport": 1440,
+      "width": 1440,
+      "ok": true
+    },
+    {
+      "article": "08-frontend",
+      "scrollWidth": 1440,
+      "viewport": 1440,
+      "width": 1440,
+      "ok": true
+    },
+    {
+      "article": "09-operations",
+      "scrollWidth": 1440,
+      "viewport": 1440,
+      "width": 1440,
+      "ok": true
+    },
+    {
+      "article": "10-server-api",
+      "scrollWidth": 1440,
+      "viewport": 1440,
+      "width": 1440,
+      "ok": true
+    },
+    {
+      "article": "00-overview",
+      "scrollWidth": 390,
+      "viewport": 390,
+      "width": 390,
+      "ok": true
+    },
+    {
+      "article": "01-skill",
+      "scrollWidth": 390,
+      "viewport": 390,
+      "width": 390,
+      "ok": true
+    },
+    {
+      "article": "02-mcp",
+      "scrollWidth": 390,
+      "viewport": 390,
+      "width": 390,
+      "ok": true
+    },
+    {
+      "article": "03-builtintool",
+      "scrollWidth": 390,
+      "viewport": 390,
+      "width": 390,
+      "ok": true
+    },
+    {
+      "article": "04-agent",
+      "scrollWidth": 390,
+      "viewport": 390,
+      "width": 390,
+      "ok": true
+    },
+    {
+      "article": "05-updater",
+      "scrollWidth": 390,
+      "viewport": 390,
+      "width": 390,
+      "ok": true
+    },
+    {
+      "article": "06-sync",
+      "scrollWidth": 390,
+      "viewport": 390,
+      "width": 390,
+      "ok": true
+    },
+    {
+      "article": "07-execution",
+      "scrollWidth": 390,
+      "viewport": 390,
+      "width": 390,
+      "ok": true
+    },
+    {
+      "article": "08-frontend",
+      "scrollWidth": 390,
+      "viewport": 390,
+      "width": 390,
+      "ok": true
+    },
+    {
+      "article": "09-operations",
+      "scrollWidth": 390,
+      "viewport": 390,
+      "width": 390,
+      "ok": true
+    },
+    {
+      "article": "10-server-api",
+      "scrollWidth": 390,
+      "viewport": 390,
+      "width": 390,
+      "ok": true
+    }
+  ],
+  "textChecks": [
+    {
+      "chapter": "00-overview",
+      "phrase": "设置 → 偏好设置",
+      "ok": true
+    },
+    {
+      "chapter": "00-overview",
+      "phrase": "无需重启",
+      "ok": true
+    },
+    {
+      "chapter": "07-execution",
+      "phrase": "并发任务上限",
+      "ok": true
+    },
+    {
+      "chapter": "07-execution",
+      "phrase": "1～64 的整数",
+      "ok": true
+    },
+    {
+      "chapter": "07-execution",
+      "phrase": "活动数量降至 1",
+      "ok": true
+    },
+    {
+      "chapter": "07-execution",
+      "phrase": "OMNIOPS_BOTS_MAX_CONCURRENT_RUNS",
+      "ok": true
+    },
+    {
+      "chapter": "07-execution",
+      "phrase": "保存失败",
+      "ok": true
+    },
+    {
+      "chapter": "07-execution",
+      "phrase": "读取失败",
+      "ok": true
+    },
+    {
+      "chapter": "07-execution",
+      "phrase": "settings.json",
+      "ok": true
+    },
+    {
+      "chapter": "07-execution",
+      "phrase": "重试重新读取磁盘",
+      "ok": true
+    },
+    {
+      "chapter": "07-execution",
+      "phrase": "启动时没有有效值则拒绝新任务",
+      "ok": true
+    },
+    {
+      "chapter": "08-frontend",
+      "phrase": "设置 → 偏好设置",
+      "ok": true
+    },
+    {
+      "chapter": "08-frontend",
+      "phrase": "Web 演示只在内存中保存",
+      "ok": true
+    },
+    {
+      "chapter": "10-server-api",
+      "phrase": "立即用于后续受理",
+      "ok": true
+    },
+    {
+      "chapter": "10-server-api",
+      "phrase": "下调不取消已受理运行",
+      "ok": true
+    }
+  ],
+  "pageErrors": []
+}

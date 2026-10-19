@@ -211,6 +211,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <li>围绕提示词和 Skill 的每周改进保存草稿、实验记录及发布引用，展示本次 Agent 实际装配；发布过程不增加审批。</li>
 <li>新会话同步清单，按需下载缺失物料；调用前核对版本，失败不拿旧版代替。</li>
 <li>运行前固定装配快照，检查所需内置工具；Playwright 按会话绑定内置 Chrome 的指定页面，不同会话可并发；同会话已有运行、其页面正在手动导航或并发容量已满时返回忙。</li>
+<li>在「设置 → 偏好设置」修改「并发任务上限」，默认 4，支持 1～64 的整数；保存到本机后立即用于新任务受理，无需重启，下调不取消当前任务，详见<a href="#07-execution">任务执行与恢复</a>。</li>
 <li>展示过程、保存结果并补传；正常任务交付只向服务端发送状态、最终结果和运行快照。</li>
 <li>用户需要排查时，另行选择一个 thread，通过 HTTPS 上传脱敏后的 SQLite checkpoint、过程与关联材料。服务端确认接收后展示诊断编号，具体见<a href="#09-operations">运维与诊断上传</a>。</li>
 </ul>
@@ -834,7 +835,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </ol>
 <figure class="usecase"><a class="screenshot-link" href="./assets/07-execution-usecase.svg" target="_blank" rel="noopener" aria-label="放大用例图"><img src="./assets/07-execution-usecase.svg" alt="执行用例图：发起任务、查看过程、取消任务、接收结果"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure>
 <h2 id="07-execution-简要设计">简要设计</h2>
-<p>客户端管理一个专用 Chrome 环境。本地、实验和远端任务按 <code>threadId</code> 绑定各自标签页，以精确 <code>targetId</code> 寻址；不同会话可以并发，同一会话同时只接纳一轮。默认最多 4 轮并发，运行时可配置上限；同一会话已有运行、其绑定页面正在手动导航或总容量已满时返回“忙”，客户端不排队。手动会话等待用户输入时释放运行容量，标签页与固定快照继续保留，下一轮复用同一页面。</p>
+<p>客户端管理一个专用 Chrome 环境。本地、实验和远端任务按 <code>threadId</code> 绑定各自标签页，以精确 <code>targetId</code> 寻址；不同会话可以并发，同一会话同时只接纳一轮。默认最多 4 轮并发，用户可在「设置 → 偏好设置」调整「并发任务上限」（1～64 的整数）；同一会话已有运行、其绑定页面正在手动导航或总容量已满时返回“忙”，客户端不排队。手动会话等待用户输入时释放运行容量，标签页与固定快照继续保留，下一轮复用同一页面。</p>
 <p>会话页面与手动页面分开管理。任务结束、失败、取消或超时后仍保留所属页面，供查看与后续轮次复用；runtime 关闭时只释放它创建的会话页面，不关闭外部或手动页面。页面丢失时本次操作失败，不回退到当前选中页或其他会话页面。</p>
 <p>所有标签页仍使用同一专用 profile，共享 Cookie、登录态和站点状态；独立页面不代表独立账号或后端业务资源，退出登录和切换账号可能影响其他会话。脚本沿用既有页面约束，不新增创建页面或 BrowserContext 的能力；弹窗不自动成为任务目标。</p>
 <p>一轮任务可以包含多次模型调用，单次模型输出结束不等于任务结束。任务终止与结果交付分别处理：执行已结束但尚未收到服务端确认时，保留结果等待补传。</p>
@@ -853,6 +854,24 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </ul>
 <h2 id="07-execution-详细设计">详细设计</h2>
 <p>以下每张顺序图对应一个独立运行场景。正常执行与结果确认见<a href="#00-overview">客户端总体设计</a>。</p>
+<h3>偏好设置：并发任务上限</h3>
+<table>
+<thead>
+<tr><th>项目</th><th>规则</th></tr>
+</thead>
+<tbody>
+<tr><td>设置入口</td><td>设置 → 偏好设置 → 并发任务上限；显示当前有效值，修改后保存</td></tr>
+<tr><td>默认与范围</td><td>默认 4；只接受 1～64 的整数，空值、小数、越界值均提示错误，不保存</td></tr>
+<tr><td>适用范围</td><td>本地、实验与远端任务共用；准备、执行和停止排空期间均占用容量，等待用户输入不占用</td></tr>
+<tr><td>保存与生效</td><td>保存到本机成功后，立即按新上限检查后续任务；重启后保留，不同步到服务端</td></tr>
+<tr><td>下调时已有任务</td><td>保持运行，不取消；活动数量达到或超过新上限时拒绝新任务，直到低于上限</td></tr>
+<tr><td>保存失败</td><td>明确提示失败，保留输入以便重试；仍使用保存前的有效上限，不显示已保存</td></tr>
+<tr><td>读取失败</td><td>设置页明确显示错误并提供重试，不以默认值冒充当前有效值，也不覆盖无法读取或损坏的文件；重试重新读取磁盘。此前已确认的有效值继续生效；启动时没有有效值则拒绝新任务，资源和设置界面仍可打开</td></tr>
+</tbody>
+</table>
+<p>例如已有 4 个任务运行时把上限保存为 2，4 个任务继续执行；活动数量降至 1 后，才可再受理 1 个任务。上调上限则在保存成功后开放新增容量。同一会话仍只接纳一轮，独立标签页仍共享登录态。</p>
+<p>桌面偏好保存在客户端数据目录的 <code>settings.json</code>，字段为 <code>maxConcurrentRuns</code>，以原子写入替换文件。启动时已保存的偏好优先；只有尚未保存偏好时才使用 <code>OMNIOPS_BOTS_MAX_CONCURRENT_RUNS</code> 作为初始值，未配置该环境变量则使用 4。现有环境变量不是已保存设置的覆盖入口。Web 演示仅在内存中演示设置，不写浏览器持久存储，也不代表桌面已保存。</p>
+<p>4 是资源保护的初始默认值，64 是允许配置的边界，不表示已验证可稳定跑满。此项设置通过界面反馈读取、校验和保存结果，不新增日志、span 或监控指标；任务过程和执行记录沿用现有观测边界。</p>
 <h3>场景一：同会话运行中或并发容量已满</h3>
 <p>本地、实验和远端任务使用同一并发上限，但各自绑定独立标签页。图中表示同一会话已有任务，或默认 4 个运行容量已全部占用；仅有另一会话运行时，不应拒绝新任务。本会话绑定页面若正在手动导航，也暂时拒绝本会话新运行；其他页面仍可接纳任务。</p>
 <figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-busy.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-busy.svg" alt="场景一：同会话运行中或并发容量已满"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
@@ -910,7 +929,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </ol>
 <h2 id="08-frontend-简要设计">简要设计</h2>
 <p>前端由左侧导航、中央业务页面与右侧工作台组成。会话承载执行与交互，Agent 页面管理装配，Skill 页面管理文件包与版本，工作台展示浏览器和执行过程。视觉采用<strong>暖灰底色、绿色强调、细边框、轻量圆角，以及 Geist / MiSans 字体</strong>。</p>
-<p>本章工作区截图已替换为 macOS 桌面包实拍，右侧是 Playwright 实际操作的内置 CEF 页面；后面的资源管理截图仍为前期 Web 页面与演示数据。下表依据已提交的本地 LangGraph 客户端实现区分已具备能力与剩余接入。</p>
+<p>本章工作区截图已替换为 macOS 桌面包实拍，右侧是 Playwright 实际操作的内置 CEF 页面；后面的资源管理截图仍为前期 Web 页面与演示数据。下表依据当前本地 LangGraph 客户端实现区分已具备能力与剩余接入。</p>
 <figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/00-workspace.jpg" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/00-workspace.jpg" alt="打包客户端：左侧会话、中央执行结果与右侧内置浏览器"></a><figcaption>本地测试模型驱动真实工具调用：Playwright 在内置浏览器的测试页面填入 <code>abcd</code>，执行结果与页面同屏展示。</figcaption></figure>
 <h2 id="08-frontend-客户端">客户端</h2>
 <p>前端目标围绕四组业务流程组织：</p>
@@ -920,7 +939,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <li><strong>执行与结果交付</strong>：按会话分别展示运行状态、执行过程和停止入口；工作台切换对应会话页面，切换不改变后台运行目标。不同会话可并发，同会话运行中、其页面正在手动导航或总容量已满时显示忙；服务端会话只读，执行记录呈现快照、结果待确认与重启中断状态。</li>
 <li><strong>故障诊断上传</strong>：从执行记录选择指定 thread，查看 checkpoint 与材料清单，提交后以服务端持久保存的回执确认接收。</li>
 </ol>
-<p>设置中的桌面更新入口计划展示检查、下载、待安装和失败状态，尚未实现。</p>
+<p>「设置 → 偏好设置」提供「并发任务上限」，默认 4，可保存 1～64 的整数；保存后立即用于新任务受理，下调不取消现有任务，重启后保留。读取失败提供重试，保存失败保留输入与原有效值。Web 演示只在内存中保存。设置中的桌面更新入口计划展示检查、下载、待安装和失败状态，尚未实现。</p>
 <h3>完成情况</h3>
 <table>
 <thead>
@@ -975,7 +994,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 <tr>
 <td>07 执行恢复</td>
-<td>流式对话、真实工具过程、按会话运行状态与停止、独立浏览器页面及切换；不同会话默认最多 4 轮并发，同会话运行中、其页面手动导航中或容量满时拒绝；超时/中断提示，执行记录含 run/thread ID、起止时间、结果/错误、运行快照，可继续原会话</td>
+<td>流式对话、真实工具过程、按会话运行状态与停止、独立浏览器页面及切换；不同会话默认最多 4 轮并发，偏好设置支持将上限保存为 1～64 并立即用于新任务，同会话运行中、其页面手动导航中或容量满时拒绝；超时/中断提示，执行记录含 run/thread ID、起止时间、结果/错误、运行快照，可继续原会话</td>
 <td>远端会话来源及只读流程、结果待确认/已交付状态</td>
 <td>WebSocket 任务与取消、结果确认与补传；本地记录/会话持久化、兜底超时、重启标记中断且不自动重跑已接入</td>
 </tr>
@@ -1554,7 +1573,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tbody></table>
 <h3>调用去重与忙时处理</h3>
 <p>客户端在鉴权范围和安装身份内持久记录 <code>callId</code> 与不可变调用内容，<strong>先检查重复，再检查会话状态与并发容量</strong>。重复投递同一调用时，只返回已知受理状态或原结果，不开始第二次模型、MCP 或 Chrome 操作；同 ID 不同内容明确拒绝为 <code>call-conflict</code>。</p>
-<p>新调用只创建一个独立的客户端 thread／run，并绑定自己的 Chrome 页面。本地、实验与远端任务共用有界并发容量，默认最多 4 轮，准备和停止排空期间也占用；同一 thread 已有运行、其绑定页面正在手动导航或总容量已满时保存并返回 <code>busy</code>，不进入客户端队列。不同 thread 的任务可以同时执行；切换工作台显示页不改变各 run 绑定的目标。服务端如决定重试执行，使用新 <code>callId</code>；重新发送已返回忙的旧 ID 仍得到原拒绝结果。</p>
+<p>新调用只创建一个独立的客户端 thread／run，并绑定自己的 Chrome 页面。本地、实验与远端任务共用有界并发容量，默认最多 4 轮；客户端用户在「设置 → 偏好设置」将上限保存为 1～64 的整数后，立即用于后续受理。下调不取消已受理运行，活动数量低于新上限后才开放容量；偏好保存在本机，不由此接口同步或覆盖。准备和停止排空期间也占用容量；同一 thread 已有运行、其绑定页面正在手动导航或总容量已满时保存并返回 <code>busy</code>，不进入客户端队列。不同 thread 的任务可以同时执行；切换工作台显示页不改变各 run 绑定的目标。服务端如决定重试执行，使用新 <code>callId</code>；重新发送已返回忙的旧 ID 仍得到原拒绝结果。</p>
 <p>去重记录不能在服务端仍可能重投时提前清理；清理期限覆盖约定的最大重投窗口，过期调用明确拒绝，不能当成新任务。过期、权限不足、版本不匹配和准备失败均有明确结果，不用“收到消息”代替成功执行。</p>
 <h3>终态、结果补传与取消</h3>
 <p>执行终态区分 <code>completed</code>、<code>failed</code>、<code>cancelled</code>、<code>timed-out</code>、<code>interrupted-unknown</code>；未受理调用另返回 <code>busy</code> 等拒绝类别。终态和结果交付状态分别保存，运行结束先落盘，再发送结果。结果包含实际 Agent／Skill、启用工具／MCP、桌面版本及模型参数，排除凭据。</p>

@@ -31,6 +31,54 @@ function bridge(handler = () => null) {
   }
 }
 
+test("client settings cross the RPC boundary, validate values, and remain editable during active runs", async t => {
+  const { createTauriRuntime } = await load(t)
+  let saved = 4, failSave = false
+  const host = bridge((_command, args) => {
+    if (args.method === "settings_get") return { maxConcurrentRuns: saved }
+    if (args.method === "settings_save") {
+      if (failSave) throw new Error("disk unavailable")
+      saved = args.params.settings.maxConcurrentRuns
+      return { maxConcurrentRuns: saved }
+    }
+    return {}
+  })
+  const runtime = createTauriRuntime(host)
+  t.after(() => runtime.dispose())
+  await assert.rejects(runtime.desktop.readSettings(), /未连接/)
+  await runtime.initialize()
+  assert.deepEqual(await runtime.desktop.readSettings(), { maxConcurrentRuns: 4 })
+  for (const value of [0, 65, 1.5, NaN, Infinity, "8", undefined]) {
+    const before = host.calls.length
+    await assert.rejects(runtime.desktop.saveSettings({ maxConcurrentRuns: value }), /1 到 64/)
+    assert.equal(host.calls.length, before, "invalid input must never leave the adapter")
+  }
+  const tasks = ["a", "b"].map(threadId => ({ threadId, runId: `run-${threadId}`, title: threadId, phase: "running" }))
+  host.emit({ event: "desktop_state", state: snapshot(tasks, "a") })
+  assert.deepEqual(await runtime.desktop.saveSettings({ maxConcurrentRuns: 1 }), { maxConcurrentRuns: 1 })
+  assert.equal(runtime.desktop.getState().tasks.length, 2, "lowering must retain active runs")
+  assert.equal(host.calls.some(([, args]) => args?.method === "stop"), false)
+  failSave = true
+  await assert.rejects(runtime.desktop.saveSettings({ maxConcurrentRuns: 8 }), /保存失败/)
+  assert.deepEqual(await runtime.desktop.readSettings(), { maxConcurrentRuns: 1 })
+  failSave = false
+  for (const value of [1, 64]) assert.deepEqual(await runtime.desktop.saveSettings({ maxConcurrentRuns: value }), { maxConcurrentRuns: value })
+})
+
+test("client settings reject malformed RPC responses instead of displaying a fabricated default", async t => {
+  const { createTauriRuntime } = await load(t)
+  let response = null
+  const host = bridge(() => response)
+  const runtime = createTauriRuntime(host)
+  t.after(() => runtime.dispose())
+  await runtime.initialize()
+  for (const value of [null, [], {}, { maxConcurrentRuns: 0 }, { maxConcurrentRuns: 65 }, { maxConcurrentRuns: 4.5 }, { maxConcurrentRuns: "4" }]) {
+    response = value
+    await assert.rejects(runtime.desktop.readSettings(), /读取失败/)
+    await assert.rejects(runtime.desktop.saveSettings({ maxConcurrentRuns: 8 }), /保存失败/)
+  }
+})
+
 test("events before start acknowledgement are buffered; stop waits for acknowledgement and backend cleanup", async t => {
   const { createTauriRuntime } = await load(t)
   const ack = deferred(), cleaned = deferred()

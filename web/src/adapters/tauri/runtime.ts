@@ -4,6 +4,7 @@ import type {
   ApprovalDecision,
   BrowserViewport,
   DesktopRuntime,
+  DesktopSettings,
   DesktopSnapshot,
   DesktopTask,
 } from "@/desktop/runtime"
@@ -62,6 +63,18 @@ const failure = (
     | "aborted"
     | "invalid-response" = "transport"
 ): ChatEvent => ({ type: "failed", error: { kind, message } })
+
+function readSettings(value: unknown): DesktopSettings {
+  const { maxConcurrentRuns } = object(value)
+  if (
+    typeof maxConcurrentRuns !== "number" ||
+    !Number.isSafeInteger(maxConcurrentRuns) ||
+    maxConcurrentRuns < 1 ||
+    maxConcurrentRuns > 64
+  )
+    throw new Error("并发上限必须是 1 到 64 的整数。")
+  return { maxConcurrentRuns }
+}
 
 export function createTauriRuntime(bridge: TauriBridge) {
   let state = initialState
@@ -305,6 +318,25 @@ export function createTauriRuntime(bridge: TauriBridge) {
   }
   let browserSelection = 0
   const desktop: DesktopRuntime = {
+    async readSettings() {
+      if (!connected || disposed) throw new Error("桌面服务未连接。")
+      try {
+        return readSettings(await request("settings_get"))
+      } catch {
+        throw new Error("客户端设置读取失败，请重试。")
+      }
+    },
+    async saveSettings(settings) {
+      const validated = readSettings(settings)
+      if (!connected || disposed) throw new Error("桌面服务未连接。")
+      try {
+        return readSettings(
+          await request("settings_save", { settings: validated })
+        )
+      } catch {
+        throw new Error("客户端设置保存失败，原设置仍生效，请重试。")
+      }
+    },
     getState: () => state,
     subscribe: (listener) => {
       listeners.add(listener)

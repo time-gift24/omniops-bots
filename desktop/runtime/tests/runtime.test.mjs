@@ -225,6 +225,55 @@ test('capacity covers preparation and rejected calls can be explicitly resubmitt
   } finally { release.resolve(); }
 });
 
+test('saving capacity applies immediately, preserves accepted work when lowering and survives restart', async t => {
+  const releases = new Map(['a', 'b', 'c', 'd', 'next'].map(id => [id, Promise.withResolvers()]));
+  const entered = new Set();
+  const f = await fixture(t, [[call('settings-browser')], []], { inspect: async (_input, _signal, threadId) => {
+    entered.add(threadId);
+    await releases.get(threadId).promise;
+    return { title: threadId };
+  } });
+  try {
+    assert.deepEqual(await f.runtime.dispatch('settings_get'), { maxConcurrentRuns: 4 });
+    for (const id of ['a', 'b', 'c', 'd']) f.start(id, { threadId: id });
+    await until(() => entered.size === 4);
+    await f.runtime.dispatch('settings_save', { settings: { maxConcurrentRuns: 2 } });
+    assert.equal(f.runtime.getState().tasks.length, 4);
+    assert.ok(f.runtime.getState().tasks.every(task => task.phase === 'running'));
+    assert.throws(() => f.start('next', { threadId: 'next' }), /并发任务已达上限/);
+    releases.get('a').resolve(); releases.get('b').resolve();
+    await until(() => f.runtime.getState().tasks.length === 2);
+    assert.throws(() => f.start('next', { threadId: 'next' }), /并发任务已达上限/);
+    releases.get('c').resolve();
+    await until(() => f.runtime.getState().tasks.length === 1);
+    f.start('next', { threadId: 'next' });
+    await until(() => entered.has('next'));
+    await assert.rejects(f.runtime.dispatch('settings_save', { settings: { maxConcurrentRuns: 1.5 } }), error => error.kind === 'invalid-request');
+    assert.deepEqual(await f.runtime.dispatch('settings_get'), { maxConcurrentRuns: 2 });
+    releases.get('d').resolve(); releases.get('next').resolve();
+    await until(() => f.runtime.getState().tasks.length === 0);
+    await f.reopen({ maxConcurrentRuns: 9 });
+    assert.deepEqual(await f.runtime.dispatch('settings_get'), { maxConcurrentRuns: 2 });
+    await f.runtime.dispatch('settings_save', { settings: { maxConcurrentRuns: 3 } });
+    for (const id of ['a', 'b', 'c']) f.start(`raised-${id}`, { threadId: id });
+    assert.equal(f.runtime.getState().tasks.length, 3);
+    await until(() => f.runtime.getState().tasks.length === 0);
+  } finally { for (const release of releases.values()) release.resolve(); }
+});
+
+test('unreadable saved settings remain visible through IPC and refuse admission until repaired', async t => {
+  const f = await fixture(t);
+  await writeFile(join(f.runsDir, '.settings.json'), '{invalid');
+  await f.reopen();
+  await assert.rejects(f.runtime.dispatch('settings_get'), error => error.kind === 'storage');
+  assert.throws(() => f.start(), error => error.kind === 'storage');
+  assert.equal(f.models.length, 0);
+  assert.equal(f.runtime.getState().tasks.length, 0);
+  await f.runtime.dispatch('settings_save', { settings: { maxConcurrentRuns: 4 } });
+  f.start();
+  assert.equal((await f.settled()).status, 'completed');
+});
+
 test('stop during preparation persists cancellation without invoking the model or browser', async t => {
   const f = await fixture(t, [[call('must-not-run')], []]);
   f.start();

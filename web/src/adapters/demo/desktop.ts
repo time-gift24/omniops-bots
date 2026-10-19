@@ -31,6 +31,7 @@ export function createDemoDesktopRuntime(options: { delayMs?: number } = {}): {
   gatewayFor(threadId: string): ChatGateway
 } {
   const delay = options.delayMs ?? 350
+  let maxConcurrentRuns = 4
   const listeners = new Set<() => void>()
   let state: DesktopSnapshot = {
     simulated: true,
@@ -274,6 +275,19 @@ export function createDemoDesktopRuntime(options: { delayMs?: number } = {}): {
   }
 
   const desktop: DesktopRuntime = {
+    async readSettings() {
+      return { maxConcurrentRuns }
+    },
+    async saveSettings(settings) {
+      if (
+        !Number.isSafeInteger(settings.maxConcurrentRuns) ||
+        settings.maxConcurrentRuns < 1 ||
+        settings.maxConcurrentRuns > 64
+      )
+        throw new Error("并发上限必须是 1 到 64 的整数。")
+      maxConcurrentRuns = settings.maxConcurrentRuns
+      return { maxConcurrentRuns }
+    },
     setBrowserViewport: async () => {},
     getState: () => state,
     subscribe(listener) {

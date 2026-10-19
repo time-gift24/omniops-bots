@@ -76,7 +76,18 @@ export interface BrowserViewport {
   interactive: boolean
 }
 
+export interface DesktopSettings {
+  maxConcurrentRuns: number
+}
+
 export interface DesktopRuntime {
+  /** Reads this client's effective settings, including initial defaults. */
+  readSettings?(): Promise<DesktopSettings>
+  /** Persists an integer limit (1–64) before applying it to new admissions.
+   * Existing runs continue. Failures leave the effective limit unchanged.
+   * Calls are scoped to this client. Demo saves are memory-only.
+   */
+  saveSettings?(settings: DesktopSettings): Promise<DesktopSettings>
   /** Selects a thread page without stopping work on other pages. */
   selectBrowserThread?(threadId: string | null): Promise<void>
   /** Null hides the native surface without navigating or stopping a task. */

@@ -235,8 +235,8 @@
       flushSync(() => root.render(React.createElement(React.StrictMode, null,
         withTestTheme(React.createElement(App), dependencies))));
       await until(() => button("工作区") && Boolean(drawer()) === mobile, "App did not mount at the requested viewport");
-      const hiddenSections = ["资料库", "动态", "设置"];
-      const hiddenItems = ["参考资料", "收藏的页面", "素材", "本周", "与我共享", "归档", "偏好设置", "成员", "连接"];
+      const hiddenSections = ["资料库", "动态"];
+      const hiddenItems = ["参考资料", "收藏的页面", "素材", "本周", "与我共享", "归档", "成员", "连接"];
       const rail = fixture.querySelector('nav[aria-label="工作区导航区域"]');
       for (const name of hiddenSections) assert(!button(name, rail), `${name} placeholder must not appear in the navigation rail`);
       assert(!moduleRequested(agentModule) && !moduleRequested(skillModule),
