@@ -7,10 +7,8 @@ import {
   RefreshIcon,
   Undo02Icon,
 } from "@hugeicons-pro/core-stroke-rounded"
-import { motion, useReducedMotion } from "motion/react"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, type ReactNode } from "react"
 import { Button } from "@/components/motion/button"
-import { SPRING_PANEL } from "@/lib/ease"
 import { cn } from "@/lib/utils"
 
 export function DocumentActions({
@@ -27,6 +25,7 @@ export function DocumentActions({
   onUndo,
   onDebug,
   onRestore,
+  children,
 }: {
   editing: boolean
   busy?: boolean
@@ -41,8 +40,8 @@ export function DocumentActions({
   onUndo: () => void
   onDebug?: () => void
   onRestore?: () => void
+  children?: ReactNode
 }) {
-  const reduce = useReducedMotion()
   const actionRef = useRef<HTMLButtonElement>(null)
   const wasEditing = useRef(editing)
   useEffect(() => {
@@ -87,11 +86,7 @@ export function DocumentActions({
         </Button>
       ) : null}
       {!readOnly ? (
-        <motion.div
-          initial={false}
-          animate={{ width: !vertical && editing ? 60 : 28 }}
-          style={{ height: vertical && editing ? 60 : 28 }}
-          transition={reduce ? { duration: 0 } : SPRING_PANEL}
+        <div
           className={cn(
             "relative flex items-center justify-end gap-1",
             vertical && "flex-col"
@@ -138,8 +133,9 @@ export function DocumentActions({
               <span className="absolute top-1 right-1 size-1 rounded-full bg-current" />
             ) : null}
           </Button>
-        </motion.div>
+        </div>
       ) : null}
+      {children}
       <span role="status" className="sr-only">
         {busy ? "处理中" : dirty ? "有未保存的修改" : ""}
       </span>

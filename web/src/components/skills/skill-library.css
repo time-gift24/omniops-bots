@@ -13,6 +13,11 @@
   caret-color: var(--primary);
 }
 
+.skill-library button {
+  touch-action: manipulation;
+  transition-property: color, background-color, border-color, opacity, transform;
+}
+
 .skill-library label:has(input:focus-visible) {
   border-color: var(--ring);
 }
@@ -70,7 +75,7 @@
   }
   .skill-file-table-heading,
   .skill-file-table-row {
-    grid-template-columns: minmax(0, 1fr) 4rem 1.5rem;
+    grid-template-columns: minmax(0, 1fr) 4rem 2rem;
     gap: .5rem;
   }
   .skill-file-table-heading > :nth-child(2),
@@ -79,8 +84,47 @@
   }
 }
 
-@container (max-width: 480px) {
+@container (max-width: 640px) {
+  .skill-file-toolbar > nav {
+    flex-basis: 100%;
+  }
+
+  .skill-file-body {
+    flex-direction: column;
+  }
+
   .skill-folder-tree {
-    width: 7.5rem;
+    width: auto;
+    max-height: 10rem;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+    padding-block: .75rem;
+    overscroll-behavior: contain;
+  }
+
+  .skill-file-list {
+    padding-inline: 1rem;
+  }
+}
+
+@media (pointer: coarse) {
+  .skill-library [data-slot="file-manager"] button {
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+  }
+
+  .skill-library [data-slot="page-actions"] button {
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+  }
+
+  .skill-library .skill-file-table-row,
+  .skill-library .skill-file-table-heading {
+    grid-template-columns: minmax(0, 1fr) 4rem 2.75rem;
+  }
+
+  .skill-library .skill-file-table-date,
+  .skill-library .skill-file-table-heading > :nth-child(2) {
+    display: none;
   }
 }

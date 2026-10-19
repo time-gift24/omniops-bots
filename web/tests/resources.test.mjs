@@ -70,3 +70,25 @@ test("技能原文与模型目录通过来源读取，调用方修改不改变�
   choices[0].id = "调用方修改"
   assert.equal((await models.list())[0].id, "pine-1")
 })
+
+test("Agent 创建与复制更新目录，失败不新增；调用方与实例仍独立", async (t) => {
+  const { createDemoAgentSource } = await sources(t)
+  const source = createDemoAgentSource()
+  const initial = await source.load()
+  const created = await source.create()
+  assert.equal(created.source, "local")
+  assert.ok(created.configuration.name.trim())
+  created.configuration.name = "调用方变更"
+  assert.notEqual((await source.load()).agents.at(-1).configuration.name, created.configuration.name)
+  const copy = await source.create({ copyFrom: initial.agents[0].id })
+  assert.notEqual(copy.id, initial.agents[0].id)
+  assert.match(copy.configuration.name, /副本/)
+  assert.equal(copy.configuration.instructions, initial.agents[0].configuration.instructions)
+  await source.save(copy.id, { ...copy.configuration, instructions: "独立副本" })
+  assert.deepEqual((await source.load()).agents[0], initial.agents[0])
+  const count = (await source.load()).agents.length
+  await assert.rejects(source.create({ copyFrom: "missing" }), /找不到/)
+  await assert.rejects(source.create({ configuration: { ...copy.configuration, name: " " } }), /名称/)
+  assert.equal((await source.load()).agents.length, count)
+  assert.equal((await createDemoAgentSource().load()).agents.length, initial.agents.length)
+})

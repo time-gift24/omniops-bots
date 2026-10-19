@@ -11,6 +11,7 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react"
+import { useRef } from "react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -50,20 +51,25 @@ export function FileEntryCard({
   onOpen,
   onRename,
   onDelete,
+  onActionMenuClose,
 }: {
   entry: SkillEntry
   readOnly: boolean
   disabled: boolean
   onOpen: () => void
-  onRename: () => void
-  onDelete: () => void
+  onRename: (trigger: HTMLButtonElement | null) => void
+  onDelete: (trigger: HTMLButtonElement | null) => void
+  onActionMenuClose: () => void
 }) {
   const folder = entry.kind === "folder"
+  const trigger = useRef<HTMLButtonElement>(null)
+  const selectedAction = useRef(false)
   return (
     <article className="skill-file-table-row grid grid-cols-[minmax(0,1fr)_7rem_5rem_2rem] items-center gap-3 border-b border-border py-3.5 last:border-0">
       <button
-        className="flex min-w-0 items-center gap-3 rounded-md text-left outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex min-w-0 items-center gap-3 rounded-md text-left outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
         onClick={onOpen}
+        disabled={disabled}
       >
         <span
           className={cn(
@@ -79,7 +85,10 @@ export function FileEntryCard({
           {nameOf(entry.path)}
         </span>
         {folder ? (
-          <ChevronRight className="size-3 shrink-0 text-muted-foreground" />
+          <ChevronRight
+            className="size-3 shrink-0 text-muted-foreground"
+            aria-hidden="true"
+          />
         ) : null}
       </button>
       <span className="skill-file-table-date text-[11px] text-muted-foreground tabular-nums">
@@ -89,24 +98,46 @@ export function FileEntryCard({
         {folder ? "—" : fileSize(entry.size)}
       </span>
       {!readOnly ? (
-        <DropdownMenu>
+        <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <Button
+              ref={trigger}
               variant="ghost"
-              size="icon-xs"
+              size="icon"
               aria-label={`管理 ${nameOf(entry.path)}`}
               disabled={disabled}
             >
-              <MoreHorizontal />
+              <MoreHorizontal aria-hidden="true" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="bg-popover">
-            <DropdownMenuItem onSelect={onRename}>
-              <Pencil />
+          <DropdownMenuContent
+            align="end"
+            className="bg-popover"
+            onCloseAutoFocus={(event) => {
+              if (selectedAction.current) {
+                event.preventDefault()
+                onActionMenuClose()
+              }
+              selectedAction.current = false
+            }}
+          >
+            <DropdownMenuItem
+              onSelect={() => {
+                selectedAction.current = true
+                onRename(trigger.current)
+              }}
+            >
+              <Pencil aria-hidden="true" />
               重命名
             </DropdownMenuItem>
-            <DropdownMenuItem variant="destructive" onSelect={onDelete}>
-              <Trash2 />
+            <DropdownMenuItem
+              variant="destructive"
+              onSelect={() => {
+                selectedAction.current = true
+                onDelete(trigger.current)
+              }}
+            >
+              <Trash2 aria-hidden="true" />
               删除
             </DropdownMenuItem>
           </DropdownMenuContent>

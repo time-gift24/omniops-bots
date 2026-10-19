@@ -103,7 +103,7 @@
     border-bottom: 1px solid var(--border);
   }
 }
-@container skill-header (min-width: 960px) {
+@container skill (min-width: 960px) {
   .skill-files-trigger {
     display: none;
   }
@@ -133,5 +133,15 @@
   .doc-reading-scroll *::after {
     scroll-behavior: auto;
     transition-duration: 0s;
+  }
+}
+
+@media (pointer: coarse) {
+  .doc-action-surface [data-slot="document-actions"] button {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
+  .doc-action-surface-vertical .doc-reading-layout {
+    padding-right: 3.25rem;
   }
 }

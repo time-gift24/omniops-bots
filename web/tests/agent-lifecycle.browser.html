@@ -1,0 +1,274 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Agent lifecycle integration regression</title>
+<!-- Run npm run dev, then open /tests/agent-lifecycle.browser.html. No backend required. -->
+<div id="fixture"></div>
+<pre id="result">Running…</pre>
+<script type="module">
+  import React from "react"
+  import { createRoot } from "react-dom/client"
+  import { flushSync } from "react-dom"
+  import "/src/index.css"
+  import { App } from "/src/App.tsx"
+  import { createTestDependencies, withTestTheme } from "/tests/support.tsx"
+
+  const fixture = document.querySelector("#fixture")
+  const result = document.querySelector("#result")
+  const checks = []
+  const deferred = () => {
+    let resolve
+    const promise = new Promise(done => { resolve = done })
+    return { promise, resolve }
+  }
+  const configuration = (name, instructions) => ({ name, description: `${name} 测试配置`, instructions, mcpServerIds: [], toolIds: [], skillIds: [] })
+  const records = new Map([
+    ["agent-a", { id: "agent-a", source: "local", configuration: configuration("Agent A", "A 原始指令") }],
+    ["agent-b", { id: "agent-b", source: "local", configuration: configuration("Agent B", "B 原始指令") }],
+    ["official", { id: "official", source: "official", configuration: configuration("官方 Agent", "官方原始指令") }],
+  ])
+  const initialLoad = deferred()
+  let initialLoading = true
+  let loadCalls = 0
+  let createCalls = 0
+  let failCreate = true
+  let createGate = null
+  let failSave = false
+  let saveGate = null
+  const saves = []
+  const bindings = []
+  const agents = {
+    async load() {
+      loadCalls++
+      if (!initialLoading) throw new Error("二次目录读取不可用")
+      await initialLoad.promise
+      return { agents: structuredClone([...records.values()]), resources: { mcpServers: [], tools: [], skills: [] } }
+    },
+    async create(input) {
+      const index = ++createCalls
+      if (failCreate) throw new Error("创建暂时失败，请重试")
+      if (createGate) { const gate = createGate; createGate = null; await gate.promise }
+      const copied = input?.copyFrom ? records.get(input.copyFrom) : null
+      const created = { id: `created-${index}`, source: "local", configuration: copied ? { ...structuredClone(copied.configuration), name: `${copied.configuration.name} 副本` } : configuration(`新建 Agent ${index}`, "新建默认指令") }
+      records.set(created.id, created)
+      return structuredClone(created)
+    },
+    async save(id, next) {
+      const snapshot = structuredClone(next)
+      saves.push({ id, configuration: snapshot })
+      if (saveGate) { const gate = saveGate; saveGate = null; await gate.promise }
+      if (failSave) throw new Error("保存暂时失败，请重试")
+      records.set(id, { ...records.get(id), configuration: snapshot })
+    },
+  }
+  const dependencies = createTestDependencies({
+    agents,
+    skills: { async list() { return [] } },
+    runs: {
+      bindSession(threadId, context) { bindings.push({ threadId, context, configuration: structuredClone(records.get(context.agentId)?.configuration) }) },
+      async list() { return [] },
+      async get() { throw new Error("This fixture has no stored runs") },
+      async snapshot() { return null },
+    },
+  })
+  const assert = (condition, message) => { if (!condition) throw new Error(message) }
+  const until = async (condition, message) => {
+    const deadline = performance.now() + 8000
+    while (!condition() && performance.now() < deadline) await new Promise(resolve => setTimeout(resolve, 20))
+    assert(condition(), message)
+  }
+  const visible = element => element && element.getClientRects().length > 0 && !element.closest('[inert], [hidden], [aria-hidden="true"]')
+  const label = element => {
+    if (element.hasAttribute("aria-label")) return element.getAttribute("aria-label").trim()
+    const clone = element.cloneNode(true)
+    clone.querySelectorAll('[aria-hidden="true"], [hidden], .invisible').forEach(child => child.remove())
+    return clone.textContent.trim()
+  }
+  const button = (name, scope = fixture) => [...scope.querySelectorAll("button")].find(element => visible(element) && (label(element) === name || (name.startsWith("打开 ") && label(element).startsWith(name))))
+  const click = element => {
+    assert(visible(element) && !element.disabled, "Expected an enabled visible control")
+    const drawer = document.querySelector('[data-mobile="true"][aria-hidden="false"]')
+    assert(!drawer || drawer.contains(element), "Close the mobile navigation before operating controls behind its overlay")
+    flushSync(() => { element.focus(); element.click() })
+  }
+  const navigation = name => fixture.querySelector(`nav[aria-label="工作区导航区域"] button[aria-label="${name}"]`)
+  const list = () => [...fixture.querySelectorAll('[data-testid="agent-library"]')].find(visible)
+  const settings = () => [...fixture.querySelectorAll('aside[aria-label="Agent 配置"]')].find(visible)
+  const editor = () => [...fixture.querySelectorAll('textarea[aria-label="系统提示词"]')].find(visible)
+  const sidebarRow = name => [...document.querySelectorAll('[data-slot="sidebar-menu-item"] button')].find(element => visible(element) && label(element) === name)
+  const header = () => fixture.querySelector('[data-slot="sidebar-rail-workspace-header"]')
+  const mobileDrawer = () => document.querySelector('[data-mobile="true"][aria-hidden="false"]')
+  const openNavigation = async () => {
+    if (innerWidth >= 768 || mobileDrawer()) return
+    click(button("展开导航"))
+    await until(() => mobileDrawer() && mobileDrawer().getBoundingClientRect().left >= -1, "Mobile navigation must open before using its entries")
+  }
+  const closeNavigation = async () => {
+    if (!mobileDrawer()) return
+    click(button("Close sidebar", mobileDrawer()))
+    await until(() => !mobileDrawer(), "Mobile navigation must close before using page actions")
+  }
+  const waitForAgent = async name => {
+    await until(() => header()?.textContent.includes(name) && (button("编辑") || button("保存")), `Agent detail did not open: ${name}`)
+    if (!settings()) click(button("Agent 配置"))
+    await until(settings, `Agent configuration did not open: ${name}`)
+  }
+  const switchAgent = async name => {
+    await openNavigation()
+    click(sidebarRow(name))
+    await closeNavigation()
+    await waitForAgent(name)
+  }
+  const write = value => flushSync(() => {
+    const input = editor()
+    assert(input && !input.disabled, "Expected an editable instruction field")
+    Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value").set.call(input, value)
+    input.dispatchEvent(new Event("input", { bubbles: true }))
+  })
+  const openList = async () => {
+    await closeNavigation()
+    click(navigation("Agent"))
+    await until(list, "Agent rail must open the full list")
+    await closeNavigation()
+    assert(!settings(), "The list must not silently open its first Agent")
+  }
+  const openAgent = async name => {
+    await openList()
+    click(button(`打开 ${name}`, list()))
+    await waitForAgent(name)
+  }
+  const root = createRoot(fixture)
+  try {
+    flushSync(() => root.render(React.createElement(React.StrictMode, null, withTestTheme(React.createElement(App), dependencies))))
+    await until(() => loadCalls > 0 && fixture.textContent.includes("正在加载工作区"), "Delayed Agent loading must show a loading state")
+    initialLoad.resolve()
+    await until(() => navigation("Agent"), "Initial Agent loading did not finish")
+    initialLoading = false
+    const initialCalls = loadCalls
+    await openList()
+    assert(button("打开 Agent A", list()) && button("打开 Agent B", list()) && button("打开 官方 Agent", list()), "The Agent list must include every local and official Agent")
+    await openNavigation()
+    const newSession = button("新会话", document)
+    const agentOverview = button("Agent 列表", document)
+    const skillOverview = button("Skill 列表", document)
+    assert(newSession && agentOverview && skillOverview, "The open sidebar must expose both global list entries")
+    assert(newSession.getBoundingClientRect().bottom <= agentOverview.getBoundingClientRect().top && agentOverview.getBoundingClientRect().bottom <= skillOverview.getBoundingClientRect().top, "Agent and Skill list entries must appear below New conversation")
+    await closeNavigation()
+    assert(!button("新建本地 Agent", list()).closest("header"), "The create action must be reachable in the page body")
+    assert(button("新建本地 Agent", list()).textContent.trim() === "", "The create action must be an accessible icon button")
+    checks.push("Delayed loading resolves to the complete Agent list with sidebar entry and body actions")
+
+    click(button("新建本地 Agent", list()))
+    await until(() => fixture.textContent.includes("创建暂时失败") && !button("新建本地 Agent", list()).disabled, "Creation failure must remain retryable")
+    failCreate = false
+    const creating = deferred()
+    createGate = creating
+    click(button("新建本地 Agent", list()))
+    await until(() => createCalls === 2 && button("新建本地 Agent", list()).disabled, "Pending creation must disable repeated submission")
+    creating.resolve()
+    await waitForAgent("新建 Agent 2")
+    assert(loadCalls === initialCalls, "Successful creation must not depend on a second directory load")
+    await openNavigation()
+    assert(sidebarRow("新建 Agent 2"), "Creation must update the sidebar")
+    await closeNavigation()
+    await openList()
+    assert(button("打开 新建 Agent 2", list()), "Creation must update the full list")
+    const background = deferred()
+    createGate = background
+    click(button("新建本地 Agent", list()))
+    await until(() => createCalls === 3, "Background creation did not start")
+    click(navigation("工作区"))
+    background.resolve()
+    await until(() => records.has("created-3"), "Background creation did not finish")
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    assert(navigation("工作区").getAttribute("aria-current") === "page" && !settings(), "Late creation must not steal navigation from the workspace")
+    await openList()
+    assert(button("打开 新建 Agent 3", list()), "Background creation must still update the full list")
+    await openNavigation()
+    assert(sidebarRow("新建 Agent 3"), "Background creation must still update the sidebar")
+    await closeNavigation()
+    click(button("复制 官方 Agent 为本地 Agent", list()))
+    await waitForAgent("官方 Agent 副本")
+    assert(button("编辑") && !button("复制为本地"), "The copied Agent must be editable")
+    assert(records.get("official").configuration.instructions === "官方原始指令" && loadCalls === initialCalls, "Copy must retain the official source and avoid reloading resources")
+    checks.push("Create failure retries; create/copy open immediately; background success updates lists without taking over navigation")
+
+    await openAgent("Agent A")
+    click(button("编辑"))
+    write("A 保存快照")
+    const saving = deferred()
+    saveGate = saving
+    click(button("保存"))
+    await until(() => saves.length === 1 && button("保存").disabled, "Save must capture one request and remain pending")
+    write("A 保存期间继续输入的新版本")
+    await switchAgent("Agent B")
+    await until(() => settings() && header()?.textContent.includes("Agent B"), "Switching to B during A's save must remain possible")
+    click(button("编辑"))
+    write("B 尚未保存的编辑")
+    await switchAgent("Agent A")
+    await until(() => editor()?.value === "A 保存期间继续输入的新版本", "Returning to A must retain edits typed after its save started")
+    assert(button("保存").disabled, "Returning to A must retain the original save lock")
+    flushSync(() => editor().dispatchEvent(new KeyboardEvent("keydown", { key: "s", ctrlKey: true, bubbles: true })))
+    assert(saves.length === 1, "A keyboard save while the original save is pending must not duplicate it")
+    await switchAgent("Agent B")
+    await until(() => editor()?.value === "B 尚未保存的编辑", "B's draft must survive returning from A")
+    const focusedB = editor()
+    focusedB.focus()
+    saving.resolve()
+    await until(() => records.get("agent-a").configuration.instructions === "A 保存快照", "The first save must persist only its captured A version")
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    assert(document.activeElement === focusedB && editor()?.value === "B 尚未保存的编辑", "A's background completion must preserve B's focus and draft")
+    await switchAgent("Agent A")
+    await until(() => editor()?.value === "A 保存期间继续输入的新版本" && button("保存") && !button("保存").disabled, "Newer A edits must remain unsaved and editable after the earlier snapshot finishes")
+    assert(!button("开始新会话") && saves.length === 1, "A must remain in edit mode until its newer version is saved")
+    const latestSave = deferred()
+    saveGate = latestSave
+    click(button("保存"))
+    await until(() => saves.length === 2, "Saving A again must capture its newer version")
+    await switchAgent("Agent B")
+    await until(() => editor()?.value === "B 尚未保存的编辑", "B must remain editable while A's latest version saves")
+    editor().focus()
+    latestSave.resolve()
+    await until(() => records.get("agent-a").configuration.instructions === "A 保存期间继续输入的新版本", "Only the second save may persist A's newer edits")
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    assert(document.activeElement === focusedB, "Finishing A's editor in the background must not move focus away from B")
+    await switchAgent("Agent A")
+    await until(() => button("开始新会话") && button("编辑") && !editor(), "A's latest saved version must return to reading and permit debug")
+    await switchAgent("Agent B")
+    await until(() => editor()?.value === "B 尚未保存的编辑", "A's completion must not erase B's draft")
+    click(navigation("工作区"))
+    await openAgent("Agent B")
+    assert(editor()?.value === "B 尚未保存的编辑", "List/workspace round trips must preserve Agent drafts")
+    checks.push("Saving snapshots preserves newer input across A/B switches; background completion never steals focus")
+
+    await openAgent("Agent A")
+    click(button("编辑"))
+    write("A 失败后重试的版本")
+    failSave = true
+    click(button("保存"))
+    await until(() => fixture.textContent.includes("保存暂时失败") && button("保存") && !button("保存").disabled, "Save failure must expose a retry without leaving edit mode")
+    assert(editor()?.value === "A 失败后重试的版本" && records.get("agent-a").configuration.instructions === "A 保存期间继续输入的新版本", "Save failure must preserve both the draft and previous durable version")
+    await openAgent("Agent B")
+    await openAgent("Agent A")
+    assert(editor()?.value === "A 失败后重试的版本", "Failed drafts must survive switching away and back")
+    failSave = false
+    click(button("保存"))
+    await until(() => button("开始新会话") && !editor(), "Retried save must return to reading")
+    click(button("开始新会话"))
+    await until(() => bindings.length === 1 && navigation("执行记录").getAttribute("aria-current") === "page", "Debug must open a new bound conversation")
+    assert(bindings[0].context.agentId === "agent-a" && bindings[0].configuration.instructions === "A 失败后重试的版本", "Debug must bind the selected saved Agent and its latest successful configuration")
+    await openAgent("Agent B")
+    assert(editor()?.value === "B 尚未保存的编辑", "Starting A's conversation must preserve B's draft")
+    click(button("撤销"))
+    click(button("开始新会话"))
+    await until(() => bindings.length === 2, "B must be able to start its own conversation")
+    assert(bindings[1].context.agentId === "agent-b" && bindings[1].configuration.instructions === "B 原始指令" && bindings[0].threadId !== bindings[1].threadId, "A and B must use separate sessions bound to their saved configurations")
+    checks.push("Failed saves retain drafts and retry; debug starts separate conversations for the selected saved Agent")
+
+    result.dataset.status = "passed"
+    result.textContent = `PASS (${checks.length})\n${checks.join("\n")}`
+  } catch (error) {
+    result.dataset.status = "failed"
+    result.textContent = `FAIL after ${checks.length} checks\n${checks.join("\n")}\n${error.stack}`
+    console.error(error)
+  }
+</script>

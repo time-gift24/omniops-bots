@@ -63,21 +63,31 @@ const wait = (ms = 20) => new Promise(resolve => setTimeout(resolve, ms))
 const assert = (condition, message) => { if (!condition) throw new Error(message) }
 const until = async (condition, message) => { const until = Date.now() + 10000; while (!condition() && Date.now() < until) await wait(); assert(condition(), message) }
 const visible = element => element?.getClientRects().length && !element.closest('[hidden],[inert],[aria-hidden="true"]')
-const button = (name, scope = document) => [...scope.querySelectorAll("button")].find(element => visible(element) && (element.getAttribute("aria-label") === name || element.textContent.trim() === name))
+const button = (name, scope = document) => [...scope.querySelectorAll("button")].find(element => visible(element) && (element.getAttribute("aria-label") === name || element.textContent.trim() === name || (name.startsWith("打开 ") && (element.getAttribute("aria-label") ?? element.textContent.trim()).startsWith(name))))
 const click = name => { const element = typeof name === "string" ? button(name) : name; assert(visible(element) && !element.disabled, `Missing enabled control ${name}`); flushSync(() => element.click()) }
 function input(element, text) { assert(element, "Missing input"); flushSync(() => { if (element.isContentEditable) element.textContent = text; else Object.getOwnPropertyDescriptor(element instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype, "value").set.call(element, text); element.dispatchEvent(new Event("input", { bubbles: true })) }) }
 async function mount() { const runtime = await createTauriAdapters(bridge); runtime.setContextResolver(async () => ({})); const dependencies = createAppDependencies(runtime.adapters); flushSync(() => root.render(withTestTheme(React.createElement(App), dependencies))); await until(() => button("Agent"), "App did not load"); return runtime }
-async function agent(name) { click("Agent"); await until(() => button(name), `Agent ${name} unavailable`); click(name); await until(() => button("开始新会话"), "Agent page did not load") }
+const activeAgentPage = () => [...fixture.querySelectorAll('[data-agent-id]')].find(visible)
+async function agent(name) {
+  click(button("Agent", fixture.querySelector('nav[aria-label="工作区导航区域"]')))
+  const close = button("Close sidebar")
+  if (close) click(close)
+  const library = () => [...fixture.querySelectorAll('[data-testid="agent-library"]')].find(visible)
+  await until(() => library() && button(`打开 ${name}`, library()), `Agent list entry ${name} unavailable`)
+  click(button(`打开 ${name}`, library()))
+  await until(() => activeAgentPage() && button("开始新会话", activeAgentPage()), "Agent page did not load")
+}
 async function send(text) { await until(() => [...fixture.querySelectorAll('[contenteditable="true"]')].some(visible), "Composer missing"); input([...fixture.querySelectorAll('[contenteditable="true"]')].find(visible), text); await until(() => button("发送") && !button("发送").disabled, "Send disabled"); click("发送"); await until(() => !button("停止任务") && fixture.textContent.includes(`执行完成 ${starts.length}`), "Run did not complete") }
 let runtime
 try {
   runtime = await mount()
   await agent("官方巡检")
   assert(!button("编辑"), "Official Agent must be read-only")
-  assert(fixture.textContent.includes("official-v1"), "Agent identity must remain visible")
+  assert(!fixture.textContent.includes("official-v1"), "Agent configuration must not expose content hashes")
   click("复制为本地")
   await until(() => button("编辑"), "Copy must create editable local Agent")
   assert(agents.length === 3, "Agent copy must be persisted through source")
+  assert(!fixture.textContent.includes("new-2-v1"), "Local Agent configuration must not expose content hashes")
   assert(!fixture.querySelector('[aria-label="变更数据的操作需要批准"]'), "Real runtime must not display approval configuration")
   click("开始新会话"); await send("检查一次")
   const firstThread = starts[0].threadId
@@ -86,24 +96,36 @@ try {
   assert(starts[1].threadId !== firstThread, "Each Agent launch requires a fresh stable session")
   assert(!calls.some(([, args]) => args?.method === "agent_instructions"), "Frontend must not assemble instructions per turn")
   await agent("新建巡检")
-  const manager = [...fixture.querySelectorAll("summary")].find(element => element.textContent === "管理本地 MCP 服务")
+  const manager = [...activeAgentPage().querySelectorAll("summary")].find(element => element.textContent === "管理本地 MCP 服务")
   if (!visible(manager)) click("Agent 配置")
   manager.click()
   click("添加 MCP 服务")
-  input(fixture.querySelector('input[placeholder="团队知识库"]'), "测试 MCP")
-  input(fixture.querySelector('input[placeholder="https://example.com/mcp"]'), "https://example.com/mcp")
-  input(fixture.querySelector('input[placeholder="TEAM_MCP_TOKEN"]'), "MCP_TOKEN")
+  input([...fixture.querySelectorAll('input[placeholder="团队知识库"]')].find(visible), "测试 MCP")
+  input([...fixture.querySelectorAll('input[placeholder="https://example.com/mcp"]')].find(visible), "https://example.com/mcp")
+  input([...fixture.querySelectorAll('input[placeholder="TEAM_MCP_TOKEN"]')].find(visible), "MCP_TOKEN")
   click("保存服务"); await until(() => button("测试连接"), "MCP save did not refresh catalog")
   click("测试连接"); await until(() => fixture.textContent.includes("MCP 连接失败"), "MCP failures must be visible")
   failedMcp = false; click("测试连接"); await until(() => fixture.textContent.includes("连接成功：1 个工具"), "Real MCP test result missing")
   click("技能"); await until(() => button("实验技能"), "Skill catalog missing"); click("实验技能")
   await until(() => button("在新会话中实验"), "Skill experiment action missing")
-  click("SKILL.md"); await until(() => button("编辑文件"), "Skill file editor unavailable"); click("编辑文件")
-  await until(() => fixture.querySelector('textarea[aria-label="SKILL.md 内容"]'), "Skill text input unavailable")
-  input(fixture.querySelector('textarea[aria-label="SKILL.md 内容"]'), "# 完整实验草稿\n使用当前未保存的内容。")
+  await until(() => visible(fixture.querySelector('[data-slot="skill-screen"]')) && button("编辑") && !button("编辑").disabled, "Native Skill must open its default file in the original reading layout")
+  assert(fixture.querySelector('[data-slot="skill-screen"] nav[aria-label="技能文件"]'), "Native Skill must preserve its file navigation")
+  const skillHeader = fixture.querySelector("header"), headerBounds = skillHeader.getBoundingClientRect()
+  const headerControls = [...skillHeader.querySelectorAll("button")].filter(visible)
+  for (let index = 0; index < headerControls.length; index++) {
+    const current = headerControls[index].getBoundingClientRect()
+    assert(current.left >= Math.max(0, headerBounds.left) - 1 && current.right <= Math.min(innerWidth, headerBounds.right) + 1 && current.top >= headerBounds.top - 1 && current.bottom <= headerBounds.bottom + 1, "Native Skill header controls must fit the header and viewport")
+    for (const control of headerControls.slice(index + 1)) {
+      const next = control.getBoundingClientRect()
+      assert(Math.min(current.right, next.right) - Math.max(current.left, next.left) <= 1 || Math.min(current.bottom, next.bottom) - Math.max(current.top, next.top) <= 1, "Native Skill header controls must not overlap")
+    }
+  }
+  click("编辑")
+  await until(() => fixture.querySelector('textarea[aria-label="编辑 SKILL.md"]'), "Skill text input unavailable")
+  input(fixture.querySelector('textarea[aria-label="编辑 SKILL.md"]'), "# 完整实验草稿\n使用当前未保存的内容。")
   click("在新会话中实验"); await until(() => fixture.textContent.includes("Skill 保存失败"), "Failed experiment save must be visible")
   assert(!button("开始实验会话") && starts.length === 2, "Failed draft save must not launch experiment")
-  assert(fixture.querySelector('textarea[aria-label="SKILL.md 内容"]').value.includes("完整实验草稿"), "Failed experiment save must retain draft")
+  assert(fixture.querySelector('textarea[aria-label="编辑 SKILL.md"]').value.includes("完整实验草稿"), "Failed experiment save must retain draft")
   failedSkillWrite = false
   click("在新会话中实验"); await until(() => button("开始实验会话"), "Experiment Agent selector missing"); click("开始实验会话")
   await send("实验一次")
@@ -120,6 +142,14 @@ try {
   assert(starts.length === 3, "Opening historical conversation must not execute")
   await send("继续检查")
   assert(starts[3].threadId === firstThread, "Continuation must use the original session identity")
+  click("Agent"); await until(() => visible(fixture.querySelector('[data-testid="agent-library"]')) && button("新建本地 Agent"), "Agent list creation control missing")
+  const create = button("新建本地 Agent", fixture.querySelector('[data-testid="agent-library"]'))
+  assert(create.querySelector("svg") && create.textContent.trim() === "", "List creation must be an accessible icon button")
+  const controlBounds = create.getBoundingClientRect(), listHeaderBounds = fixture.querySelector("header").getBoundingClientRect()
+  assert(controlBounds.width === controlBounds.height && controlBounds.height >= 24, "Creation control must be square with an accessible target")
+  assert(controlBounds.top >= listHeaderBounds.bottom && !create.closest("header"), "Creation control must float in the body below the breadcrumb")
+  create.focus(); assert(document.activeElement === create, "Creation control must accept keyboard focus")
+  click(create); await until(() => agents.length === 4 && button("编辑"), "Icon creation must still open a new local Agent")
   result.textContent = "PASS: official read-only/copy, Agent-bound unique sessions, native gate, MCP save/test failure/success, Skill draft-save failure/retry and experiment, persisted history/snapshot, restore without execution, continuation"
   result.dataset.passed = "true"
 } catch (error) { result.textContent = `FAIL: ${error.stack}`; result.dataset.passed = "false"; throw error }

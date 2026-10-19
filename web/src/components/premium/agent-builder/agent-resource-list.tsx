@@ -77,16 +77,12 @@ export function AgentResourceList({
                 {resource.description}
               </span>
               {resource.contentId || resource.source ? (
-                <span
-                  title={resource.contentId}
-                  className="mt-1 block truncate font-mono text-[10px] text-muted-foreground"
-                >
+                <span className="mt-1 block text-xs text-muted-foreground">
                   {resource.source === "official"
-                    ? `官方${resource.releaseTag ? ` ${resource.releaseTag}` : ""}${resource.contentId ? " · " : ""}`
+                    ? "官方"
                     : resource.contentId
-                      ? "本地 · "
+                      ? "本地"
                       : "本地草稿"}
-                  {resource.contentId}
                 </span>
               ) : null}
             </span>
@@ -102,10 +98,11 @@ export function AgentResourceList({
               <button
                 type="button"
                 onClick={() => onInspect(resource.id)}
-                aria-label={`查看 ${resource.name} 的能力`}
                 className="group flex min-w-0 flex-1 items-center gap-2 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
+                <span className="sr-only">查看 </span>
                 {summary}
+                <span className="sr-only"> 的能力</span>
                 <HugeiconsIcon
                   icon={ArrowRight01Icon}
                   aria-hidden="true"

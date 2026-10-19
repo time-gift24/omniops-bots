@@ -5,6 +5,7 @@ import {
   type ReactNode,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   useSyncExternalStore,
@@ -13,6 +14,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import {
   BotIcon,
   Folder01Icon,
+  HistoryIcon,
   PackageIcon,
   PanelRightIcon,
   Search01Icon,
@@ -20,7 +22,7 @@ import {
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import { useAppDependencies } from "@/app/dependencies"
 import type { AgentEntry, AgentResource, AgentResources } from "@/agents/source"
-import type { Skill } from "@/skills/source"
+import type { ManagedSkill } from "@/skills/library"
 import type { ModelChoice } from "@/models/source"
 import { useBackendData } from "@/components/workbench/use-backend-data"
 import { ChatScreen } from "@/components/chat/chat-screen"
@@ -72,6 +74,11 @@ const SkillLibraryScreen = lazy(() =>
     default: module.SkillLibraryScreen,
   }))
 )
+const AgentLibraryScreen = lazy(() =>
+  import("@/components/agents/agent-library-screen").then((module) => ({
+    default: module.AgentLibraryScreen,
+  }))
+)
 
 class PageLoadBoundary extends Component<
   { children: ReactNode },
@@ -110,6 +117,20 @@ type View =
   | { kind: "page"; sectionId: string; itemId: string }
   | { kind: "section"; sectionId: string; workspaceId?: string }
 
+function skillResource(
+  skill: Pick<ManagedSkill, "id" | "name" | "description"> &
+    Partial<Pick<ManagedSkill, "origin" | "version" | "contentId">>
+): AgentResource {
+  return {
+    id: skill.id,
+    name: skill.name,
+    description: skill.description,
+    contentId: skill.contentId,
+    source: skill.origin ?? "local",
+    releaseTag: skill.version,
+  }
+}
+
 export function App() {
   const dependencies = useAppDependencies()
   const [attempt, setAttempt] = useState(0)
@@ -120,8 +141,12 @@ export function App() {
   )
   const skills = useBackendData(
     attempt,
-    () => dependencies.skills.list(),
-    dependencies.skills
+    async () => {
+      const items = await (dependencies.skillLibrary?.list() ??
+        dependencies.skills.list())
+      return items.map(skillResource)
+    },
+    dependencies.skillLibrary ?? dependencies.skills
   )
   const models = useBackendData(
     attempt,
@@ -177,7 +202,7 @@ function WorkspaceApp({
 }: {
   initialAgents: readonly AgentEntry[]
   resources: AgentResources
-  skills: readonly Skill[]
+  skills: readonly AgentResource[]
   models: readonly ModelChoice[]
 }) {
   const {
@@ -187,6 +212,7 @@ function WorkspaceApp({
     desktop,
     threads,
     runs,
+    skillLibrary,
   } = useAppDependencies()
   const desktopState = useSyncExternalStore(
     desktop.subscribe,
@@ -212,13 +238,26 @@ function WorkspaceApp({
     null
   )
   const [experimentAgentId, setExperimentAgentId] = useState("")
-  const [openedAgentId, setOpenedAgentId] = useState<string | null>(null)
+  const [visitedAgents, setVisitedAgents] = useState<readonly string[]>([])
+  const [agentListVisited, setAgentListVisited] = useState(false)
   const [view, setView] = useState<View>({ kind: "chat" })
+  const currentView = useRef(view)
+  const mounted = useRef(false)
+  useLayoutEffect(() => {
+    currentView.current = view
+  }, [view])
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+    }
+  }, [])
   const [agentToolbarTarget, setAgentToolbarTarget] =
     useState<HTMLDivElement | null>(null)
   const [skillCatalog, setSkillCatalog] =
     useState<readonly AgentResource[]>(skills)
   const [openedSkillId, setOpenedSkillId] = useState<string | null>(null)
+  const [skillsVisited, setSkillsVisited] = useState(false)
   const [workbenchOpen, setWorkbenchOpen] = useState(true)
   const [navigationExpanded, setNavigationExpanded] = useState(true)
   const [compactWindow, setCompactWindow] = useState(
@@ -227,10 +266,11 @@ function WorkspaceApp({
       window.matchMedia("(width < 1100px)").matches
   )
   const workbenchId = useId()
+  const contentId = useId()
   const workbenchRef = useRef<WorkbenchHandle>(null)
   const workbenchToggleRef = useRef<HTMLButtonElement>(null)
   const reduce = useReducedMotion()
-  const contentRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLElement>(null)
   const lifetime = useRef({ version: 0 })
   useEffect(() => {
     const media = window.matchMedia("(width < 1100px)")
@@ -287,7 +327,6 @@ function WorkspaceApp({
   const activeWorkspace = state.workspaces.find(
     (workspace) => workspace.id === activeSession?.workspaceId
   )
-  const activeAgent = agents.find((agent) => agent.id === openedAgentId)
   const activeSkill = skillCatalog.find((skill) => skill.id === openedSkillId)
   const activeSectionId =
     view.kind === "session"
@@ -315,19 +354,11 @@ function WorkspaceApp({
     id: "agents",
     label: "Agent",
     icon: BotIcon,
+    selectFirstItem: false,
+    overviewLabel: "Agent 列表",
     groups: [
       {
         label: "本地 Agent",
-        action: agentSource.create ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={agentBusy}
-            onClick={() => void createAgent()}
-          >
-            新建
-          </Button>
-        ) : undefined,
         items: agents
           .filter((agent) => agent.source !== "official")
           .map((agent) => ({
@@ -406,7 +437,7 @@ function WorkspaceApp({
           {
             id: "runs",
             label: "执行记录",
-            icon: BotIcon,
+            icon: HistoryIcon,
             selectFirstItem: false,
             groups: [
               {
@@ -425,6 +456,7 @@ function WorkspaceApp({
       label: "技能",
       icon: PackageIcon,
       selectFirstItem: false,
+      overviewLabel: "Skill 列表",
       groups: [
         {
           label: "我的技能",
@@ -496,22 +528,36 @@ function WorkspaceApp({
     agentOperation.current = true
     setAgentBusy(true)
     setActionError("")
+    const origin = currentView.current
     try {
       const agent = await agentSource.create(
         copyFrom ? { copyFrom } : undefined
       )
-      await refreshAgents()
-      setOpenedAgentId(agent.id)
-      setView({ kind: "agent", agentId: agent.id })
-      setWorkbenchOpen(false)
+      if (!mounted.current) return
+      setAgents((current) => [
+        ...current.filter((item) => item.id !== agent.id),
+        agent,
+      ])
+      if (currentView.current === origin) openAgent(agent.id)
     } catch (cause) {
-      setActionError(
-        cause instanceof Error ? cause.message : "创建 Agent 失败，请重试。"
-      )
+      if (mounted.current)
+        setActionError(
+          cause instanceof Error ? cause.message : "创建 Agent 失败，请重试。"
+        )
     } finally {
       agentOperation.current = false
-      setAgentBusy(false)
+      if (mounted.current) setAgentBusy(false)
     }
+  }
+
+  function openAgent(id: string) {
+    setVisitedAgents((current) =>
+      current.includes(id) ? current : [...current, id]
+    )
+    setView({ kind: "agent", agentId: id })
+    wasWorkbenchOpen.current = false
+    setWorkbenchOpen(false)
+    contentRef.current?.focus({ preventScroll: true })
   }
 
   function showSession(threadId: string, title: string) {
@@ -550,6 +596,10 @@ function WorkspaceApp({
   }
 
   function openSection(sectionId: string, workspaceId?: string) {
+    if (sectionId === "agents") setAgentListVisited(true)
+    if (sectionId === "skills") setSkillsVisited(true)
+    if (sectionId === "agents" || sectionId === "skills")
+      setWorkbenchOpen(false)
     contentRef.current?.focus({ preventScroll: true })
     setView({ kind: "section", sectionId, workspaceId })
   }
@@ -576,8 +626,7 @@ function WorkspaceApp({
       const agentId = task.threadId.slice("agent-test:".length)
       const agent = agents.find((entry) => entry.id === agentId)
       if (!agent) return
-      setOpenedAgentId(agentId)
-      setView({ kind: "agent", agentId })
+      openAgent(agentId)
       workbenchRef.current?.openAgentDebug(agentId, agent.configuration.name)
       setWorkbenchOpen(true)
     } else {
@@ -599,11 +648,8 @@ function WorkspaceApp({
       return
     }
     if (section.id === "agents") {
-      wasWorkbenchOpen.current = false
-      setWorkbenchOpen(false)
       const agentId = item.id.slice("agent:".length)
-      setOpenedAgentId(agentId)
-      setView({ kind: "agent", agentId })
+      openAgent(agentId)
       return
     }
     if (section.id !== "workspace") {
@@ -620,6 +666,12 @@ function WorkspaceApp({
 
   return (
     <>
+      <a
+        href={`#${contentId}`}
+        className="fixed top-3 left-3 z-100 -translate-y-24 rounded-md border border-border bg-background px-4 py-2 text-sm focus:translate-y-0 focus:outline-2 focus:outline-ring"
+      >
+        跳到主要内容
+      </a>
       <SidebarRail
         workspaceName="omniops-bots"
         expanded={navigationExpanded && (!compactWindow || !workbenchOpen)}
@@ -634,6 +686,7 @@ function WorkspaceApp({
           if (compactWindow) setWorkbenchOpen(false)
           if (section.id === "workspace") setView({ kind: "chat" })
           if (section.id === "runs") openSection("runs")
+          if (section.id === "agents") openSection("agents")
           if (section.id === "skills") {
             setWorkbenchOpen(false)
             openSection("skills")
@@ -785,12 +838,14 @@ function WorkspaceApp({
               }}
             />
           )}
-          <div
+          <main
+            id={contentId}
             ref={contentRef}
             tabIndex={-1}
             className="min-h-0 flex-1 outline-none"
           >
-            {openedSkillId ||
+            {skillsVisited ||
+            openedSkillId ||
             (view.kind === "section" && view.sectionId === "skills") ? (
               <div
                 className={
@@ -812,30 +867,31 @@ function WorkspaceApp({
                     }
                   >
                     <SkillLibraryScreen
+                      active={
+                        view.kind === "skill" ||
+                        (view.kind === "section" && view.sectionId === "skills")
+                      }
                       skillId={
                         view.kind === "section" && view.sectionId === "skills"
                           ? null
                           : openedSkillId
                       }
                       onOpenSkill={(id) => {
+                        contentRef.current?.focus({ preventScroll: true })
                         if (id === null) openSection("skills")
                         else {
                           setOpenedSkillId(id)
                           setView({ kind: "skill" })
                         }
                       }}
-                      onCatalogChange={(items) =>
-                        setSkillCatalog(
-                          items.map((skill) => ({
-                            id: skill.id,
-                            name: skill.name,
-                            description: skill.description,
-                            contentId: skill.contentId,
-                            source: skill.origin,
-                            releaseTag: skill.version,
-                          }))
+                      onCatalogChange={(items) => {
+                        setSkillCatalog(items.map(skillResource))
+                        setOpenedSkillId((current) =>
+                          items.some((item) => item.id === current)
+                            ? current
+                            : null
                         )
-                      }
+                      }}
                       onExperiment={
                         runs
                           ? (id) => {
@@ -849,9 +905,13 @@ function WorkspaceApp({
                 </PageLoadBoundary>
               </div>
             ) : null}
-            {activeAgent ? (
+            {agentListVisited ? (
               <div
-                className={view.kind === "agent" ? "h-full min-h-0" : "hidden"}
+                className={
+                  view.kind === "section" && view.sectionId === "agents"
+                    ? "h-full min-h-0"
+                    : "hidden"
+                }
               >
                 <PageLoadBoundary>
                   <Suspense
@@ -864,79 +924,130 @@ function WorkspaceApp({
                       </p>
                     }
                   >
-                    <AgentBuilder
-                      key={activeAgent.id}
-                      initialConfiguration={activeAgent.configuration}
-                      readOnly={activeAgent.source === "official"}
-                      showApproval={desktopState.simulated}
-                      identity={
-                        activeAgent.contentId
-                          ? `${activeAgent.source === "official" ? `官方 ${activeAgent.releaseTag ?? ""}` : "本地"} · ${activeAgent.contentId}`
-                          : undefined
-                      }
-                      debugLabel={runs ? "开始新会话" : undefined}
+                    <AgentLibraryScreen
+                      agents={agents}
+                      busy={agentBusy}
+                      canCreate={!!agentSource.create}
+                      onCreate={() => void createAgent()}
+                      onOpen={openAgent}
                       onCopy={
-                        activeAgent.source === "official" && agentSource.create
-                          ? () => void createAgent(activeAgent.id)
+                        agentSource.create
+                          ? (id) => void createAgent(id)
                           : undefined
                       }
-                      resourceManager={
-                        <McpManager
-                          source={agentSource}
-                          servers={resources.mcpServers}
-                          onChanged={refreshAgents}
-                        />
-                      }
-                      mcpServers={resources.mcpServers}
-                      tools={resources.tools}
-                      skills={[
-                        ...resources.skills.filter(
-                          (entry) =>
-                            !skillCatalog.some((skill) => skill.id === entry.id)
-                        ),
-                        ...skillCatalog,
-                      ]}
-                      initialDraft={activeAgent.draft}
-                      onDraftChange={(draft) =>
-                        setAgents((current) =>
-                          current.map((agent) =>
-                            agent.id === activeAgent.id
-                              ? { ...agent, draft }
-                              : agent
-                          )
-                        )
-                      }
-                      toolbarTarget={
-                        view.kind === "agent" ? agentToolbarTarget : null
-                      }
-                      onBack={() => openSection("agents")}
-                      onDebug={() => {
-                        if (runs) {
-                          startAgentSession(activeAgent)
-                          return
-                        }
-                        workbenchRef.current?.openAgentDebug(
-                          activeAgent.id,
-                          activeAgent.configuration.name
-                        )
-                        setWorkbenchOpen(true)
-                      }}
-                      onSave={async (configuration) => {
-                        await agentSource.save(activeAgent.id, configuration)
-                        if (runs) await refreshAgents()
-                        setAgents((current) =>
-                          current.map((agent) =>
-                            agent.id === activeAgent.id
-                              ? { ...agent, configuration, draft: undefined }
-                              : agent
-                          )
-                        )
-                      }}
                     />
                   </Suspense>
                 </PageLoadBoundary>
               </div>
             ) : null}
+            {agents
+              .filter((item) => visitedAgents.includes(item.id))
+              .map((agent) => (
+                <div
+                  key={agent.id}
+                  data-agent-id={agent.id}
+                  className={
+                    view.kind === "agent" && view.agentId === agent.id
+                      ? "h-full min-h-0"
+                      : "hidden"
+                  }
+                >
+                  <PageLoadBoundary>
+                    <Suspense
+                      fallback={
+                        <p
+                          role="status"
+                          className="p-6 text-sm text-muted-foreground"
+                        >
+                          正在加载 Agent…
+                        </p>
+                      }
+                    >
+                      <AgentBuilder
+                        active={
+                          view.kind === "agent" && view.agentId === agent.id
+                        }
+                        copyBusy={agentBusy}
+                        initialConfiguration={agent.configuration}
+                        readOnly={agent.source === "official"}
+                        showApproval={desktopState.simulated}
+                        debugLabel={runs ? "开始新会话" : undefined}
+                        onCopy={
+                          agent.source === "official" && agentSource.create
+                            ? () => void createAgent(agent.id)
+                            : undefined
+                        }
+                        resourceManager={
+                          <McpManager
+                            source={agentSource}
+                            servers={resources.mcpServers}
+                            onChanged={refreshAgents}
+                          />
+                        }
+                        mcpServers={resources.mcpServers}
+                        tools={resources.tools}
+                        skills={
+                          skillLibrary
+                            ? skillCatalog
+                            : [
+                                ...resources.skills.filter(
+                                  (entry) =>
+                                    !skillCatalog.some(
+                                      (skill) => skill.id === entry.id
+                                    )
+                                ),
+                                ...skillCatalog,
+                              ]
+                        }
+                        initialDraft={agent.draft}
+                        onDraftChange={(draft) =>
+                          setAgents((current) =>
+                            current.map((item) =>
+                              item.id === agent.id ? { ...item, draft } : item
+                            )
+                          )
+                        }
+                        toolbarTarget={
+                          view.kind === "agent" && view.agentId === agent.id
+                            ? agentToolbarTarget
+                            : null
+                        }
+                        onBack={() => openSection("agents")}
+                        onDebug={() => {
+                          if (runs) {
+                            startAgentSession(agent)
+                            return
+                          }
+                          workbenchRef.current?.openAgentDebug(
+                            agent.id,
+                            agent.configuration.name
+                          )
+                          setWorkbenchOpen(true)
+                        }}
+                        onSave={async (configuration) => {
+                          await agentSource.save(agent.id, configuration)
+                          setAgents((current) =>
+                            current.map((item) =>
+                              item.id === agent.id
+                                ? {
+                                    ...item,
+                                    configuration,
+                                    draft:
+                                      JSON.stringify(
+                                        item.draft ?? configuration
+                                      ) === JSON.stringify(configuration)
+                                        ? undefined
+                                        : item.draft,
+                                  }
+                                : item
+                            )
+                          )
+                        }}
+                      />
+                    </Suspense>
+                  </PageLoadBoundary>
+                </div>
+              ))}
             {view.kind === "session" ? (
               <ChatScreen
                 key={view.threadId}
@@ -948,6 +1059,7 @@ function WorkspaceApp({
             ) : view.kind === "section" && view.sectionId === "runs" && runs ? (
               <RunHistory source={runs} onContinue={continueSession} />
             ) : view.kind === "section" &&
+              view.sectionId === "agents" ? null : view.kind === "section" &&
               view.sectionId === "skills" ? null : view.kind === "section" ? (
               <section
                 data-slot="navigation-overview"
@@ -956,15 +1068,6 @@ function WorkspaceApp({
                 <h1 className="text-2xl font-medium tracking-tight">
                   {overviewWorkspace?.name ?? activeSection?.label}
                 </h1>
-                {view.sectionId === "agents" && agentSource.create ? (
-                  <Button
-                    className="mt-4 rounded-full"
-                    disabled={agentBusy}
-                    onClick={() => void createAgent()}
-                  >
-                    新建本地 Agent
-                  </Button>
-                ) : null}
                 {overviewItems.length ? (
                   <ul className="mt-6 space-y-1">
                     {overviewItems.map((item) => (
@@ -1043,7 +1146,7 @@ function WorkspaceApp({
                 </Button>
               </div>
             )}
-          </div>
+          </main>
         </div>
       </SidebarRail>
       <Dialog

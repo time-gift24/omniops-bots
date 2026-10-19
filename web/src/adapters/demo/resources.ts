@@ -170,6 +170,10 @@ export const DEMO_MODELS: readonly ModelChoice[] = [
 /** 每个应用实例持有独立的演示数据，调用方不能通过修改返回值写入来源。 */
 export function createDemoAgentSource(): AgentSource {
   let agents = structuredClone(INITIAL_AGENTS)
+  const validate = (configuration: AgentConfiguration) => {
+    if (!configuration.name.trim() || !configuration.instructions.trim())
+      throw new Error("请先填写名称和系统提示词，再保存。")
+  }
   return {
     load() {
       return Promise.resolve(
@@ -186,14 +190,38 @@ export function createDemoAgentSource(): AgentSource {
     async save(id, configuration) {
       if (!agents.some((agent) => agent.id === id))
         throw new Error("找不到这个 Agent。")
-      if (!configuration.name.trim() || !configuration.instructions.trim()) {
-        throw new Error("请先填写名称和系统提示词，再保存。")
-      }
+      validate(configuration)
       agents = agents.map((agent) =>
         agent.id === id
           ? { id, configuration: structuredClone(configuration) }
           : agent
       )
+    },
+    async create(input = {}) {
+      const original = input.copyFrom
+        ? agents.find((agent) => agent.id === input.copyFrom)
+        : undefined
+      if (input.copyFrom && !original) throw new Error("找不到这个 Agent。")
+      const configuration = structuredClone(
+        input.configuration ??
+          original?.configuration ?? {
+            ...DEFAULT_AGENT,
+            name: "未命名 Agent",
+            mcpServerIds: [],
+            toolIds: [],
+            skillIds: [],
+          }
+      )
+      validate(configuration)
+      if (original && !input.configuration)
+        configuration.name = `${configuration.name}（副本）`
+      const agent: AgentEntry = {
+        id: crypto.randomUUID(),
+        source: "local",
+        configuration,
+      }
+      agents = [...agents, agent]
+      return structuredClone(agent)
     },
   }
 }

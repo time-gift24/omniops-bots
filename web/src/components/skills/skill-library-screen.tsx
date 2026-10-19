@@ -1,18 +1,19 @@
 import {
   useCallback,
   useEffect,
+  useId,
   useLayoutEffect,
   useRef,
   useState,
-  type MouseEvent,
+  type ReactNode,
 } from "react"
 import {
   BookOpen,
-  ChevronLeft,
   ChevronRight,
   Copy,
   Download,
   FileText,
+  Save,
   FolderOpen,
   LockKeyhole,
   Plus,
@@ -22,8 +23,14 @@ import {
 } from "lucide-react"
 import { useAppDependencies } from "@/app/dependencies"
 import { Button } from "@/components/ui/button"
-import { MarkdownEditor } from "@/components/markdown/markdown-editor"
-import { MarkdownReading } from "@/components/markdown/markdown-reading"
+import { HugeiconsIcon } from "@hugeicons/react"
+import {
+  BookOpen01Icon,
+  Bug01Icon,
+  Download01Icon,
+  ListViewIcon,
+} from "@hugeicons-pro/core-stroke-rounded"
+import { SkillDocument } from "./skill-document"
 import { FileManager } from "@/components/premium/file-manager/file-manager"
 import {
   SkillLibraryError,
@@ -33,8 +40,6 @@ import {
   type SkillLibrary,
 } from "@/skills/library"
 import { cn } from "@/lib/utils"
-import { resolveSkillLink } from "@/skills/content"
-import { findDocsHeading } from "@/components/premium/docs-pages/docs-data"
 import "./skill-library.css"
 
 type Edit = { value: string; saved: string }
@@ -45,7 +50,6 @@ type UploadResult = {
   status: "saved" | "conflict" | "failed" | "skipped"
   message: string
 }
-const ignoreSections = () => {}
 const editKey = (id: string, path: string) => `${id}\u0000${path}`
 const includesEdit = (key: string, id: string, path: string) =>
   key === editKey(id, path) || key.startsWith(`${editKey(id, path)}/`)
@@ -90,39 +94,65 @@ function FilePreview({
   skill,
   entry,
   edit,
+  files,
   onEdit,
   onLoaded,
   busy,
   onSave,
-  onClose,
   onOpenFile,
-  hash,
+  active,
+  actions,
 }: {
   library: SkillLibrary
   skill: ManagedSkill
   entry: SkillEntry
   edit: Edit | undefined
+  files: readonly { path: string; modified: boolean }[]
   onEdit: (value: string) => void
   onLoaded: (value: string) => void
   busy: boolean
   onSave: (value: string) => Promise<void>
-  onClose: () => void
-  onOpenFile: (path: string, hash: string) => void
-  hash: string
+  onOpenFile: (path: string) => void
+  active: boolean
+  actions: ReactNode
 }) {
-  const [loaded, setLoaded] = useState<{
-    blob: Blob
+  const [readResult, setLoaded] = useState<{
+    entry: SkillEntry
     text?: string
     url: string
   } | null>(null)
-  const root = useRef<HTMLElement>(null)
+  const loaded = readResult?.entry === entry ? readResult : null
   const [error, setError] = useState("")
-  const [editing, setEditing] = useState(false)
+  const [readError, setReadError] = useState<{
+    entry: SkillEntry
+    message: string
+  } | null>(null)
+  const [readAttempt, setReadAttempt] = useState(0)
+  const readFailure = readError?.entry === entry ? readError.message : ""
+  const [editingPath, setEditingPath] = useState<string | null>(null)
+  const editing = editingPath === entry.path
   const isText = textFile(entry)
   const loadCallback = useRef(onLoaded)
+  const currentSource = useRef("")
+  const currentPath = useRef(entry.path)
+  const mounted = useRef(false)
+  const source = edit?.value ?? loaded?.text ?? ""
+  const ready = !!loaded || (isText && edit !== undefined)
+  const retryRead = () => {
+    setReadError(null)
+    setReadAttempt((value) => value + 1)
+  }
   useLayoutEffect(() => {
     loadCallback.current = onLoaded
-  }, [onLoaded])
+    currentSource.current = source
+    currentPath.current = entry.path
+  }, [onLoaded, source, entry.path])
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+    }
+  }, [])
   useEffect(() => {
     let live = true
     let url: string | undefined
@@ -132,70 +162,53 @@ function FilePreview({
         const text = isText ? await blob.text() : undefined
         if (!live) return
         url = URL.createObjectURL(blob)
-        setLoaded({ blob, text, url })
+        setLoaded({ entry, text, url })
+        setReadError(null)
         setError("")
         if (text !== undefined) loadCallback.current(text)
       })
       .catch((cause: unknown) => {
-        if (live) setError(errorMessage(cause))
+        if (live)
+          setReadError({
+            entry,
+            message: errorMessage(cause),
+          })
       })
     return () => {
       live = false
       if (url) URL.revokeObjectURL(url)
     }
-  }, [library, skill.id, entry.path, entry.modifiedAt, isText])
-  useEffect(() => {
-    if (!loaded || !hash) return
-    const request = requestAnimationFrame(() =>
-      findDocsHeading(root.current, hash)?.scrollIntoView({ block: "start" })
-    )
-    return () => cancelAnimationFrame(request)
-  }, [loaded, hash])
-  function followLink(event: MouseEvent<HTMLDivElement>) {
-    const anchor = (event.target as Element).closest("a")
-    let href = anchor?.getAttribute("href")
-    if (!href) return
-    if (href.startsWith("https://skill.invalid/")) {
-      const target = new URL(href)
-      href = target.pathname + target.hash
-    }
-    const target = resolveSkillLink(entry.path, href)
-    if (!target) return
-    event.preventDefault()
-    event.stopPropagation()
-    if (
-      !skill.entries.some(
-        (item) => item.kind === "file" && item.path === target.path
-      )
-    ) {
-      setError(`找不到文件 ${target.path}，请从目录选择已有文件。`)
+  }, [library, skill.id, entry, isText, readAttempt])
+  const dirty = !!edit && edit.value !== edit.saved
+  async function save() {
+    if (busy || !ready || !editing || skill.readOnly) return
+    if (!dirty) {
+      setEditingPath(null)
       return
     }
-    setError("")
-    if (target.path === entry.path && target.hash)
-      findDocsHeading(root.current, target.hash)?.scrollIntoView({
-        block: "start",
-      })
-    else onOpenFile(target.path, target.hash)
+    try {
+      await onSave(source)
+      if (
+        mounted.current &&
+        currentPath.current === entry.path &&
+        currentSource.current === source
+      )
+        setEditingPath(null)
+    } catch {
+      // The library displays the error; keep the current editor available for retry.
+    }
   }
-  const source = edit?.value ?? loaded?.text ?? ""
-  const dirty = !!edit && edit.value !== edit.saved
-  const markdown = /\.mdx?$/i.test(entry.path)
-  const reading = (
-    <div className="mx-auto max-w-[72ch]">
-      <MarkdownReading
-        source={source}
-        linkBase={`https://skill.invalid/${entry.path}`}
-        onSections={ignoreSections}
-        onLink={followLink}
-        empty={
-          <p className="text-sm text-muted-foreground">
-            这个文件还是空的，可以开始编辑。
-          </p>
-        }
-      />
-    </div>
-  )
+  useEffect(() => {
+    if (!active) return
+    const shortcut = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
+        event.preventDefault()
+        void save()
+      }
+    }
+    window.addEventListener("keydown", shortcut)
+    return () => window.removeEventListener("keydown", shortcut)
+  })
   const download = async () => {
     try {
       const blob = await library.readFile(skill.id, entry.path)
@@ -211,126 +224,112 @@ function FilePreview({
   }
   return (
     <section
-      ref={root}
       className="skill-file-preview flex min-h-0 flex-1 flex-col"
       aria-label={`${entry.path} 文件内容`}
     >
-      <div className="flex min-h-14 shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border px-5 py-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <FileText className="size-4 shrink-0 text-muted-foreground" />
-          <span className="truncate text-sm font-medium" title={entry.path}>
-            {entry.path}
-          </span>
-          {dirty ? (
-            <span className="shrink-0 text-xs text-primary">未保存</span>
+      {error || (readFailure && ready) ? (
+        <div
+          role="alert"
+          className="mx-5 my-3 flex flex-wrap items-center gap-3 text-sm text-destructive"
+        >
+          <p>{error || readFailure}</p>
+          {readFailure && ready ? (
+            <Button variant="outline" size="sm" onClick={retryRead}>
+              重新读取文件
+            </Button>
           ) : null}
         </div>
-        <div className="flex items-center gap-1.5">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            title="下载文件"
-            aria-label="下载文件"
-            onClick={() => void download()}
-          >
-            <Download />
-          </Button>
-          {!skill.readOnly && loaded?.text !== undefined ? (
-            <>
-              {editing ? (
-                <Button
-                  size="sm"
-                  className="rounded-full"
-                  disabled={busy || !dirty}
-                  onClick={() => void onSave(source)}
-                >
-                  {busy ? "保存中…" : "保存文件"}
-                </Button>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="rounded-full"
-                  onClick={() => setEditing(true)}
-                >
-                  编辑文件
-                </Button>
-              )}
-            </>
-          ) : null}
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            title="关闭文件"
-            aria-label="关闭文件"
-            onClick={onClose}
-          >
-            <X />
-          </Button>
-        </div>
-      </div>
-      {error ? (
-        <p role="alert" className="mx-5 mt-3 text-sm text-destructive">
-          {error}
-        </p>
       ) : null}
-      {!loaded && !error ? (
-        <div className="space-y-4 p-8" role="status" aria-label="正在读取文件">
-          <div className="h-7 w-2/5 rounded bg-muted" />
-          <div className="h-3 w-4/5 rounded bg-muted" />
-          <div className="h-3 w-3/5 rounded bg-muted" />
-        </div>
-      ) : null}
-      {loaded?.text !== undefined ? (
-        editing ? (
-          <div className="flex min-h-0 flex-1 p-4">
-            <MarkdownEditor
-              value={source}
-              onChange={onEdit}
-              ariaLabel={`${entry.path} 内容`}
-              title={filename(entry.path)}
-              markdown={markdown}
-              preview={reading}
-            />
-          </div>
-        ) : (
-          <div className="min-h-0 flex-1 overflow-auto p-6 md:p-8" tabIndex={0}>
-            {markdown ? (
-              reading
-            ) : (
-              <pre className="font-mono text-[13px] leading-6 break-words whitespace-pre-wrap">
-                {source || "（空文件）"}
-              </pre>
-            )}
-          </div>
-        )
-      ) : loaded ? (
-        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 overflow-auto p-8">
-          {entry.mimeType.startsWith("image/") &&
-          entry.mimeType !== "image/svg+xml" ? (
-            <img
-              src={loaded.url}
-              alt={filename(entry.path)}
-              className="max-h-[60vh] max-w-full rounded-lg object-contain"
-            />
-          ) : (
-            <>
-              <FileText className="size-12 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
-                此文件暂不支持预览，可下载查看。
+      <SkillDocument
+        files={files}
+        path={entry.path}
+        source={source}
+        active={active}
+        actions={
+          <>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="rounded-full"
+              aria-label="下载文件"
+              title="下载文件"
+              onClick={() => void download()}
+            >
+              <HugeiconsIcon
+                icon={Download01Icon}
+                size={16}
+                aria-hidden="true"
+              />
+            </Button>
+            {actions}
+          </>
+        }
+        loading={!ready && !readFailure}
+        busy={busy}
+        dirty={dirty}
+        readOnly={skill.readOnly || !isText || (!ready && !!readFailure)}
+        editing={editing}
+        saveLabel="保存文件"
+        onEdit={() => setEditingPath(entry.path)}
+        onSave={() => void save()}
+        onUndo={() => {
+          onEdit(edit?.saved ?? loaded?.text ?? "")
+          setEditingPath(null)
+          setError("")
+        }}
+        onChange={onEdit}
+        onSelectFile={(path) => {
+          setEditingPath(null)
+          setError("")
+          onOpenFile(path)
+        }}
+        onError={setError}
+        preview={
+          readFailure && !ready ? (
+            <div className="flex min-h-64 flex-col items-center justify-center gap-4 p-6 text-center">
+              <p role="alert" className="text-sm text-destructive">
+                {readFailure}
               </p>
               <Button
                 variant="outline"
                 className="rounded-full"
-                onClick={() => void download()}
+                onClick={retryRead}
               >
-                <Download />
-                下载文件
+                重新读取文件
               </Button>
-            </>
-          )}
-        </div>
-      ) : null}
+            </div>
+          ) : !isText ? (
+            <div className="flex min-h-64 flex-col items-center justify-center gap-4 p-8">
+              {!loaded ? (
+                <p role="status">正在读取文件…</p>
+              ) : entry.mimeType.startsWith("image/") ? (
+                <img
+                  src={loaded.url}
+                  alt={filename(entry.path)}
+                  width={800}
+                  height={600}
+                  className="max-h-[60vh] max-w-full object-contain"
+                />
+              ) : (
+                <>
+                  <FileText className="size-12 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    此文件暂不支持预览，可下载查看。
+                  </p>
+                  <Button
+                    variant="outline"
+                    className="rounded-full"
+                    onClick={() => void download()}
+                  >
+                    <Download />
+                    下载文件
+                  </Button>
+                </>
+              )}
+            </div>
+          ) : undefined
+        }
+      />
     </section>
   )
 }
@@ -340,39 +339,52 @@ export function SkillLibraryScreen({
   onOpenSkill,
   onCatalogChange,
   onExperiment,
+  active = true,
 }: {
   skillId: string | null
   onOpenSkill: (id: string | null) => void
   onCatalogChange?: (skills: readonly ManagedSkill[]) => void
   onExperiment?: (skillId: string) => void
+  active?: boolean
 }) {
   const { skillLibrary: library, skills: source } = useAppDependencies()
   const [catalog, setCatalog] = useState<readonly ManagedSkill[]>([])
   const [loaded, setLoaded] = useState(false)
+  const [loadFailed, setLoadFailed] = useState(false)
+  const [loadAttempt, setLoadAttempt] = useState(0)
   const [error, setError] = useState("")
   const [notice, setNotice] = useState("")
   const [busy, setBusy] = useState(false)
   const operation = useRef(false)
   const mounted = useRef(false)
   const scope = useRef(skillId)
+  const currentActive = useRef(active)
   const callback = useRef(onCatalogChange)
   const [query, setQuery] = useState("")
   const [filter, setFilter] = useState<"all" | "local" | "official">("all")
   const [creating, setCreating] = useState(false)
   const [newName, setNewName] = useState("")
   const [newDescription, setNewDescription] = useState("")
+  const nameInput = useRef<HTMLInputElement>(null)
+  const createButton = useRef<HTMLButtonElement>(null)
+  const createFormId = useId()
   const [deleting, setDeleting] = useState<string | null>(null)
   const [selected, setSelected] = useState<Record<string, string | null>>({})
-  const [selectedHashes, setSelectedHashes] = useState<Record<string, string>>(
-    {}
-  )
+  const [listViews, setListViews] = useState<Record<string, boolean>>({})
   const [edits, setEdits] = useState<Record<string, Edit>>({})
   const [uploads, setUploads] = useState<Record<string, UploadResult[]>>({})
+  const currentEdits = useRef(edits)
   const serial = useRef(0)
+  useEffect(() => {
+    if (creating && active && window.matchMedia("(pointer: fine)").matches)
+      nameInput.current?.focus()
+  }, [creating, active])
   useLayoutEffect(() => {
     scope.current = skillId
+    currentActive.current = active
     callback.current = onCatalogChange
-  }, [skillId, onCatalogChange])
+    currentEdits.current = edits
+  }, [skillId, active, onCatalogChange, edits])
   useEffect(() => {
     mounted.current = true
     let live = true
@@ -400,12 +412,14 @@ export function SkillLibraryScreen({
       .then((items) => {
         if (live) {
           setCatalog(items)
+          setLoadFailed(false)
           setLoaded(true)
         }
       })
       .catch((cause: unknown) => {
         if (live) {
           setError(errorMessage(cause))
+          setLoadFailed(true)
           setLoaded(true)
         }
       })
@@ -413,8 +427,10 @@ export function SkillLibraryScreen({
       live = false
       mounted.current = false
     }
-  }, [library, source])
-  const unsaved = Object.values(edits).some((edit) => edit.value !== edit.saved)
+  }, [library, source, loadAttempt])
+  const unsaved =
+    Object.values(edits).some((edit) => edit.value !== edit.saved) ||
+    (creating && !!(newName || newDescription))
   useEffect(() => {
     if (!unsaved) return
     const warn = (event: BeforeUnloadEvent) => {
@@ -425,7 +441,14 @@ export function SkillLibraryScreen({
     return () => window.removeEventListener("beforeunload", warn)
   }, [unsaved])
   const skill = catalog.find((item) => item.id === skillId)
-  const selectedPath = skillId ? selected[skillId] : null
+  const selectedPath =
+    skill &&
+    (skill.entries.find(
+      (item) => item.kind === "file" && item.path === selected[skill.id]
+    )?.path ??
+      skill.entries.find((item) => item.path === "SKILL.md")?.path ??
+      skill.entries.find((item) => item.kind === "file")?.path)
+  const listView = !!skillId && (listViews[skillId] ?? false)
   const entry = skill?.entries.find(
     (item) => item.path === selectedPath && item.kind === "file"
   )
@@ -439,13 +462,14 @@ export function SkillLibraryScreen({
     })
   }, [])
   useEffect(() => {
-    if (loaded) callback.current?.(catalog)
-  }, [catalog, loaded])
+    if (loaded && !loadFailed) callback.current?.(catalog)
+  }, [catalog, loaded, loadFailed])
   async function run<T>(work: () => Promise<T>, success?: string): Promise<T> {
     if (operation.current) throw new Error("正在保存，请稍后再试。")
     operation.current = true
     setBusy(true)
     setError("")
+    setNotice("")
     const target = scope.current
     try {
       const result = await work()
@@ -474,7 +498,8 @@ export function SkillLibraryScreen({
           setCreating(false)
           setNewName("")
           setNewDescription("")
-          if (scope.current === null) onOpenSkill(created.id)
+          if (scope.current === null && currentActive.current)
+            onOpenSkill(created.id)
         }
       })
     } catch {
@@ -488,7 +513,11 @@ export function SkillLibraryScreen({
       await run(async () => {
         const copied = await library.copyToLocal(item.id)
         update(copied)
-        if (mounted.current && scope.current === startingScope)
+        if (
+          mounted.current &&
+          scope.current === startingScope &&
+          currentActive.current
+        )
           onOpenSkill(copied.id)
       }, "已复制为本地 Skill")
     } catch {
@@ -505,6 +534,17 @@ export function SkillLibraryScreen({
             current.filter((value) => value.id !== item.id)
           )
           setDeleting(null)
+          setEdits((current) =>
+            Object.fromEntries(
+              Object.entries(current).filter(
+                ([key]) => !key.startsWith(`${item.id}\u0000`)
+              )
+            )
+          )
+          setUploads((current) => ({ ...current, [item.id]: [] }))
+          setSelected((current) => ({ ...current, [item.id]: null }))
+          if (scope.current === item.id && currentActive.current)
+            onOpenSkill(null)
         }
       }, "Skill 已删除")
     } catch {
@@ -522,20 +562,26 @@ export function SkillLibraryScreen({
     const id = skill.id
     try {
       await run(async () => {
-        const results: UploadResult[] = []
+        setUploads((current) => ({
+          ...current,
+          [id]: (current[id] ?? []).filter(
+            (item) => item.status === "conflict" || item.status === "failed"
+          ),
+        }))
         for (const file of files) {
           const path = folder ? `${folder}/${file.name}` : file.name
+          let result: UploadResult
           try {
             update(await library.writeFile(id, path, file))
-            results.push({
+            result = {
               id: ++serial.current,
               path,
               file,
               status: "saved",
               message: "已保存",
-            })
+            }
           } catch (cause) {
-            results.push({
+            result = {
               id: ++serial.current,
               path,
               file,
@@ -544,10 +590,13 @@ export function SkillLibraryScreen({
                   ? "conflict"
                   : "failed",
               message: errorMessage(cause),
-            })
+            }
           }
           if (mounted.current)
-            setUploads((current) => ({ ...current, [id]: [...results] }))
+            setUploads((current) => ({
+              ...current,
+              [id]: [...(current[id] ?? []), result],
+            }))
         }
       })
     } catch {
@@ -612,11 +661,29 @@ export function SkillLibraryScreen({
     }
   }
   async function experiment() {
-    if (!skill || !onExperiment || !library) return
+    if (!skill || skill.readOnly || !onExperiment || !library) return
+    const main = skill.entries.find(
+      (item) => item.kind === "file" && item.path === "SKILL.md"
+    )
+    if (!main) {
+      setError("请先新建或上传 SKILL.md，再开始实验。")
+      setListViews((current) => ({ ...current, [skill.id]: true }))
+      return
+    }
+    const mainEdit = currentEdits.current[editKey(skill.id, "SKILL.md")]
+    if ((mainEdit ? new Blob([mainEdit.value]).size : main.size) > 256 * 1024) {
+      setError(
+        "SKILL.md 不能超过 256 KiB，请精简入口并将参考资料拆分为独立文件。"
+      )
+      setSelected((current) => ({ ...current, [skill.id]: "SKILL.md" }))
+      setListViews((current) => ({ ...current, [skill.id]: false }))
+      return
+    }
     const id = skill.id
+    const snapshot = currentEdits.current
     try {
       await run(async () => {
-        for (const [key, edit] of Object.entries(edits)) {
+        for (const [key, edit] of Object.entries(snapshot)) {
           if (!key.startsWith(`${id}\u0000`) || edit.value === edit.saved)
             continue
           const path = key.slice(id.length + 1)
@@ -634,7 +701,19 @@ export function SkillLibraryScreen({
             }))
         }
       })
-      if (mounted.current && scope.current === id) onExperiment(id)
+      if (mounted.current && scope.current === id && currentActive.current) {
+        if (
+          Object.entries(currentEdits.current).some(
+            ([key, edit]) =>
+              key.startsWith(`${id}\u0000`) &&
+              edit.value !== (snapshot[key]?.value ?? edit.saved)
+          )
+        ) {
+          setError("保存期间还有新的修改，请再次点击实验以使用最新内容。")
+          return
+        }
+        onExperiment(id)
+      }
     } catch {
       /* run preserves drafts and displays the failure. */
     }
@@ -647,85 +726,103 @@ export function SkillLibraryScreen({
         .toLowerCase()
         .includes(query.toLowerCase().trim())
   )
-  const storageText =
-    library?.storage.kind === "desktop"
-      ? library.storage.root
-      : "当前浏览器 · 与桌面端目录独立"
+  const detailActions = skill ? (
+    <>
+      {onExperiment && !skill.readOnly ? (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-7 text-muted-foreground/70 hover:text-foreground"
+          aria-label="在新会话中实验"
+          title="在新会话中实验"
+          disabled={busy || !library}
+          onClick={() => void experiment()}
+        >
+          <HugeiconsIcon icon={Bug01Icon} size={16} aria-hidden="true" />
+        </Button>
+      ) : null}
+      {skill.origin === "official" ? (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-7 text-muted-foreground/70 hover:text-foreground"
+          aria-label="复制为本地 Skill"
+          title="复制为本地 Skill"
+          disabled={busy || !library}
+          onClick={() => void copy(skill)}
+        >
+          <Copy />
+        </Button>
+      ) : null}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="size-7 text-muted-foreground/70 hover:text-foreground"
+        aria-label={listView ? "阅读视图" : "列表查看"}
+        title={listView ? "阅读视图" : "列表查看"}
+        aria-pressed={listView}
+        onClick={() =>
+          setListViews((current) => ({ ...current, [skill.id]: !listView }))
+        }
+      >
+        <HugeiconsIcon
+          icon={listView ? BookOpen01Icon : ListViewIcon}
+          size={16}
+          aria-hidden="true"
+        />
+      </Button>
+    </>
+  ) : null
   return (
     <div
-      className="skill-library flex h-full min-h-0 flex-col bg-background"
+      className="skill-library relative flex h-full min-h-0 flex-col bg-background"
       data-testid="skill-library"
     >
-      <div className="shrink-0 border-b border-border px-5 py-5 md:px-8 md:py-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0">
-            {skillId ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="mb-3 -ml-2 rounded-full text-muted-foreground"
-                onClick={() => onOpenSkill(null)}
-              >
-                <ChevronLeft />
-                全部 Skill
-              </Button>
-            ) : null}
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-xl font-semibold tracking-tight">
-                {skill?.name ?? (skillId ? "Skill 文件" : "Skill")}
-              </h1>
-              {skill ? <SkillSourceLabel skill={skill} /> : null}
-            </div>
-            <p className="mt-2 max-w-[70ch] text-[13px] leading-6 text-muted-foreground">
-              {skill?.description ||
-                (skillId
-                  ? "管理这个 Skill 的文件与目录。"
-                  : "整理操作规范、脚本和参考资料，构建 Agent 的技能。")}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {skill && onExperiment ? (
-              <Button
-                variant="outline"
-                className="rounded-full"
-                disabled={busy || !library}
-                onClick={() => void experiment()}
-              >
-                在新会话中实验
-              </Button>
-            ) : null}
-            {skill ? (
-              skill.origin === "official" ? (
-                <Button
-                  className="rounded-full"
-                  disabled={busy || !library}
-                  onClick={() => void copy(skill)}
-                >
-                  <Copy />
-                  复制为本地 Skill
-                </Button>
-              ) : null
-            ) : !skillId ? (
-              <Button
-                className="rounded-full"
-                disabled={busy || !library}
-                onClick={() => setCreating((value) => !value)}
-              >
-                <Plus />
-                新建 Skill
-              </Button>
-            ) : null}
-          </div>
+      {!skillId ? <h1 className="sr-only">Skill</h1> : null}
+      {!skillId && active ? (
+        <div
+          role="group"
+          aria-label="页面操作"
+          data-slot="page-actions"
+          className="absolute top-3 right-3 z-20 flex flex-col items-center gap-1"
+        >
+          {creating ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7 text-muted-foreground/70 hover:text-foreground"
+              aria-label="取消新建 Skill"
+              title="取消新建 Skill"
+              disabled={busy}
+              onClick={() => {
+                setCreating(false)
+                createButton.current?.focus()
+              }}
+            >
+              <X aria-hidden="true" />
+            </Button>
+          ) : null}
+          <Button
+            ref={createButton}
+            variant="ghost"
+            size="icon"
+            className="size-7 text-muted-foreground/70 hover:text-foreground"
+            aria-label={creating ? "创建 Skill" : "新建 Skill"}
+            title={creating ? "创建 Skill" : "新建 Skill"}
+            type={creating ? "submit" : "button"}
+            form={creating ? createFormId : undefined}
+            disabled={busy || !library || !loaded || loadFailed}
+            aria-expanded={creating}
+            onClick={creating ? undefined : () => setCreating(true)}
+          >
+            {creating ? (
+              <Save aria-hidden="true" />
+            ) : (
+              <Plus aria-hidden="true" />
+            )}
+          </Button>
         </div>
-        {skill?.readOnly ? (
-          <p className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
-            <LockKeyhole className="size-3.5" />
-            {skill.origin === "official"
-              ? "官方已发布版本只读，需要修改时可复制为本地 Skill。"
-              : "当前接入仅支持查看文件。"}
-          </p>
-        ) : null}
-      </div>
+      ) : null}
       {!library ? (
         <p
           role="status"
@@ -776,11 +873,35 @@ export function SkillLibraryScreen({
             <div key={item} className="h-14 w-full rounded-lg bg-muted" />
           ))}
         </div>
+      ) : loadFailed ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
+          <p className="text-sm text-muted-foreground">未能读取技能列表。</p>
+          <Button
+            variant="outline"
+            className="rounded-full"
+            onClick={() => {
+              setLoaded(false)
+              setLoadFailed(false)
+              setError("")
+              setLoadAttempt((value) => value + 1)
+            }}
+          >
+            重新读取 Skill
+          </Button>
+        </div>
       ) : !skillId ? (
-        <div className="min-h-0 flex-1 overflow-auto px-5 py-6 md:px-8">
+        <div className="min-h-0 flex-1 overflow-auto py-6 pr-14 pl-5 md:pl-8">
           {creating ? (
             <form
+              id={createFormId}
               className="mb-6 rounded-xl border border-border bg-muted/30 p-5"
+              onKeyDown={(event) => {
+                if (event.key === "Escape" && !busy) {
+                  event.preventDefault()
+                  setCreating(false)
+                  createButton.current?.focus()
+                }
+              }}
               onSubmit={(event) => {
                 event.preventDefault()
                 void create()
@@ -788,50 +909,39 @@ export function SkillLibraryScreen({
             >
               <div className="flex items-center justify-between gap-4">
                 <h2 className="text-sm font-medium">新建本地 Skill</h2>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label="取消新建 Skill"
-                  onClick={() => setCreating(false)}
-                  type="button"
-                >
-                  <X />
-                </Button>
               </div>
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 <label className="grid gap-2 text-xs font-medium">
                   名称
                   <input
-                    autoFocus
+                    ref={nameInput}
+                    name="skill-name"
+                    autoComplete="off"
                     className="skill-input"
                     value={newName}
                     onChange={(event) => setNewName(event.target.value)}
                     placeholder="例如：生产环境巡检"
                     maxLength={100}
+                    disabled={busy}
+                    pattern={".*\\S.*"}
                     required
                   />
                 </label>
                 <label className="grid gap-2 text-xs font-medium">
-                  说明（可选）
+                  说明
                   <input
+                    name="skill-description"
+                    autoComplete="off"
                     className="skill-input"
                     value={newDescription}
                     onChange={(event) => setNewDescription(event.target.value)}
                     placeholder="这个 Skill 解决什么问题"
+                    maxLength={4096}
+                    disabled={busy}
+                    pattern={".*\\S.*"}
+                    required
                   />
                 </label>
-              </div>
-              <div className="mt-4 flex items-center justify-between gap-4">
-                <span className="text-xs text-muted-foreground">
-                  创建后会生成 SKILL.md，可继续添加文件。
-                </span>
-                <Button
-                  type="submit"
-                  className="rounded-full"
-                  disabled={busy || !newName.trim()}
-                >
-                  创建 Skill
-                </Button>
               </div>
             </form>
           ) : null}
@@ -860,9 +970,12 @@ export function SkillLibraryScreen({
             <label className="flex w-full items-center gap-2 rounded-full border border-border px-3 sm:w-64">
               <Search className="size-4 text-muted-foreground" />
               <input
+                type="search"
+                name="skill-search"
+                autoComplete="off"
                 className="h-9 min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-muted-foreground"
                 aria-label="搜索 Skill"
-                placeholder="搜索 Skill"
+                placeholder="搜索 Skill…"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
               />
@@ -968,55 +1081,51 @@ export function SkillLibraryScreen({
                   ? "试试其他关键词，或切换来源。"
                   : "新建 Skill，然后添加 SKILL.md、脚本和参考文件。"}
               </p>
-              {!query && filter === "all" ? (
-                <Button
-                  className="mt-5 rounded-full"
-                  disabled={!library}
-                  onClick={() => setCreating(true)}
-                >
-                  <Plus />
-                  新建 Skill
-                </Button>
-              ) : null}
             </div>
           ) : null}
         </div>
       ) : skill ? (
         <div className="min-h-0 flex-1 overflow-hidden">
           {entry && library ? (
-            <FilePreview
-              key={`${skill.id}:${entry.path}`}
-              library={library}
-              skill={skill}
-              entry={entry}
-              edit={edits[pathKey]}
-              busy={busy}
-              hash={selectedHashes[skill.id] ?? ""}
-              onOpenFile={(path, hash) => {
-                setSelected((current) => ({ ...current, [skill.id]: path }))
-                setSelectedHashes((current) => ({
-                  ...current,
-                  [skill.id]: hash,
-                }))
-              }}
-              onClose={() =>
-                setSelected((current) => ({ ...current, [skill.id]: null }))
-              }
-              onLoaded={(value) =>
-                setEdits((current) =>
-                  current[pathKey]
-                    ? current
-                    : { ...current, [pathKey]: { value, saved: value } }
-                )
-              }
-              onEdit={(value) =>
-                setEdits((current) => ({
-                  ...current,
-                  [pathKey]: { value, saved: current[pathKey]?.saved ?? value },
-                }))
-              }
-              onSave={async (value) => {
-                try {
+            <div className={listView ? "hidden" : "h-full"}>
+              <FilePreview
+                key={skill.id}
+                library={library}
+                skill={skill}
+                entry={entry}
+                edit={edits[pathKey]}
+                busy={busy}
+                active={active && !listView}
+                actions={detailActions}
+                files={skill.entries
+                  .filter((item) => item.kind === "file")
+                  .map((item) => {
+                    const edit = edits[editKey(skill.id, item.path)]
+                    return {
+                      path: item.path,
+                      modified: !!edit && edit.value !== edit.saved,
+                    }
+                  })}
+                onOpenFile={(path) =>
+                  setSelected((current) => ({ ...current, [skill.id]: path }))
+                }
+                onLoaded={(value) =>
+                  setEdits((current) =>
+                    current[pathKey]
+                      ? current
+                      : { ...current, [pathKey]: { value, saved: value } }
+                  )
+                }
+                onEdit={(value) =>
+                  setEdits((current) => ({
+                    ...current,
+                    [pathKey]: {
+                      value,
+                      saved: current[pathKey]?.saved ?? value,
+                    },
+                  }))
+                }
+                onSave={async (value) => {
                   await mutate(
                     () =>
                       library.writeFile(
@@ -1037,137 +1146,170 @@ export function SkillLibraryScreen({
                         saved: value,
                       },
                     }))
-                } catch {
-                  /* Keep editor content on failed persistence. */
-                }
-              }}
-            />
-          ) : (
-            <div className="flex h-full min-h-0 flex-col">
-              <FileManager
-                key={skill.id}
-                entries={skill.entries}
-                disabled={busy || !library}
-                readOnly={skill.readOnly}
-                onOpenFile={(path) => {
-                  setSelected((current) => ({ ...current, [skill.id]: path }))
-                  setSelectedHashes((current) => ({
-                    ...current,
-                    [skill.id]: "",
-                  }))
-                  if (!library)
-                    setError(
-                      "当前接入未提供文件读取，请连接 Skill 文件存储后重试。"
-                    )
-                }}
-                onUpload={uploadFiles}
-                onCreateDirectory={(path) =>
-                  library
-                    ? mutate(
-                        () => library.createDirectory(skill.id, path),
-                        "目录已创建"
-                      )
-                    : Promise.reject(new Error("文件存储尚未连接"))
-                }
-                onCreateFile={(path) =>
-                  library
-                    ? mutate(
-                        () =>
-                          library.writeFile(
-                            skill.id,
-                            path,
-                            new Blob([""], { type: skillFileMimeType(path) })
-                          ),
-                        "文件已创建"
-                      )
-                    : Promise.reject(new Error("文件存储尚未连接"))
-                }
-                onRename={async (path, next) => {
-                  if (!library) return
-                  if (
-                    Object.entries(edits).some(
-                      ([key, edit]) =>
-                        includesEdit(key, skill.id, path) &&
-                        edit.value !== edit.saved
-                    )
-                  )
-                    throw new Error(
-                      "请先保存此文件或目录下的未保存编辑，再重命名。"
-                    )
-                  await mutate(
-                    () => library.rename(skill.id, path, next),
-                    "名称已更新"
-                  )
-                }}
-                onRemove={async (path) => {
-                  if (!library) return
-                  if (
-                    Object.entries(edits).some(
-                      ([key, edit]) =>
-                        includesEdit(key, skill.id, path) &&
-                        edit.value !== edit.saved
-                    )
-                  )
-                    throw new Error(
-                      "请先保存此文件或目录下的未保存编辑，再删除。"
-                    )
-                  await mutate(() => library.remove(skill.id, path), "已删除")
-                  setEdits((current) =>
-                    Object.fromEntries(
-                      Object.entries(current).filter(
-                        ([key]) => !includesEdit(key, skill.id, path)
-                      )
-                    )
-                  )
                 }}
               />
-              {(uploads[skill.id]?.length ?? 0) > 0 ? (
-                <section
-                  aria-label="文件上传结果"
-                  className="max-h-52 shrink-0 overflow-auto border-t border-border bg-muted/30 px-5 py-3"
-                >
-                  <div className="mb-2 flex items-center justify-between">
-                    <h2 className="text-xs font-medium">文件上传结果</h2>
-                    <Button
-                      variant="ghost"
-                      size="icon-xs"
-                      aria-label="关闭上传结果"
-                      disabled={busy}
-                      onClick={() =>
-                        setUploads((current) => ({
-                          ...current,
-                          [skill.id]: [],
-                        }))
+            </div>
+          ) : null}
+          <div
+            className={
+              listView || !entry || !library
+                ? "flex h-full min-h-0 flex-col"
+                : "hidden"
+            }
+          >
+            <FileManager
+              key={skill.id}
+              actions={active ? detailActions : null}
+              entries={skill.entries}
+              disabled={busy || !library}
+              readOnly={skill.readOnly}
+              onOpenFile={(path) => {
+                setSelected((current) => ({ ...current, [skill.id]: path }))
+                setListViews((current) => ({ ...current, [skill.id]: false }))
+                if (!library)
+                  setError(
+                    "当前接入未提供文件读取，请连接 Skill 文件存储后重试。"
+                  )
+              }}
+              onUpload={uploadFiles}
+              onCreateDirectory={(path) =>
+                library
+                  ? mutate(
+                      () => library.createDirectory(skill.id, path),
+                      "目录已创建"
+                    )
+                  : Promise.reject(new Error("文件存储尚未连接"))
+              }
+              onCreateFile={async (path) => {
+                if (!library) throw new Error("文件存储尚未连接")
+                await mutate(
+                  () =>
+                    library.writeFile(
+                      skill.id,
+                      path,
+                      new Blob([""], { type: skillFileMimeType(path) })
+                    ),
+                  "文件已创建"
+                )
+                if (mounted.current && scope.current === skill.id) {
+                  setSelected((current) => ({ ...current, [skill.id]: path }))
+                  setListViews((current) => ({ ...current, [skill.id]: false }))
+                }
+              }}
+              onRename={async (path, next) => {
+                if (!library) return
+                if (
+                  Object.entries(edits).some(
+                    ([key, edit]) =>
+                      includesEdit(key, skill.id, path) &&
+                      edit.value !== edit.saved
+                  )
+                )
+                  throw new Error(
+                    "请先保存此文件或目录下的未保存编辑，再重命名。"
+                  )
+                await mutate(
+                  () => library.rename(skill.id, path, next),
+                  "名称已更新"
+                )
+                if (!mounted.current) return
+                setSelected((current) => {
+                  const previous = current[skill.id] ?? selectedPath
+                  return previous &&
+                    (previous === path || previous.startsWith(`${path}/`))
+                    ? {
+                        ...current,
+                        [skill.id]: `${next}${previous.slice(path.length)}`,
                       }
+                    : current
+                })
+                setEdits((current) =>
+                  Object.fromEntries(
+                    Object.entries(current).filter(
+                      ([key]) => !includesEdit(key, skill.id, path)
+                    )
+                  )
+                )
+              }}
+              onRemove={async (path) => {
+                if (!library) return
+                if (
+                  Object.entries(edits).some(
+                    ([key, edit]) =>
+                      includesEdit(key, skill.id, path) &&
+                      edit.value !== edit.saved
+                  )
+                )
+                  throw new Error(
+                    "请先保存此文件或目录下的未保存编辑，再删除。"
+                  )
+                await mutate(() => library.remove(skill.id, path), "已删除")
+                setEdits((current) =>
+                  Object.fromEntries(
+                    Object.entries(current).filter(
+                      ([key]) => !includesEdit(key, skill.id, path)
+                    )
+                  )
+                )
+              }}
+            />
+            {(uploads[skill.id]?.length ?? 0) > 0 ? (
+              <section
+                aria-label="文件上传结果"
+                className="max-h-52 shrink-0 overflow-auto border-t border-border bg-muted/30 px-5 py-3"
+              >
+                <div className="mb-2 flex items-center justify-between">
+                  <h2 className="text-xs font-medium">文件上传结果</h2>
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    aria-label="关闭上传结果"
+                    disabled={busy}
+                    onClick={() =>
+                      setUploads((current) => ({
+                        ...current,
+                        [skill.id]: [],
+                      }))
+                    }
+                  >
+                    <X />
+                  </Button>
+                </div>
+                {uploads[skill.id]?.map((result) => (
+                  <div
+                    key={result.id}
+                    className="flex flex-wrap items-center justify-between gap-2 py-1.5 text-xs"
+                  >
+                    <span
+                      className="min-w-0 flex-1 truncate"
+                      title={result.path}
                     >
-                      <X />
-                    </Button>
-                  </div>
-                  {uploads[skill.id]?.map((result) => (
-                    <div
-                      key={result.id}
-                      className="flex flex-wrap items-center justify-between gap-2 py-1.5 text-xs"
+                      {result.path}
+                    </span>
+                    <span
+                      role="status"
+                      className={cn(
+                        "max-w-64",
+                        result.status === "saved"
+                          ? "text-primary"
+                          : "text-muted-foreground"
+                      )}
                     >
-                      <span
-                        className="min-w-0 flex-1 truncate"
-                        title={result.path}
-                      >
-                        {result.path}
-                      </span>
-                      <span
-                        className={cn(
-                          "max-w-64",
-                          result.status === "saved"
-                            ? "text-primary"
-                            : "text-muted-foreground"
-                        )}
-                      >
-                        {result.status === "conflict"
+                      {result.status === "conflict"
+                        ? skill.entries.some(
+                            (item) =>
+                              item.kind === "file" && item.path === result.path
+                          )
                           ? "同名文件已存在"
-                          : result.message}
-                      </span>
-                      {result.status === "conflict" ? (
-                        <div className="flex gap-1">
+                          : "名称冲突，请修改名称后重新上传"
+                        : result.message}
+                    </span>
+                    {result.status === "conflict" ? (
+                      <div className="flex gap-1">
+                        {skill.entries.some(
+                          (item) =>
+                            item.kind === "file" && item.path === result.path
+                        ) ? (
                           <Button
                             size="xs"
                             variant="outline"
@@ -1177,46 +1319,46 @@ export function SkillLibraryScreen({
                           >
                             替换
                           </Button>
-                          <Button
-                            size="xs"
-                            variant="ghost"
-                            disabled={busy}
-                            onClick={() =>
-                              setUploads((current) => ({
-                                ...current,
-                                [skill.id]: current[skill.id].map((item) =>
-                                  item.id === result.id
-                                    ? {
-                                        ...item,
-                                        status: "skipped",
-                                        message: "已跳过",
-                                      }
-                                    : item
-                                ),
-                              }))
-                            }
-                          >
-                            跳过
-                          </Button>
-                        </div>
-                      ) : null}
-                      {result.status === "failed" ? (
+                        ) : null}
                         <Button
                           size="xs"
-                          variant="outline"
-                          className="rounded-full"
+                          variant="ghost"
                           disabled={busy}
-                          onClick={() => void saveUploadedFile(result, false)}
+                          onClick={() =>
+                            setUploads((current) => ({
+                              ...current,
+                              [skill.id]: current[skill.id].map((item) =>
+                                item.id === result.id
+                                  ? {
+                                      ...item,
+                                      status: "skipped",
+                                      message: "已跳过",
+                                    }
+                                  : item
+                              ),
+                            }))
+                          }
                         >
-                          重试
+                          跳过
                         </Button>
-                      ) : null}
-                    </div>
-                  ))}
-                </section>
-              ) : null}
-            </div>
-          )}
+                      </div>
+                    ) : null}
+                    {result.status === "failed" ? (
+                      <Button
+                        size="xs"
+                        variant="outline"
+                        className="rounded-full"
+                        disabled={busy}
+                        onClick={() => void saveUploadedFile(result, false)}
+                      >
+                        重试
+                      </Button>
+                    ) : null}
+                  </div>
+                ))}
+              </section>
+            ) : null}
+          </div>
         </div>
       ) : (
         <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8">
@@ -1234,16 +1376,6 @@ export function SkillLibraryScreen({
           </Button>
         </div>
       )}
-      <footer className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-border px-5 py-2.5 text-[11px] text-muted-foreground md:px-8">
-        <span className="truncate" title={storageText}>
-          {storageText}
-        </span>
-        <span>
-          {skill?.origin === "official"
-            ? "已发布文件包 · 只读"
-            : "本地文件 · 保存后生效"}
-        </span>
-      </footer>
     </div>
   )
 }

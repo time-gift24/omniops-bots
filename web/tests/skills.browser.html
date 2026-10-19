@@ -109,27 +109,28 @@
       )
     )
   const saved = () =>
-    fixture
-      .querySelector('[role="status"]')
-      ?.textContent.includes("草稿已保存")
+    [...fixture.querySelectorAll('[role="status"]')]
+      .some(element => element.textContent.includes("草稿已保存"))
   const content = () => fixture.querySelector('[aria-label="文件内容"]')
   const header = () => fixture.querySelector("header")
   const checkHeader = () => {
     assert(!fixture.querySelector(".skill-doc-bar"), "Skill content must not retain the old document toolbar")
-    for (const name of ["编辑", "撤销", "保存草稿", "恢复原始内容"]) {
+    for (const name of ["编辑", "撤销", "保存草稿", "恢复原始内容", "浏览技能文件"]) {
       assert(!button(name, header()), "Document actions must float in the body, outside the Header")
     }
-    const controls = [...header().querySelectorAll("button")].filter(visible)
-    const bounds = header().getBoundingClientRect()
+    const dock = fixture.querySelector('[data-slot="document-actions"]')
+    assert(visible(dock) && !dock.closest("header"), "Skill actions must share one body dock")
+    assert(dock.querySelector('button[aria-label="浏览技能文件"]'), "File navigation must belong to the same dock as editing")
+    const controls = [...dock.querySelectorAll("button")].filter(visible)
+    const bounds = fixture.getBoundingClientRect()
     for (let index = 0; index < controls.length; index++) {
       const left = controls[index].getBoundingClientRect()
       assert(left.left >= bounds.left - 1 && left.right <= bounds.right + 1,
-        "Skill Header controls must fit their container")
+        "Skill body actions must fit their container")
       for (const control of controls.slice(index + 1)) {
         const right = control.getBoundingClientRect()
-        assert(Math.min(left.right, right.right) - Math.max(left.left, right.left) <= 1 ||
-          Math.min(left.bottom, right.bottom) - Math.max(left.top, right.top) <= 1,
-          "Skill Header controls must not overlap")
+        assert(left.bottom <= right.top + 1 && Math.abs((left.left + left.right) / 2 - (right.left + right.right) / 2) <= 1,
+          "Skill actions must form one vertical column without overlap")
       }
     }
   }
@@ -170,17 +171,14 @@
   }
   function Probe() {
     const skillId = "weekly-report"
-    const [toolbarTarget, setToolbarTarget] = React.useState(null)
     return React.createElement("div", { className: "flex h-full min-h-0 flex-col" },
       React.createElement("header", { className: "@container/skill-header flex h-12 shrink-0 items-center gap-2 px-4" },
-        React.createElement("span", { className: "min-w-0 flex-1 truncate" }, "周报助手"),
-        React.createElement("div", { ref: setToolbarTarget, className: "flex shrink-0 items-center" })),
+        React.createElement("span", { className: "min-w-0 flex-1 truncate" }, "周报助手")),
       React.createElement("div", { className: "min-h-0 flex-1" },
         React.createElement(SkillScreen, {
           skillId,
           skills: DEMO_SKILLS,
           active: true,
-          toolbarTarget,
         })))
   }
   const render = (key) =>

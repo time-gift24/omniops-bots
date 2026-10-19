@@ -12,7 +12,14 @@ import {
   Upload,
   X,
 } from "lucide-react"
-import { useRef, useState, type DragEvent, type FormEvent } from "react"
+import {
+  useId,
+  useRef,
+  useState,
+  type DragEvent,
+  type FormEvent,
+  type ReactNode,
+} from "react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -34,6 +41,7 @@ import { parentPath, nameOf } from "./file-manager-data"
  */
 export type FileManagerProps = {
   entries: readonly SkillEntry[]
+  actions?: ReactNode
   disabled?: boolean
   readOnly?: boolean
   onOpenFile: (path: string) => void
@@ -50,6 +58,7 @@ const errorText = (error: unknown) =>
 
 export function FileManager({
   entries,
+  actions,
   disabled = false,
   readOnly = false,
   onOpenFile,
@@ -69,6 +78,11 @@ export function FileManager({
   const [submitting, setSubmitting] = useState(false)
   const [dragging, setDragging] = useState(false)
   const input = useRef<HTMLInputElement>(null)
+  const manager = useRef<HTMLDivElement>(null)
+  const createTrigger = useRef<HTMLButtonElement>(null)
+  const actionOrigin = useRef<HTMLButtonElement | null>(null)
+  const selectedAction = useRef(false)
+  const treeId = useId()
   const dragDepth = useRef(0)
   const actionLock = useRef(false)
   const folderExists =
@@ -105,10 +119,25 @@ export function FileManager({
     setAction(null)
     setError("")
   }
-  function begin(next: Action) {
+  function begin(next: Action, origin = createTrigger.current) {
+    actionOrigin.current = origin
     setAction(next)
     setName(next.kind === "rename" ? nameOf(next.entry.path) : "")
     setError("")
+  }
+  function closeAction() {
+    setAction(null)
+    setError("")
+    requestAnimationFrame(() => {
+      const origin = actionOrigin.current
+      if (origin?.isConnected && !origin.disabled) origin.focus()
+      else createTrigger.current?.focus()
+    })
+  }
+  function focusAction() {
+    manager.current
+      ?.querySelector<HTMLElement>("form input, form button")
+      ?.focus()
   }
   async function submit(event: FormEvent) {
     event.preventDefault()
@@ -132,7 +161,7 @@ export function FileManager({
           parent ? `${parent}/${cleaned}` : cleaned
         )
       } else if (action.kind === "delete") await onRemove(action.entry.path)
-      setAction(null)
+      closeAction()
     } catch (cause) {
       setError(errorText(cause))
     } finally {
@@ -175,8 +204,9 @@ export function FileManager({
   }
   return (
     <div
+      ref={manager}
       data-slot="file-manager"
-      className={cn("relative flex min-h-0 flex-1 flex-col", className)}
+      className={cn("relative flex min-h-0 min-w-0 flex-1 flex-col", className)}
       onDragEnter={drag}
       onDragOver={(event) => {
         if (event.dataTransfer.types.includes("Files")) {
@@ -206,7 +236,7 @@ export function FileManager({
           void upload(files)
         }}
       />
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3 md:px-8">
+      <div className="skill-file-toolbar flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border py-3 pr-14 pl-5 md:pl-8">
         <nav
           aria-label="文件路径"
           className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto text-xs"
@@ -215,65 +245,112 @@ export function FileManager({
             variant="ghost"
             size="icon-sm"
             aria-label={treeOpen ? "收起文件夹" : "展开文件夹"}
+            aria-expanded={treeOpen}
+            aria-controls={treeId}
             className="mr-1 shrink-0"
             onClick={() => setTreeOpen((value) => !value)}
           >
-            {treeOpen ? <PanelLeftClose /> : <PanelLeftOpen />}
+            {treeOpen ? (
+              <PanelLeftClose aria-hidden="true" />
+            ) : (
+              <PanelLeftOpen aria-hidden="true" />
+            )}
           </Button>
           <button
             className="shrink-0 rounded px-1 py-1 text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
             onClick={() => navigate("")}
+            disabled={disabled || submitting}
+            aria-current={!folderPath ? "page" : undefined}
           >
             全部文件
           </button>
           {breadcrumbs.map((item) => (
             <span key={item.path} className="flex shrink-0 items-center gap-1">
-              <ChevronRight className="size-3 text-muted-foreground" />
+              <ChevronRight
+                className="size-3 text-muted-foreground"
+                aria-hidden="true"
+              />
               <button
                 className="max-w-40 truncate rounded px-1 py-1 outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
                 onClick={() => navigate(item.path)}
+                disabled={disabled || submitting}
+                aria-current={item.path === folderPath ? "page" : undefined}
+                title={item.name}
               >
                 {item.name}
               </button>
             </span>
           ))}
         </nav>
+      </div>
+      <div
+        role="group"
+        aria-label="页面操作"
+        data-slot="page-actions"
+        className="absolute top-3 right-3 z-20 flex flex-col items-center gap-1"
+      >
         {!readOnly ? (
-          <div className="flex flex-wrap gap-1.5">
-            <DropdownMenu>
+          <>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button
-                  variant="outline"
-                  className="rounded-full"
+                  ref={createTrigger}
+                  variant="ghost"
+                  size="icon"
+                  aria-label="新建"
+                  title="新建文件或文件夹"
+                  className="size-7 text-muted-foreground/70 hover:text-foreground"
                   disabled={locked}
                 >
-                  <FolderPlus />
-                  新建
+                  <FolderPlus aria-hidden="true" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-popover">
-                <DropdownMenuItem onSelect={() => begin({ kind: "file" })}>
-                  <FilePlus2 />
+              <DropdownMenuContent
+                align="end"
+                className="bg-popover"
+                onCloseAutoFocus={(event) => {
+                  if (selectedAction.current) {
+                    event.preventDefault()
+                    focusAction()
+                  }
+                  selectedAction.current = false
+                }}
+              >
+                <DropdownMenuItem
+                  onSelect={() => {
+                    selectedAction.current = true
+                    begin({ kind: "file" })
+                  }}
+                >
+                  <FilePlus2 aria-hidden="true" />
                   新建文件
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => begin({ kind: "folder" })}>
-                  <FolderPlus />
+                <DropdownMenuItem
+                  onSelect={() => {
+                    selectedAction.current = true
+                    begin({ kind: "folder" })
+                  }}
+                >
+                  <FolderPlus aria-hidden="true" />
                   新建文件夹
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <Button
-              className="rounded-full"
+              variant="ghost"
+              size="icon"
+              className="size-7 text-muted-foreground/70 hover:text-foreground"
+              aria-label="上传文件"
+              title="上传文件"
+              aria-busy={disabled}
               disabled={locked}
               onClick={() => input.current?.click()}
             >
-              <Upload />
-              {disabled ? "保存中…" : "上传文件"}
+              <Upload aria-hidden="true" />
             </Button>
-          </div>
-        ) : (
-          <span className="text-xs text-muted-foreground">只读文件包</span>
-        )}
+          </>
+        ) : null}
+        {actions}
       </div>
       {action ? (
         <FileManagerActionForm
@@ -281,9 +358,10 @@ export function FileManager({
           name={name}
           disabled={locked}
           submitting={submitting}
+          error={error}
           onNameChange={setName}
           onSubmit={(event) => void submit(event)}
-          onCancel={() => setAction(null)}
+          onCancel={closeAction}
         />
       ) : null}
       {!folderExists ? (
@@ -302,7 +380,7 @@ export function FileManager({
           </Button>
         </div>
       ) : null}
-      {error ? (
+      {error && !action ? (
         <p
           role="alert"
           className="shrink-0 border-b border-border px-5 py-3 text-sm text-destructive md:px-8"
@@ -310,9 +388,10 @@ export function FileManager({
           {error}
         </p>
       ) : null}
-      <div className="flex min-h-0 flex-1">
+      <div className="skill-file-body flex min-h-0 flex-1">
         {treeOpen ? (
           <aside
+            id={treeId}
             aria-label="Skill 文件夹"
             className="skill-folder-tree w-48 shrink-0 overflow-auto border-r border-border bg-muted/20 px-3 py-5"
           >
@@ -321,19 +400,21 @@ export function FileManager({
             </p>
             <button
               onClick={() => navigate("")}
+              disabled={disabled || submitting}
               aria-current={!folderPath ? "page" : undefined}
               className={cn(
                 "flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring",
                 !folderPath && "bg-muted text-primary"
               )}
             >
-              <FolderOpen className="size-4 shrink-0" />
+              <FolderOpen className="size-4 shrink-0" aria-hidden="true" />
               全部文件
             </button>
             {folders.map((item) => (
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
+                disabled={disabled || submitting}
                 aria-current={folderPath === item.path ? "page" : undefined}
                 title={item.path}
                 className={cn(
@@ -344,23 +425,29 @@ export function FileManager({
                   paddingLeft: `${Math.min(item.path.split("/").length, 5) * 10 + 8}px`,
                 }}
               >
-                <Folder className="size-3.5 shrink-0" />
+                <Folder className="size-3.5 shrink-0" aria-hidden="true" />
                 <span className="truncate">{nameOf(item.path)}</span>
               </button>
             ))}
           </aside>
         ) : null}
-        <div className="min-h-0 min-w-0 flex-1 overflow-auto px-5 py-5 md:px-8">
+        <div className="skill-file-list min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain px-5 py-5 md:px-8">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <span className="text-xs text-muted-foreground">
               {visible.length} 项{query ? "匹配结果" : "内容"}
             </span>
             <label className="flex w-full items-center gap-2 rounded-full border border-border px-3 sm:w-64">
-              <Search className="size-3.5 text-muted-foreground" />
+              <Search
+                className="size-3.5 text-muted-foreground"
+                aria-hidden="true"
+              />
               <input
                 className="h-8 min-w-0 flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground"
                 aria-label="搜索当前目录"
-                placeholder="搜索当前目录"
+                name="fileSearch"
+                autoComplete="off"
+                spellCheck={false}
+                placeholder="搜索当前目录…"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
               />
@@ -368,10 +455,10 @@ export function FileManager({
                 <button
                   type="button"
                   aria-label="清除文件搜索"
-                  className="rounded outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
                   onClick={() => setQuery("")}
                 >
-                  <X className="size-3.5" />
+                  <X className="size-3.5" aria-hidden="true" />
                 </button>
               ) : null}
             </label>
@@ -393,8 +480,13 @@ export function FileManager({
                   ? navigate(item.path)
                   : onOpenFile(item.path)
               }
-              onRename={() => begin({ kind: "rename", entry: item })}
-              onDelete={() => begin({ kind: "delete", entry: item })}
+              onRename={(origin) =>
+                begin({ kind: "rename", entry: item }, origin)
+              }
+              onDelete={(origin) =>
+                begin({ kind: "delete", entry: item }, origin)
+              }
+              onActionMenuClose={focusAction}
             />
           ))}
           {!visible.length ? (
@@ -402,6 +494,7 @@ export function FileManager({
               <FolderOpen
                 className="mb-4 size-9 text-muted-foreground"
                 strokeWidth={1.5}
+                aria-hidden="true"
               />
               <h2 className="text-sm font-medium">
                 {query ? "没有匹配的文件" : "这个目录还是空的"}
@@ -413,32 +506,17 @@ export function FileManager({
                     ? "此版本没有包含文件。"
                     : "上传文件，或新建文档与文件夹。也可以把文件拖到这里。"}
               </p>
-              {!query && !readOnly ? (
-                <Button
-                  variant="outline"
-                  className="mt-4 rounded-full"
-                  disabled={locked}
-                  onClick={() => input.current?.click()}
-                >
-                  <Upload />
-                  上传文件
-                </Button>
-              ) : null}
             </div>
-          ) : !readOnly ? (
-            <p className="mt-6 text-center text-[11px] text-muted-foreground">
-              可将文件拖入当前目录
-            </p>
           ) : null}
         </div>
       </div>
       {dragging ? (
         <div className="pointer-events-none absolute inset-2 z-20 flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-primary bg-background/95 text-primary">
-          <Upload className="size-8" />
+          <Upload className="size-8" aria-hidden="true" />
           <p className="text-sm font-medium">
             松开以添加到{folderPath ? ` ${folderPath}` : "当前 Skill"}
           </p>
-          <p className="text-xs">文件保存到本地，同名文件需要确认替换。</p>
+          <p className="text-xs">同名文件需要确认替换。</p>
         </div>
       ) : null}
     </div>

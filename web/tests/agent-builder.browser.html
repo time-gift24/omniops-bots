@@ -57,7 +57,7 @@
       visible(element) && !element.disabled,
       "Expected an enabled visible control"
     )
-    flushSync(() => element.click())
+    flushSync(() => { element.focus(); element.click() })
   }
   const editor = () => fixture.querySelector("#agent-editor")
   const actions = () => editor().querySelector('[data-slot="document-actions"]')
@@ -66,7 +66,7 @@
     const dock = actions()
     assert(visible(dock) && !dock.closest("header"), "Agent actions must float in the document body")
     const controls = [...dock.querySelectorAll("button")].filter(visible)
-    const names = controls.map(accessibleLabel).sort()
+    const names = controls.map(accessibleLabel).filter(name => name !== "Agent 配置").sort()
     assert(JSON.stringify(names) === JSON.stringify((editing ? ["保存", "撤销"] : ["编辑", "调试"]).sort()),
       "Agent actions must match the current reading or editing mode")
     for (const control of controls) assert(control.getAttribute("aria-label") && control.textContent.trim() === "",
@@ -132,6 +132,7 @@
     ])
     const [selected, setSelected] = React.useState(0)
     const [open, setOpen] = React.useState(false)
+    const [toolbarTarget, setToolbarTarget] = React.useState(null)
     const workbench = React.useRef(null)
     const selectAgent = (index) => {
       setSelected(index)
@@ -157,12 +158,14 @@
             "编辑第二个 Agent"
           )
         ),
+        React.createElement("header", { ref: setToolbarTarget, id: "agent-header", className: "@container/agent-header flex min-h-11 px-3" }),
         React.createElement(
           "div",
           { id: "agent-editor", className: "min-h-0 flex-1" },
           React.createElement(AgentBuilder, {
             key: selected,
             initialConfiguration: agents[selected],
+            toolbarTarget,
             mcpServers: MCP_SERVERS, tools: AGENT_TOOLS, skills: AGENT_SKILLS,
             onDebug() {
               workbench.current.openAgentDebug(
@@ -205,8 +208,8 @@
     }), dependencies)))
     const resourceRows = [...fixture.querySelectorAll("li")]
     assert(resourceRows[0].textContent.includes("本地草稿"), "Local Skill identity remains visible before it has a contentId")
-    assert(resourceRows[1].textContent.includes("官方 v1.2.0 · sha256:released") && resourceRows[1].querySelector('[title="sha256:released"]'), "Official Skill retains its release and complete content identity")
-    checks.push("local Skill draft identity and official release/content identity")
+    assert(resourceRows[1].textContent.includes("官方") && !resourceRows[1].textContent.includes("sha256:released") && !resourceRows[1].textContent.includes("v1.2.0") && !resourceRows[1].querySelector('[title="sha256:released"]'), "Skill resources show their source without technical version identifiers")
+    checks.push("readable resource sources without content hashes or technical versions")
     flushSync(() => root.render(withDependencies(React.createElement(Probe), dependencies)))
     if (visible(button("Agent 配置", editor())))
       click(button("Agent 配置", editor()))
@@ -227,6 +230,9 @@
     assert(resourceSwitches().length > 0 && resourceSwitches().every(control => control.matches(":disabled")),
       "Reading mode must disable resource switches")
     checkActions(false)
+    assert(!button("Agent 配置", fixture.querySelector("#agent-header")) && !fixture.querySelector('#agent-header [data-slot="document-actions"]'),
+      "Agent header must contain location only; all actions belong in the document body")
+    if (button("Agent 配置", editor())) assert(actions().contains(button("Agent 配置", editor())), "Narrow-screen configuration must share the vertical body dock")
     checks.push(
       "summary textarea, model removal and debugging collapsed by default"
     )
@@ -266,6 +272,7 @@
       "Empty name must be rejected before saving"
     )
     assert(saved.length === 0, "Invalid name must not reach onSave")
+    await until(() => document.activeElement === field("名称"), "Missing name must focus its configuration field")
     write(field("名称"), "回归助手")
     write(field("系统提示词"), "  ")
     click(button("保存", editor()))
@@ -274,6 +281,7 @@
       "Blank instructions must be rejected"
     )
     assert(saved.length === 0, "Invalid instructions must not reach onSave")
+    await until(() => document.activeElement === field("系统提示词"), "Missing instructions must focus the source editor")
 
     const instructions =
       "# 回归策略\n\n- 保留完整 Markdown。\n- 仅使用已授权能力。\n"
@@ -301,8 +309,8 @@
     click(button("保存", editor()))
     await until(() => saved.length === 1, "Save callback must run")
     assert(
-      field("名称").matches(":disabled") && field("系统提示词").matches(":disabled"),
-      "Saving must lock configuration and instructions"
+      !field("名称").matches(":disabled") && !field("系统提示词").matches(":disabled") && button("保存", actions()).disabled,
+      "Saving must keep input editable while preventing duplicate submission"
     )
     assert(
       saved[0].instructions === instructions &&
@@ -339,7 +347,7 @@
     )
     click(button("撤销", actions()))
     checks.push(
-      "save locking and payload preservation; discard restores saved Markdown"
+      "save submission locking and payload preservation; discard restores saved Markdown"
     )
 
     click(button("编辑", actions()))
@@ -368,6 +376,34 @@
     assert(document.activeElement === outsideAction, "Async save completion must preserve focus moved outside the editor")
     checkActions(false)
     checks.push("failed saving preserves editing without Debug; successful retry returns to reading")
+
+    click(button("编辑", actions()))
+    write(field("系统提示词"), "# 提交时的快照")
+    click(button("保存", actions()))
+    await until(() => saved.length === 4, "Delayed snapshot save must start")
+    write(field("系统提示词"), "# 等待保存期间继续编辑")
+    write(field("名称"), "等待期间的新名称")
+    const duplicateSave = new KeyboardEvent("keydown", { key: "s", ctrlKey: true, bubbles: true, cancelable: true })
+    field("名称").dispatchEvent(duplicateSave)
+    assert(saved.length === 4 && duplicateSave.defaultPrevented, "Save shortcut during an active save must not submit again")
+    finishSave()
+    await until(() => button("保存", actions()) && !button("保存", actions()).disabled, "Delayed save must unlock submission")
+    assert(field("系统提示词").value === "# 等待保存期间继续编辑" && field("名称").value === "等待期间的新名称", "Snapshot completion must preserve all new input and keep editing open")
+    assert(saved[3].instructions === "# 提交时的快照" && saved[3].name === "失败重试助手", "Save must submit the original snapshot only")
+    assert(!button("调试", actions()), "New unsaved input must not expose debugging of a stale configuration")
+    const unload = new Event("beforeunload", { cancelable: true })
+    window.dispatchEvent(unload)
+    assert(unload.defaultPrevented, "Unsaved changes after a completed snapshot must still warn before leaving")
+    const saveLatest = new KeyboardEvent("keydown", { key: "s", metaKey: true, bubbles: true, cancelable: true })
+    field("名称").dispatchEvent(saveLatest)
+    await until(() => saved.length === 5, "Cmd+S from the configuration field must submit the latest input")
+    assert(saveLatest.defaultPrevented && saved[4].instructions === "# 等待保存期间继续编辑" && saved[4].name === "等待期间的新名称", "Shortcut save must preserve the latest configuration")
+    finishSave()
+    await until(() => button("编辑", actions()) && !field("系统提示词"), "Saving the latest version must return to reading")
+    const cleanUnload = new Event("beforeunload", { cancelable: true })
+    window.dispatchEvent(cleanUnload)
+    assert(!cleanUnload.defaultPrevented, "A fully saved Agent must clear its unload warning")
+    checks.push("snapshot saves preserve typing; duplicate shortcuts are locked; Cmd+S saves the latest configuration")
 
     click(button("调试", editor()))
     await until(
@@ -454,6 +490,34 @@
       )
     }
     checks.push("separate Agent conversations and mobile overlay sizing")
+
+    const header = document.createElement("header")
+    fixture.before(header)
+    let inactiveSaves = 0
+    let copied = 0
+    const renderIsolated = (props) => flushSync(() => root.render(withDependencies(
+      React.createElement("div", { id: "agent-editor", className: "min-h-0 min-w-0 flex-1" },
+        React.createElement(AgentBuilder, {
+          initialConfiguration: DEFAULT_AGENT,
+          mcpServers: MCP_SERVERS, tools: AGENT_TOOLS, skills: AGENT_SKILLS,
+          toolbarTarget: header,
+          onSave() { inactiveSaves++ },
+          ...props,
+        })), dependencies)))
+    renderIsolated({ key: "inactive", active: false, initialDraft: { ...DEFAULT_AGENT, instructions: "# 暂未保存的后台编辑" } })
+    assert(!header.textContent && !editor().querySelector('[data-slot="document-actions"]'), "Inactive Agent must not render into the shared header or expose body actions")
+    const inactiveShortcut = new KeyboardEvent("keydown", { key: "s", metaKey: true, bubbles: true, cancelable: true })
+    window.dispatchEvent(inactiveShortcut)
+    assert(!inactiveShortcut.defaultPrevented && inactiveSaves === 0, "Inactive Agent must not intercept global save shortcuts")
+    const official = { key: "official", readOnly: true, onCopy() { copied++ } }
+    renderIsolated({ ...official, copyBusy: true })
+    assert(!button("编辑", actions()) && button("复制为本地", actions())?.disabled, "Official Agent must remain read-only while its copy action is busy")
+    assert(!button("复制为本地", header) && !button("Agent 配置", header), "Copy and configuration must never appear in the breadcrumb header")
+    renderIsolated({ ...official, copyBusy: false })
+    click(button("复制为本地", actions()))
+    assert(copied === 1, "Body copy action must invoke the official Agent copy flow")
+    header.remove()
+    checks.push("inactive Agents release header and shortcuts; official copy remains in the body dock with a busy guard")
     result.dataset.passed = "true"
     result.textContent = checks.map((check) => `PASS: ${check}`).join("\n")
   } catch (error) {

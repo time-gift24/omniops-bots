@@ -1,129 +1,18 @@
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type MouseEvent,
-} from "react"
-import { createPortal } from "react-dom"
-import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
-import {
-  BookOpen01Icon,
-  FileTextIcon,
-  Files01Icon,
-  SourceCodeIcon,
-} from "@hugeicons-pro/core-stroke-rounded"
-import { DocumentActions } from "@/components/markdown/document-actions"
-import {
-  MarkdownEditor,
-  type MarkdownEditorMode,
-} from "@/components/markdown/markdown-editor"
-import {
-  MarkdownOutline,
-  MarkdownReading,
-  useHeadingScroll,
-} from "@/components/markdown/markdown-reading"
-import {
-  findDocsHeading,
-  type DocsSection,
-} from "@/components/premium/docs-pages/docs-data"
-import { DocsMobileNav } from "@/components/premium/docs-pages/docs-mobile-nav"
-import { useScrollspy } from "@/components/premium/docs-pages/use-scrollspy"
-import { Button } from "@/components/ui/button"
-import {
-  CodeBlock,
-  CodeBlockActions,
-  CodeBlockContent,
-  CodeBlockCopyButton,
-  CodeBlockHeader,
-  CodeBlockLine,
-  CodeBlockTitle,
-} from "@/components/ui/code-block"
-import { useHighlightedCode } from "@/hooks/use-highlighted-code"
-import { cn } from "@/lib/utils"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { useAppDependencies } from "@/app/dependencies"
+import { Button } from "@/components/ui/button"
 import type { Skill } from "@/skills/source"
 import { fileKey } from "@/skills/drafts"
-import { resolveSkillLink } from "@/skills/content"
-import {
-  BranchedMenu,
-  type BranchedMenuChild,
-  type BranchedMenuItem,
-} from "./branched-menu"
-import "@/components/premium/docs-pages/docs-article.css"
-
-function SourceView({ source, path }: { source: string; path: string }) {
-  const lines = useHighlightedCode(source, "javascript")
-  return (
-    <CodeBlock>
-      <CodeBlockHeader>
-        <CodeBlockTitle>{path}</CodeBlockTitle>
-        <CodeBlockActions>
-          <CodeBlockCopyButton value={source} />
-        </CodeBlockActions>
-      </CodeBlockHeader>
-      <CodeBlockContent lineNumbers>
-        {lines.map((line, index) => (
-          <CodeBlockLine key={index}>{line}</CodeBlockLine>
-        ))}
-      </CodeBlockContent>
-    </CodeBlock>
-  )
-}
-
-function fileIcon(path: string): IconSvgElement {
-  const name = path.split("/").at(-1) ?? path
-  if (name === "SKILL.md") return BookOpen01Icon
-  if (path.toLowerCase().endsWith(".md")) return FileTextIcon
-  return SourceCodeIcon
-}
-
-function UnsavedBadge() {
-  return (
-    <>
-      <span className="sr-only">未保存</span>
-      <span aria-hidden="true" className="size-1.5 rounded-full bg-primary" />
-    </>
-  )
-}
-
-function SkillFileNav({
-  items,
-  active,
-  onPick,
-}: {
-  items: BranchedMenuItem[]
-  active: string
-  onPick: (value: string) => void
-}) {
-  return (
-    <BranchedMenu
-      ariaLabel="技能文件"
-      items={items}
-      active={active}
-      defaultOpen={items.map((_, index) => index)}
-      onSelect={onPick}
-      color="var(--sidebar-foreground)"
-      accentColor="var(--primary)"
-      lineColor="var(--border-strong)"
-      width={224}
-      className="branched-menu--fill"
-    />
-  )
-}
+import { SkillDocument } from "./skill-document"
 
 export function SkillScreen({
   skills,
   skillId,
   active,
-  toolbarTarget,
 }: {
   skills: readonly Skill[]
   skillId: string
   active: boolean
-  toolbarTarget: HTMLElement | null
 }) {
   const { skillDrafts, host } = useAppDependencies()
   const [saved, setSaved] = useState<Record<string, string>>({})
@@ -140,14 +29,6 @@ export function SkillScreen({
   const mounted = useRef(false)
   const [paths, setPaths] = useState<Record<string, string>>({})
   const [editing, setEditing] = useState(false)
-  const [mode, setMode] = useState<MarkdownEditorMode>("source")
-  const [navOpen, setNavOpen] = useState(false)
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const editorPreviewRef = useRef<HTMLDivElement>(null)
-  const [outline, setOutline] = useState<{
-    key: string
-    sections: DocsSection[]
-  }>({ key: "", sections: [] })
   const skill = skills.find((entry) => entry.id === skillId) ?? skills[0]
   const path = (skill && paths[skill.id]) ?? "SKILL.md"
   const file = skill?.files.find((entry) => entry.path === path)
@@ -191,34 +72,12 @@ export function SkillScreen({
   }, [key, source])
   const original = file?.content ?? ""
   const dirty = source !== (saved[key] ?? original)
-  const markdown = path.toLowerCase().endsWith(".md")
   const unsaved = skills.some((item) =>
     item.files.some((entry) => {
       const id = fileKey(item.id, entry.path)
       return (contents[id] ?? entry.content) !== (saved[id] ?? entry.content)
     })
   )
-  const updateSections = useCallback(
-    (sections: DocsSection[]) => setOutline({ key, sections }),
-    [key]
-  )
-  const outlineSections =
-    markdown && (!editing || mode === "preview") && outline.key === key
-      ? outline.sections
-      : []
-  const activeSection = useScrollspy(
-    outlineSections.map((section) => section.id),
-    editing ? editorPreviewRef : scrollRef
-  )
-  const resolveScroll = useCallback(
-    () => editorPreviewRef.current ?? scrollRef.current,
-    []
-  )
-  const { scrollToY, scrollToHeading } = useHeadingScroll(
-    resolveScroll,
-    `${key}:${editing ? mode : "reading"}`
-  )
-
   async function save() {
     if (!skill || !file || !editing || loading || operation.current) return
     if (!dirty) {
@@ -315,158 +174,8 @@ export function SkillScreen({
     }
   }
 
-  function followLink(event: MouseEvent<HTMLDivElement>) {
-    if (!skill) return
-    const anchor = (event.target as Element).closest("a")
-    if (!anchor) return
-    let href = anchor.getAttribute("href")
-    if (!href) return
-    if (href.startsWith("https://skill.invalid/")) {
-      const local = new URL(href)
-      href = local.pathname + local.hash
-    }
-    const target = resolveSkillLink(path, href)
-    if (!target) return
-    event.preventDefault()
-    event.stopPropagation()
-    if (!skill.files.some((entry) => entry.path === target.path)) {
-      setError(`找不到文件 ${target.path}。请从文件导航选择已有文件。`)
-      return
-    }
-    setError("")
-    selectFile(target.path)
-    requestAnimationFrame(() => {
-      if (target.hash) {
-        const node = findDocsHeading(resolveScroll(), target.hash)
-        if (node) scrollToHeading(node)
-      } else {
-        scrollToY(0)
-      }
-    })
-  }
-
-  const menuItems = useMemo<BranchedMenuItem[]>(() => {
-    if (!skill) return []
-    const fileBadge = (entryPath: string) => {
-      const entry = skill.files.find((file) => file.path === entryPath)
-      const id = fileKey(skill.id, entryPath)
-      const modified =
-        (contents[id] ?? entry?.content ?? "") !==
-        (saved[id] ?? entry?.content ?? "")
-      return {
-        value: entryPath,
-        label: entryPath.split("/").at(-1) ?? entryPath,
-        icon: fileIcon(entryPath),
-        badge: modified ? <UnsavedBadge /> : undefined,
-      }
-    }
-    // 按路径段建树：顶层文件（如 SKILL.md）与文件夹（如 reference/）同级。
-    type TreeNode = { label: string; path: string | null; children: TreeNode[] }
-    const tree: TreeNode[] = []
-    for (const entry of skill.files) {
-      const parts = entry.path.split("/")
-      let level = tree
-      let node: TreeNode | undefined
-      parts.forEach((part, index) => {
-        node = level.find((item) => item.label === part)
-        if (!node) {
-          node = {
-            label: part,
-            path: index === parts.length - 1 ? entry.path : null,
-            children: [],
-          }
-          level.push(node)
-        }
-        level = node.children
-      })
-    }
-    const collectLeaves = (
-      node: TreeNode,
-      prefix: string
-    ): BranchedMenuChild[] => {
-      const leaves: BranchedMenuChild[] = []
-      for (const child of node.children) {
-        if (child.path !== null) {
-          leaves.push({ ...fileBadge(child.path), label: prefix + child.label })
-        } else {
-          leaves.push(...collectLeaves(child, `${prefix}${child.label}/`))
-        }
-      }
-      return leaves
-    }
-    return tree.map((node) =>
-      node.path !== null
-        ? { ...fileBadge(node.path), label: node.label }
-        : { label: node.label, children: collectLeaves(node, "") }
-    )
-  }, [skill, contents, saved])
-
-  const selectFromSidebar = (value: string) => {
-    selectFile(value)
-    requestAnimationFrame(() => scrollToY(0))
-  }
-  const selectFromDrawer = (value: string) => {
-    selectFromSidebar(value)
-    setNavOpen(false)
-  }
-
-  const preview = (
-    <MarkdownReading
-      source={source}
-      linkBase={`https://skill.invalid/${path}`}
-      onSections={updateSections}
-      onLink={followLink}
-      empty={
-        <p className="py-12 text-center text-sm text-muted-foreground">
-          这个文件还是空的，点击「编辑」开始编写。
-        </p>
-      }
-    />
-  )
-
-  const wide = editing && mode !== "preview"
-
   return (
-    <div className="skill-docs" data-slot="skill-screen">
-      {active && toolbarTarget
-        ? createPortal(
-            <div
-              className="flex min-h-11 items-center gap-1 py-1"
-              data-slot="skill-toolbar"
-            >
-              <Button
-                variant="ghost"
-                size="icon"
-                className="skill-files-trigger rounded-full"
-                aria-label="浏览技能文件"
-                title={path}
-                onClick={() => setNavOpen(true)}
-              >
-                <HugeiconsIcon
-                  icon={Files01Icon}
-                  size={18}
-                  aria-hidden="true"
-                />
-              </Button>
-              {dirty ? (
-                <span
-                  className="size-1.5 shrink-0 rounded-full bg-primary"
-                  title="有未保存的修改"
-                >
-                  <span className="sr-only">有未保存的修改</span>
-                </span>
-              ) : null}
-              <div
-                role="status"
-                aria-live="polite"
-                className="sr-only @min-[560px]/skill-header:not-sr-only @min-[560px]/skill-header:text-xs @min-[560px]/skill-header:text-muted-foreground"
-              >
-                {message}
-              </div>
-            </div>,
-            toolbarTarget
-          )
-        : null}
+    <div className="flex h-full min-h-0 flex-col">
       {error ? (
         <div
           role="alert"
@@ -483,118 +192,53 @@ export function SkillScreen({
           </Button>
         </div>
       ) : null}
-      <div className="flex min-h-0 flex-1">
-        <aside className="skill-file-sidebar">
-          <div className="min-h-0 flex-1 overflow-y-auto px-3 pt-4 pb-4">
-            <SkillFileNav
-              items={menuItems}
-              active={path}
-              onPick={selectFromSidebar}
-            />
-          </div>
-        </aside>
-        <div className="doc-action-surface relative flex min-h-0 min-w-0 flex-1">
-          <DocumentActions
-            editing={editing}
-            busy={busy}
-            disabled={loading || !skill || !file}
-            dirty={dirty}
-            saveLabel="保存草稿"
-            onEdit={() => {
-              setEditing(true)
-              setMode("source")
-              setMessage("")
-            }}
-            onSave={() => void save()}
-            onUndo={() => {
-              setContents((current) => ({
-                ...current,
-                [key]: saved[key] ?? original,
-              }))
-              setEditing(false)
-              setError("")
-              setMessage("")
-            }}
-            onRestore={
-              saved[key] !== undefined || source !== original
-                ? () => void restore()
-                : undefined
+      <div className="min-h-0 flex-1">
+        <SkillDocument
+          key={skill?.id}
+          files={(skill?.files ?? []).map((entry) => {
+            const id = fileKey(skill!.id, entry.path)
+            return {
+              path: entry.path,
+              modified:
+                (contents[id] ?? entry.content) !==
+                (saved[id] ?? entry.content),
             }
-          />
-          <div
-            ref={scrollRef}
-            className={cn(
-              "doc-reading-scroll skill-docs-scroll min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain",
-              editing && "overflow-hidden"
-            )}
-            tabIndex={0}
-            aria-label="文件内容"
-          >
-            <div
-              className={cn("doc-reading-layout", wide && "doc-reading-wide")}
-              style={editing ? { height: "100%", maxWidth: "none" } : undefined}
-            >
-              <article
-                className={cn(
-                  "doc-article min-w-0 pt-2!",
-                  editing && "flex h-full min-h-0 flex-col p-3!"
-                )}
-              >
-                {!file ? (
-                  <p role="alert">文件不存在，请从左侧导航选择文件。</p>
-                ) : editing ? (
-                  <MarkdownEditor
-                    value={source}
-                    ariaLabel={`编辑 ${path}`}
-                    autoFocus
-                    markdown={markdown}
-                    preview={preview}
-                    previewScrollRef={editorPreviewRef}
-                    onModeChange={setMode}
-                    onChange={(value) => {
-                      setContents((current) => ({ ...current, [key]: value }))
-                      setMessage("")
-                    }}
-                  />
-                ) : markdown ? (
-                  preview
-                ) : (
-                  <>
-                    <h1 className="mb-6 text-2xl font-semibold tracking-tight">
-                      {path.split("/").at(-1)}
-                    </h1>
-                    <SourceView source={source} path={path} />
-                  </>
-                )}
-              </article>
-              {!wide && outlineSections.length > 0 ? (
-                <MarkdownOutline
-                  key={key}
-                  sections={outlineSections}
-                  active={activeSection ?? ""}
-                  onSelect={(id) => {
-                    const node = findDocsHeading(resolveScroll(), id)
-                    if (node) scrollToHeading(node)
-                  }}
-                />
-              ) : null}
-            </div>
-          </div>
-        </div>
+          })}
+          path={path}
+          source={source}
+          active={active}
+          message={message}
+          loading={loading}
+          busy={busy}
+          dirty={dirty}
+          editing={editing}
+          onEdit={() => {
+            setEditing(true)
+            setMessage("")
+          }}
+          onSave={() => void save()}
+          onUndo={() => {
+            setContents((current) => ({
+              ...current,
+              [key]: saved[key] ?? original,
+            }))
+            setEditing(false)
+            setError("")
+            setMessage("")
+          }}
+          onRestore={
+            saved[key] !== undefined || source !== original
+              ? () => void restore()
+              : undefined
+          }
+          onChange={(value) => {
+            setContents((current) => ({ ...current, [key]: value }))
+            setMessage("")
+          }}
+          onSelectFile={selectFile}
+          onError={setError}
+        />
       </div>
-      <DocsMobileNav
-        open={navOpen}
-        onOpenChange={setNavOpen}
-        title="技能文件"
-        closeLabel="关闭文件导航"
-        nav={
-          <SkillFileNav
-            items={menuItems}
-            active={path}
-            onPick={selectFromDrawer}
-          />
-        }
-      />
     </div>
   )
 }

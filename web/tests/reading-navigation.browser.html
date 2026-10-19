@@ -58,9 +58,9 @@
         h("div", { ref: setToolbarTarget, className: "flex shrink-0 items-center" })),
       h("div", { className: "min-h-0 flex-1" },
         h("div", { id: "skill-page", className: "h-full min-h-0", style: { display: visible === "skill" ? "block" : "none" } },
-          h(SkillScreen, { skills, skillId, active: visible === "skill", toolbarTarget: visible === "skill" ? toolbarTarget : null })),
+          h(SkillScreen, { skills, skillId, active: visible === "skill" })),
         h("div", { id: "agent-page", className: "h-full min-h-0", style: { display: visible === "agent" ? "block" : "none" } },
-          h(AgentBuilder, { initialConfiguration: agent, mcpServers: [], tools: [], skills: [], onSave() {} }))),
+          h(AgentBuilder, { initialConfiguration: agent, mcpServers: [], tools: [], skills: [], active: visible === "agent", toolbarTarget: visible === "agent" ? toolbarTarget : null, onSave() {} }))),
     );
   }
   const render = (visible, skillId = skills[0].id) => flushSync(() => root.render(withDependencies(h(Pages, { visible, skillId }), dependencies)));
@@ -73,6 +73,27 @@
     button.getAttribute("aria-label")?.replace(/\s/g, "") === `${action}${label}`);
   const activeHeading = name => outline(name)?.querySelector('[aria-current="true"]')?.textContent.trim();
   const click = element => { assert(element, "Expected navigation control is missing"); flushSync(() => element.click()); };
+  const checkActions = async name => {
+    const dock = page(name).querySelector('[data-slot="document-actions"]');
+    assert(dock && !dock.closest("header") && !fixture.querySelector("header button"), "Document actions must stay in the body, outside the shared Header");
+    assert(dock.querySelector('button[aria-label="编辑"]'), "The active document must expose editing in its dock");
+    if (name === "skill") assert(dock.querySelector('button[aria-label="浏览技能文件"]'), "File navigation and editing must share one Skill dock");
+    assert(!page(name === "skill" ? "agent" : "skill").querySelector('[data-slot="document-actions"]'), "Inactive pages must not retain document actions");
+    fixture.style.width = `${innerWidth}px`;
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const controls = [...dock.querySelectorAll("button")].filter(button => button.getClientRects().length > 0);
+    for (const [index, control] of controls.entries()) {
+      const bounds = control.getBoundingClientRect();
+      assert(bounds.left >= -1 && bounds.right <= innerWidth + 1, `${name} body action must fit the viewport`);
+      assert(control.getAttribute("aria-label") && control.textContent.trim() === "", "Body actions must remain accessible icon buttons");
+      if (index) {
+        const previous = controls[index - 1].getBoundingClientRect();
+        assert(previous.bottom <= bounds.top + 1 && Math.abs((previous.left + previous.right) / 2 - (bounds.left + bounds.right) / 2) <= 1, `${name} actions must form one vertical column without overlap`);
+      }
+    }
+    fixture.style.width = "1800px";
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  };
   const link = label => [...page("skill").querySelectorAll(".doc-preview a")].find(anchor => anchor.textContent === label);
   const aligned = (name, label = "共享章节") => {
     const container = scroll(name);
@@ -224,6 +245,7 @@
     await until(() => heading("skill") && heading("agent") && outline("agent"), "Both real reading pages must mount");
     assert(!fixture.querySelector(".skill-doc-bar"), "Skill content must not retain the old document toolbar");
     assert(!fixture.querySelector("header button"), "An inactive Skill page must not render Header controls");
+    await checkActions("agent");
     uniqueIds();
     assert(heading("skill").id !== heading("agent").id, "Matching Chinese headings must have distinct document IDs");
     await checkOutlineBranches("agent");
@@ -243,10 +265,9 @@
 
     render("skill", skills[1].id);
     await until(() => page("skill").querySelector(".doc-preview")?.textContent.includes("SECOND_MAIN"), "Switching Skill must render its current file");
-    await until(() => fixture.querySelector('header button[aria-label="浏览技能文件"]') && page("skill").querySelector('[data-slot="document-actions"] button[aria-label="编辑"]'),
-      "The active Skill page must keep file navigation in the Header and Edit in its body dock");
-    assert(!fixture.querySelector('header [data-slot="document-actions"]') && !fixture.querySelector('header button[aria-label="编辑"]'),
-      "Skill editing actions must stay outside the shared Header");
+    await until(() => page("skill").querySelector('[data-slot="document-actions"] button[aria-label="浏览技能文件"]') && page("skill").querySelector('[data-slot="document-actions"] button[aria-label="编辑"]'),
+      "The active Skill page must keep file navigation and Edit in the same body dock");
+    await checkActions("skill");
     uniqueIds();
     await checkOutlineBranches("skill");
     checkOutlineHierarchy("skill");

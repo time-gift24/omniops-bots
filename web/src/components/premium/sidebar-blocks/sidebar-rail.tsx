@@ -1,6 +1,6 @@
-"use client";
+"use client"
 
-import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
+import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
 import {
   ArrowUpRight01Icon,
   BookOpen01Icon,
@@ -10,12 +10,13 @@ import {
   HistoryIcon,
   Home01Icon,
   Layers02Icon,
+  ListViewIcon,
   PanelLeftIcon,
   PlusSignIcon,
   Search01Icon,
   Settings02Icon,
-} from "@hugeicons-pro/core-stroke-rounded";
-import { motion, useReducedMotion } from "motion/react";
+} from "@hugeicons-pro/core-stroke-rounded"
+import { motion, useReducedMotion } from "motion/react"
 import {
   type ReactNode,
   type RefObject,
@@ -23,7 +24,7 @@ import {
   useId,
   useRef,
   useState,
-} from "react";
+} from "react"
 import {
   AnimatedSidebar,
   AnimatedSidebarClose,
@@ -36,10 +37,10 @@ import {
   AnimatedSidebarMenuItem,
   AnimatedSidebarProvider,
   useAnimatedSidebar,
-} from "@/components/motion/animated-sidebar";
-import { Button } from "@/components/motion/button";
-import { Breadcrumbs } from "@/components/ui/breadcrumbs";
-import { SharedLayoutBg } from "@/components/motion/shared-layout-bg";
+} from "@/components/motion/animated-sidebar"
+import { Button } from "@/components/motion/button"
+import { Breadcrumbs } from "@/components/ui/breadcrumbs"
+import { SharedLayoutBg } from "@/components/motion/shared-layout-bg"
 import {
   CommandDialog,
   CommandEmpty,
@@ -47,37 +48,39 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/components/ui/command";
+} from "@/components/ui/command"
 import {
   MorphicTooltip,
   MorphicTooltipProvider,
-} from "@/components/premium/morphic-tooltip/morphic-tooltip";
-import { SPRING_PANEL } from "@/lib/ease";
-import { cn } from "@/lib/utils";
+} from "@/components/premium/morphic-tooltip/morphic-tooltip"
+import { SPRING_PANEL } from "@/lib/ease"
+import { cn } from "@/lib/utils"
 
 export type SidebarRailItem = {
-  id: string;
-  label: string;
-  icon?: IconSvgElement;
-};
+  id: string
+  label: string
+  icon?: IconSvgElement
+}
 
 export type SidebarRailSection = {
-  id: string;
-  label: string;
-  icon: IconSvgElement;
+  id: string
+  label: string
+  icon: IconSvgElement
   groups: readonly {
-    label: string;
-    items: readonly SidebarRailItem[];
+    label: string
+    items: readonly SidebarRailItem[]
     /** Extra control rendered beside the group label, e.g. a search button. */
-    action?: ReactNode;
-  }[];
+    action?: ReactNode
+  }[]
   /** A section can own its rows while still supplying searchable items. */
-  renderContent?: (closeNavigation: () => void) => ReactNode;
+  renderContent?: (closeNavigation: () => void) => ReactNode
   /** Full-page tools provide their own local navigation. */
-  collapseOnSelect?: boolean;
+  collapseOnSelect?: boolean
   /** Sections with a management list open that list before an individual item. */
-  selectFirstItem?: boolean;
-};
+  selectFirstItem?: boolean
+  /** A persistent list shortcut below the new-conversation action. */
+  overviewLabel?: string
+}
 
 export const defaultSections: readonly SidebarRailSection[] = [
   {
@@ -154,46 +157,46 @@ export const defaultSections: readonly SidebarRailSection[] = [
       },
     ],
   },
-];
+]
 
 export type SidebarRailProps = {
-  workspaceName?: string;
-  sections?: readonly SidebarRailSection[];
-  defaultExpanded?: boolean;
-  expanded?: boolean;
-  onExpandedChange?: (expanded: boolean) => void;
-  defaultItemId?: string;
-  activeSectionId?: string;
-  activeItemId?: string;
-  onSectionSelect?: (section: SidebarRailSection) => void;
-  onParentSelect?: (section: SidebarRailSection) => void;
-  onItemSelect?: (item: SidebarRailItem, section: SidebarRailSection) => void;
-  onCreate?: () => void;
-  createLabel?: string;
-  account?: { name: string; initials: string };
-  onAccountClick?: () => void;
+  workspaceName?: string
+  sections?: readonly SidebarRailSection[]
+  defaultExpanded?: boolean
+  expanded?: boolean
+  onExpandedChange?: (expanded: boolean) => void
+  defaultItemId?: string
+  activeSectionId?: string
+  activeItemId?: string
+  onSectionSelect?: (section: SidebarRailSection) => void
+  onParentSelect?: (section: SidebarRailSection) => void
+  onItemSelect?: (item: SidebarRailItem, section: SidebarRailSection) => void
+  onCreate?: () => void
+  createLabel?: string
+  account?: { name: string; initials: string }
+  onAccountClick?: () => void
   /** Replaces the panel title; search and collapse controls stay built in. Pass null to hide it. */
-  panelHeader?: ReactNode;
+  panelHeader?: ReactNode
   /** Replaces the account control at the bottom of the icon rail. Pass null to hide it. */
-  railFooter?: ReactNode;
+  railFooter?: ReactNode
   /** Extra controls above the account at the bottom of the icon rail. */
-  railActions?: ReactNode;
+  railActions?: ReactNode
   /** Replaces the workspace breadcrumbs; the navigation toggle stays built in. Pass null to hide them. */
-  workspaceHeader?: ReactNode;
+  workspaceHeader?: ReactNode
   /** Shared header spacing, including room for floating controls on every page. */
-  workspaceHeaderClassName?: string;
+  workspaceHeaderClassName?: string
   /** Full-height column rendered after the header+content column, e.g. the workbench panel. */
-  endPanel?: ReactNode;
+  endPanel?: ReactNode
   /** Absolutely positioned overlay on the header+content column, e.g. a floating toggle over the header. Positioning classes are the caller's responsibility. */
-  headerOverlay?: ReactNode;
+  headerOverlay?: ReactNode
   /** Overrides the content wrapper padding; chat-like surfaces pass p-0 and own their padding. */
-  contentClassName?: string;
-  children?: ReactNode;
-  className?: string;
-};
+  contentClassName?: string
+  children?: ReactNode
+  className?: string
+}
 
 const iconButtonClass =
-  "size-9 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  "size-9 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
 
 export function SidebarRail({
   defaultExpanded = true,
@@ -202,16 +205,16 @@ export function SidebarRail({
   className,
   ...props
 }: SidebarRailProps) {
-  const [internalExpanded, setInternalExpanded] = useState(defaultExpanded);
-  const [focused, setFocused] = useState(false);
-  const toggleRef = useRef<HTMLButtonElement>(null);
-  const expanded = controlledExpanded ?? internalExpanded;
+  const [internalExpanded, setInternalExpanded] = useState(defaultExpanded)
+  const [focused, setFocused] = useState(false)
+  const toggleRef = useRef<HTMLButtonElement>(null)
+  const expanded = controlledExpanded ?? internalExpanded
 
   function setExpanded(next: boolean) {
-    if (!next) toggleRef.current?.focus({ preventScroll: true });
-    if (controlledExpanded === undefined) setInternalExpanded(next);
-    onExpandedChange?.(next);
-    setFocused(false);
+    if (!next) toggleRef.current?.focus({ preventScroll: true })
+    if (controlledExpanded === undefined) setInternalExpanded(next)
+    onExpandedChange?.(next)
+    setFocused(false)
   }
 
   return (
@@ -236,7 +239,7 @@ export function SidebarRail({
         </AnimatedSidebarProvider>
       </MorphicTooltipProvider>
     </div>
-  );
+  )
 }
 
 function SidebarRailShell({
@@ -266,26 +269,26 @@ function SidebarRailShell({
   setFocused,
   toggleRef,
 }: Omit<SidebarRailProps, "expanded" | "onExpandedChange"> & {
-  expanded: boolean;
-  setExpanded: (next: boolean) => void;
-  setFocused: (next: boolean) => void;
-  toggleRef: RefObject<HTMLButtonElement | null>;
+  expanded: boolean
+  setExpanded: (next: boolean) => void
+  setFocused: (next: boolean) => void
+  toggleRef: RefObject<HTMLButtonElement | null>
 }) {
-  const context = useAnimatedSidebar();
-  const { triggerRef } = context;
-  const reduce = useReducedMotion();
-  const [internalSectionId, setSectionId] = useState(sections[0]?.id);
-  const [internalItemId, setItemId] = useState(defaultItemId);
-  const sectionId = activeSectionId ?? internalSectionId;
-  const itemId = activeItemId ?? internalItemId;
-  const [searchOpen, setSearchOpen] = useState(false);
-  const panelId = useId();
+  const context = useAnimatedSidebar()
+  const { triggerRef } = context
+  const reduce = useReducedMotion()
+  const [internalSectionId, setSectionId] = useState(sections[0]?.id)
+  const [internalItemId, setItemId] = useState(defaultItemId)
+  const sectionId = activeSectionId ?? internalSectionId
+  const itemId = activeItemId ?? internalItemId
+  const [searchOpen, setSearchOpen] = useState(false)
+  const panelId = useId()
   const section =
-    sections.find((entry) => entry.id === sectionId) ?? sections[0];
+    sections.find((entry) => entry.id === sectionId) ?? sections[0]
   const selectedItem = section?.groups
     .flatMap((group) => group.items)
-    .find((item) => item.id === itemId);
-  const groups = section?.groups ?? [];
+    .find((item) => item.id === itemId)
+  const groups = section?.groups ?? []
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -295,56 +298,65 @@ function SidebarRailShell({
         !(event.metaKey || event.ctrlKey) ||
         event.key.toLowerCase() !== "k"
       )
-        return;
+        return
       const modal =
         event.target instanceof Element
           ? event.target.closest(
-              '[aria-modal="true"]:not([data-mobile="true"])',
+              '[aria-modal="true"]:not([data-mobile="true"])'
             )
-          : null;
-      if (modal && !modal.querySelector('[data-slot="command"]')) return;
-      event.preventDefault();
-      setSearchOpen((open) => !open);
+          : null
+      if (modal && !modal.querySelector('[data-slot="command"]')) return
+      event.preventDefault()
+      setSearchOpen((open) => !open)
     }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [])
 
   function closePeek() {
-    setFocused(false);
+    setFocused(false)
   }
 
   function closeNavigation() {
-    context.setOpenMobile(false);
-    if (!expanded && !context.isMobile) closePeek();
+    context.setOpenMobile(false)
+    if (!expanded && !context.isMobile) closePeek()
   }
 
   function toggleExpanded() {
-    setExpanded(!expanded);
+    setExpanded(!expanded)
   }
 
   function selectItem(item: SidebarRailItem) {
-    if (!section) return;
-    setItemId(item.id);
-    onItemSelect?.(item, section);
-    if (section.collapseOnSelect) setExpanded(false);
+    if (!section) return
+    setItemId(item.id)
+    onItemSelect?.(item, section)
+    if (section.collapseOnSelect) setExpanded(false)
     if (!expanded && !context.isMobile) {
-      toggleRef.current?.focus({ preventScroll: true });
-      closePeek();
+      toggleRef.current?.focus({ preventScroll: true })
+      closePeek()
     }
   }
 
   function selectSearchItem(target: SidebarRailSection, item: SidebarRailItem) {
-    setSectionId(target.id);
-    setItemId(item.id);
-    onItemSelect?.(item, target);
-    if (target.collapseOnSelect) setExpanded(false);
-    setSearchOpen(false);
-    context.setOpenMobile(false);
+    setSectionId(target.id)
+    setItemId(item.id)
+    onItemSelect?.(item, target)
+    if (target.collapseOnSelect) setExpanded(false)
+    setSearchOpen(false)
+    context.setOpenMobile(false)
     if (!expanded && !context.isMobile) {
-      toggleRef.current?.focus({ preventScroll: true });
-      closePeek();
+      toggleRef.current?.focus({ preventScroll: true })
+      closePeek()
     }
+  }
+
+  function selectOverview(target: SidebarRailSection) {
+    setSectionId(target.id)
+    setItemId("")
+    if (onParentSelect) onParentSelect(target)
+    else onSectionSelect?.(target)
+    setSearchOpen(false)
+    closeNavigation()
   }
 
   const panelHeaderNode = (
@@ -377,25 +389,48 @@ function SidebarRailShell({
           <HugeiconsIcon icon={Cancel01Icon} aria-hidden="true" size={16} />
         </AnimatedSidebarClose>
       </div>
-      <Button
-        variant="ghost"
-        onClick={() => {
-          setItemId("new-page");
-          if (onCreate) setSectionId(sections[0]?.id);
-          onCreate?.();
-          context.setOpenMobile(false);
-          if (!expanded && !context.isMobile) {
-            toggleRef.current?.focus({ preventScroll: true });
-            closePeek();
-          }
-        }}
-        className="h-9 justify-start rounded-full px-2 text-foreground"
-      >
-        <HugeiconsIcon icon={PlusSignIcon} aria-hidden="true" size={16} />
-        {createLabel}
-      </Button>
+      <div className="flex flex-col gap-1">
+        <Button
+          variant="ghost"
+          onClick={() => {
+            setItemId("new-page")
+            if (onCreate) setSectionId(sections[0]?.id)
+            onCreate?.()
+            context.setOpenMobile(false)
+            if (!expanded && !context.isMobile) {
+              toggleRef.current?.focus({ preventScroll: true })
+              closePeek()
+            }
+          }}
+          className="h-9 justify-start rounded-full px-2 text-foreground"
+        >
+          <HugeiconsIcon icon={PlusSignIcon} aria-hidden="true" size={16} />
+          {createLabel}
+        </Button>
+        {sections
+          .filter((entry) => entry.overviewLabel)
+          .map((entry) => (
+            <Button
+              key={entry.id}
+              variant="ghost"
+              aria-current={
+                sectionId === entry.id && itemId === "" ? "page" : undefined
+              }
+              onClick={() => selectOverview(entry)}
+              className={cn(
+                "h-9 justify-start rounded-full px-2 text-muted-foreground hover:text-foreground",
+                sectionId === entry.id &&
+                  itemId === "" &&
+                  "bg-accent text-accent-foreground"
+              )}
+            >
+              <HugeiconsIcon icon={ListViewIcon} aria-hidden="true" size={16} />
+              {entry.overviewLabel}
+            </Button>
+          ))}
+      </div>
     </AnimatedSidebarHeader>
-  );
+  )
 
   return (
     <>
@@ -408,18 +443,18 @@ function SidebarRailShell({
         className="relative z-20 h-full shrink-0 max-md:w-16!"
         onFocusCapture={(event) => {
           if (!context.isMobile && event.target.matches(":focus-visible")) {
-            setFocused(true);
+            setFocused(true)
           }
         }}
         onBlurCapture={(event) => {
           if (!event.currentTarget.contains(event.relatedTarget))
-            setFocused(false);
+            setFocused(false)
         }}
         onKeyDown={(event) => {
           if (event.key === "Escape" && !expanded && !context.isMobile) {
-            event.preventDefault();
-            toggleRef.current?.focus({ preventScroll: true });
-            closePeek();
+            event.preventDefault()
+            toggleRef.current?.focus({ preventScroll: true })
+            closePeek()
           }
         }}
       >
@@ -428,8 +463,8 @@ function SidebarRailShell({
           className="relative z-30 flex h-full w-16 flex-col items-center gap-4 border-r border-sidebar-border bg-sidebar py-4"
         >
           {sections.map((entry) => {
-            const Icon = entry.icon;
-            const active = section?.id === entry.id;
+            const Icon = entry.icon
+            const active = section?.id === entry.id
             return (
               <MorphicTooltip
                 key={entry.id}
@@ -448,26 +483,30 @@ function SidebarRailShell({
                     (context.isMobile ? context.openMobile : context.open)
                   }
                   onClick={(event) => {
-                    setSectionId(entry.id);
-                    onSectionSelect?.(entry);
-                    if (entry.id !== section?.id && !entry.renderContent && entry.selectFirstItem !== false) {
-                      const firstItem = entry.groups[0]?.items[0];
+                    setSectionId(entry.id)
+                    onSectionSelect?.(entry)
+                    if (
+                      entry.id !== section?.id &&
+                      !entry.renderContent &&
+                      entry.selectFirstItem !== false
+                    ) {
+                      const firstItem = entry.groups[0]?.items[0]
                       if (firstItem) {
-                        setItemId(firstItem.id);
-                        onItemSelect?.(firstItem, entry);
+                        setItemId(firstItem.id)
+                        onItemSelect?.(firstItem, entry)
                       }
                     }
                     if (entry.collapseOnSelect) {
-                      context.setOpenMobile(false);
-                      setExpanded(false);
+                      context.setOpenMobile(false)
+                      setExpanded(false)
                     } else if (context.isMobile) {
-                      triggerRef.current = event.currentTarget;
-                      context.setOpenMobile(true);
-                    } else setExpanded(true);
+                      triggerRef.current = event.currentTarget
+                      context.setOpenMobile(true)
+                    } else setExpanded(true)
                   }}
                   className={cn(
                     iconButtonClass,
-                    active && "bg-accent text-accent-foreground",
+                    active && "bg-accent text-accent-foreground"
                   )}
                 >
                   <HugeiconsIcon
@@ -478,9 +517,12 @@ function SidebarRailShell({
                   />
                 </Button>
               </MorphicTooltip>
-            );
+            )
           })}
-          <div data-slot="sidebar-rail-footer" className="mt-auto flex flex-col items-center gap-3">
+          <div
+            data-slot="sidebar-rail-footer"
+            className="mt-auto flex flex-col items-center gap-3"
+          >
             {railActions}
             {railFooter === undefined ? (
               <MorphicTooltip
@@ -495,7 +537,7 @@ function SidebarRailShell({
                   onClick={onAccountClick}
                   className={cn(
                     iconButtonClass,
-                    "border border-border text-xs text-foreground",
+                    "border border-border text-xs text-foreground"
                   )}
                 >
                   {account.initials}
@@ -514,7 +556,7 @@ function SidebarRailShell({
           className="w-76 shadow-none md:absolute md:inset-y-0 md:left-16 md:w-auto"
           panelClassName={cn(
             "static h-full border-r border-sidebar-border bg-sidebar shadow-none",
-            !expanded && context.open && "bg-popover shadow-md",
+            !expanded && context.open && "bg-popover shadow-md"
           )}
         >
           {panelHeaderNode}
@@ -525,7 +567,7 @@ function SidebarRailShell({
               : groups.map((group) => (
                   <AnimatedSidebarGroup key={group.label} className="gap-2 p-0">
                     <div className="flex items-center gap-1 pr-1">
-                      <AnimatedSidebarGroupLabel className="min-w-0 flex-1 px-3 text-xs font-medium text-muted-foreground">
+                      <AnimatedSidebarGroupLabel className="mb-0 flex min-w-0 flex-1 items-center px-3 text-xs font-medium text-muted-foreground">
                         {group.label}
                       </AnimatedSidebarGroupLabel>
                       {group.action}
@@ -539,7 +581,7 @@ function SidebarRailShell({
                         className="flex w-full min-w-0 list-none flex-col gap-0.5"
                       >
                         {group.items.map((item) => {
-                          const Icon = item.icon;
+                          const Icon = item.icon
                           return (
                             <AnimatedSidebarMenuItem key={item.id}>
                               <AnimatedSidebarMenuButton
@@ -560,7 +602,7 @@ function SidebarRailShell({
                                 {item.label}
                               </AnimatedSidebarMenuButton>
                             </AnimatedSidebarMenuItem>
-                          );
+                          )
                         })}
                       </SharedLayoutBg>
                     </AnimatedSidebarGroupContent>
@@ -588,6 +630,26 @@ function SidebarRailShell({
         />
         <CommandList className="max-h-[min(24rem,60dvh)]">
           <CommandEmpty>没有找到页面。</CommandEmpty>
+          {sections.some((entry) => entry.overviewLabel) ? (
+            <CommandGroup heading="页面">
+              {sections
+                .filter((entry) => entry.overviewLabel)
+                .map((entry) => (
+                  <CommandItem
+                    key={entry.id}
+                    value={entry.overviewLabel}
+                    onSelect={() => selectOverview(entry)}
+                  >
+                    <HugeiconsIcon
+                      icon={ListViewIcon}
+                      aria-hidden="true"
+                      size={16}
+                    />
+                    <span>{entry.overviewLabel}</span>
+                  </CommandItem>
+                ))}
+            </CommandGroup>
+          ) : null}
           {sections.map((entry) =>
             entry.groups.map((group) => (
               <CommandGroup
@@ -595,7 +657,7 @@ function SidebarRailShell({
                 heading={`${entry.label} · ${group.label}`}
               >
                 {group.items.map((item) => {
-                  const Icon = item.icon;
+                  const Icon = item.icon
                   return (
                     <CommandItem
                       key={item.id}
@@ -613,10 +675,10 @@ function SidebarRailShell({
                       ) : null}
                       <span className="truncate">{item.label}</span>
                     </CommandItem>
-                  );
+                  )
                 })}
               </CommandGroup>
-            )),
+            ))
           )}
         </CommandList>
       </CommandDialog>
@@ -639,9 +701,9 @@ function SidebarRailShell({
               aria-expanded={context.isMobile ? context.openMobile : expanded}
               onClick={(event) => {
                 if (context.isMobile) {
-                  triggerRef.current = event.currentTarget;
-                  context.setOpenMobile(!context.openMobile);
-                } else toggleExpanded();
+                  triggerRef.current = event.currentTarget
+                  context.setOpenMobile(!context.openMobile)
+                } else toggleExpanded()
               }}
               className={iconButtonClass}
             >
@@ -656,7 +718,7 @@ function SidebarRailShell({
             data-slot="sidebar-rail-workspace-header"
             className={cn(
               "flex min-w-0 flex-1 items-center gap-3",
-              workspaceHeaderClassName,
+              workspaceHeaderClassName
             )}
           >
             {workspaceHeader === undefined ? (
@@ -685,7 +747,7 @@ function SidebarRailShell({
         <div
           className={cn(
             "min-h-0 flex-1 overflow-auto p-4 pt-6 sm:p-8 sm:pt-8",
-            contentClassName,
+            contentClassName
           )}
         >
           {children ?? (
@@ -711,5 +773,5 @@ function SidebarRailShell({
 
       {endPanel}
     </>
-  );
+  )
 }
