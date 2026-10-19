@@ -1,7 +1,7 @@
 import { chromium } from 'playwright-core';
 import { selectBrowserTarget } from './browser-target.mjs';
-import { httpUrl } from './input.mjs';
-import { RuntimeError } from './errors.mjs';
+import { httpUrl } from '../input.mjs';
+import { RuntimeError } from '../errors.mjs';
 
 export const emptyBrowser = () => ({ url: '', title: '浏览器未打开', status: 'empty', canGoBack: false, canGoForward: false });
 

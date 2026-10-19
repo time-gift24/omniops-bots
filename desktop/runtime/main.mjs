@@ -5,9 +5,10 @@ import { homedir } from 'node:os';
 import { createMcpCatalog, connectMcp } from './mcp.ts';
 import readline from 'node:readline';
 import { ChatOpenAI } from '@langchain/openai';
-import { embeddedBrowserConfig } from './browser-target.mjs';
-import { createBrowserService } from './browser.mjs';
-import { createScriptWorkspace } from './script-workspace.mjs';
+import { embeddedBrowserConfig } from './browser/browser-target.mjs';
+import { createBrowserService } from './browser/browser.mjs';
+import { createScriptWorkspace } from './browser/script-workspace.mjs';
+import { openSqliteCheckpointer } from './execution/sqlite.ts';
 import { createDesktopRuntime } from './runtime.mjs';
 import { createResources } from './resources.mjs';
 import { httpUrl } from './input.mjs';
@@ -27,8 +28,9 @@ const localRoot = process.env.OMNIOPS_BOTS_LOCAL_ROOT || join(homedir(), '.omnim
 const runsDir = join(localRoot, 'runs');
 const mcpCatalog = createMcpCatalog({ directory: join(localRoot, 'config') });
 const resources = createResources({ skillsDir: join(localRoot, 'skills'), agentsDir: join(localRoot, 'agents'), runsDir, mcpCatalog });
+const checkpoints = await openSqliteCheckpointer(join(localRoot, 'checkpoints.sqlite'));
 const runtime = await createDesktopRuntime({
-  browser, resources, runsDir, modelName, emit: send, redact,
+  browser, resources, runsDir, modelName, emit: send, redact, checkpointer: checkpoints.checkpointer,
   timeoutMs: process.env.OMNIOPS_BOTS_RUN_TIMEOUT_MS ? Number(process.env.OMNIOPS_BOTS_RUN_TIMEOUT_MS) : 300_000,
   workspaceFactory: session => createScriptWorkspace({ dataDir: session.directory, ensureBrowser: browser.ensure, signalEvent: send, redact }),
   modelFactory(model) {
@@ -50,7 +52,8 @@ function close(id) {
     const deadline = setTimeout(() => process.exit(1), 10_000);
     shutdown = Promise.resolve().then(async () => {
       input.close();
-      await runtime.close();
+      try { await runtime.close(); }
+      finally { await checkpoints.close(); }
       if (id !== undefined) send({ id, result: { stopped: true } });
       await new Promise(resolve => process.stdout.write(`${JSON.stringify({ event: 'exit' })}\n`, resolve));
       clearTimeout(deadline);

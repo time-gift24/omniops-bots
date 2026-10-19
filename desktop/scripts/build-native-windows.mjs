@@ -5,7 +5,7 @@ import { createReadStream, existsSync } from 'node:fs';
 import { cp, mkdir, open, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { delimiter, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { runtimeSourceFiles } from './prepare.mjs';
+import { runtimeSourceFiles, verifySqliteAddon } from './prepare.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const hostCrate = join(root, 'crates/omniops-bots-desktop');
@@ -121,10 +121,17 @@ async function verifyPackage() {
   const executable = join(release, 'omniops-bots-desktop.exe');
   const applicationDLL = join(resources, 'cef/omniops-bots-desktop.dll');
   const node = join(root, 'crates/omniops-bots-desktop/binaries', `omniops-bots-node-${target}.exe`);
+  const sqliteAddon = join(resources, 'runtime/node_modules/better-sqlite3/build/Release/better_sqlite3.node');
   const manifest = JSON.parse(await readFile(join(resources, 'runtime-manifest.json'), 'utf8'));
   assert.equal(manifest.browserMode, 'embedded');
   assert.equal(manifest.target, target);
   assert.equal(manifest.nodeSha256, await digest(node));
+  assert.equal(manifest.sqlite.platform, 'win32');
+  assert.equal(manifest.sqlite.arch, 'x64');
+  assert.equal(manifest.sqlite.nodeABI, '147');
+  assert.equal(manifest.sqlite.sha256, await digest(sqliteAddon));
+  verifySqliteAddon(await readFile(sqliteAddon), target);
+  if (process.platform === 'win32') assert.equal(manifest.sqlite.loadValidation, 'passed', 'Load the native SQLite addon with the bundled Windows Node before packaging');
   assert.equal(await digest(executable), await digest(join(cefPath, 'bootstrap.exe')), 'The launch EXE must remain the unmodified sandbox bootstrap');
   const applicationExports = execFileSync('llvm-readobj', ['--coff-exports', applicationDLL], { encoding: 'utf8', env });
   assert.match(applicationExports, /Name: RunWinMain\s/);
@@ -142,12 +149,13 @@ async function verifyPackage() {
   for (const name of ['combase.dll', 'shcore.dll', 'runtimeobject.dll']) requiresDelay.add(name);
   assert.ok(delayedImports.some(name => name.toLowerCase() === 'libcef.dll'), 'The sandbox client must delay-load libcef.dll');
   assert.deepEqual(ordinaryImports.filter(name => requiresDelay.has(name.toLowerCase())), [], 'CEF or UI libraries loaded before entering the renderer sandbox');
-  const runtimeImports = imports.filter(entry => /^(?:vcruntime|msvcp|msvcr\d|concrt|vcomp).*\.dll$/i.test(entry.name)).map(entry => entry.name);
+  const sqliteImports = [...execFileSync('llvm-readobj', ['--coff-imports', sqliteAddon], { encoding: 'utf8', env }).matchAll(/Import \{\s+Name: (.+)/g)].map(match => match[1].trim());
+  const runtimeImports = [...imports.map(entry => entry.name), ...sqliteImports].filter(name => /^(?:vcruntime|msvcp|msvcr\d|concrt|vcomp).*\.dll$/i.test(name));
   const stagedDLLs = new Set((await readdir(join(resources, 'cef'))).map(name => name.toLowerCase()));
   const missingRedistributableRuntimeDLLs = [...new Set(runtimeImports)].filter(name => !stagedDLLs.has(name.toLowerCase()));
   assert.deepEqual(missingRedistributableRuntimeDLLs, [], 'Bundle the non-system Visual C++ runtime DLLs required by the application');
   const machines = {};
-  for (const [name, path] of Object.entries({ launcher: executable, applicationDLL, node, cef: join(resources, 'cef/libcef.dll') })) {
+  for (const [name, path] of Object.entries({ launcher: executable, applicationDLL, node, sqliteAddon, cef: join(resources, 'cef/libcef.dll') })) {
     machines[name] = await peMachine(path);
     assert.equal(machines[name], '0x8664', `${name} must be x64`);
   }
@@ -160,21 +168,25 @@ async function verifyPackage() {
   for (const name of ['libcef.dll', 'omniops-bots-desktop.dll', 'icudtl.dat', 'CEF-LICENSE.txt', 'CEF-CREDITS.html']) assert.ok(bundledFiles.some(file => file.target === name), `NSIS must put ${name} beside the launch EXE`);
   assert.ok(bundledFiles.some(file => file.target === 'locales\\en-US.pak'));
   assert.ok(bundledFiles.some(file => file.target === 'runtime\\main.mjs'));
+  assert.ok(bundledFiles.some(file => file.target === 'runtime\\execution\\sqlite.ts'));
+  assert.ok(bundledFiles.some(file => file.target === 'runtime\\node_modules\\better-sqlite3\\build\\Release\\better_sqlite3.node'));
   assert.ok(bundledFiles.every(file => !/^browsers[\\/]/.test(file.target) && !/\.framework[\\/]|resources[\\/]windows[\\/]/.test(file.source)), 'Native installer contains an external Chromium or macOS payload');
   assert.ok(bundledFiles.every(file => !/(^|[\\/])(model\.env|[^\\/]*\.sqlite(?:-wal|-shm)?|dev-runtime-bridge\.mjs|test\.mjs)$/.test(file.target)), 'Native installer contains a local credential, database or development bridge');
   assert.match(nsis, /!define INSTALLWEBVIEW2MODE "offlineInstaller"/);
   assert.match(nsis, /MicrosoftEdgeWebView2RuntimeInstallerX64\.exe/);
   const sourceFiles = await runtimeSourceFiles(join(root, 'desktop/runtime'));
+  const installerFiles = new Set(bundledFiles.map(file => file.target));
+  for (const file of sourceFiles) assert.ok(installerFiles.has(`runtime\\${file.split(/[\\/]/).join('\\')}`), `NSIS is missing runtime module: ${file}`);
   assert.deepEqual(await runtimeSourceFiles(join(resources, 'runtime')), sourceFiles, 'Re-prepare added or removed runtime modules before packaging');
   const runtimeSourceMatchesStagedFiles = (await Promise.all(sourceFiles.map(async name => await digest(join(root, 'desktop/runtime', name)) === await digest(join(resources, 'runtime', name))))).every(Boolean);
   assert.ok(runtimeSourceMatchesStagedFiles, 'Re-prepare changed runtime source before packaging');
   const summary = {
     version: config.version, target, browserMode: 'embedded', builtOn: process.platform === 'win32' ? 'Windows x64' : 'macOS arm64 (cross compiled)',
     installer: installerPath, installerBytes: (await stat(installerPath)).size, installerSha256: await digest(installerPath), installerMachine: await peMachine(installerPath),
-    componentMachines: machines, nodeSha256MatchesManifest: true, runtimeSourceMatchesStagedFiles,
+    componentMachines: machines, nodeSha256MatchesManifest: true, runtimeSourceMatchesStagedFiles, sqlite: manifest.sqlite,
     cef: manifest.chromium, sandbox: { ...manifest.sandbox, windowsTokenValidation: 'not_run: requires Windows host or VM' }, launchExecutableMatchesUpstreamBootstrap: true, exportsRunWinMain: true,
     compatibleUnsignedBootstrapClientPair: true,
-    ordinaryImports, delayedImports, cefAndUILibrariesDelayLoaded: true, missingRedistributableRuntimeDLLs,
+    ordinaryImports, delayedImports, sqliteImports, cefAndUILibrariesDelayLoaded: true, missingRedistributableRuntimeDLLs,
     resourceSourceFiles: bundledFiles.length, cefResourcesBesideExecutable: true, localesSubdirectory: true,
     containsNoDuplicateExternalChromium: true, containsNoMacPayload: true, containsNoLocalModelConfigurationOrUserDatabases: true,
     offlineWebView2Installer: true, signed: false, windowsRuntimeValidation: 'not_run: requires Windows host or VM',

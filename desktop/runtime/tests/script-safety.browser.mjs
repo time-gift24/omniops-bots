@@ -5,8 +5,9 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { chromium } from 'playwright-core';
 import { ChatOpenAI } from '@langchain/openai';
-import { createScriptWorkspace } from '../script-workspace.mjs';
-import { createBrowserService } from '../browser.mjs';
+import { MemorySaver } from '@langchain/langgraph';
+import { createScriptWorkspace } from '../browser/script-workspace.mjs';
+import { createBrowserService } from '../browser/browser.mjs';
 import { createDesktopRuntime } from '../runtime.mjs';
 import { createResources } from '../resources.mjs';
 import { createModelFixture } from './model-fixture.mjs';
@@ -76,7 +77,7 @@ test('real CDP scripts retain source/hash, filesystem/process/network permission
 
     // Only the model is synthetic; LangGraph, immutable assembly and Playwright execute locally.
     const chat = [];
-    runtime = await createDesktopRuntime({ browser: service, workspace, resources: createResources({ homeDir: directory }), runsDir: join(directory, '.omnimind-ops/runs'), modelName: fixture.model, emit: event => chat.push(event), modelFactory: () => new ChatOpenAI({ model: fixture.model, apiKey: 'fixture-key', configuration: { baseURL: fixture.baseURL }, useResponsesApi: false, maxRetries: 0 }) });
+    runtime = await createDesktopRuntime({ browser: service, workspace, resources: createResources({ homeDir: directory }), runsDir: join(directory, '.omnimind-ops/runs'), checkpointer: new MemorySaver(), modelName: fixture.model, emit: event => chat.push(event), modelFactory: () => new ChatOpenAI({ model: fixture.model, apiKey: 'fixture-key', configuration: { baseURL: fixture.baseURL }, useResponsesApi: false, maxRetries: 0 }) });
     runtime.dispatch('chat_start', { runId: 'real-local', threadId: 'agent-test:local', request: { messages: [{ role: 'user', text: '填写本地搜索框，不提交' }] } });
     await until(() => runtime.getState().task === null);
     assert.equal(chat.some(event => event.state?.task?.phase === 'awaiting-approval'), false);

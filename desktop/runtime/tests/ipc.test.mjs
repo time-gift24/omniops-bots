@@ -36,6 +36,7 @@ test('JSONL entry returns structured safe errors, exact snapshots and clean shut
     assert.deepEqual(Object.keys(status).sort(), ['browser', 'browserRequest', 'simulated', 'task']);
     assert.equal(status.simulated, false);
     assert.deepEqual((await rpc('models_list')).result, []);
+    assert.equal((await rpc('run_get', { runId: 'missing' })).error.kind, 'invalid-request');
     const failure = await rpc('chat_start', { runId: 'test', threadId: 'test', request: { messages: [{ role: 'user', text: 'hello' }] } });
     assert.equal(failure.error.kind, 'unavailable');
     assert.equal(typeof failure.error.message, 'string');

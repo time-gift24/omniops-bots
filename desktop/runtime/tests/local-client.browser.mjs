@@ -56,7 +56,8 @@ async function mcpFixture() {
   } };
 }
 async function client(directory, endpoint, targetId, model) {
-  const child = spawn(process.execPath, ['main.mjs'], { cwd: new URL('..', import.meta.url), env: {
+  const child = spawn(process.env.OMNIOPS_BOTS_TEST_NODE_EXECUTABLE || process.execPath, ['main.mjs'], {
+    cwd: process.env.OMNIOPS_BOTS_TEST_RUNTIME_DIRECTORY || new URL('..', import.meta.url), env: {
     ...process.env, OMNIOPS_BOTS_DATA_DIR: join(directory, 'app'), OMNIOPS_BOTS_LOCAL_ROOT: join(directory, 'local'),
     OMNIOPS_BOTS_MODEL: model.model, OPENAI_API_KEY: 'local-model-private', OPENAI_BASE_URL: model.baseURL,
     OMNIOPS_BOTS_BROWSER_CDP_ENDPOINT: endpoint, OMNIOPS_BOTS_BROWSER_TARGET_ID: targetId, MCP_LOCAL_TOKEN: 'local-mcp-private',

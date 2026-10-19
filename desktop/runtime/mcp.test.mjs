@@ -224,3 +224,33 @@ test('invalid and colliding MCP tool names fail instead of silently replacing ca
     assert.deepEqual(duplicate.calls, []);
   } finally { await invalid.close(); await duplicate.close(); }
 });
+
+test('MCP tool effects use the node cancellation signal and retain one tracked close promise', async () => {
+  const server = await fixture({ slow: true });
+  const run = new AbortController(), node = new AbortController();
+  const cleanups = [];
+  let registered = false, connected;
+  const scope = {
+    defer(close) { cleanups.push(close); },
+    operation(nodeSignal, work) {
+      registered = true;
+      return work(AbortSignal.any([run.signal, nodeSignal]));
+    },
+  };
+  try {
+    connected = await connectMcp([server.config], { signal: run.signal, scope,
+      onTool(event) { if (event.type === 'start') assert.equal(registered, true); } });
+    const pending = connected.tools[0].invoke({ value: 8 }, { signal: node.signal });
+    const rejected = assert.rejects(pending, error => error.name === 'AbortError');
+    await server.entered.promise;
+    node.abort(new DOMException('Sibling failed', 'AbortError'));
+    await rejected;
+    assert.equal(run.signal.aborted, false, 'a handled node cancellation does not terminate its whole run');
+    assert.equal(cleanups.length, 1);
+    const closing = connected.close();
+    assert.equal(cleanups[0](), closing);
+    assert.equal(connected.close(), closing);
+    await closing;
+    await until(() => server.responses.size === 0);
+  } finally { server.release.resolve(); await connected?.close(); await server.close(); }
+});

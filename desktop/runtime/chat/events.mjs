@@ -3,6 +3,7 @@ export const contentText = content => typeof content === 'string' ? content : (c
 /** One output part per model message/tool call; callbacks and snapshots share IDs. */
 export function createChatEvents(emit) {
   const parts = new Map();
+  const streams = new Map();
   const put = (key, kind, name) => {
     if (!parts.has(key)) {
       const part = { partId: parts.size, kind, text: '', complete: false };
@@ -28,6 +29,23 @@ export function createChatEvents(emit) {
     if (done) complete(part, { type: 'tool-call', call: { callId: call.callId, name: call.name, inputText, ...(error ? { errorText: error } : { output: result }) } });
   }
   return {
+    protocol(event) {
+      if (event.method !== 'messages') return;
+      const data = event.params.data;
+      if (!data || typeof data !== 'object') return;
+      const key = JSON.stringify([event.params.namespace, data.run_id ?? 'default']);
+      if (data.event === 'message-start') {
+        streams.set(key, { id: data.id ?? `stream:${key}`, assistant: !data.role || ['ai', 'assistant'].includes(data.role) });
+      } else if (data.event === 'message-finish') {
+        streams.delete(key);
+      } else {
+        const stream = streams.get(key);
+        if (!stream?.assistant) return;
+        const text = data.event === 'content-block-delta' && data.delta?.type === 'text-delta' ? data.delta.text :
+          data.event === 'content-block-start' && data.content?.type === 'text' ? data.content.text : undefined;
+        if (typeof text === 'string' && text) this.token({ type: 'ai', id: stream.id, content: text });
+      }
+    },
     token(message) {
       if (!['ai', 'AIMessageChunk'].includes(message?.getType?.() ?? message?.type)) return;
       const text = contentText(message.content);

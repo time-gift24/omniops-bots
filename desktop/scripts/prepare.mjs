@@ -1,7 +1,8 @@
-import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { cp, lstat, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { dirname, join, resolve } from 'node:path';
+import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -27,11 +28,81 @@ export function verifyNodeArchive(bytes, checksums, filename) {
 }
 
 export async function runtimeSourceFiles(directory) {
-  return (await readdir(directory, { withFileTypes: true }))
-    .filter(entry => entry.isFile() && /\.(?:mjs|ts)$/.test(entry.name)
-      && !/(?:^|\.)(?:test|spec)\.(?:mjs|ts)$/.test(entry.name)
-      && entry.name !== 'dev-runtime-bridge.mjs')
-    .map(entry => entry.name).sort();
+  const files = [];
+  async function visit(relative = '') {
+    for (const entry of await readdir(join(directory, relative), { withFileTypes: true })) {
+      if (entry.name.startsWith('.') || /^(?:node_modules|tests?|__tests__|fixtures?|state|credentials|coverage|dist|build)$/.test(entry.name) || entry.isSymbolicLink()) continue;
+      const file = join(relative, entry.name);
+      if (entry.isDirectory()) await visit(file);
+      else if (entry.isFile() && /\.(?:mjs|ts)$/.test(entry.name)
+        && !/(?:^|\.)(?:test|spec)\.(?:mjs|ts)$/.test(entry.name)
+        && !/\.browser\.(?:mjs|ts)$/.test(entry.name)
+        && entry.name !== 'dev-runtime-bridge.mjs') files.push(file);
+    }
+  }
+  await visit();
+  return files.sort();
+}
+
+export async function stageRuntimeSources(source, destination) {
+  for (const file of [...await runtimeSourceFiles(source), 'package.json', 'package-lock.json']) {
+    if (!(await lstat(join(source, file))).isFile()) throw new Error(`Runtime source must be a regular file: ${file}`);
+    await mkdir(dirname(join(destination, file)), { recursive: true });
+    await cp(join(source, file), join(destination, file));
+  }
+}
+
+export function verifySqliteAddon(bytes, target) {
+  if (target === macTarget) {
+    if (bytes.readUInt32LE(0) !== 0xfeedfacf || bytes.readUInt32LE(4) !== 0x0100000c) throw new Error('SQLite addon must be Mach-O arm64');
+    return 'arm64';
+  }
+  if (target === windowsTarget) {
+    if (bytes.readUInt16LE(0) !== 0x5a4d) throw new Error('SQLite addon must be PE x64');
+    const offset = bytes.readUInt32LE(60);
+    if (bytes.readUInt32LE(offset) !== 0x4550 || bytes.readUInt16LE(offset + 4) !== 0x8664) throw new Error('SQLite addon must be PE x64');
+    return 'x64';
+  }
+  throw new Error(`Unsupported SQLite addon target: ${target}`);
+}
+
+export async function prepareSqliteAddon(staged, plan, executable, pinned) {
+  const require = createRequire(join(staged, 'package.json'));
+  const packagePath = require.resolve('better-sqlite3/package.json');
+  const packageDirectory = dirname(packagePath);
+  const platform = plan.windows ? 'win32' : 'darwin';
+  const arch = plan.windows ? 'x64' : 'arm64';
+  // Dependency lifecycle scripts stay disabled; only this pinned installer's download is run.
+  execFileSync(process.execPath, [require.resolve('prebuild-install/bin.js'), '--runtime=node', `--target=${pinned}`, `--platform=${platform}`, `--arch=${arch}`], { cwd: packageDirectory, stdio: 'inherit' });
+  const addon = join(packageDirectory, 'build/Release/better_sqlite3.node');
+  const bytes = await readFile(addon);
+  verifySqliteAddon(bytes, plan.target);
+  execFileSync(process.execPath, ['--input-type=module', '--eval', "await import('./runtime.mjs'); await import('./browser/browser.mjs'); await import('./browser/script-workspace.mjs');"], { cwd: staged, stdio: 'inherit' });
+  let loadValidation = 'not_run: requires Windows x64 host';
+  if (!plan.cross) {
+    execFileSync(executable, ['--input-type=module', '--eval', `
+      import { mkdtemp, rm } from 'node:fs/promises';
+      import { tmpdir } from 'node:os';
+      import { join } from 'node:path';
+      import assert from 'node:assert/strict';
+      import { emptyCheckpoint } from '@langchain/langgraph-checkpoint';
+      import { openSqliteCheckpointer } from './execution/sqlite.ts';
+      const directory = await mkdtemp(join(tmpdir(), 'omniops-sqlite-package-'));
+      try {
+        const path = join(directory, 'checkpoints.sqlite');
+        const config = { configurable: { thread_id: 'package-probe', checkpoint_ns: '' } };
+        const store = await openSqliteCheckpointer(path);
+        await store.checkpointer.put(config, emptyCheckpoint(), { source: 'input', step: -1, parents: {} }, {});
+        await store.close();
+        const reopened = await openSqliteCheckpointer(path);
+        try { assert.ok(await reopened.checkpointer.getTuple(config)); }
+        finally { await reopened.close(); }
+      } finally { await rm(directory, { recursive: true, force: true }); }
+    `], { cwd: staged, stdio: 'inherit' });
+    loadValidation = 'passed';
+  }
+  return { package: JSON.parse(await readFile(packagePath, 'utf8')).version, nodeABI: process.versions.modules,
+    platform, arch, sha256: createHash('sha256').update(bytes).digest('hex'), runtimeImportValidation: 'passed', loadValidation, persistentReopenValidation: loadValidation };
 }
 
 async function download(url) {
@@ -97,10 +168,7 @@ async function main() {
   const staged = join(resources, 'runtime');
   await rm(staged, { recursive: true, force: true });
   await mkdir(staged, { recursive: true });
-  // Only root runtime source and dependency manifests belong in the private sidecar.
-  for (const file of [...await runtimeSourceFiles(join(desktop, 'runtime')), 'package.json', 'package-lock.json']) {
-    await cp(join(desktop, 'runtime', file), join(staged, file), { recursive: true, dereference: true });
-  }
+  await stageRuntimeSources(join(desktop, 'runtime'), staged);
   const installArgs = ['ci', '--omit=dev', '--prefix', staged, '--ignore-scripts'];
   if (process.platform === 'win32') {
     const npmCli = process.env.npm_execpath || join(dirname(process.execPath), 'node_modules/npm/bin/npm-cli.js');
@@ -108,13 +176,17 @@ async function main() {
   } else {
     execFileSync('npm', installArgs, { stdio: 'inherit' });
   }
+  const sqlite = await prepareSqliteAddon(staged, plan, executable, pinned);
   const playwrightLicense = await readFile(join(staged, 'node_modules/playwright-core/LICENSE'), 'utf8');
-  await writeFile(join(resources, 'THIRD_PARTY_NOTICES.txt'), `Bundled Node.js ${pinned}\n\n${nodeLicense}\n\nPlaywright\n\n${playwrightLicense}\n\n${plan.windows ? 'CEF-LICENSE.txt and CEF-CREDITS.html accompany the native CEF DLLs beside the application executable.' : 'CEF and Chromium licenses accompany the framework in Contents/Frameworks/.'}\n`);
+  const sqliteLicense = await readFile(join(staged, 'node_modules/better-sqlite3/LICENSE'), 'utf8');
+  const saverLicense = await readFile(join(staged, 'node_modules/@langchain/langgraph-checkpoint-sqlite/LICENSE'), 'utf8');
+  await writeFile(join(resources, 'THIRD_PARTY_NOTICES.txt'), `Bundled Node.js ${pinned}\n\n${nodeLicense}\n\nPlaywright\n\n${playwrightLicense}\n\nbetter-sqlite3\n\n${sqliteLicense}\n\nLangGraph SQLite checkpoint saver\n\n${saverLicense}\n\n${plan.windows ? 'CEF-LICENSE.txt and CEF-CREDITS.html accompany the native CEF DLLs beside the application executable.' : 'CEF and Chromium licenses accompany the framework in Contents/Frameworks/.'}\n`);
   const manifest = {
     node: pinned,
     nodeSha256: createHash('sha256').update(await readFile(sidecar)).digest('hex'),
     playwright: JSON.parse(await readFile(join(staged, 'node_modules/playwright-core/package.json'), 'utf8')).version,
     deepagents: JSON.parse(await readFile('desktop/runtime/package.json', 'utf8')).dependencies.deepagents,
+    sqlite,
     browserMode: 'embedded',
     chromium: { cef: '154.0.34', version: '154.0.8037.98' },
     target: plan.target,

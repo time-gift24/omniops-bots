@@ -4,8 +4,9 @@ import { lstat, mkdir, readdir, readFile, realpath, rename, stat, writeFile } fr
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const runtimeDir = dirname(fileURLToPath(import.meta.url));
-const runnerPath = join(runtimeDir, 'script-runner.mjs');
+const browserDirectory = dirname(fileURLToPath(import.meta.url));
+const runtimeDir = dirname(browserDirectory);
+const runnerPath = join(browserDirectory, 'script-runner.mjs');
 const hash = code => createHash('sha256').update(code).digest('hex');
 const compact = run => run && ({ id: run.id, status: run.status, exitCode: run.exitCode, durationMs: run.durationMs, sha256: run.sha256 });
 

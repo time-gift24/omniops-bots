@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Tauri beforeBundle hook: stage signed CEF framework and sandbox helpers."""
 import json
+import hashlib
 import os
 import plistlib
 import shutil
 import subprocess
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 root = Path(__file__).resolve().parents[2]
 crate = root / 'crates/omniops-bots-desktop'
@@ -38,6 +40,27 @@ with entitlements.open('wb') as file:
 def sign(path, jit=False):
     extra = ['--entitlements', str(entitlements)] if jit else []
     run('codesign', '--force', '--sign', '-', '--options', 'runtime', *extra, str(path))
+
+node_sidecar = crate / 'binaries/omniops-bots-node-aarch64-apple-darwin'
+with TemporaryDirectory(prefix='omniops-node-sign-') as directory:
+    # Match Tauri's final filename and exact entitlements so its later signature is identical.
+    signed_node = Path(directory) / 'omniops-bots-node'
+    shutil.copy2(node_sidecar, signed_node)
+    run('codesign', '--force', '--sign', '-', '--options', 'runtime',
+        '--entitlements', str(crate / 'cef-entitlements.plist'), str(signed_node))
+    run('codesign', '--verify', '--strict', str(signed_node))
+    shutil.copy2(signed_node, node_sidecar)
+
+sqlite_addon = crate / 'resources/runtime/node_modules/better-sqlite3/build/Release/better_sqlite3.node'
+assert sqlite_addon.is_file(), 'Prepare the native SQLite addon before bundling.'
+sign(sqlite_addon)
+run('codesign', '--verify', '--strict', str(sqlite_addon))
+manifest_path = crate / 'resources/runtime-manifest.json'
+manifest = json.loads(manifest_path.read_text())
+manifest['nodeSha256'] = hashlib.sha256(node_sidecar.read_bytes()).hexdigest()
+manifest['sqlite']['sha256'] = hashlib.sha256(sqlite_addon.read_bytes()).hexdigest()
+manifest['sqlite']['adHocSigned'] = True
+manifest_path.write_text(json.dumps(manifest, indent=2) + '\n')
 
 for suffix in ('', ' (Alerts)', ' (GPU)', ' (Plugin)', ' (Renderer)'):
     name = binary + ' Helper' + suffix

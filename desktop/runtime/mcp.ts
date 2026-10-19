@@ -6,7 +6,8 @@ import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
 import { invalid, RuntimeError } from './errors.mjs';
-import { writeJson } from './run-store.ts';
+import { writeJson } from './json-store.mjs';
+import type { GraphScope } from './execution/index.ts';
 
 export type McpConfiguration = { id: string; name: string; description: string; url: string; credentialEnv?: string };
 type Capability = { name: string; description: string; params?: string };
@@ -58,17 +59,22 @@ export function createMcpCatalog({ directory }: { directory: string }) {
 }
 
 export async function connectMcp(configurations: readonly McpConfiguration[], {
-  signal, env = process.env, onTool = () => {}, redact = String,
-}: { signal: AbortSignal; env?: NodeJS.ProcessEnv; onTool?: (event: object) => void; redact?: (value: string) => string }) {
+  signal, scope, env = process.env, onTool = () => {}, redact = String,
+}: { signal: AbortSignal; scope?: GraphScope; env?: NodeJS.ProcessEnv; onTool?: (event: object) => void; redact?: (value: string) => string }) {
   const clients: Client[] = [];
   const tools: DynamicStructuredTool[] = [];
   const manifests: { id: string; url: string; tools: { name: string; sourceName: string; description?: string; inputSchema: Tool['inputSchema'] }[] }[] = [];
   const capabilities: { id: string; capabilities: { tools: Capability[]; resources: Capability[]; prompts: Capability[] } }[] = [];
   const names = new Set<string>();
   const options = { signal, timeout: 15_000 };
-  const close = async () => { signal.removeEventListener('abort', abort); await Promise.allSettled(clients.map(client => client.close())); };
+  let closing: Promise<void> | undefined;
+  const close = () => closing ??= (async () => {
+    signal.removeEventListener('abort', abort);
+    await Promise.allSettled(clients.map(client => client.close()));
+  })();
   const abort = () => { void close(); };
   signal.addEventListener('abort', abort, { once: true });
+  scope?.defer(close);
   try {
     for (const candidate of configurations) {
       signal.throwIfAborted();
@@ -104,22 +110,27 @@ export async function connectMcp(configurations: readonly McpConfiguration[], {
             name, description: definition.description || `${config.name}: ${definition.name}`, schema: definition.inputSchema,
             responseFormat: 'content_and_artifact',
             func: async (args, _manager, toolConfig) => {
-              signal.throwIfAborted();
-              const call = { callId: (toolConfig as { toolCall?: { id?: string } })?.toolCall?.id, name, args: sanitized(args) };
-              onTool({ type: 'start', ...call });
-              try {
-                const result = await client.callTool({ name: definition.name, arguments: args }, undefined, { signal, timeout: 60_000 });
-                if (JSON.stringify(result).length > 2 * 1024 * 1024) throw new Error('oversized MCP result');
-                const safe = sanitized(result);
-                const error = result.isError ? `MCP ${config.name} 工具执行失败。` : undefined;
-                onTool({ type: 'end', ...call, result: safe, error });
-                return [JSON.stringify(safe), { value: safe, executedArgs: call.args }];
-              } catch {
-                signal.throwIfAborted();
-                const error = `MCP ${config.name} 工具调用失败，请检查连接或服务状态。`;
-                onTool({ type: 'end', ...call, error });
-                return [JSON.stringify({ error }), { value: { error }, executedArgs: call.args }];
-              }
+              const nodeSignal = toolConfig?.signal ?? signal;
+              const execute = async (operationSignal: AbortSignal) => {
+                operationSignal.throwIfAborted();
+                const call = { callId: (toolConfig as { toolCall?: { id?: string } })?.toolCall?.id, name, args: sanitized(args) };
+                onTool({ type: 'start', ...call });
+                try {
+                  const result = await client.callTool({ name: definition.name, arguments: args }, undefined, { signal: operationSignal, timeout: 60_000 });
+                  if (JSON.stringify(result).length > 2 * 1024 * 1024) throw new Error('oversized MCP result');
+                  const safe = sanitized(result);
+                  const error = result.isError ? `MCP ${config.name} 工具执行失败。` : undefined;
+                  onTool({ type: 'end', ...call, result: safe, error });
+                  operationSignal.throwIfAborted();
+                  return [JSON.stringify(safe), { value: safe, executedArgs: call.args }];
+                } catch {
+                  operationSignal.throwIfAborted();
+                  const error = `MCP ${config.name} 工具调用失败，请检查连接或服务状态。`;
+                  onTool({ type: 'end', ...call, error });
+                  return [JSON.stringify({ error }), { value: { error }, executedArgs: call.args }];
+                }
+              };
+              return scope ? scope.operation(nodeSignal, execute) : execute(AbortSignal.any([signal, nodeSignal]));
             },
           }));
         }

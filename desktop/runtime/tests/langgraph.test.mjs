@@ -7,10 +7,12 @@ import { test } from 'node:test';
 import { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { AIMessage, HumanMessage } from '@langchain/core/messages';
 import { DynamicStructuredTool } from '@langchain/core/tools';
-import { MemorySaver } from '@langchain/langgraph';
+import { END, MemorySaver, MessagesAnnotation, START, StateGraph } from '@langchain/langgraph';
 import { z } from 'zod';
-import { createBrowserAgent } from '../langgraph.ts';
+import { createBrowserAgent } from '../graphs/browser-agent.ts';
 import { createResources } from '../resources.mjs';
+import { createExecution } from '../execution/index.ts';
+import { RuntimeError } from '../errors.mjs';
 
 // The real graph still binds and executes tools. Only model generation and the
 // external browser/MCP effects are replaced with deterministic local fixtures.
@@ -59,15 +61,23 @@ async function fixture(t, { skills = true, toolIds = ['inspect_browser'] } = {})
   };
   const mcp = new DynamicStructuredTool({ name: 'mcp_fixture_lookup', description: 'A selected MCP fixture.', schema: z.object({ key: z.string() }),
     func: async ({ key }) => { actions.push(['mcp', key]); return 'Verified MCP result'; } });
-  async function run(turns, { extraTools = [], snapshot: selectedSnapshot = snapshot, redact = String } = {}) {
+  async function run(turns, { extraTools = [], snapshot: selectedSnapshot = snapshot, redact = String, failure = false, signal, asSubgraph = false, checkpointer = new MemorySaver() } = {}) {
     const model = new ScriptedModel(turns);
-    const controller = new AbortController();
-    const built = createBrowserAgent({ model, signal: controller.signal, workspace, browser, snapshot: selectedSnapshot,
-      checkpointer: new MemorySaver(), extraTools, redact, onTool: event => events.push(event) });
-    const config = { configurable: { thread_id: randomUUID() }, signal: controller.signal, recursionLimit: 12 };
-    const result = await built.agent.invoke({ messages: [new HumanMessage('Exercise the selected capabilities.')] }, config);
-    await built.drain();
-    return { result, model, built, config };
+    const execution = await createExecution({ recordsDirectory: join(homeDir, 'runs', randomUUID()), checkpointer });
+    try {
+      const outcome = await execution.execute({
+        threadId: 'graph-test-session', runId: randomUUID(), timeoutMs: 15_000, signal,
+        prepare(scope) {
+          const agent = createBrowserAgent({ model, scope, workspace, browser, snapshot: selectedSnapshot,
+            extraTools, redact, onTool: event => events.push(event) });
+          const graph = asSubgraph ? new StateGraph(MessagesAnnotation).addNode('browser', agent.graph)
+            .addEdge(START, 'browser').addEdge('browser', END).compile({ checkpointer: scope.checkpointer }) : agent;
+          return { graph, input: { messages: [new HumanMessage('Exercise the selected capabilities.')] } };
+        },
+      });
+      if (!failure) assert.equal(outcome.ok, true, outcome.error?.message);
+      return { result: outcome.output, model, outcome };
+    } finally { await execution.close(); }
   }
   return { homeDir, resources, skill, write, created, snapshot, actions, events, browser, workspace, mcp, run };
 }
@@ -175,7 +185,7 @@ test('an empty capability selection exposes no filesystem or framework tools', a
   assert.deepEqual(f.actions, []);
 });
 
-test('known credentials are removed from successful and failed builtin results before the next model turn', async t => {
+test('a handled browser failure can be followed by success without exposing credentials to the next model turn', async t => {
   const f = await fixture(t);
   const secret = 'fixture-known-provider-credential';
   const redact = value => value.replaceAll(secret, '[redacted]');
@@ -183,10 +193,78 @@ test('known credentials are removed from successful and failed builtin results b
     if (url === 'https://failure.example/') throw new Error(`failed with ${secret}`);
     return { title: `Echoed ${secret}`, nested: { text: secret } };
   };
-  const { model, result } = await f.run([[call('inspect_browser'), call('inspect_browser', { url: 'https://failure.example/' }, 'failed')], []], { redact });
+  const { model, result } = await f.run([[call('inspect_browser', { url: 'https://failure.example/' }, 'failed')], [call('inspect_browser')], []], { redact });
+  assert.equal(model.inputs.length, 3, 'a handled browser failure allows the next explicitly selected browser action');
+  assert.match(resultById(result).get('inspect_browser').artifact.value.title, /Echoed \[redacted\]/u);
   assert.equal(JSON.stringify(result).includes(secret), false);
   assert.equal(JSON.stringify(model.inputs).includes(secret), false);
   assert.equal(JSON.stringify(f.events).includes(secret), false);
   assert.match(JSON.stringify(resultById(result).get('inspect_browser')), /\[redacted\]/u);
   assert.match(JSON.stringify(resultById(result).get('failed')), /\[redacted\]/u);
+});
+
+test('manual verification terminates the graph without another model turn or browser retry', async t => {
+  const f = await fixture(t);
+  f.browser.inspect = async () => { throw new RuntimeError('human-required', '本地验证需要人工操作。'); };
+  const { outcome, model } = await f.run([[call('inspect_browser')], [call('inspect_browser')]], { failure: true });
+  assert.equal(outcome.ok, false);
+  assert.equal(model.inputs.length, 1);
+  let error = outcome.error;
+  while (error && error.kind !== 'human-required') error = error.cause;
+  assert.equal(error?.kind, 'human-required');
+  assert.equal(f.events.at(-1).type, 'end');
+  assert.equal(f.events.at(-1).error, '本地验证需要人工操作。');
+});
+
+
+test('a real graph serializes simultaneous browser tool calls even when a model ignores parallel_tool_calls', async t => {
+  const f = await fixture(t), first = Promise.withResolvers(), release = Promise.withResolvers();
+  const order = [];
+  f.browser.inspect = async ({ url }) => {
+    order.push(`${url}:start`);
+    if (url === 'first') { first.resolve(); await release.promise; }
+    order.push(`${url}:end`);
+    return { title: url };
+  };
+  const pending = f.run([[call('inspect_browser', { url: 'first' }, 'one'), call('inspect_browser', { url: 'second' }, 'two')], []]);
+  try {
+    await first.promise;
+    await new Promise(resolve => setTimeout(resolve, 20));
+    assert.deepEqual(order, ['first:start']);
+  } finally { release.resolve(); }
+  await pending;
+  assert.deepEqual(order, ['first:start', 'first:end', 'second:start', 'second:end']);
+});
+
+
+test('browser agent remains a native subgraph with Skill initialization and checkpoint namespaces', async t => {
+  const f = await fixture(t), namespaces = [];
+  class Saver extends MemorySaver {
+    async put(config, ...args) { namespaces.push(config.configurable.checkpoint_ns); return super.put(config, ...args); }
+  }
+  const path = `${f.snapshot.skills[0].mountPath}/references/nested/evidence.txt`;
+  const { result, model } = await f.run([[call('read_file', { file_path: path })], []], { asSubgraph: true, checkpointer: new Saver() });
+  assert.match(JSON.stringify(resultById(result).get('read_file').content), /ORIGINAL_FIXED_REFERENCE_BYTES/u);
+  assert.match(JSON.stringify(model.inputs[0]), /fixed-reference|Read the nested immutable reference/u);
+  assert.ok(namespaces.includes(''));
+  assert.ok(namespaces.some(namespace => namespace.startsWith('browser:')));
+});
+
+
+test('fatal manual verification closes browser admission before a queued simultaneous tool can start', async t => {
+  const f = await fixture(t), order = [];
+  const reason = new RuntimeError('human-required', '已识别人工验证；本轮停止。');
+  f.browser.inspect = async ({ url }, signal) => {
+    order.push(`${url}:start:${signal.aborted}`);
+    if (url === 'first') throw reason;
+    return { title: 'This queued browser action must never start' };
+  };
+  const { outcome, model } = await f.run([[call('inspect_browser', { url: 'first' }, 'first'), call('inspect_browser', { url: 'second' }, 'second')], []], { failure: true });
+  assert.equal(outcome.ok, false);
+  assert.equal(outcome.error.kind, 'graph');
+  assert.equal(outcome.error.cause, reason, 'the explicit fatal reason wins over propagated cancellation');
+  assert.deepEqual(order, ['first:start:false']);
+  assert.equal(model.inputs.length, 1);
+  assert.deepEqual(f.events.map(event => [event.callId, event.type]), [['first', 'start'], ['first', 'end']]);
+  assert.equal(f.events.at(-1).error, reason.message);
 });

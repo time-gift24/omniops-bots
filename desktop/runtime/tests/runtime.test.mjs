@@ -2,16 +2,20 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createHash, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { chmod, lstat, mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
+import { chmod, lstat, mkdtemp, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { FakeToolCallingModel } from 'langchain';
+import { MemorySaver } from '@langchain/langgraph';
+import { openSqliteCheckpointer } from '../execution/sqlite.ts';
 import { createDesktopRuntime } from '../runtime.mjs';
 import { createResources } from '../resources.mjs';
-import { createRunStore, storageId, writeJson } from '../run-store.ts';
+import { createRunRecords } from '../execution/records.ts';
+import { storageId, writeJson } from '../json-store.mjs';
+import { chatRecord } from '../chat/adapter.mjs';
 import { chatInput, httpUrl } from '../input.mjs';
-import { embeddedBrowserConfig, selectBrowserTarget } from '../browser-target.mjs';
+import { embeddedBrowserConfig, selectBrowserTarget } from '../browser/browser-target.mjs';
 import { safeError } from '../errors.mjs';
 
 const call = (id, args = {}) => ({ id, name: 'inspect_browser', args });
@@ -59,29 +63,30 @@ async function fixture(t, toolCalls = [], options = {}) {
       return result;
     }
   }
-  let resources, runtime;
+  let resources, runtime, checkpoints;
   const settings = { modelName: 'fixture', timeoutMs: options.timeoutMs, ...options.runtime };
   async function open(overrides = {}) {
     Object.assign(settings, overrides);
     resources = createResources({ homeDir, runsDir });
-    runtime = await createDesktopRuntime({ browser, workspace, resources, runsDir, ...settings,
+    if (options.persistent) checkpoints = await openSqliteCheckpointer(join(homeDir, 'checkpoints.sqlite'));
+    runtime = await createDesktopRuntime({ browser, workspace, resources, runsDir, checkpointer: checkpoints?.checkpointer ?? new MemorySaver(), ...settings,
       modelFactory: name => { models.push(name); return new Model({ toolCalls: options.callsForRun?.(models.length) ?? toolCalls }); },
       emit: event => {
         events.push(event);
         if (event.event === 'chat_event' && ['completed', 'failed'].includes(event.data.type)) {
-          try { terminalRecords.push(JSON.parse(readFileSync(join(runsDir, '.records', `${storageId(event.runId)}.json`), 'utf8'))); }
+          try { terminalRecords.push(chatRecord(JSON.parse(readFileSync(join(runsDir, '.records', `${storageId(event.runId)}.json`), 'utf8')))); }
           catch (error) { terminalRecords.push(error); }
         }
       },
     });
   }
-  t.after(async () => { await runtime?.close(); await writable(homeDir); await rm(homeDir, { recursive: true, force: true }); });
+  t.after(async () => { await runtime?.close(); await checkpoints?.close(); await writable(homeDir); await rm(homeDir, { recursive: true, force: true }); });
   await open();
   const start = (id = 'run-1', extra = {}) => runtime.dispatch('chat_start', { runId: id, threadId: 'agent-test:test', request, ...extra });
   return {
-    get runtime() { return runtime; }, get resources() { return resources; },
+    get runtime() { return runtime; }, get resources() { return resources; }, get checkpoints() { return checkpoints; },
     homeDir, runsDir, events, inspected, navigated, models, modelInputs, terminalRecords, workspace, start,
-    async reopen(overrides) { await runtime.close(); await open(overrides); },
+    async reopen(overrides) { await runtime.close(); await checkpoints?.close(); await open(overrides); },
     async settled(id = 'run-1') { await until(() => runtime.getState().task === null); return runtime.dispatch('run_get', { runId: id }); },
   };
 }
@@ -120,6 +125,24 @@ test('tools execute without approval, busy owns the slot and completion is durab
     await f.runtime.dispatch('navigate', { url: 'example.com' });
     assert.deepEqual(f.navigated, [{ method: 'navigate', url: 'https://example.com/' }]);
   } finally { release.resolve(); }
+});
+
+test('chat uses persistent native checkpoints while every explicit continuation gets a fresh graph identity', async t => {
+  const f = await fixture(t, [], { persistent: true, callsForRun: index => index === 1 ? [[call('persistent-once')], []] : [] });
+  f.start('sqlite-first');
+  const first = await f.settled('sqlite-first');
+  assert.equal(first.status, 'completed', JSON.stringify(first.error));
+  assert.notEqual(first.graphThreadId, first.threadId);
+  const saved = await f.checkpoints.checkpointer.getTuple({ configurable: { thread_id: first.graphThreadId } });
+  assert.ok(saved.checkpoint.channel_values.messages.some(message => message.tool_call_id === 'persistent-once'));
+  await f.reopen();
+  const reopened = await f.checkpoints.checkpointer.getTuple({ configurable: { thread_id: first.graphThreadId } });
+  assert.equal(reopened.checkpoint.id, saved.checkpoint.id);
+  f.start('sqlite-continued');
+  const continued = await f.settled('sqlite-continued');
+  assert.equal(continued.status, 'completed', JSON.stringify(continued.error));
+  assert.notEqual(continued.graphThreadId, first.graphThreadId);
+  assert.equal(f.inspected.length, 1, 'saved graph tasks must never replay on continuation');
 });
 
 test('stop during preparation persists cancellation without invoking the model or browser', async t => {
@@ -210,6 +233,49 @@ test('a model failure after a completed operation preserves its request, evidenc
   assert.equal(f.inspected.length, 1, 'continuing the conversation must not replay the completed action');
 });
 
+test('history committed before an interrupted terminal record retains work and adds the later outcome once', async t => {
+  const requestText = 'BEFORE_TERMINAL_COMMIT', evidence = 'COMMITTED_ACTION';
+  const f = await fixture(t, [], { callsForRun: run => run === 1 ? [[call('committed-tool')], []] : [], inspect: async () => ({ receipt: evidence }) });
+  f.start('commit-gap', { request: { messages: [{ role: 'user', text: requestText }] } });
+  assert.equal((await f.settled('commit-gap')).status, 'completed');
+  await f.runtime.close();
+  const path = join(f.runsDir, '.records', `${storageId('commit-gap')}.json`);
+  const record = JSON.parse(await readFile(path, 'utf8'));
+  // A crash after history commit but before terminal commit leaves a running record.
+  record.status = 'running'; delete record.endedAt;
+  await writeJson(path, record);
+  await f.reopen();
+  f.start('after-commit-gap');
+  assert.equal((await f.settled('after-commit-gap')).status, 'completed');
+  const messages = f.modelInputs.at(-1);
+  assert.equal(messages.filter(message => message.getType() === 'human' && message.content === requestText).length, 1);
+  assert.equal(messages.filter(message => message.getType() === 'tool' && message.tool_call_id === 'committed-tool').length, 1);
+  const summaries = messages.filter(message => message.getType() === 'ai' && typeof message.content === 'string' && message.content.startsWith('运行时终止记录'));
+  assert.equal(summaries.length, 1);
+  assert.ok(summaries[0].content.includes('interrupted'));
+  assert.ok(summaries[0].content.includes(evidence));
+  assert.equal(f.inspected.length, 1);
+});
+
+test('history storage failure after an action reports storage and never suggests repeating the task', async t => {
+  let f;
+  f = await fixture(t, [[call('before-storage-failure')], []], { beforeGenerate: async ({ index }) => {
+    if (index !== 1) return;
+    const sessions = join(f.runsDir, '.sessions');
+    await rename(sessions, sessions + '-preserved');
+    await writeFile(sessions, 'blocked history directory');
+  } });
+  f.start('storage-failure');
+  const failed = await f.settled('storage-failure');
+  assert.equal(f.inspected.length, 1);
+  assert.equal(failed.status, 'failed');
+  assert.equal(failed.error.kind, 'storage');
+  assert.match(failed.error.message, /不要直接重跑/u);
+  const terminal = f.events.findLast(event => event.event === 'chat_event');
+  assert.equal(terminal.data.error.kind, 'storage');
+  assert.match(terminal.data.error.message, /不要直接重跑/u);
+});
+
 test('cancelling a later operation preserves completed evidence and marks the in-flight outcome unknown', async t => {
   const requestText = 'CANCELLED_REQUEST_CONTEXT_MARKER', evidence = 'CONFIRMED_BEFORE_CANCELLATION';
   const entered = Promise.withResolvers();
@@ -251,7 +317,7 @@ test('startup restores interrupted context from the last durable tool events wit
   const sessionFile = join(f.runsDir, '.sessions', `${storageId('agent-test:test')}.json`);
   const running = await until(async () => {
     const record = JSON.parse(await readFile(recordFile, 'utf8'));
-    const saved = JSON.stringify(record.events);
+    const saved = JSON.stringify(record.details.events);
     return saved.includes(evidence) && saved.includes('https://pending.example/') ? record : undefined;
   });
   assert.equal(running.status, 'running');
@@ -348,10 +414,10 @@ test('restart retains terminal results, marks unfinished runs interrupted and ne
   f.start('completed');
   const completed = await f.settled('completed');
   assert.equal(completed.status, 'completed', JSON.stringify(completed.error));
-  const records = await createRunStore(f.runsDir);
+  const records = await createRunRecords(f.runsDir);
   for (const status of ['preparing', 'running']) await records.save({
-    runId: status, threadId: `interrupted-${status}`, title: 'Interrupted fixture', status,
-    startedAt: new Date().toISOString(), inputMessages: [{ role: 'user', text: 'Do not replay.' }], events: [],
+    runId: status, threadId: `interrupted-${status}`, graphThreadId: `graph-${status}`, status,
+    startedAt: new Date().toISOString(), details: { title: 'Interrupted fixture', inputMessages: [{ role: 'user', text: 'Do not replay.' }], events: [] },
   });
   const calls = f.models.length, actions = f.inspected.length, events = f.events.length;
   await f.reopen();
