@@ -199,6 +199,16 @@
     }
 }
 
+#root[data-host="desktop"]::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  height: 1px;
+  background: var(--border);
+  pointer-events: none;
+  z-index: 100;
+}
+
 /* 减轻深色背景下白字的视觉膨胀；仅调整命名字重工具类，保留正文与局部字重。 */
 @layer base {
   .dark .font-medium {

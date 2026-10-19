@@ -146,6 +146,9 @@
     await until(() => visible(documentView()) && loadedText().includes("运行前检查。") && button("编辑"), "Opening a Skill must read SKILL.md in the original document layout")
     assert(documentView().querySelector('nav[aria-label="技能文件"]') && documentView().querySelector('[data-slot="document-actions"]'), "Default reading must retain the original file navigation and floating document actions")
     assert(!visible(fileManager()) && !textarea(), "Skill detail must start in reading mode, not the file manager or editor")
+    const readingShortcut = new KeyboardEvent("keydown", { key: "s", metaKey: true, bubbles: true, cancelable: true })
+    window.dispatchEvent(readingShortcut)
+    assert(!readingShortcut.defaultPrevented && !textarea(), "Reading mode must leave Cmd+S to the browser")
     click(button("编辑"))
     await until(textarea, "The reading page must offer source editing")
     const readingDraft = "# 阅读草稿\n\n切换列表后继续编辑。"

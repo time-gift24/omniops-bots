@@ -32,6 +32,7 @@ import { useScrollspy } from "@/components/premium/docs-pages/use-scrollspy"
 import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import { Button } from "@/components/motion/button"
 import { DocumentActions } from "@/components/markdown/document-actions"
+import { useSaveShortcut } from "@/hooks/use-save-shortcut"
 import { cn } from "@/lib/utils"
 import "@/components/premium/docs-pages/docs-article.css"
 import type {
@@ -119,25 +120,12 @@ export function AgentBuilder({
     window.addEventListener("beforeunload", warn)
     return () => window.removeEventListener("beforeunload", warn)
   }, [dirty])
-  useEffect(() => {
-    if (!active) return
-    const shortcut = (event: KeyboardEvent) => {
-      if (
-        event.defaultPrevented ||
-        !(event.metaKey || event.ctrlKey) ||
-        event.key.toLowerCase() !== "s"
-      )
-        return
-      if (
-        event.target instanceof Element &&
-        event.target.closest('[aria-modal="true"]')
-      )
-        return
-      event.preventDefault()
-      if (editing && !saving) void save()
-    }
-    window.addEventListener("keydown", shortcut)
-    return () => window.removeEventListener("keydown", shortcut)
+  useSaveShortcut({
+    active,
+    enabled: editing,
+    onSave: () => {
+      if (!saving) void save()
+    },
   })
 
   const updateSections = useCallback(

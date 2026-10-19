@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { useAppDependencies } from "@/app/dependencies"
 import { Button } from "@/components/ui/button"
+import { useSaveShortcut } from "@/hooks/use-save-shortcut"
 import type { Skill } from "@/skills/source"
 import { fileKey } from "@/skills/drafts"
 import { SkillDocument } from "./skill-document"
@@ -118,16 +119,10 @@ export function SkillScreen({
     return () => window.removeEventListener("beforeunload", warn)
   }, [unsaved])
 
-  useEffect(() => {
-    if (!active) return
-    const shortcut = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
-        event.preventDefault()
-        void save()
-      }
-    }
-    window.addEventListener("keydown", shortcut)
-    return () => window.removeEventListener("keydown", shortcut)
+  useSaveShortcut({
+    active,
+    enabled: editing,
+    onSave: () => void save(),
   })
 
   function selectFile(nextPath: string) {

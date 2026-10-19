@@ -255,7 +255,9 @@ export function createAssemblyStore({ agentsDir, runsDir, skillLibrary, tools, m
     if (options.experimentSkillId) {
       const experiment = await capture(options.experimentSkillId);
       if (experiment.skill.origin !== 'local') throw invalid('实验需要可编辑的本地 Skill 草稿。');
-      const matching = captured.flatMap((item, index) => item.skill.id === experiment.skill.id || item.skill.name === experiment.skill.name ? [index] : []);
+      const exact = captured.findIndex(item => item.skill.id === experiment.skill.id);
+      const name = metadata(experiment.entries).name.toLowerCase();
+      const matching = exact >= 0 ? [exact] : captured.flatMap((item, index) => metadata(item.entries).name.toLowerCase() === name ? [index] : []);
       if (matching.length > 1) throw invalid('模板中存在多个同名 Skill，无法确定实验替换项。');
       if (matching.length) captured[matching[0]!] = experiment;
       else captured.push(experiment);

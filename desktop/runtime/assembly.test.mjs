@@ -136,6 +136,26 @@ test('a draft experiment replaces its matching Skill for this session without mo
   assert.deepEqual(appended.agent.configuration.skillIds, [draft.id]);
 }));
 
+test('an official copy experiments against its entry name instead of its local display name', async () => fixture(async ({ homeDir, resources }) => {
+  const bytes = Buffer.from('---\nname: official-ops\ndescription: Immutable operations.\n---\nOriginal instructions.\n');
+  const contentId = packageContentId([{ path: 'SKILL.md', kind: 'file', bytes }]);
+  const directory = path.join(homeDir, '.omnimind-ops/skills/releases/official-ops', contentId);
+  await mkdir(directory, { recursive: true });
+  await writeFile(path.join(directory, 'SKILL.md'), bytes);
+  const originalId = `official/official-ops/${contentId}`;
+  const copy = await resources.handle('skill_library_copy', { id: originalId });
+  assert.notEqual(copy.name, 'official-ops');
+  assert.deepEqual(await readFile(path.join(homeDir, '.omnimind-ops/skills', copy.id, 'SKILL.md')), bytes);
+  await saveFile(resources, copy.id, 'SKILL.md', Buffer.from(bytes.toString().replace('Original instructions.', 'Experimental instructions.')));
+  const agent = await configured(resources, [originalId]);
+  const snapshot = await resources.prepareSession({ sessionId: 'official-copy-experiment', agentId: agent.id, experimentSkillId: copy.id });
+  assert.deepEqual(snapshot.agent.configuration.skillIds, [copy.id]);
+  assert.equal(snapshot.skills.length, 1);
+  assert.match(await readFile(physical(snapshot, 0, 'SKILL.md'), 'utf8'), /Experimental instructions\./u);
+  assert.deepEqual((await resources.getAgent(agent.id)).skillIds, [originalId]);
+  assert.deepEqual(await readFile(path.join(directory, 'SKILL.md')), bytes);
+}));
+
 test('invalid Skill metadata, duplicate names, symlinks and incomplete snapshots fail instead of dropping capabilities', async () => fixture(async ({ homeDir, resources }) => {
   const first = await skill(resources, 'same-name');
   const second = await skill(resources, 'same-name');

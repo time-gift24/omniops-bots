@@ -23,6 +23,7 @@ import {
 } from "lucide-react"
 import { useAppDependencies } from "@/app/dependencies"
 import { Button } from "@/components/ui/button"
+import { useSaveShortcut } from "@/hooks/use-save-shortcut"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   BookOpen01Icon,
@@ -198,16 +199,10 @@ function FilePreview({
       // The library displays the error; keep the current editor available for retry.
     }
   }
-  useEffect(() => {
-    if (!active) return
-    const shortcut = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
-        event.preventDefault()
-        void save()
-      }
-    }
-    window.addEventListener("keydown", shortcut)
-    return () => window.removeEventListener("keydown", shortcut)
+  useSaveShortcut({
+    active,
+    enabled: editing,
+    onSave: () => void save(),
   })
   const download = async () => {
     try {

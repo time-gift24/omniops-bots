@@ -12,7 +12,10 @@ import { createDemoAdapters } from "@/adapters/demo"
 import { Button } from "@/components/ui/button"
 import { loadInitialThemePreferences } from "@/preferences/theme"
 
-const root = createRoot(document.getElementById("root")!)
+const container = document.getElementById("root")!
+const isDesktop = "__TAURI_INTERNALS__" in window
+container.dataset.host = isDesktop ? "desktop" : "browser"
+const root = createRoot(container)
 let disposed = false
 let cleanup = () => {}
 
@@ -23,10 +26,9 @@ async function start() {
     </p>
   )
   try {
-    const tauri =
-      "__TAURI_INTERNALS__" in window
-        ? await (await import("@/adapters/tauri")).createTauriAdapters()
-        : undefined
+    const tauri = isDesktop
+      ? await (await import("@/adapters/tauri")).createTauriAdapters()
+      : undefined
     if (disposed) {
       tauri?.dispose()
       return
