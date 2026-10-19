@@ -48,6 +48,7 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  onEscapeKeyDown,
   ...props
 }: ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
@@ -62,6 +63,21 @@ function DialogContent({
           className,
         )}
         {...props}
+        onEscapeKeyDown={(event) => {
+          const options = event.target instanceof Element
+            ? event.target.closest('[data-slot="select-options"]')
+            : null;
+          const triggerId = options?.getAttribute("aria-labelledby");
+          const trigger = triggerId ? document.getElementById(triggerId) : null;
+          if (trigger instanceof HTMLButtonElement) {
+            // Radix captures Escape first; preventing it also skips Headless UI's handler.
+            event.preventDefault();
+            trigger.click();
+            trigger.focus();
+            return;
+          }
+          onEscapeKeyDown?.(event);
+        }}
       >
         {children}
         {showCloseButton ? (

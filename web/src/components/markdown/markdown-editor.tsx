@@ -7,7 +7,7 @@ import {
   type Ref,
 } from "react"
 import { Markdown } from "@/components/chat/markdown"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/motion/button"
 import { cn } from "@/lib/utils"
 
 export type MarkdownEditorMode = "source" | "preview" | "split"

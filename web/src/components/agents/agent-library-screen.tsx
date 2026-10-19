@@ -1,7 +1,8 @@
 import { useRef, useState } from "react"
 import { Bot, Copy, Plus, Search, X } from "lucide-react"
 import type { AgentEntry } from "@/agents/source"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/motion/button"
+import { Input } from "@/components/motion/input"
 import { cn } from "@/lib/utils"
 
 export type AgentLibraryScreenProps = {
@@ -84,30 +85,30 @@ export function AgentLibraryScreen({
               </Button>
             ))}
           </div>
-          <label className="flex w-full items-center gap-2 rounded-full border border-border px-3 focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/40 @min-[640px]/agents:w-64">
-            <Search
-              className="size-4 shrink-0 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <input
-              ref={search}
-              type="search"
-              name="agent-search"
-              autoComplete="off"
-              spellCheck={false}
-              className="h-9 min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-muted-foreground pointer-coarse:min-h-11"
-              aria-label="搜索 Agent"
-              placeholder="搜索 Agent…"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-            />
-            {query ? (
+          <Input
+            ref={search}
+            type="search"
+            name="agent-search"
+            autoComplete="off"
+            spellCheck={false}
+            aria-label="搜索 Agent"
+            placeholder="搜索 Agent…"
+            value={query}
+            onChange={setQuery}
+            className="w-full @min-[640px]/agents:w-64"
+            classNames={{
+              field: "h-9 pointer-coarse:min-h-11",
+              input: "text-[13px]",
+              rightIcon: "[&_button]:size-9 pointer-coarse:[&_button]:size-11",
+            }}
+            leftIcon={<Search className="size-4" aria-hidden="true" />}
+            rightIcon={query ? (
               <Button
                 type="button"
                 variant="ghost"
                 size="icon-sm"
                 aria-label="清除 Agent 搜索"
-                className="-mr-2 touch-manipulation rounded-full transition-colors pointer-coarse:size-11"
+                className="touch-manipulation rounded-full transition-colors pointer-coarse:size-11"
                 onClick={() => {
                   setQuery("")
                   search.current?.focus()
@@ -116,7 +117,7 @@ export function AgentLibraryScreen({
                 <X aria-hidden="true" />
               </Button>
             ) : null}
-          </label>
+          />
         </div>
         <p className="sr-only" role="status">
           {busy ? "正在处理 Agent…" : `找到 ${visible.length} 个 Agent`}

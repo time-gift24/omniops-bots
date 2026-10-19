@@ -66,6 +66,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     disabled,
     id: idProp,
     type,
+    "aria-describedby": describedBy,
     ...rest
   },
   ref,
@@ -103,7 +104,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
 
   return (
     <div
-      className={cn("flex flex-col gap-1.5", className, classNames?.root)}
+      className={cn("flex min-w-0 flex-col gap-1.5", className, classNames?.root)}
     >
       {label ? (
         <label
@@ -152,10 +153,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           ref={ref}
           id={id}
           type={type}
+          data-slot="input"
           value={value}
           disabled={disabled}
           aria-invalid={hasError || undefined}
-          aria-describedby={errorMessage ? `${id}-error` : undefined}
+          aria-describedby={
+            [describedBy, errorMessage ? `${id}-error` : undefined]
+              .filter(Boolean).join(" ") || undefined
+          }
           {...rest}
           onChange={(e) => handleChange(e.target.value)}
           onFocus={(event) => {
@@ -167,8 +172,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
             onBlur?.(event);
           }}
           className={cn(
-            "peer h-full w-full bg-transparent text-base leading-6 text-foreground caret-foreground outline-none",
-            "placeholder:text-muted-foreground/60",
+            "peer h-full w-full min-w-0 bg-transparent text-base leading-6 text-foreground caret-foreground outline-none",
+            "placeholder:text-muted-foreground",
             leftIcon ? "pl-10" : "pl-3.5",
             rightSlot || success ? "pr-10" : "pr-3.5",
             disabled && "cursor-not-allowed",

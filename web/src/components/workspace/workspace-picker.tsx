@@ -1,8 +1,8 @@
 import { useEffect, useId, useRef, useState, type RefObject } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Folder01Icon } from "@hugeicons-pro/core-stroke-rounded"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Button } from "@/components/motion/button"
+import { Input } from "@/components/motion/input"
 import {
   Dialog,
   DialogContent,
@@ -167,13 +167,14 @@ export function WorkspacePicker({
             id={inputId}
             value={path}
             disabled={busy}
-            onChange={(event) => {
-              setPath(event.target.value)
+            onChange={(value) => {
+              setPath(value)
               setError(null)
             }}
+            error={Boolean(error)}
             aria-invalid={Boolean(error)}
             aria-describedby={error ? `${inputId}-error` : undefined}
-            className="h-9"
+            classNames={{ field: "h-9", input: "text-sm" }}
             autoComplete="off"
           />
           <div className="grid gap-1">

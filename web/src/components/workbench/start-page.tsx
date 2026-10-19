@@ -1,3 +1,4 @@
+import { Button } from "@/components/motion/button"
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import {
   ArrowRight01Icon,
@@ -21,7 +22,7 @@ function ToolRow({
 }) {
   return (
     <li>
-      <button
+      <Button variant="plain" pressScale={1} whileHover={undefined}
         type="button"
         onClick={onClick}
         className="flex w-full items-center gap-2.5 rounded-full px-3 py-2 text-left outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
@@ -45,7 +46,7 @@ function ToolRow({
           aria-hidden="true"
           className="shrink-0 text-muted-foreground/60"
         />
-      </button>
+      </Button>
     </li>
   );
 }
@@ -58,7 +59,7 @@ function SiteTile({
   onOpen: (site: RecommendedSite) => void;
 }) {
   return (
-    <button
+    <Button variant="plain" pressScale={1} whileHover={undefined}
       type="button"
       onClick={() => onOpen(site)}
       className="flex min-w-0 items-center gap-2.5 rounded-xl border border-border bg-card px-3 py-2.5 text-left outline-none transition-colors hover:border-(--border-strong) focus-visible:ring-2 focus-visible:ring-ring"
@@ -75,7 +76,7 @@ function SiteTile({
           {site.url}
         </span>
       </span>
-    </button>
+    </Button>
   );
 }
 

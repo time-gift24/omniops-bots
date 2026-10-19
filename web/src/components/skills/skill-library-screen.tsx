@@ -22,7 +22,8 @@ import {
   X,
 } from "lucide-react"
 import { useAppDependencies } from "@/app/dependencies"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/motion/button"
+import { Input } from "@/components/motion/input"
 import { useSaveShortcut } from "@/hooks/use-save-shortcut"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
@@ -833,13 +834,15 @@ export function SkillLibraryScreen({
           className="flex items-start justify-between gap-4 border-b border-border bg-destructive/5 px-5 py-3 text-sm text-destructive"
         >
           <span>{error}</span>
-          <button
+          <Button
+            variant="ghost"
+            size="icon-xs"
             aria-label="关闭错误提示"
             onClick={() => setError("")}
-            className="rounded outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="shrink-0 text-inherit hover:text-inherit"
           >
             <X className="size-4" />
-          </button>
+          </Button>
         </div>
       ) : null}
       {notice ? (
@@ -848,13 +851,15 @@ export function SkillLibraryScreen({
           className="flex items-center justify-between gap-3 border-b border-border px-5 py-2 text-xs text-primary"
         >
           <span>{notice}</span>
-          <button
+          <Button
+            variant="ghost"
+            size="icon-xs"
             aria-label="关闭操作提示"
             onClick={() => setNotice("")}
-            className="rounded outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="shrink-0 text-inherit hover:text-inherit"
           >
             <X className="size-3.5" />
-          </button>
+          </Button>
         </div>
       ) : null}
       {!loaded ? (
@@ -906,37 +911,41 @@ export function SkillLibraryScreen({
                 <h2 className="text-sm font-medium">新建本地 Skill</h2>
               </div>
               <div className="mt-4 grid gap-4 md:grid-cols-2">
-                <label className="grid gap-2 text-xs font-medium">
-                  名称
-                  <input
-                    ref={nameInput}
-                    name="skill-name"
-                    autoComplete="off"
-                    className="skill-input"
-                    value={newName}
-                    onChange={(event) => setNewName(event.target.value)}
-                    placeholder="例如：生产环境巡检"
-                    maxLength={100}
-                    disabled={busy}
-                    pattern={".*\\S.*"}
-                    required
-                  />
-                </label>
-                <label className="grid gap-2 text-xs font-medium">
-                  说明
-                  <input
-                    name="skill-description"
-                    autoComplete="off"
-                    className="skill-input"
-                    value={newDescription}
-                    onChange={(event) => setNewDescription(event.target.value)}
-                    placeholder="这个 Skill 解决什么问题"
-                    maxLength={4096}
-                    disabled={busy}
-                    pattern={".*\\S.*"}
-                    required
-                  />
-                </label>
+                <Input
+                  ref={nameInput}
+                  label="名称"
+                  name="skill-name"
+                  autoComplete="off"
+                  classNames={{
+                    label: "text-xs",
+                    field: "h-9 bg-background",
+                    input: "text-[13px] font-normal",
+                  }}
+                  value={newName}
+                  onChange={setNewName}
+                  placeholder="例如：生产环境巡检"
+                  maxLength={100}
+                  disabled={busy}
+                  pattern={".*\\S.*"}
+                  required
+                />
+                <Input
+                  label="说明"
+                  name="skill-description"
+                  autoComplete="off"
+                  classNames={{
+                    label: "text-xs",
+                    field: "h-9 bg-background",
+                    input: "text-[13px] font-normal",
+                  }}
+                  value={newDescription}
+                  onChange={setNewDescription}
+                  placeholder="这个 Skill 解决什么问题"
+                  maxLength={4096}
+                  disabled={busy}
+                  pattern={".*\\S.*"}
+                  required
+                />
               </div>
             </form>
           ) : null}
@@ -962,19 +971,18 @@ export function SkillLibraryScreen({
                 </Button>
               ))}
             </div>
-            <label className="flex w-full items-center gap-2 rounded-full border border-border px-3 sm:w-64">
-              <Search className="size-4 text-muted-foreground" />
-              <input
-                type="search"
-                name="skill-search"
-                autoComplete="off"
-                className="h-9 min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-muted-foreground"
-                aria-label="搜索 Skill"
-                placeholder="搜索 Skill…"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-              />
-            </label>
+            <Input
+              type="search"
+              name="skill-search"
+              autoComplete="off"
+              className="w-full sm:w-64"
+              classNames={{ field: "h-9", input: "min-w-0 text-[13px]" }}
+              leftIcon={<Search aria-hidden="true" />}
+              aria-label="搜索 Skill"
+              placeholder="搜索 Skill…"
+              value={query}
+              onChange={setQuery}
+            />
           </div>
           <div className="skill-catalog-heading grid grid-cols-[minmax(0,1fr)_7rem_8rem_3rem] gap-3 border-b border-border px-3 pb-3 text-[11px] text-muted-foreground">
             <span>名称</span>

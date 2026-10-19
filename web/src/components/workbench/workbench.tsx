@@ -26,7 +26,7 @@ import {
   ReloadIcon,
   Search01Icon,
 } from "@hugeicons-pro/core-stroke-rounded"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/motion/button"
 import { ChatScreen } from "@/components/chat/chat-screen"
 import {
   DropdownMenu,
@@ -34,11 +34,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/components/ui/input-group"
+import { Input } from "@/components/motion/input"
 import { MorphicTooltip } from "@/components/premium/morphic-tooltip/morphic-tooltip"
 import { SPRING_PANEL } from "@/lib/ease"
 import { cn } from "@/lib/utils"
@@ -567,30 +563,31 @@ export function WorkbenchPanel({
                 navigate(draftUrl)
               }}
             >
-              <InputGroup className="h-8 rounded-full border-transparent bg-muted/70 has-disabled:opacity-100 has-[[data-slot=input-group-control]:focus-visible]:border-ring has-[[data-slot=input-group-control]:focus-visible]:bg-background">
-                <InputGroupAddon align="inline-start" className="pl-2.5">
+              <Input
+                leftIcon={
                   <HugeiconsIcon
                     icon={Search01Icon}
                     size={14}
                     aria-hidden="true"
                   />
-                </InputGroupAddon>
-                <InputGroupInput
-                  value={draftUrl}
-                  onChange={(event) =>
-                    setAddressDraft({
-                      tabId: activeId,
-                      threadId: browserThreadId,
-                      url: currentUrl,
-                      value: event.target.value,
-                    })
-                  }
-                  disabled={navigationDisabled}
-                  placeholder="输入网址"
-                  aria-label="地址栏"
-                  className="text-xs disabled:text-muted-foreground disabled:opacity-100"
-                />
-              </InputGroup>
+                }
+                value={draftUrl}
+                onChange={(value) =>
+                  setAddressDraft({
+                    tabId: activeId,
+                    threadId: browserThreadId,
+                    url: currentUrl,
+                    value,
+                  })
+                }
+                disabled={navigationDisabled}
+                placeholder="输入网址"
+                aria-label="地址栏"
+                classNames={{
+                  field: "h-9 border-transparent bg-muted/70 focus-within:border-ring focus-within:bg-background",
+                  input: "text-xs disabled:text-muted-foreground disabled:opacity-100",
+                }}
+              />
             </form>
             <DropdownMenu>
               <MorphicTooltip content="更多" side="bottom" align="end">

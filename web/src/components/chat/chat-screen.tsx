@@ -16,7 +16,7 @@ import {
   ChatThreadLoading,
   preloadChatThread,
 } from "@/components/chat/chat-thread-loading"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/motion/button"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { SPRING_PANEL } from "@/lib/ease"
 import type { ModelChoice } from "@/models/source"

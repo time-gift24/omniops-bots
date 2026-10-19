@@ -1,7 +1,7 @@
 import { useRef, useState } from "react"
 import type { AgentSource, McpConfiguration, McpServer } from "@/agents/source"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Button } from "@/components/motion/button"
+import { Input } from "@/components/motion/input"
 
 const empty = (): McpConfiguration => ({
   id: "",
@@ -168,21 +168,25 @@ export function McpManager({
               },
             ] as const
           ).map((field) => (
-            <label key={field.key} className="block space-y-1.5 text-xs">
-              {field.label}
-              <Input
-                value={form[field.key] ?? ""}
-                placeholder={field.placeholder}
-                required={"required" in field && field.required}
-                disabled={busy}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    [field.key]: event.target.value,
-                  }))
-                }
-              />
-            </label>
+            <Input
+              key={field.key}
+              label={field.label}
+              value={form[field.key] ?? ""}
+              placeholder={field.placeholder}
+              required={"required" in field && field.required}
+              disabled={busy}
+              classNames={{
+                label: "px-0 text-xs font-normal",
+                field: "h-8",
+                input: "px-2.5 text-sm",
+              }}
+              onChange={(value) =>
+                setForm((current) => ({
+                  ...current,
+                  [field.key]: value,
+                }))
+              }
+            />
           ))}
           <div className="flex gap-2">
             <Button size="sm" disabled={busy} type="submit">

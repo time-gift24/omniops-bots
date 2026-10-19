@@ -7,7 +7,7 @@ import {
 } from "@hugeicons-pro/core-stroke-rounded"
 import { HugeiconsIcon } from "@hugeicons/react"
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/motion/button"
 import type { ThreadDraft } from "@/chat/thread-store"
 import type {
   ApprovalRequest,

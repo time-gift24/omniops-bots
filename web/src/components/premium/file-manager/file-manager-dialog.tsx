@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useId, useRef, type FormEvent } from "react"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/motion/button"
+import { Input } from "@/components/motion/input"
 import type { SkillEntry } from "@/skills/library"
 import { nameOf } from "./file-manager-data"
 
@@ -76,32 +77,37 @@ export function FileManagerActionForm({
         </div>
       ) : (
         <div className="flex flex-wrap items-end gap-3">
-          <label className="grid min-w-0 flex-1 basis-48 gap-2 text-xs font-medium">
-            {action.kind === "rename"
-              ? `重命名 ${nameOf(action.entry.path)}`
-              : action.kind === "file"
-                ? "文件名称"
-                : "文件夹名称"}
-            <input
-              name="fileName"
-              autoComplete="off"
-              spellCheck={false}
-              aria-invalid={Boolean(error)}
-              aria-describedby={error ? errorId : undefined}
-              className="skill-input"
-              value={name}
-              onChange={(event) => onNameChange(event.target.value)}
-              placeholder={
-                action.kind === "file"
-                  ? "例如：README.md"
-                  : action.kind === "folder"
-                    ? "例如：references"
-                    : "输入新名称"
-              }
-              disabled={disabled}
-              required
-            />
-          </label>
+          <Input
+            label={
+              action.kind === "rename"
+                ? `重命名 ${nameOf(action.entry.path)}`
+                : action.kind === "file"
+                  ? "文件名称"
+                  : "文件夹名称"
+            }
+            name="fileName"
+            autoComplete="off"
+            spellCheck={false}
+            error={Boolean(error)}
+            aria-describedby={error ? errorId : undefined}
+            className="min-w-0 flex-1 basis-48"
+            classNames={{
+              label: "text-xs",
+              field: "h-9 bg-background",
+              input: "text-[13px] font-normal",
+            }}
+            value={name}
+            onChange={onNameChange}
+            placeholder={
+              action.kind === "file"
+                ? "例如：README.md"
+                : action.kind === "folder"
+                  ? "例如：references"
+                  : "输入新名称"
+            }
+            disabled={disabled}
+            required
+          />
           <Button
             type="submit"
             className="rounded-full"

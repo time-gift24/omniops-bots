@@ -9,7 +9,7 @@ import {
   createAppDependencies,
 } from "@/app/dependencies"
 import { createDemoAdapters } from "@/adapters/demo"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/motion/button"
 import { loadInitialThemePreferences } from "@/preferences/theme"
 
 const container = document.getElementById("root")!

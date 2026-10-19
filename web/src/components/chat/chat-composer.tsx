@@ -19,7 +19,7 @@ import {
 } from "@/components/premium/agent-chat-input/composition"
 import type { AgentChatCreditsLabels } from "@/components/premium/agent-chat-input/credits-labels"
 import type { AgentChatInputStatus } from "@/components/premium/agent-chat-input/types"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/motion/button"
 import { cn } from "@/lib/utils"
 import type { ModelChoice } from "@/models/source"
 
@@ -165,7 +165,7 @@ export function ChatComposer({
               {task ? (
                 <Button
                   size="icon"
-                  variant={ownsTask ? "secondary" : "default"}
+                  variant={ownsTask ? "secondary" : "primary"}
                   className="size-10 rounded-full"
                   aria-label={
                     ownsTask ? (stopping ? "正在停止任务" : "停止任务") : "发送"

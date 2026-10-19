@@ -20,7 +20,8 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/motion/button"
+import { Input } from "@/components/motion/input"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -78,6 +79,7 @@ export function FileManager({
   const [submitting, setSubmitting] = useState(false)
   const [dragging, setDragging] = useState(false)
   const input = useRef<HTMLInputElement>(null)
+  const searchInput = useRef<HTMLInputElement>(null)
   const manager = useRef<HTMLDivElement>(null)
   const createTrigger = useRef<HTMLButtonElement>(null)
   const actionOrigin = useRef<HTMLButtonElement | null>(null)
@@ -436,32 +438,37 @@ export function FileManager({
             <span className="text-xs text-muted-foreground">
               {visible.length} 项{query ? "匹配结果" : "内容"}
             </span>
-            <label className="flex w-full items-center gap-2 rounded-full border border-border px-3 sm:w-64">
-              <Search
-                className="size-3.5 text-muted-foreground"
-                aria-hidden="true"
-              />
-              <input
-                className="h-8 min-w-0 flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground"
-                aria-label="搜索当前目录"
-                name="fileSearch"
-                autoComplete="off"
-                spellCheck={false}
-                placeholder="搜索当前目录…"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-              />
-              {query ? (
-                <button
+            <Input
+              ref={searchInput}
+              className="w-full sm:w-64"
+              classNames={{
+                field: "h-8 pointer-coarse:h-11",
+                input: "min-w-0 text-xs",
+                rightIcon: "[&_button]:size-8 pointer-coarse:[&_button]:size-11",
+              }}
+              leftIcon={<Search aria-hidden="true" />}
+              rightIcon={query ? (
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon-sm"
                   aria-label="清除文件搜索"
-                  className="flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                  onClick={() => setQuery("")}
+                  onClick={() => {
+                    setQuery("")
+                    searchInput.current?.focus()
+                  }}
                 >
                   <X className="size-3.5" aria-hidden="true" />
-                </button>
-              ) : null}
-            </label>
+                </Button>
+              ) : undefined}
+              aria-label="搜索当前目录"
+              name="fileSearch"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder="搜索当前目录…"
+              value={query}
+              onChange={setQuery}
+            />
           </div>
           <div className="skill-file-table-heading grid grid-cols-[minmax(0,1fr)_7rem_5rem_2rem] items-center gap-3 border-b border-border pb-3 text-[11px] text-muted-foreground">
             <span>名称</span>

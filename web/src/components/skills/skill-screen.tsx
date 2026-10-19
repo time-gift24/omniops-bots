@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { useAppDependencies } from "@/app/dependencies"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/motion/button"
 import { useSaveShortcut } from "@/hooks/use-save-shortcut"
 import type { Skill } from "@/skills/source"
 import { fileKey } from "@/skills/drafts"

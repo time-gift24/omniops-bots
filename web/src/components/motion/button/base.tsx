@@ -18,8 +18,21 @@ import { EASE_OUT, SPRING_PRESS } from "@/lib/ease";
 import { useHoverCapable } from "@/lib/hooks/use-hover-capable";
 import { cn } from "@/lib/utils";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "outline";
-export type ButtonSize = "sm" | "md" | "lg" | "icon";
+export type ButtonVariant =
+  | "primary"
+  | "secondary"
+  | "ghost"
+  | "outline"
+  | "destructive";
+export type ButtonSize =
+  | "xs"
+  | "sm"
+  | "md"
+  | "lg"
+  | "icon"
+  | "icon-xs"
+  | "icon-sm"
+  | "icon-lg";
 
 export interface ButtonProps extends Omit<
   HTMLMotionProps<"button">,
@@ -51,13 +64,19 @@ const VARIANT_CLASS: Record<ButtonVariant, string> = {
   ghost: "text-muted-foreground hover:text-foreground hover:bg-muted/60",
   outline:
     "border border-border bg-transparent text-foreground hover:bg-muted/60",
+  destructive:
+    "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:ring-destructive/40",
 };
 
 const SIZE_CLASS: Record<ButtonSize, string> = {
+  xs: "h-6 px-2 text-xs gap-1 rounded-full",
   sm: "h-8 px-3 text-xs gap-1.5 rounded-full",
   md: "h-10 px-5 text-sm gap-2 rounded-full",
   lg: "h-12 px-6 text-base gap-2 rounded-full",
   icon: "h-8 w-8 rounded-lg",
+  "icon-xs": "size-6 p-0 rounded-full",
+  "icon-sm": "size-7 p-0 rounded-full",
+  "icon-lg": "size-9 p-0 rounded-full",
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -104,12 +123,16 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <motion.button
         ref={ref}
         type="button"
-        whileTap={reduce ? undefined : { scale: pressScale }}
+        data-slot="button"
+        data-variant={variant}
+        data-size={size}
+        // Popup triggers own Enter/Space; Motion's keyboard tap would toggle them twice.
+        whileTap={reduce || rest["aria-haspopup"] ? undefined : { scale: pressScale }}
         whileHover={reduce || !canHover ? undefined : { scale: 1.02 }}
         transition={SPRING_PRESS}
         onPointerDown={handlePointerDown}
         className={cn(
-          "inline-flex items-center justify-center font-medium select-none",
+          "inline-flex shrink-0 items-center justify-center font-medium select-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
           "transition-colors",
           "disabled:pointer-events-none disabled:opacity-50",
           ripple && "relative overflow-hidden",

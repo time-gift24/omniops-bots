@@ -12,7 +12,7 @@ import {
   Trash2,
 } from "lucide-react"
 import { useRef } from "react"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/motion/button"
 import {
   DropdownMenu,
   DropdownMenuContent,

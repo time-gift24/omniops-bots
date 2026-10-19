@@ -1,3 +1,4 @@
+import { Button } from "@/components/motion/button"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { FileTextIcon } from "@hugeicons-pro/core-stroke-rounded"
 import type {
@@ -44,7 +45,7 @@ function FileList({
     <ul className="space-y-0.5">
       {files.data.map((file) => (
         <li key={file.path}>
-          <button
+          <Button variant="plain" pressScale={1} whileHover={undefined}
             type="button"
             onClick={() => onOpenFile(file.path)}
             className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
@@ -65,7 +66,7 @@ function FileList({
             <span className="shrink-0 font-mono text-[11px] text-muted-foreground tabular-nums">
               {file.size}
             </span>
-          </button>
+          </Button>
         </li>
       ))}
     </ul>

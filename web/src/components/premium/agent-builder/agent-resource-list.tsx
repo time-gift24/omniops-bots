@@ -1,5 +1,7 @@
 "use client"
 
+import { Button } from "@/components/motion/button"
+
 import { HugeiconsIcon } from "@hugeicons/react"
 import { ArrowRight01Icon } from "@hugeicons-pro/core-stroke-rounded"
 import { Switch } from "@/components/motion/switch"
@@ -44,13 +46,13 @@ export function AgentResourceList({
           className="flex items-center justify-between gap-2 py-3 text-xs text-destructive"
         >
           <span className="break-all">资源不可用：{id}</span>
-          <button
+          <Button variant="plain" pressScale={1} whileHover={undefined}
             disabled={disabled}
             className="shrink-0 underline disabled:opacity-50"
             onClick={() => onToggle(id, false)}
           >
             移除
-          </button>
+          </Button>
         </li>
       ))}
       {resources.map((resource) => {
@@ -95,7 +97,7 @@ export function AgentResourceList({
             key={resource.id}
           >
             {onInspect ? (
-              <button
+              <Button variant="plain" pressScale={1} whileHover={undefined}
                 type="button"
                 onClick={() => onInspect(resource.id)}
                 className="group flex min-w-0 flex-1 items-center gap-2 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -109,7 +111,7 @@ export function AgentResourceList({
                   size={12}
                   className="shrink-0 text-muted-foreground opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
                 />
-              </button>
+              </Button>
             ) : (
               summary
             )}

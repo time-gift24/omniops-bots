@@ -30,7 +30,7 @@ import {
 } from "@/components/premium/docs-pages/docs-data"
 import { DocsMobileNav } from "@/components/premium/docs-pages/docs-mobile-nav"
 import { useScrollspy } from "@/components/premium/docs-pages/use-scrollspy"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/motion/button"
 import {
   CodeBlock,
   CodeBlockActions,

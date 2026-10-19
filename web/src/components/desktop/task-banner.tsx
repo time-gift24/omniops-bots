@@ -1,5 +1,5 @@
 import type { DesktopTask } from "@/desktop/runtime"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/motion/button"
 
 const labels: Record<DesktopTask["phase"], string> = {
   preparing: "正在准备运行",

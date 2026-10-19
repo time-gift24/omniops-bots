@@ -1,8 +1,8 @@
 import { useEffect, useId, useRef, useState } from "react"
 import { useAppDependencies } from "@/app/dependencies"
 import type { DesktopRuntime, DesktopSettings } from "@/desktop/runtime"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Button } from "@/components/motion/button"
+import { Input } from "@/components/motion/input"
 import { useBackendData } from "@/components/workbench/use-backend-data"
 
 export function ClientSettingsScreen() {
@@ -133,11 +133,13 @@ function SettingsForm({
           step={1}
           value={draft}
           disabled={saving}
+          error={invalid}
           aria-invalid={invalid}
           aria-describedby={`${id}-help ${id}-effective${invalid ? ` ${id}-invalid` : ""}`}
-          className="h-10 max-w-40 tabular-nums"
-          onChange={(event) => {
-            setDraft(event.target.value)
+          className="w-full max-w-40"
+          classNames={{ field: "h-10", input: "text-sm tabular-nums" }}
+          onChange={(value) => {
+            setDraft(value)
             setError("")
             setSuccess(false)
           }}

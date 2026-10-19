@@ -18,7 +18,7 @@ import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 import { Markdown } from "@/components/chat/markdown";
 import { ChainOfThought } from "@/components/chat/chain-of-thought";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/motion/button";
 import { Message, MessageContent, MessageFooter } from "@/components/ui/message";
 import {
   Tooltip,

@@ -35,7 +35,8 @@ import {
   type SidebarRailItem,
   type SidebarRailSection,
 } from "@/components/premium/sidebar-blocks/sidebar-rail"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/motion/button"
+import { Select } from "@/components/premium/select/select"
 import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import {
   CommandDialog,
@@ -1226,21 +1227,22 @@ function WorkspaceApp({
               在全新会话中使用此 Skill 的完整当前版本，已有会话的快照保持固定。
             </DialogDescription>
           </DialogHeader>
-          <label className="space-y-2 text-sm">
-            Agent
-            <select
-              aria-label="实验 Agent"
-              className="mt-2 h-10 w-full rounded-md border border-border bg-background px-3"
+          <div className="space-y-2 text-sm">
+            <p>Agent</p>
+            <Select
+              label="实验 Agent"
+              className="block w-full"
+              buttonClassName="w-full"
+              options={agents.map((agent) => ({
+                id: agent.id,
+                label: agent.configuration.name,
+              }))}
               value={experimentAgentId}
-              onChange={(event) => setExperimentAgentId(event.target.value)}
-            >
-              {agents.map((agent) => (
-                <option key={agent.id} value={agent.id}>
-                  {agent.configuration.name}
-                </option>
-              ))}
-            </select>
-          </label>
+              onValueChange={setExperimentAgentId}
+              disabled={!agents.length}
+              portal={false}
+            />
+          </div>
           {!agents.length ? (
             <p className="text-sm text-muted-foreground">
               请先创建一个本地 Agent。

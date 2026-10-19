@@ -5,7 +5,7 @@ import { cn } from "cn"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { AlertCircleIcon, CheckIcon, Copy01Icon } from "@hugeicons-pro/core-stroke-rounded"
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/motion/button"
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard"
 
 const codeBlockVariants = cva(

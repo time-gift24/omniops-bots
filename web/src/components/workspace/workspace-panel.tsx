@@ -5,7 +5,7 @@ import {
   Folder01Icon,
   PlusSignIcon,
 } from "@hugeicons-pro/core-stroke-rounded";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/motion/button";
 import { cn } from "@/lib/utils";
 import type {
   Workspace,

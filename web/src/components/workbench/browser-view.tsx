@@ -5,8 +5,8 @@ import type {
   DesktopTask,
   DesktopRuntime,
 } from "@/desktop/runtime"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Button } from "@/components/motion/button"
+import { Input } from "@/components/motion/input"
 import { useBrowserViewport } from "./use-browser-viewport"
 
 const taskLabels: Record<DesktopTask["phase"], string> = {
@@ -154,14 +154,13 @@ export function BrowserView({
               {browser.preview.text}
             </p>
             {browser.preview.field ? (
-              <label className="block space-y-2 pt-2 text-sm font-medium">
-                <span>{browser.preview.field.label}</span>
-                <Input
-                  readOnly
-                  value={browser.preview.field.value}
-                  className="bg-background font-normal"
-                />
-              </label>
+              <Input
+                label={browser.preview.field.label}
+                readOnly
+                value={browser.preview.field.value}
+                className="pt-2 font-normal"
+                classNames={{ field: "bg-background" }}
+              />
             ) : null}
           </article>
         ) : (

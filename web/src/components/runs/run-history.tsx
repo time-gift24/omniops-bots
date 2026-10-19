@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/motion/button"
 import type {
   RunRecord,
   RunSnapshot,
@@ -140,7 +140,7 @@ export function RunHistory({
           <ul className="divide-y divide-border">
             {records.map((run) => (
               <li key={run.runId}>
-                <button
+                <Button variant="plain" pressScale={1} whileHover={undefined}
                   className="flex w-full items-start justify-between gap-4 rounded-lg px-3 py-3 text-left hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
                   onClick={() => void inspect(run)}
                   aria-pressed={selected?.run.runId === run.runId}
@@ -156,7 +156,7 @@ export function RunHistory({
                   <span className="shrink-0 text-xs text-muted-foreground">
                     {statusLabels[run.status]}
                   </span>
-                </button>
+                </Button>
               </li>
             ))}
           </ul>

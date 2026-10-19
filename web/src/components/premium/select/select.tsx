@@ -85,7 +85,7 @@ export function Select({
             className={cn(
               "inline-flex h-10 min-w-40 items-center justify-between gap-2 rounded-full border border-border bg-background px-3 text-left font-medium text-foreground text-sm transition-colors",
               "hover:border-border-strong disabled:pointer-events-none disabled:opacity-50",
-              "outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 data-focus:outline-none data-focus:ring-0 data-open:ring-0",
+              "outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               buttonClassName,
             )}
           >
@@ -102,6 +102,7 @@ export function Select({
           </ListboxButton>
 
           <ListboxOptions
+            data-slot="select-options"
             transition
             portal={portal}
             anchor={
@@ -118,7 +119,7 @@ export function Select({
                 : undefined
             }
             className={cn(
-              "z-[120] overflow-hidden rounded-2xl border border-border-strong/50 bg-background p-1.5 backdrop-blur-xl",
+              "z-[120] max-h-72 overflow-y-auto rounded-2xl border border-border-strong/50 bg-background p-1.5 backdrop-blur-xl",
               "outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 data-focus:outline-none data-focus:ring-0",
               "transition duration-150 ease-out data-closed:scale-95 data-closed:opacity-0",
               side === "top" ? "origin-bottom" : "origin-top",
