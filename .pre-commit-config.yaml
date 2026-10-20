@@ -6,7 +6,7 @@ repos:
     hooks:
       # ------------------------------------------------------------------
       # Rust: formatting must stay STABLE — check-only mode, pinned via
-      # rust-toolchain.toml (1.98.1) + rustfmt.toml. Never auto-fix here,
+      # rust-toolchain.toml (1.92.0) + rustfmt.toml. Never auto-fix here,
       # so re-running hooks cannot introduce unrelated diff churn.
       # ------------------------------------------------------------------
       - id: cargo-fmt

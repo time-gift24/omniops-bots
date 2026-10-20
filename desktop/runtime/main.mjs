@@ -5,8 +5,8 @@ import { homedir } from 'node:os';
 import { createMcpCatalog, connectMcp } from './mcp.ts';
 import readline from 'node:readline';
 import { ChatOpenAI } from '@langchain/openai';
-import { embeddedBrowserConfig } from './browser/browser-target.mjs';
-import { createBrowserService } from './browser/browser.mjs';
+import { createChromeHost } from './browser/chrome-host.mjs';
+import { createBrowserService, createOperationsBrowser } from './browser/browser.mjs';
 import { createScriptWorkspace } from './browser/script-workspace.mjs';
 import { openSqliteCheckpointer } from './execution/sqlite.ts';
 import { createDesktopRuntime } from './runtime.mjs';
@@ -23,25 +23,18 @@ const key = process.env.OPENAI_API_KEY;
 const modelName = key && process.env.OMNIOPS_BOTS_MODEL || undefined;
 const redact = value => String(value).replaceAll(key || '\0', '[redacted]');
 const send = message => process.stdout.write(`${JSON.stringify(message)}\n`);
-const hostRequests = new Map();
-let nextHostRequest = 0;
-const browser = createBrowserService(embeddedBrowserConfig(process.env), (method, pageId) => new Promise((resolve, reject) => {
-  if (hostRequests.size >= 64) { reject(new RuntimeError('resource-limit', '浏览器请求已达上限，请稍后重试。')); return; }
-  const id = ++nextHostRequest;
-  const timer = setTimeout(() => {
-    hostRequests.delete(id);
-    reject(new RuntimeError('unavailable', '浏览器页面未能就绪，请重试。'));
-  }, 25_000);
-  hostRequests.set(id, { resolve, reject, timer });
-  send({ event: 'browser_host_request', id, method, pageId });
-}));
+const browser = createBrowserService(createChromeHost({ directory: join(dataDir, 'chrome') }));
+const operationsBrowser = createOperationsBrowser({
+  endpoint: process.env.OMNIOPS_BOTS_MANUAL_BROWSER_CDP_ENDPOINT,
+  targetId: process.env.OMNIOPS_BOTS_MANUAL_BROWSER_TARGET_ID,
+});
 const localRoot = process.env.OMNIOPS_BOTS_LOCAL_ROOT || join(homedir(), '.omnimind-ops');
 const runsDir = join(localRoot, 'runs');
 const mcpCatalog = createMcpCatalog({ directory: join(localRoot, 'config') });
 const resources = createResources({ skillsDir: join(localRoot, 'skills'), agentsDir: join(localRoot, 'agents'), runsDir, mcpCatalog });
 const checkpoints = await openSqliteCheckpointer(join(localRoot, 'checkpoints.sqlite'));
 const runtime = await createDesktopRuntime({
-  browser, resources, runsDir, modelName, emit: send, redact, checkpointer: checkpoints.checkpointer,
+  browser, operationsBrowser, resources, runsDir, modelName, emit: send, redact, checkpointer: checkpoints.checkpointer,
   timeoutMs: process.env.OMNIOPS_BOTS_RUN_TIMEOUT_MS ? Number(process.env.OMNIOPS_BOTS_RUN_TIMEOUT_MS) : 300_000,
   maxConcurrentRuns: process.env.OMNIOPS_BOTS_MAX_CONCURRENT_RUNS ? Number(process.env.OMNIOPS_BOTS_MAX_CONCURRENT_RUNS) : 4,
   settingsFile: join(dataDir, 'settings.json'),
@@ -81,16 +74,6 @@ input.on('line', line => {
   try {
     if (Buffer.byteLength(line) > 40 * 1024 * 1024) throw invalid('请求超过大小限制。');
     request = JSON.parse(line);
-    if (Number.isSafeInteger(request?.browserHostResponse)) {
-      const pending = hostRequests.get(request.browserHostResponse);
-      if (pending) {
-        hostRequests.delete(request.browserHostResponse);
-        clearTimeout(pending.timer);
-        if (request.error) pending.reject(new RuntimeError('unavailable', '浏览器页面操作失败，请重试。'));
-        else pending.resolve(request.result);
-      }
-      return;
-    }
     if (!request || !Number.isSafeInteger(request.id) || request.id < 0 || typeof request.method !== 'string') throw invalid('IPC 请求格式无效。');
   } catch (error) {
     send({ id: Number.isSafeInteger(request?.id) ? request.id : null, error: error instanceof RuntimeError ? safeError(error) : safeError(invalid('IPC 请求格式无效。')) });

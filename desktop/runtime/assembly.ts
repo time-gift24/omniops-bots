@@ -171,8 +171,8 @@ export function createAssemblyStore({ agentsDir, runsDir, skillLibrary, tools, m
     });
   };
   const defaultConfiguration: AgentConfiguration = {
-    name: '浏览器助手', description: '在内置浏览器中查阅信息并完成操作。',
-    instructions: '你是桌面浏览器助手。使用内置浏览器核实页面信息，按用户要求操作，并如实说明结果。',
+    name: '浏览器助手', description: '在专用 Chrome 中查阅信息并完成操作。',
+    instructions: '你是桌面浏览器助手。使用专用 Chrome 核实页面信息，按用户要求操作，并如实说明结果。',
     mcpServerIds: [], toolIds: tools.map(tool => tool.id), skillIds: [],
   };
   function entry(id: string, config: AgentConfiguration): AgentEntry {

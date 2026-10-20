@@ -1,13 +1,13 @@
-import { connectBrowserTarget, selectBrowserTarget } from './browser-target.mjs';
+import { browserTargetConfig, connectBrowserTarget, selectBrowserTarget } from './browser-target.mjs';
 import { httpUrl } from '../input.mjs';
 import { RuntimeError } from '../errors.mjs';
 
 export const emptyBrowser = () => ({ url: '', title: '浏览器未打开', status: 'empty', canGoBack: false, canGoForward: false });
 
 /** Each connection keeps its original target even when the UI selects another page. */
-function createPageService(config) {
+function createPageService(getConfig, name = 'Chrome', initialState = emptyBrowser()) {
   let connection, current, page, session, revision = 0;
-  let state = emptyBrowser();
+  let state = initialState;
   let publish = () => {};
   const update = patch => { state = { ...state, ...patch }; publish(state); };
 
@@ -23,8 +23,15 @@ function createPageService(config) {
   }
 
   async function ensure() {
+    if (page?.isClosed()) {
+      const stale = current;
+      connection = current = page = session = undefined;
+      revision++;
+      await stale?.close().catch(() => {});
+    }
     if (!connection) {
-      connection = connectBrowserTarget(config.endpoint, config.targetId).then(async browser => {
+      connection = Promise.resolve().then(getConfig).then(async config => {
+        const browser = await connectBrowserTarget(config.endpoint, config.targetId);
         try {
           const selected = await selectBrowserTarget(browser, config.targetId);
           current = browser;
@@ -45,11 +52,12 @@ function createPageService(config) {
         } catch (error) { await browser.close().catch(() => {}); throw error; }
       }).catch(error => {
         connection = undefined;
-        throw Object.assign(new RuntimeError('unavailable', '内置浏览器尚未就绪或目标页面已关闭，请重新打开应用。'), { cause: error });
+        if (error instanceof RuntimeError) throw error;
+        throw Object.assign(new RuntimeError('unavailable', `${name} 尚未就绪或目标页面已关闭，请重试。`), { cause: error });
       });
     }
     const result = await connection;
-    if (result.page.isClosed()) throw new RuntimeError('unavailable', '内置浏览器页面已关闭，请重新打开应用。');
+    if (result.page.isClosed()) throw new RuntimeError('unavailable', `${name} 页面已关闭，请重试。`);
     return result;
   }
 
@@ -125,10 +133,26 @@ function createPageService(config) {
   };
 }
 
+/** Manual operations use only the native host's fixed page, never an Agent's Chrome page. */
+export function createOperationsBrowser(config) {
+  let validated;
+  try { validated = browserTargetConfig(config ?? {}); } catch { /* An unavailable manual host must not prevent Agent chat. */ }
+  const configured = Boolean(validated);
+  const message = '运维浏览器尚未就绪，请在桌面端打开运维浏览器。';
+  const service = createPageService(() => {
+    if (!configured) throw new RuntimeError('unavailable', message);
+    return validated;
+  }, '运维浏览器', configured ? emptyBrowser() : { ...emptyBrowser(), status: 'error', error: message });
+  const { getState, subscribe, navigation, close } = service;
+  return { getState, subscribe, navigation, close, async refresh() {
+    if (configured) { await service.ensure(); await service.refresh(); }
+  } };
+}
+
 /** A thread owns a page; changing the visible page never changes a run's binding. */
-export function createBrowserService(config, host) {
+export function createBrowserService(host) {
   const pages = new Map();
-  const manual = createPageService(config);
+  const manual = createPageService(() => host.request('create', '__manual__'));
   let selected = null, publish = () => {}, selecting = Promise.resolve(), closed = false, closePromise;
   manual.subscribe(state => { if (selected === null) publish(state); });
 
@@ -137,29 +161,18 @@ export function createBrowserService(config, host) {
     if (threadId === null) return manual;
     if (threadId === '__manual__') throw new RuntimeError('invalid-request', '会话编号为浏览器保留编号。');
     if (pages.has(threadId)) return pages.get(threadId);
-    let pending, service, attempted = false;
-    const get = () => pending ??= Promise.resolve().then(async () => {
+    let attempted = false;
+    const service = createPageService(() => {
       attempted = true;
-      const connection = await host('create', threadId);
-      service = createPageService(connection);
-      service.subscribe(state => { if (selected === threadId) publish(state); });
-      return service;
-    }).catch(error => {
-      pending = undefined;
-      throw error;
+      return host.request('create', threadId);
     });
+    service.subscribe(state => { if (selected === threadId) publish(state); });
     const page = {
-      getState: () => service?.getState() ?? emptyBrowser(),
-      ensure: async () => (await get()).ensure(),
-      inspect: async (input, signal) => (await get()).inspect(input, signal),
-      assertAutomationReady: async () => (await get()).assertAutomationReady(),
-      refresh: async () => { if (pending) await (await pending).refresh(); },
-      navigation: async (method, url) => (await get()).navigation(method, url),
-      stop: async () => { if (pending) await (await pending).stop(); },
+      ...service,
       async close() {
         if (!attempted) return;
-        try { if (pending) await (await pending).close(); }
-        finally { await host('release', threadId); }
+        try { await service.close(); }
+        finally { await host.request('release', threadId); }
       },
     };
     pages.set(threadId, page);
@@ -176,13 +189,17 @@ export function createBrowserService(config, host) {
     inspect: (input, signal) => current().inspect(input, signal),
     assertAutomationReady: () => current().assertAutomationReady(),
     refresh: () => current().refresh(),
-    async select(threadId) {
+    async select(threadId, { focus = false } = {}) {
       if (closed) throw new RuntimeError('unavailable', '浏览器已关闭。');
       const work = selecting.catch(() => {}).then(async () => {
-        if (threadId !== null) await forThread(threadId).ensure();
-        await host('select', threadId ?? '__manual__');
+        const page = forThread(threadId);
+        if (focus) {
+          await page.ensure();
+          await host.request('select', threadId ?? '__manual__');
+        }
         selected = threadId;
-        publish(current().getState());
+        await page.refresh();
+        publish(page.getState());
       });
       selecting = work;
       return work;
@@ -194,11 +211,11 @@ export function createBrowserService(config, host) {
       closePromise = (async () => {
         await selecting.catch(() => {});
         const errors = [];
-        // Retained threads may outnumber the host's bounded IPC request capacity.
         for (const page of pages.values()) {
           try { await page.close(); } catch (error) { errors.push(error); }
         }
         await manual.close();
+        await host.close();
         if (errors.length) throw errors[0];
       })();
       return closePromise;

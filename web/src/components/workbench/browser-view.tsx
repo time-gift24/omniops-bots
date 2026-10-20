@@ -1,13 +1,8 @@
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Globe02Icon } from "@hugeicons-pro/core-stroke-rounded"
-import type {
-  BrowserSnapshot,
-  DesktopTask,
-  DesktopRuntime,
-} from "@/desktop/runtime"
+import type { BrowserSnapshot, DesktopTask } from "@/desktop/runtime"
 import { Button } from "@/components/motion/button"
 import { Input } from "@/components/motion/input"
-import { useBrowserViewport } from "./use-browser-viewport"
 
 const taskLabels: Record<DesktopTask["phase"], string> = {
   preparing: "准备中",
@@ -45,7 +40,7 @@ export function BrowserTaskStatus({
           {task.approval.targetUrl}
         </p>
       ) : null}
-      <p className="mt-1.5 text-muted-foreground">任务结束后可手动浏览。</p>
+      <p className="mt-1.5 text-muted-foreground">Agent 正在使用当前浏览器页面。</p>
       {task.phase === "awaiting-approval" && onReturnToApproval ? (
         <Button
           variant="outline"
@@ -65,28 +60,14 @@ export function BrowserView({
   simulated,
   canRetry,
   onRetry,
-  visible = true,
-  interactive = true,
-  browserThreadId = null,
-  setBrowserViewport,
+  onShowChrome,
 }: {
   browser: BrowserSnapshot
   simulated: boolean
   canRetry: boolean
   onRetry: () => void
-  visible?: boolean
-  interactive?: boolean
-  browserThreadId?: string | null
-  setBrowserViewport?: DesktopRuntime["setBrowserViewport"]
+  onShowChrome?: () => void
 }) {
-  const { ref: viewportRef, error: viewportError } = useBrowserViewport(
-    visible &&
-      !simulated &&
-      (browser.status === "ready" || browser.status === "loading"),
-    interactive,
-    simulated ? undefined : setBrowserViewport,
-    browserThreadId
-  )
   return (
     <section
       aria-label="浏览器页面"
@@ -95,25 +76,35 @@ export function BrowserView({
     >
       <div className="flex min-w-0 shrink-0 items-center gap-2 border-b border-border px-4 py-2.5 text-xs text-muted-foreground">
         <HugeiconsIcon icon={Globe02Icon} size={14} aria-hidden="true" />
-        <span className="shrink-0">{simulated ? "模拟浏览器" : "浏览器"}</span>
+        <span className="shrink-0">{simulated ? "模拟浏览器" : "Chrome"}</span>
         {browser.title ? (
           <span className="min-w-0 truncate" title={browser.title}>
             {browser.title}
           </span>
         ) : null}
       </div>
-      <div ref={viewportRef} className="min-h-0 flex-1 overflow-auto px-5 py-7">
-        {viewportError ? (
-          <p role="alert" className="text-sm text-muted-foreground">
-            {viewportError}
-          </p>
-        ) : !simulated && browser.status === "ready" ? null : browser.status ===
-          "empty" ? (
-          <div className="mx-auto flex h-full max-w-64 flex-col justify-center gap-2 pb-10 text-center">
-            <h2 className="text-base font-medium">浏览器已就绪</h2>
+      <div className="min-h-0 flex-1 overflow-auto px-5 py-7">
+        {!simulated && browser.status !== "error" ? (
+          <div className="mx-auto flex h-full max-w-64 flex-col items-center justify-center gap-3 pb-10 text-center">
+            <h2 className="text-base font-medium">
+              {browser.status === "loading"
+                ? "正在加载页面…"
+                : browser.status === "empty"
+                  ? "浏览器已就绪"
+                  : "页面已在 Chrome 中打开"}
+            </h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              在地址栏输入网址，或启动浏览器任务后，在这里查看页面。
+              Agent 在独立的 Chrome 窗口中操作，你也可以直接操作该窗口。
             </p>
+            {onShowChrome ? (
+              <Button variant="outline" size="sm" onClick={onShowChrome}>
+                显示 Chrome
+              </Button>
+            ) : null}
+          </div>
+        ) : browser.status === "empty" ? (
+          <div className="mx-auto flex h-full max-w-64 flex-col justify-center pb-10 text-center">
+            <h2 className="text-base font-medium">浏览器已就绪</h2>
           </div>
         ) : browser.status === "loading" ? (
           <div role="status" className="space-y-5">
@@ -133,7 +124,7 @@ export function BrowserView({
             <div role="alert" className="space-y-2">
               <h2 className="text-base font-medium">页面未能打开</h2>
               <p className="text-sm leading-relaxed break-words text-muted-foreground">
-                {browser.error ?? "暂时无法显示这个页面，请重试。"}
+                {browser.error ?? "页面未能加载，请重试。"}
               </p>
             </div>
             <Button

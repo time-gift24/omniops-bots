@@ -40,11 +40,13 @@ export interface DesktopSnapshot {
   simulated: boolean
   /** Active runs across all threads. Older demo adapters expose only task. */
   tasks?: DesktopTask[]
-  /** Thread owning the visible page; null selects the manual browser page. */
+  /** Thread owning the selected Chrome page; null selects the manual browser page. */
   browserThreadId?: string | null
   /** Active task on the selected browser page. */
   task: DesktopTask | null
   browser: BrowserSnapshot
+  /** Manual operations page, independent of Agent Chrome and its active thread. */
+  operationsBrowser?: BrowserSnapshot
   /** Increments once for each new browser call, including before approval. */
   browserRequest: number
 }
@@ -66,21 +68,27 @@ export interface ApprovalDecision {
   reason?: string
 }
 
-/** Logical CSS pixels relative to the application window content. */
+export interface DesktopSettings {
+  maxConcurrentRuns: number
+}
+
+/** Logical CSS pixels of the manual operations surface in the application window. */
 export interface BrowserViewport {
   x: number
   y: number
   width: number
   height: number
-  /** Tasks retain exclusive browser input while the live page remains visible. */
-  interactive: boolean
-}
-
-export interface DesktopSettings {
-  maxConcurrentRuns: number
 }
 
 export interface DesktopRuntime {
+  /** Positions the manual operations page; null hides it without closing it. */
+  setBrowserViewport?(bounds: BrowserViewport | null): Promise<void>
+  readOperationsBrowser?(): Promise<BrowserSnapshot>
+  /** Manual operations never acquire or navigate an Agent's Chrome page. */
+  operationsNavigate?(url: string): Promise<void>
+  operationsBack?(): Promise<void>
+  operationsForward?(): Promise<void>
+  operationsReload?(): Promise<void>
   /** Reads this client's effective settings, including initial defaults. */
   readSettings?(): Promise<DesktopSettings>
   /** Persists an integer limit (1–64) before applying it to new admissions.
@@ -88,10 +96,11 @@ export interface DesktopRuntime {
    * Calls are scoped to this client. Demo saves are memory-only.
    */
   saveSettings?(settings: DesktopSettings): Promise<DesktopSettings>
-  /** Selects a thread page without stopping work on other pages. */
-  selectBrowserThread?(threadId: string | null): Promise<void>
-  /** Null hides the native surface without navigating or stopping a task. */
-  setBrowserViewport(bounds: BrowserViewport | null): Promise<void>
+  /** Selects a thread's snapshot; focus creates or reveals its external Chrome page. */
+  selectBrowserThread?(
+    threadId: string | null,
+    options?: { focus?: boolean }
+  ): Promise<void>
   /** Stable immutable snapshot; scoped to this adapter instance. */
   getState(): DesktopSnapshot
   /** Subscription cleanup does not stop a task or destroy the page. */

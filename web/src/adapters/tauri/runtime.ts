@@ -10,6 +10,7 @@ import type {
 } from "@/desktop/runtime"
 import {
   object,
+  readBrowserSnapshot,
   readChatEvent,
   readDesktopSnapshot,
   readRpcError,
@@ -79,6 +80,7 @@ function readSettings(value: unknown): DesktopSettings {
 export function createTauriRuntime(bridge: TauriBridge) {
   let state = initialState
   let version = 0
+  let operationsVersion = 0
   let disposed = false
   let connected = false
   let unavailable = false
@@ -95,12 +97,12 @@ export function createTauriRuntime(bridge: TauriBridge) {
   const tasksOf = (snapshot = state) =>
     snapshot.tasks ?? (snapshot.task ? [snapshot.task] : [])
   const publish = (next: DesktopSnapshot) => {
+    if (next.operationsBrowser !== state.operationsBrowser) operationsVersion++
     const tasks = tasksOf(next)
     const browserThreadId =
       next.browserThreadId === undefined
         ? (next.task?.threadId ?? null)
         : next.browserThreadId
-    const selectionChanged = state.browserThreadId !== browserThreadId
     state = {
       ...next,
       tasks,
@@ -109,10 +111,6 @@ export function createTauriRuntime(bridge: TauriBridge) {
     }
     version++
     for (const listener of [...listeners]) listener()
-    if (selectionChanged)
-      void setBrowserViewport(
-        viewport ? { ...viewport, interactive: false } : null
-      ).catch(() => {})
   }
   const updateTask = (task: DesktopTask) =>
     publish({
@@ -161,6 +159,24 @@ export function createTauriRuntime(bridge: TauriBridge) {
       const event = object(value)
       if (event.event === "exit_blocked") {
         publish({ ...state, closeBlocked: true })
+        return
+      }
+      if (event.event === "operations_browser_state") {
+        try {
+          publish({
+            ...state,
+            operationsBrowser: readBrowserSnapshot(event.state),
+          })
+        } catch {
+          publish({
+            ...state,
+            operationsBrowser: {
+              ...initialState.browser,
+              status: "error",
+              error: "运维浏览器返回了无效数据，请重新打开面板。",
+            },
+          })
+        }
         return
       }
       if (event.event === "desktop_state") {
@@ -260,41 +276,49 @@ export function createTauriRuntime(bridge: TauriBridge) {
       navigating.delete(threadId)
     }
   }
+  let browserSelection = 0
+  let operationsNavigating = false
+  const operationsNavigation = async (method: string, params = {}) => {
+    if (!connected || disposed) throw new Error("桌面服务未连接。")
+    if (operationsNavigating)
+      throw new Error("运维浏览器正在导航，请稍后再试。")
+    operationsNavigating = true
+    try {
+      await request(method, params)
+    } catch {
+      throw new Error("运维浏览器操作失败，请重试。")
+    } finally {
+      operationsNavigating = false
+    }
+  }
   let viewport: BrowserViewport | null = null
-  let viewportPageId = "__manual__"
   let viewportKey = ""
   let viewportWrite: Promise<void> | undefined
   let viewportVersion = 0
   const setBrowserViewport = (
     bounds: BrowserViewport | null
   ): Promise<void> => {
-    const pageId = state.browserThreadId ?? "__manual__"
-    const key = JSON.stringify({ bounds, pageId })
+    const key = JSON.stringify(bounds)
     if (key === viewportKey) return viewportWrite ?? Promise.resolve()
     viewportKey = key
     viewport = bounds
-    viewportPageId = pageId
     viewportVersion++
     if (!viewportWrite) {
-      let complete!: () => void
-      let fail!: (error: Error) => void
-      const completion = new Promise<void>((resolve, reject) => {
-        complete = resolve
-        fail = reject
-      })
-      viewportWrite = completion
-      void (async () => {
+      viewportWrite = Promise.resolve().then(async () => {
         try {
           let sent = -1
           while (sent !== viewportVersion) {
             sent = viewportVersion
-            const bounds = viewport
-            const pageId = viewportPageId
             await bridge.invoke("browser_set_bounds", {
-              bounds: bounds
-                ? { ...bounds, pageId, visible: true }
+              bounds: viewport
+                ? {
+                    ...viewport,
+                    pageId: "__manual__",
+                    visible: true,
+                    interactive: true,
+                  }
                 : {
-                    pageId,
+                    pageId: "__manual__",
                     x: 0,
                     y: 0,
                     width: 0,
@@ -304,20 +328,40 @@ export function createTauriRuntime(bridge: TauriBridge) {
                   },
             })
           }
-          viewportWrite = undefined
-          complete()
         } catch {
           viewportKey = ""
+          throw new Error("运维浏览器画面暂时无法显示，请重新打开面板。")
+        } finally {
           viewportWrite = undefined
-          fail(new Error("浏览器画面暂时无法显示，请重新打开右侧面板。"))
         }
-      })()
-      return completion
+      })
     }
     return viewportWrite
   }
-  let browserSelection = 0
   const desktop: DesktopRuntime = {
+    setBrowserViewport,
+    async readOperationsBrowser() {
+      if (!connected || disposed) throw new Error("桌面服务未连接。")
+      try {
+        const before = operationsVersion
+        const browser = readBrowserSnapshot(
+          await request("operations_browser_status")
+        )
+        if (operationsVersion === before)
+          publish({ ...state, operationsBrowser: browser })
+        return browser
+      } catch {
+        throw new Error("运维浏览器暂不可用，请重新打开面板。")
+      }
+    },
+    async operationsNavigate(url) {
+      await operationsNavigation("operations_browser_navigate", {
+        url: safeHttpUrl(url, true),
+      })
+    },
+    operationsBack: () => operationsNavigation("operations_browser_back"),
+    operationsForward: () => operationsNavigation("operations_browser_forward"),
+    operationsReload: () => operationsNavigation("operations_browser_reload"),
     async readSettings() {
       if (!connected || disposed) throw new Error("桌面服务未连接。")
       try {
@@ -344,12 +388,17 @@ export function createTauriRuntime(bridge: TauriBridge) {
         listeners.delete(listener)
       }
     },
-    setBrowserViewport,
-    async selectBrowserThread(threadId) {
+    async selectBrowserThread(threadId, options) {
+      const focus = options?.focus
+      if (focus !== undefined && typeof focus !== "boolean")
+        throw new Error("Chrome 聚焦选项必须是布尔值。")
       if (!connected || disposed) throw new Error("桌面服务未连接。")
       const selection = ++browserSelection
       try {
-        await request("browser_select", { threadId })
+        await request("browser_select", {
+          threadId,
+          ...(focus === undefined ? {} : { focus }),
+        })
         if (selection === browserSelection && !unavailable)
           publish({ ...state, browserThreadId: threadId })
       } catch {

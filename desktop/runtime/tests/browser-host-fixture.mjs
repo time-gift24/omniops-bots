@@ -1,6 +1,6 @@
-/** Real CDP pages stand in for the native CEF page registry in runtime browser tests. */
+/** An externally owned CDP browser exercises page binding without launching a visible Chrome. */
 export function browserHostFixture(context, endpoint) {
-  const pages = new Map();
+  const pages = new Map([['__manual__', context.pages()[0]]].filter(([, page]) => page));
   const bindings = new Map();
   let selected = '__manual__';
   return {
@@ -19,7 +19,7 @@ export function browserHostFixture(context, endpoint) {
         } finally { await session.detach(); }
       }
       if (method === 'select') {
-        if (pageId !== '__manual__' && !pages.has(pageId)) throw new Error('Unknown browser page');
+        if (!pages.has(pageId)) await this.request('create', pageId);
         selected = pageId;
         return { selected: true };
       }
@@ -30,6 +30,10 @@ export function browserHostFixture(context, endpoint) {
         return { released: true };
       }
       throw new Error('Unknown host request');
+    },
+    async close() {
+      await Promise.all([...pages.values()].map(page => page.close()));
+      pages.clear(); bindings.clear();
     },
   };
 }

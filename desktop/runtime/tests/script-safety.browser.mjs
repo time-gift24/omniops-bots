@@ -37,11 +37,8 @@ test('real CDP scripts retain source/hash, filesystem/process/network permission
     control = await chromium.connectOverCDP(endpoint);
     const context = control.contexts()[0];
     const page = context.pages()[0] || await context.newPage();
-    const session = await context.newCDPSession(page);
-    const { targetInfo } = await session.send('Target.getTargetInfo');
-    await session.detach();
     const host = browserHostFixture(context, endpoint);
-    service = createBrowserService({ endpoint, targetId: targetInfo.targetId }, host.request);
+    service = createBrowserService(host);
     const events = [];
     const workspace = await createScriptWorkspace({ dataDir: directory, ensureBrowser: service.ensure, signalEvent: event => events.push(event), redact: String });
     const forbidden = join(directory, 'credential.env');
@@ -73,7 +70,7 @@ test('real CDP scripts retain source/hash, filesystem/process/network permission
     const other = await context.newPage();
     await other.goto('about:blank');
     assert.equal((await service.ensure()).page.url(), fixture.pageURL);
-    const wrong = createBrowserService({ endpoint, targetId: 'missing' });
+    const wrong = createBrowserService({ request: async () => ({ endpoint, targetId: 'missing' }), close: async () => {} });
     await assert.rejects(wrong.ensure(), /目标页面/);
     await wrong.close();
 

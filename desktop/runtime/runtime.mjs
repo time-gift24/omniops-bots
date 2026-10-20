@@ -5,8 +5,9 @@ import { chatInput, httpUrl, identifier } from './input.mjs';
 import { invalid, RuntimeError } from './errors.mjs';
 import { join } from 'node:path';
 import { createClientSettings } from './settings.mjs';
+import { createOperationsBrowser } from './browser/browser.mjs';
 
-export async function createDesktopRuntime({ browser, workspace, workspaceFactory, modelFactory, modelName, resources, runsDir, checkpointer,
+export async function createDesktopRuntime({ browser, operationsBrowser = createOperationsBrowser(), workspace, workspaceFactory, modelFactory, modelName, resources, runsDir, checkpointer,
   timeoutMs = 300_000, maxConcurrentRuns = 4, settingsFile = join(runsDir, '.settings.json'), desktopVersion = '0.1.0', modelParameters = { temperature: 0 }, emit = () => {}, redact = String, env = process.env }) {
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 3_600_000) throw invalid('每轮执行超时必须在 1ms 到一小时之间。');
   if (!checkpointer) throw invalid('执行必须配置 checkpoint 存储。');
@@ -15,8 +16,9 @@ export async function createDesktopRuntime({ browser, workspace, workspaceFactor
   const history = await createChatHistory(runsDir);
   const settings = await createClientSettings({ file: settingsFile, defaultMaxConcurrentRuns: maxConcurrentRuns });
   const seen = new Set(execution.records.list().map(record => record.runId));
-  let state = { simulated: false, tasks: [], task: null, browserThreadId: null, browser: browser.getState(), browserRequest: 0 };
+  let state = { simulated: false, tasks: [], task: null, browserThreadId: null, browser: browser.getState(), browserRequest: 0, operationsBrowser: operationsBrowser.getState() };
   const active = new Map(), navigations = new Map();
+  let operationsNavigation;
   let closing = false;
   const publish = patch => { state = { ...state, ...patch }; emit({ event: 'desktop_state', state }); };
   const selectedThread = () => browser.getThreadId ? browser.getThreadId() : [...active.values()].at(-1)?.threadId ?? null;
@@ -26,6 +28,10 @@ export async function createDesktopRuntime({ browser, workspace, workspaceFactor
     publish({ tasks, task: tasks.find(task => task.threadId === browserThreadId) ?? null, browserThreadId, ...patch });
   };
   browser.subscribe(snapshot => publishTasks({ browser: snapshot }));
+  operationsBrowser.subscribe(snapshot => {
+    state = { ...state, operationsBrowser: snapshot };
+    emit({ event: 'operations_browser_state', state: snapshot });
+  });
   const updateTask = (run, patch) => {
     if (active.get(run.id) !== run) return;
     run.task = { ...run.task, ...patch };
@@ -95,10 +101,24 @@ export async function createDesktopRuntime({ browser, workspace, workspaceFactor
     publish({ browserRequest: state.browserRequest + 1 });
     try { await navigation; return { navigated: true }; } finally { navigations.delete(threadId); }
   }
+  async function navigateOperations(method, params) {
+    if (closing || operationsNavigation) throw new RuntimeError('unavailable', '请等待运维浏览器导航完成。');
+    const url = method === 'navigate' ? httpUrl(params?.url, { normalize: true }) : undefined;
+    operationsNavigation = Promise.resolve().then(() => operationsBrowser.navigation(method, url));
+    try { await operationsNavigation; return { navigated: true }; }
+    finally { operationsNavigation = undefined; }
+  }
   return {
     getState: () => state,
     dispatch(method, params) {
       if (method === 'status') return state;
+      if (method === 'operations_browser_status') {
+        if (closing) throw new RuntimeError('unavailable', '应用正在关闭。');
+        return operationsBrowser.refresh().then(() => state.operationsBrowser);
+      }
+      if (['operations_browser_navigate', 'operations_browser_back', 'operations_browser_forward', 'operations_browser_reload'].includes(method)) {
+        return navigateOperations(method.slice('operations_browser_'.length), params);
+      }
       if (method === 'settings_get') return settings.read();
       if (method === 'settings_save') {
         if (closing) throw new RuntimeError('unavailable', '应用正在关闭。');
@@ -111,7 +131,9 @@ export async function createDesktopRuntime({ browser, workspace, workspaceFactor
         if (closing) throw new RuntimeError('unavailable', '应用正在关闭。');
         const threadId = params?.threadId === null ? null : identifier(params?.threadId, 'threadId');
         if (threadId === '__manual__') throw invalid('会话编号为浏览器保留编号。');
-        return browser.select(threadId).then(() => { publishTasks(); return { selected: true }; });
+        const focus = params?.focus === undefined ? false : params.focus;
+        if (typeof focus !== 'boolean') throw invalid('浏览器聚焦选项必须为布尔值。');
+        return browser.select(threadId, { focus }).then(() => { publishTasks(); return { selected: true }; });
       }
       if (method === 'runs_list') return execution.records.list().map(chatRecord);
       if (method === 'run_get') {
@@ -127,9 +149,10 @@ export async function createDesktopRuntime({ browser, workspace, workspaceFactor
       closing = true;
       await Promise.all([...active.keys()].map(runId => stop({ runId })));
       await execution.close();
-      await Promise.allSettled([...navigations.values()]);
+      await Promise.allSettled([...navigations.values(), operationsNavigation]);
       await settings.close();
-      await browser.close();
+      try { await browser.close(); }
+      finally { await operationsBrowser.close(); }
     },
   };
 }

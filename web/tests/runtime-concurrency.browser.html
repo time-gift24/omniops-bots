@@ -32,7 +32,6 @@ const runtime = createTauriRuntime(bridge)
 try {
   await runtime.initialize()
   await runtime.desktop.selectBrowserThread("a")
-  await runtime.desktop.setBrowserViewport({ x: 0, y: 0, width: 600, height: 400, interactive: false })
   const first = runtime.gatewayFor("a"), second = runtime.gatewayFor("b")
   const input = { messages: [{ role: "user", text: "inspect" }] }
   const a = first.stream(input)[Symbol.asyncIterator](), b = second.stream(input)[Symbol.asyncIterator]()
@@ -41,6 +40,7 @@ try {
   listener({ event: "desktop_state", state: empty })
   assert(runtime.desktop.getState().tasks.length === 2, "An old empty snapshot must retain both preparations")
   await runtime.desktop.selectBrowserThread("b")
+  assert(!calls.some(([, args]) => args?.method === "browser_select" && args.params.focus), "Normal thread selection must not open or focus Chrome")
   assert(runtime.desktop.getState().task.threadId === "b", "Visible task must follow the selected page")
   const stopped = first.abort()
   prepare.get("a").resolve()
@@ -55,9 +55,11 @@ try {
   listener({ event: "chat_event", runId: run.runId, threadId: "b", data: { type: "completed", response: { assistant: { parts: [{ type: "text", text: "done" }] }, finish: { reason: "stop" }, usage: {}, metadata } } })
   assert((await b.next()).value.type === "completed" && (await b.next()).done, "B must complete normally")
   assert(runtime.desktop.getState().tasks.length === 0, "Both task reservations must be released")
-  await runtime.desktop.setBrowserViewport({ x: 0, y: 0, width: 600, height: 400, interactive: true })
-  assert(calls.filter(([command]) => command === "browser_set_bounds").at(-1)[1].bounds.pageId === "b", "Native viewport must identify the selected page")
-  result.textContent = "PASS: concurrent preparation, selected page projection, isolated cancellation, independent completion, native page identity"
+  await runtime.desktop.selectBrowserThread("b", { focus: true })
+  assert(calls.filter(([, args]) => args?.method === "browser_select").at(-1)[1].params.threadId === "b", "Chrome refocus must identify the selected page")
+  assert(calls.filter(([, args]) => args?.method === "browser_select").at(-1)[1].params.focus === true, "Chrome refocus must explicitly request focus")
+  assert(!calls.some(([command]) => command === "browser_set_bounds"), "External Chrome must not receive native viewport commands")
+  result.textContent = "PASS: concurrent preparation, selected page projection, isolated cancellation, independent completion, Chrome page identity"
   result.dataset.passed = "true"
 } catch (error) {
   result.textContent = `FAIL: ${error.stack}`

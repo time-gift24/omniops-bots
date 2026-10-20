@@ -67,7 +67,7 @@ Running…</pre>
   const start = () =>
     flushSync(() =>
       assert(
-        thread.send("打开内置浏览器，访问必应并输入 abcd，不提交搜索"),
+        thread.send("打开 Chrome，访问必应并输入 abcd，不提交搜索"),
         "Demo task was not accepted"
       )
     )

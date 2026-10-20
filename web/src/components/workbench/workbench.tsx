@@ -54,6 +54,7 @@ import { useAppDependencies } from "@/app/dependencies"
 import type { ModelChoice } from "@/models/source"
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard"
 import { BrowserView, BrowserTaskStatus } from "./browser-view"
+import { OperationsBrowserView } from "./operations-browser-view"
 
 const MIN_WIDTH = 320
 const DEFAULT_WIDTH = 400
@@ -72,6 +73,7 @@ function clampWidth(value: number): number {
 export type WorkbenchView =
   | { type: "start" }
   | { type: "browser" }
+  | { type: "operations-browser" }
   | { type: "files" }
   | { type: "changes" }
   | { type: "file"; path: string }
@@ -93,7 +95,9 @@ function viewTitle(view: WorkbenchView): string {
     case "start":
       return "新标签页"
     case "browser":
-      return "浏览器"
+      return "Chrome"
+    case "operations-browser":
+      return "运维浏览器"
     case "files":
       return "文件"
     case "changes":
@@ -109,6 +113,7 @@ function viewIcon(view: WorkbenchView): IconSvgElement {
   switch (view.type) {
     case "start":
     case "browser":
+    case "operations-browser":
       return Globe02Icon
     case "files":
       return FolderOpenIcon
@@ -186,7 +191,7 @@ export function WorkbenchPanel({
   models: readonly ModelChoice[]
 }) {
   const namespace = useId()
-  const { host, desktop } = useAppDependencies()
+  const { desktop } = useAppDependencies()
   const desktopState = useSyncExternalStore(
     desktop.subscribe,
     desktop.getState,
@@ -244,9 +249,15 @@ export function WorkbenchPanel({
         ? current
         : [...current, { id: "browser", view: { type: "browser" } }]
     )
-    setActiveId("browser")
+    setActiveId((current) => current === "operations-browser" ? current : "browser")
     setAddressDraft(null)
     setHostFailure(null)
+  }, [])
+  const openOperationsBrowser = useCallback(() => {
+    setTabs((current) => current.some((tab) => tab.id === "operations-browser")
+      ? current
+      : [...current, { id: "operations-browser", view: { type: "operations-browser" } }])
+    setActiveId("operations-browser")
   }, [])
   useImperativeHandle(
     ref,
@@ -371,6 +382,20 @@ export function WorkbenchPanel({
     }
   }
 
+  async function showChrome() {
+    setHostFailure(null)
+    try {
+      await desktop.selectBrowserThread?.(browserThreadId, { focus: true })
+    } catch (error) {
+      if ((desktop.getState().browserThreadId ?? null) === browserThreadId)
+        setHostFailure({
+          threadId: browserThreadId,
+          message:
+            error instanceof Error ? error.message : "无法显示 Chrome，请重试。",
+        })
+    }
+  }
+
   function openSite(site: RecommendedSite) {
     navigate(site.url)
   }
@@ -486,6 +511,11 @@ export function WorkbenchPanel({
             ))}
             </TabsList>
           </Tabs>
+          <MorphicTooltip content="运维浏览器" side="bottom" align="end">
+            <Button variant="ghost" size="icon" aria-label="打开运维浏览器" onClick={openOperationsBrowser} className="size-9 shrink-0 rounded-full">
+              <HugeiconsIcon icon={Globe02Icon} size={16} aria-hidden="true" />
+            </Button>
+          </MorphicTooltip>
           <MorphicTooltip content="新建标签页" side="bottom" align="end">
             <Button
               variant="ghost"
@@ -608,33 +638,18 @@ export function WorkbenchPanel({
                 >
                   复制链接
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  disabled={view.type !== "browser" || !browser.url}
-                  onSelect={() => {
-                    if (view.type === "browser") {
-                      setHostFailure(null)
-                      void host.openExternal(browser.url).catch(() => {
-                        if (
-                          (desktop.getState().browserThreadId ?? null) ===
-                          browserThreadId
-                        )
-                          setHostFailure({
-                            threadId: browserThreadId,
-                            message: "无法打开链接，请检查权限后重试。",
-                          })
-                      })
-                    }
-                  }}
-                >
-                  在默认浏览器中打开
-                </DropdownMenuItem>
+                {!desktopState.simulated && desktop.selectBrowserThread ? (
+                  <DropdownMenuItem onSelect={() => void showChrome()}>
+                    显示 Chrome
+                  </DropdownMenuItem>
+                ) : null}
                 <DropdownMenuItem onSelect={addTab}>
                   新建标签页
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        ) : view.type === "agent-debug" ? null : (
+        ) : view.type === "agent-debug" || view.type === "operations-browser" ? null : (
           <div className="flex h-12 shrink-0 items-center gap-1 px-3">
             <Button
               variant="ghost"
@@ -655,7 +670,7 @@ export function WorkbenchPanel({
           </div>
         )}
 
-        {hostError ? (
+        {view.type === "browser" && hostError ? (
           <p role="alert" className="px-3 py-1 text-xs text-destructive">
             {hostError}
           </p>
@@ -678,15 +693,22 @@ export function WorkbenchPanel({
               onOpenFiles={() => updateActiveView({ type: "files" })}
               onNewTab={addTab}
               onOpenSite={openSite}
+              onOpenOperationsBrowser={openOperationsBrowser}
+            />
+          ) : view.type === "operations-browser" ? (
+            <OperationsBrowserView
+              browser={desktopState.operationsBrowser}
+              desktop={desktop}
+              simulated={desktopState.simulated}
+              visible={open}
             />
           ) : view.type === "browser" ? (
             <BrowserView
               browser={browser}
               simulated={desktopState.simulated}
-              visible={open}
-              interactive={!desktopState.task}
-              browserThreadId={browserThreadId}
-              setBrowserViewport={desktop.setBrowserViewport}
+              onShowChrome={
+                desktop.selectBrowserThread ? () => void showChrome() : undefined
+              }
               canRetry={!navigationDisabled && Boolean(browser.url)}
               onRetry={() => void runBrowserAction(() => desktop.reload())}
             />

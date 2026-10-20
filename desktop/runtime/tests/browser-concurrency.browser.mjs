@@ -40,11 +40,8 @@ test('real concurrent tasks retain their pages, shared login and independent can
     const context = control.contexts()[0];
     const manual = context.pages()[0] || await context.newPage();
     await manual.setContent('<title>Manual</title>Keep this page');
-    const session = await context.newCDPSession(manual);
-    const { targetInfo } = await session.send('Target.getTargetInfo');
-    await session.detach();
     const host = browserHostFixture(context, endpoint);
-    service = createBrowserService({ endpoint, targetId: targetInfo.targetId }, host.request);
+    service = createBrowserService(host);
     const code = "export default async({page,assert})=>{await page.getByLabel('Value').fill('only-b');assert.equal(await page.getByLabel('Value').inputValue(),'only-b');return {value:'only-b'}}";
     const sha256 = createHash('sha256').update(code).digest('hex');
     let model = 0;
@@ -90,7 +87,7 @@ test('real concurrent tasks retain their pages, shared login and independent can
     assert.equal((await service.forThread('thread-b').ensure()).targetId, b.targetId);
     await runtime.close(); runtime = undefined;
     assert.equal(host.pages.size, 0);
-    assert.equal(manual.isClosed(), false);
+    assert.equal(manual.isClosed(), true);
   } finally {
     slowResponse?.end();
     await runtime?.close(); await service?.close(); await control?.close(); await server?.close();

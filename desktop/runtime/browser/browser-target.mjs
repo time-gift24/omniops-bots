@@ -1,17 +1,15 @@
 import { chromium } from 'playwright-core';
 
-export function embeddedBrowserConfig(env) {
-  const endpoint = env.OMNIOPS_BOTS_BROWSER_CDP_ENDPOINT;
-  const targetId = env.OMNIOPS_BOTS_BROWSER_TARGET_ID;
-  if (!endpoint || !targetId) throw new Error('OMNIOPS_BOTS_BROWSER_CDP_ENDPOINT and OMNIOPS_BOTS_BROWSER_TARGET_ID must be provided together');
+export function browserTargetConfig({ endpoint, targetId }) {
+  if (!endpoint || !targetId) throw new Error('Browser endpoint and target ID must be provided together');
   const url = new URL(endpoint);
   const loopback = url.hostname === 'localhost' || url.hostname === '[::1]'
     || /^127\.\d+\.\d+\.\d+$/.test(url.hostname);
   if (!['http:', 'https:', 'ws:', 'wss:'].includes(url.protocol) || !loopback || url.username || url.password) {
-    throw new Error('Embedded browser CDP endpoint must be a loopback HTTP(S) or WS(S) URL without credentials');
+    throw new Error('Browser CDP endpoint must be a loopback HTTP(S) or WS(S) URL without credentials');
   }
-  if (typeof targetId !== 'string' || !targetId.trim() || targetId !== targetId.trim() || targetId.length > 256) {
-    throw new Error('Embedded browser target ID is invalid');
+  if (typeof targetId !== 'string' || !targetId.trim() || targetId !== targetId.trim() || targetId.length > 256 || /\p{Cc}/u.test(targetId)) {
+    throw new Error('Browser target ID is invalid');
   }
   return { endpoint: url.href, targetId };
 }
@@ -31,11 +29,12 @@ export async function selectBrowserTarget(browser, targetId) {
       } finally { await session?.detach().catch(() => {}); }
     }
   }
-  if (matches.length !== 1) throw new Error(`Embedded browser target ${targetId} is unavailable; refusing to select another page`);
+  if (matches.length !== 1) throw new Error(`Browser target ${targetId} is unavailable; refusing to select another page`);
   return matches[0];
 }
 /** Attach only this target: Playwright's default browser-wide attachment can wait on an unrelated stalled page. */
 export async function connectBrowserTarget(endpoint, targetId, options = {}) {
+  ({ endpoint, targetId } = browserTargetConfig({ endpoint, targetId }));
   const signal = AbortSignal.timeout(5000);
   let url = new URL(endpoint);
   if (url.protocol === 'http:' || url.protocol === 'https:') {

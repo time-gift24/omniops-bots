@@ -587,6 +587,7 @@ async fn wait_page(page_id: &str, timeout: Duration) -> Result<Connection, Error
     }
 }
 
+#[cfg(debug_assertions)]
 pub async fn create_page(app: tauri::AppHandle, page_id: String) -> Result<Connection, Error> {
     validate_page_id(&page_id)?;
     let requested = page_id.clone();
@@ -608,6 +609,7 @@ pub async fn create_page(app: tauri::AppHandle, page_id: String) -> Result<Conne
     }
 }
 
+#[cfg(debug_assertions)]
 pub async fn select_page(app: tauri::AppHandle, page_id: String) -> Result<(), Error> {
     validate_page_id(&page_id)?;
     let (tx, rx) = tokio::sync::oneshot::channel();
@@ -635,6 +637,7 @@ pub async fn select_page(app: tauri::AppHandle, page_id: String) -> Result<(), E
         .map_err(|_| "Native browser selection callback was cancelled".to_owned())?
 }
 
+#[cfg(debug_assertions)]
 pub async fn release_page(app: tauri::AppHandle, page_id: String) -> Result<(), Error> {
     validate_page_id(&page_id)?;
     if page_id == MANUAL_PAGE {

@@ -271,3 +271,22 @@ test("direct desktop stop settles ThreadStore; ordinary mock stop drains before 
   await desktop.stop(nextTask.runId)
   await next
 })
+
+test("manual operations have separate history and remain usable while an Agent task owns Chrome", async t => {
+  const { createDemoDesktopRuntime } = await load(t)
+  const { desktop, gatewayFor } = createDemoDesktopRuntime({ delayMs: 1 })
+  const events = collect(gatewayFor("agent"))
+  const task = (await pending(desktop)).task
+  const chrome = desktop.getState().browser
+  await desktop.operationsNavigate("ops.test")
+  await desktop.operationsNavigate("ops.test/next")
+  await desktop.operationsBack()
+  assert.equal(desktop.getState().operationsBrowser.url, "https://ops.test/")
+  assert.equal(desktop.getState().operationsBrowser.canGoForward, true)
+  assert.equal(desktop.getState().browser, chrome)
+  assert.equal(desktop.getState().task.runId, task.runId)
+  await desktop.operationsForward(); await desktop.operationsReload()
+  assert.equal(desktop.getState().operationsBrowser.url, "https://ops.test/next")
+  await assert.rejects(desktop.operationsNavigate("file:///private"), /HTTP/)
+  await desktop.stop(task.runId); await events
+})

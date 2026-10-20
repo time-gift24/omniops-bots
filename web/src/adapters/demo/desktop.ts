@@ -37,6 +37,7 @@ export function createDemoDesktopRuntime(options: { delayMs?: number } = {}): {
     simulated: true,
     task: null,
     browserRequest: 0,
+    operationsBrowser: { url: "", title: "", status: "empty", canGoBack: false, canGoForward: false },
     browser: {
       url: "",
       title: "浏览器未打开",
@@ -49,6 +50,9 @@ export function createDemoDesktopRuntime(options: { delayMs?: number } = {}): {
   let navigating = false
   const history: Page[] = []
   let position = -1
+  const operationsHistory: Page[] = []
+  let operationsPosition = -1
+  let operationsNavigating = false
   const publish = (patch: Partial<DesktopSnapshot>) => {
     state = { ...state, ...patch }
     for (const listener of [...listeners]) listener()
@@ -78,7 +82,7 @@ export function createDemoDesktopRuntime(options: { delayMs?: number } = {}): {
       title: bing ? "Bing" : host,
       preview: {
         heading: bing ? "Bing" : host,
-        text: "演示页面，用于预览内置浏览器与审批流程；未连接真实网站。",
+        text: "演示页面，用于预览浏览器操作与审批流程；未连接真实网站。",
         ...(bing ? { field: { label: "搜索", value: "" } } : {}),
       },
     }
@@ -126,7 +130,7 @@ export function createDemoDesktopRuntime(options: { delayMs?: number } = {}): {
     const operations = [
       {
         title: "打开必应",
-        description: "在右侧浏览器中打开必应首页。",
+        description: "在 Agent 的 Chrome 中打开必应首页。",
         toolName: "browser.navigate",
         parameters: JSON.stringify({ url: "https://www.bing.com/" }, null, 2),
         code: 'await page.goto("https://www.bing.com/");',
@@ -274,7 +278,66 @@ export function createDemoDesktopRuntime(options: { delayMs?: number } = {}): {
     }
   }
 
+  function navigationUrl(input: string) {
+    const value = input.trim()
+    let url: URL
+    try {
+      url = new URL(
+        /^[a-z][a-z\d+.-]*:/i.test(value) ? value : `https://${value}`
+      )
+    } catch {
+      throw new Error("请输入有效的网址。")
+    }
+    if (
+      !value ||
+      !["http:", "https:"].includes(url.protocol) ||
+      url.username ||
+      url.password
+    ) {
+      throw new Error("请输入不含登录信息的 HTTP 或 HTTPS 网址。")
+    }
+    return url
+  }
+  const showOperationsPage = () => publish({ operationsBrowser: {
+    ...operationsHistory[operationsPosition], status: "ready",
+    canGoBack: operationsPosition > 0,
+    canGoForward: operationsPosition < operationsHistory.length - 1,
+  } })
+  async function navigateOperations(action: () => void) {
+    if (operationsNavigating) throw new Error("运维浏览器正在导航，请稍后再试。")
+    operationsNavigating = true
+    publish({ operationsBrowser: { ...state.operationsBrowser!, status: "loading", error: undefined } })
+    try { await new Promise((resolve) => setTimeout(resolve, delay)); action() }
+    finally { operationsNavigating = false }
+  }
+
   const desktop: DesktopRuntime = {
+    setBrowserViewport: async () => {},
+    readOperationsBrowser: async () => state.operationsBrowser!,
+    async operationsNavigate(input) {
+      const url = navigationUrl(input)
+      await navigateOperations(() => {
+        operationsHistory.splice(operationsPosition + 1, operationsHistory.length, pageFor(url.href))
+        operationsPosition++
+        showOperationsPage()
+      })
+    },
+    async operationsBack() {
+      if (operationsPosition >= 0) await navigateOperations(() => {
+        if (operationsPosition > 0) operationsPosition--
+        showOperationsPage()
+      })
+    },
+    async operationsForward() {
+      if (operationsPosition >= 0) await navigateOperations(() => {
+        if (operationsPosition < operationsHistory.length - 1) operationsPosition++
+        showOperationsPage()
+      })
+    },
+    async operationsReload() {
+      if (operationsPosition >= 0) await navigateOperations(showOperationsPage)
+    },
+
     async readSettings() {
       return { maxConcurrentRuns }
     },
@@ -288,7 +351,6 @@ export function createDemoDesktopRuntime(options: { delayMs?: number } = {}): {
       maxConcurrentRuns = settings.maxConcurrentRuns
       return { maxConcurrentRuns }
     },
-    setBrowserViewport: async () => {},
     getState: () => state,
     subscribe(listener) {
       listeners.add(listener)
@@ -350,23 +412,7 @@ export function createDemoDesktopRuntime(options: { delayMs?: number } = {}): {
       return run.stopping
     },
     async navigate(input) {
-      const value = input.trim()
-      let url: URL
-      try {
-        url = new URL(
-          /^[a-z][a-z\d+.-]*:/i.test(value) ? value : `https://${value}`
-        )
-      } catch {
-        throw new Error("请输入有效的网址。")
-      }
-      if (
-        !value ||
-        !["http:", "https:"].includes(url.protocol) ||
-        url.username ||
-        url.password
-      ) {
-        throw new Error("请输入不含登录信息的 HTTP 或 HTTPS 网址。")
-      }
+      const url = navigationUrl(input)
       await navigate(() => {
         openPage(pageFor(url.href))
       })

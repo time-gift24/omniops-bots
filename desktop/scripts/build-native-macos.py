@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a complete native CEF app; --dev runs it with Vite hot updates."""
+"""Build the desktop with manual CEF and Agent Chrome; --dev runs it with Vite hot updates."""
 import json
 import os
 import platform

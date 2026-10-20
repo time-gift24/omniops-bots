@@ -15,7 +15,7 @@ import { createRunRecords } from '../execution/records.ts';
 import { storageId, writeJson } from '../json-store.mjs';
 import { chatRecord } from '../chat/adapter.mjs';
 import { chatInput, httpUrl } from '../input.mjs';
-import { embeddedBrowserConfig, selectBrowserTarget } from '../browser/browser-target.mjs';
+import { browserTargetConfig, selectBrowserTarget } from '../browser/browser-target.mjs';
 import { createBrowserService } from '../browser/browser.mjs';
 import { safeError } from '../errors.mjs';
 
@@ -24,20 +24,20 @@ const request = { messages: [{ role: 'user', text: '检查浏览器' }] };
 
 test('page creation can recover on a later explicit request and shutdown bounds historical page releases', async () => {
   let creates = 0, releasing = 0, peak = 0, released = 0;
-  const browser = createBrowserService({}, async method => {
+  const browser = createBrowserService({ async request(method) {
     if (method === 'create') { creates++; throw new Error('temporary host failure'); }
     if (method === 'release') {
       peak = Math.max(peak, ++releasing);
       await delay(1);
       releasing--; released++;
     }
-  });
+  }, async close() {} });
   const first = browser.forThread('first');
-  await assert.rejects(first.ensure(), /temporary/);
-  await assert.rejects(first.ensure(), /temporary/);
+  await assert.rejects(first.ensure(), /Chrome/);
+  await assert.rejects(first.ensure(), /Chrome/);
   assert.equal(creates, 2);
   await Promise.all(Array.from({ length: 64 }, async (_unused, index) => {
-    await assert.rejects(browser.forThread(`historical-${index}`).ensure(), /temporary/);
+    await assert.rejects(browser.forThread(`historical-${index}`).ensure(), /Chrome/);
   }));
   await browser.close();
   await browser.close();
@@ -123,6 +123,33 @@ async function fixture(t, toolCalls = [], options = {}) {
     async settled(id = 'run-1') { await until(() => runtime.getState().task === null); return runtime.dispatch('run_get', { runId: id }); },
   };
 }
+
+test('manual operations serialize separately and never reserve Agent threads or publish Agent activity', async t => {
+  const entered = Promise.withResolvers(), release = Promise.withResolvers();
+  let publishOperations;
+  const snapshot = { url: '', title: '运维', status: 'empty', canGoBack: false, canGoForward: false };
+  const operationsBrowser = {
+    getState: () => snapshot, subscribe(listener) { publishOperations = listener; }, refresh: async () => {}, close: async () => {},
+    async navigation(method, url) { entered.resolve(); await release.promise; publishOperations({ ...snapshot, url, status: 'ready' }); },
+  };
+  const f = await fixture(t, [], { runtime: { operationsBrowser } });
+  const navigation = f.runtime.dispatch('operations_browser_navigate', { url: 'https://manual.example.test' });
+  try {
+    await entered.promise;
+    await assert.rejects(f.runtime.dispatch('operations_browser_reload'), error => error.kind === 'unavailable');
+    f.start();
+    assert.equal((await f.settled()).status, 'completed');
+  } finally { release.resolve(); await navigation; }
+  assert.equal(f.runtime.getState().browserRequest, 0);
+  assert.equal(f.runtime.getState().browser.url, '');
+  assert.equal(f.runtime.getState().operationsBrowser.url, 'https://manual.example.test/');
+  assert.ok(f.events.some(event => event.event === 'operations_browser_state' && event.state.url === 'https://manual.example.test/'));
+  assert.deepEqual(f.navigated, []);
+  const shuttingDown = f.runtime.close();
+  assert.throws(() => f.runtime.dispatch('operations_browser_status'), error => error.kind === 'unavailable');
+  await shuttingDown;
+  assert.throws(() => f.runtime.dispatch('operations_browser_status'), error => error.kind === 'unavailable');
+});
 
 test('tools execute without approval, busy owns the slot and completion is durable before its event', async t => {
   const entered = Promise.withResolvers(), release = Promise.withResolvers();
@@ -587,8 +614,8 @@ test('input history/instructions/model and supported attachments survive without
 });
 
 test('browser configuration and target selection never fall back to another page', async () => {
-  assert.throws(() => embeddedBrowserConfig({}), /provided together/);
-  assert.throws(() => embeddedBrowserConfig({ OMNIOPS_BOTS_BROWSER_CDP_ENDPOINT: 'https://remote.test', OMNIOPS_BOTS_BROWSER_TARGET_ID: 'x' }), /loopback/);
+  assert.throws(() => browserTargetConfig({}), /provided together/);
+  assert.throws(() => browserTargetConfig({ endpoint: 'https://remote.test', targetId: 'x' }), /loopback/);
   const page = { isClosed: () => false };
   const browser = { contexts: () => [{ pages: () => [page], newCDPSession: async () => ({ send: async () => ({ targetInfo: { targetId: 'real' } }), detach: async () => {} }) }] };
   await assert.rejects(selectBrowserTarget(browser, 'wrong'), /refusing to select another page/);

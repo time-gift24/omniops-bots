@@ -7,7 +7,6 @@
 NODE ?= node
 PYTHON ?= python3
 MACOS_ARGS ?=
-export SQLX_OFFLINE := true
 
 ifeq ($(OS),Windows_NT)
 SHELL := cmd.exe
@@ -31,7 +30,7 @@ help:
 	@echo make package-debug          Build macOS ARM64 debug .app
 	@echo make package-windows        Build Windows x64 NSIS installer
 	@echo make install-windows-cross  Install macOS tools for cross-compiling Windows
-	@echo Prerequisites on PATH: GNU Make, Node 26.11.1 with npm, and rustup.
+	@echo Prerequisites on PATH: GNU Make, Node 26.11.1 with npm, Rust 1.92.0 and Google Chrome.
 	@echo macOS: Xcode command-line tools, Python 3, CMake and Ninja.
 	@echo Windows: x64 VS Developer shell with C++ Build Tools and Windows SDK.
 	@echo Windows also needs CMake, Ninja and LLVM on PATH.

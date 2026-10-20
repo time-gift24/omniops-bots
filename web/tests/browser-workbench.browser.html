@@ -1,7 +1,7 @@
 <!doctype html>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Embedded browser workbench regression</title>
+<title>Browser workbench regression</title>
 <!-- Run npm run dev, then open /tests/browser-workbench.browser.html. -->
 <div id="fixture" class="flex h-[min(740px,90dvh)] min-w-0"></div>
 <pre id="result" class="break-words whitespace-pre-wrap">Running…</pre>
@@ -22,6 +22,7 @@
   const root = createRoot(fixture)
   const listeners = new Set()
   const calls = []
+  let selectionFailure = false
   const pendingNavigations = new Map()
   let snapshot = {
     simulated: true,
@@ -62,6 +63,10 @@
     },
     async stop() {
       calls.push("stop")
+    },
+    async selectBrowserThread(threadId, options) {
+      calls.push(["select", threadId, options])
+      if (selectionFailure) throw new Error("Chrome 窗口暂不可用，请重试。")
     },
     async navigate(url) {
       calls.push(["navigate", url])
@@ -165,7 +170,7 @@
       (tab) => {
         const label = tab.cloneNode(true)
         label.querySelectorAll('[aria-hidden="true"]').forEach(node => node.remove())
-        return label.textContent.trim() === "浏览器"
+        return label.textContent.trim() === "Chrome"
       }
     )
   const click = (element) => {
@@ -330,7 +335,7 @@
       browserTabs().length === 1 && address().value === currentPage,
       "Switching back must reuse browser snapshot"
     )
-    click(button("关闭标签页 浏览器"))
+    click(button("关闭标签页 Chrome"))
     assert(
       browserTabs().length === 0 && snapshot.browser.url === currentPage,
       "Closing tab must only hide browser"
@@ -409,6 +414,17 @@
       !fixture.querySelector("iframe"),
       "Simulated page must not impersonate an embedded remote browser"
     )
+    update({ simulated: false, browserThreadId: "thread", task: pendingTask })
+    click(button("显示 Chrome"))
+    await until(() => calls.at(-1)?.[0] === "select", "Show Chrome did not focus the runtime page")
+    assert(calls.at(-1)[1] === "thread" && calls.at(-1)[2]?.focus === true && address().disabled, "Chrome refocus must explicitly request focus and retain task ownership and the selected thread")
+    assert(fixture.textContent.includes("页面已在 Chrome 中打开"), "Live pages must be identified as external Chrome")
+    selectionFailure = true
+    click(button("显示 Chrome"))
+    await until(() => fixture.textContent.includes("Chrome 窗口暂不可用"), "Chrome focus failure must be visible")
+    selectionFailure = false
+    click(button("显示 Chrome"))
+    await until(() => !fixture.textContent.includes("Chrome 窗口暂不可用"), "Chrome focus must remain retryable")
     const pairedFixture = document.createElement("div")
     pairedFixture.className = "flex h-96"
     document.body.append(pairedFixture)
@@ -452,7 +468,7 @@
       pairedFixture.remove()
     }
     result.textContent =
-      "PASS: singleton browser, runtime preview, navigation/history, concurrent page state, task lock, approval target, collapse/tab lifecycle, loading/error/retry, keyboard and narrow layout; independent workbench tab IDs, ARIA links and close focus"
+      "PASS: singleton browser, runtime preview, navigation/history, concurrent page state, task lock, approval target, collapse/tab lifecycle, loading/error/retry, keyboard and narrow layout; external Chrome focus and retry; independent workbench tab IDs, ARIA links and close focus"
     result.dataset.status = "passed"
   } catch (error) {
     result.textContent = `FAIL: ${error.stack || error}`

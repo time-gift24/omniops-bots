@@ -13,7 +13,6 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { z } from 'zod';
 import { createModelFixture } from './model-fixture.mjs';
-import { browserHostFixture } from './browser-host-fixture.mjs';
 
 async function until(check) {
   const deadline = Date.now() + 15_000;
@@ -56,12 +55,13 @@ async function mcpFixture() {
     http.closeAllConnections(); await new Promise(resolve => http.close(resolve));
   } };
 }
-async function client(directory, endpoint, targetId, model, host) {
+async function client(directory, model, manual = {}) {
   const child = spawn(process.env.OMNIOPS_BOTS_TEST_NODE_EXECUTABLE || process.execPath, ['main.mjs'], {
     cwd: process.env.OMNIOPS_BOTS_TEST_RUNTIME_DIRECTORY || new URL('..', import.meta.url), env: {
     ...process.env, OMNIOPS_BOTS_DATA_DIR: join(directory, 'app'), OMNIOPS_BOTS_LOCAL_ROOT: join(directory, 'local'),
     OMNIOPS_BOTS_MODEL: model.model, OPENAI_API_KEY: 'local-model-private', OPENAI_BASE_URL: model.baseURL,
-    OMNIOPS_BOTS_BROWSER_CDP_ENDPOINT: endpoint, OMNIOPS_BOTS_BROWSER_TARGET_ID: targetId, MCP_LOCAL_TOKEN: 'local-mcp-private',
+    MCP_LOCAL_TOKEN: 'local-mcp-private',
+    OMNIOPS_BOTS_MANUAL_BROWSER_CDP_ENDPOINT: manual.endpoint || '', OMNIOPS_BOTS_MANUAL_BROWSER_TARGET_ID: manual.targetId || '',
   }, stdio: ['pipe', 'pipe', 'pipe'] });
   const events = [], pending = new Map(), ready = Promise.withResolvers(), exited = Promise.withResolvers();
   let sequence = 0, stderr = '';
@@ -70,13 +70,6 @@ async function client(directory, endpoint, targetId, model, host) {
   child.on('exit', code => { exited.resolve(code); ready.reject(new Error(`Runtime exited: ${code} ${stderr}`)); for (const request of pending.values()) request.reject(new Error('Runtime exited')); });
   readline.createInterface({ input: child.stdout }).on('line', line => {
     const message = JSON.parse(line);
-    if (message.event === 'browser_host_request') {
-      void host.request(message.method, message.pageId).then(
-        result => child.stdin.write(JSON.stringify({ browserHostResponse: message.id, result }) + '\n'),
-        error => child.stdin.write(JSON.stringify({ browserHostResponse: message.id, error: { message: error.message } }) + '\n'),
-      );
-      return;
-    }
     if (message.event) events.push(message);
     if (message.event === 'ready') ready.resolve();
     const request = pending.get(message.id);
@@ -95,9 +88,20 @@ async function client(directory, endpoint, targetId, model, host) {
   } };
 }
 
-test('client JSONL runs complete pinned Skills and real MCP through LangGraph and Chromium, then restores without replay', { timeout: 60_000 }, async () => {
+test('client JSONL isolates manual CDP operations from Agent Chrome, runs pinned Skills and MCP, and restores without replay', { timeout: 90_000 }, async () => {
   const directory = await realpath(await mkdtemp(join(tmpdir(), 'omniops-bots-client-')));
-  let browserServer, control, runtime, model, mcp;
+  let control, manualServer, manualControl, runtime, model, mcp;
+  async function chromeContext() {
+    await control?.close();
+    const [port, path] = (await readFile(join(directory, 'app/chrome/DevToolsActivePort'), 'utf8')).trim().split('\n');
+    control = await chromium.connectOverCDP(`ws://127.0.0.1:${port}${path}`);
+    return control.contexts()[0];
+  }
+  async function inputValues(context) {
+    const values = [];
+    for (const page of context.pages()) if (await page.getByRole('searchbox').count()) values.push(await page.getByRole('searchbox').inputValue());
+    return values.toSorted();
+  }
   try {
     mcp = await mcpFixture();
     model = await createModelFixture({ respond({ body, baseURL }) {
@@ -122,18 +126,31 @@ test('client JSONL runs complete pinned Skills and real MCP through LangGraph an
       assert.equal(JSON.parse(last.content).status, 'passed');
       return { text: `真实页面已填写：${JSON.parse(last.content).result.query}，未提交。` };
     } });
-    browserServer = await chromium.launchServer({ channel: 'chromium', headless: true, args: ['--remote-debugging-port=0', '--remote-debugging-address=127.0.0.1'] });
-    const profile = browserServer.process().spawnargs.find(arg => arg.startsWith('--user-data-dir=')).slice('--user-data-dir='.length);
-    const [port, path] = (await readFile(join(profile, 'DevToolsActivePort'), 'utf8')).trim().split('\n');
-    const endpoint = `ws://127.0.0.1:${port}${path}`;
-    control = await chromium.connectOverCDP(endpoint);
-    const context = control.contexts()[0], page = context.pages()[0] || await context.newPage();
-    const other = await context.newPage();
-    const session = await context.newCDPSession(page);
-    const { targetInfo } = await session.send('Target.getTargetInfo'); await session.detach();
-    const host = browserHostFixture(context, endpoint);
-    runtime = await client(directory, endpoint, targetInfo.targetId, model, host);
+    manualServer = await chromium.launchServer({ channel: 'chromium', headless: true, args: ['--remote-debugging-port=0', '--remote-debugging-address=127.0.0.1'] });
+    const manualProfile = manualServer.process().spawnargs.find(arg => arg.startsWith('--user-data-dir=')).slice('--user-data-dir='.length);
+    const [manualPort, manualPath] = (await readFile(join(manualProfile, 'DevToolsActivePort'), 'utf8')).trim().split('\n');
+    const manual = { endpoint: `ws://127.0.0.1:${manualPort}${manualPath}` };
+    manualControl = await chromium.connectOverCDP(manual.endpoint);
+    const manualPage = manualControl.contexts()[0].pages()[0] || await manualControl.contexts()[0].newPage();
+    const manualSession = await manualControl.contexts()[0].newCDPSession(manualPage);
+    manual.targetId = (await manualSession.send('Target.getTargetInfo')).targetInfo.targetId;
+    await manualSession.detach();
+    runtime = await client(directory, model, manual);
     const rpc = (...args) => runtime.rpc(...args);
+    assert.equal((await rpc('operations_browser_status')).status, 'empty');
+    const manualUrl = `${model.baseURL.replace(/\/v1\/?$/, '')}/page`;
+    await rpc('operations_browser_navigate', { url: `${manualUrl}?manual=one` });
+    await rpc('operations_browser_navigate', { url: `${manualUrl}?manual=two` });
+    await rpc('operations_browser_back');
+    assert.equal((await rpc('operations_browser_status')).url, `${manualUrl}?manual=one`);
+    await rpc('operations_browser_forward');
+    await rpc('operations_browser_reload');
+    await manualPage.getByRole('searchbox').fill('manual-only');
+    const beforeAgent = await rpc('status');
+    assert.equal(beforeAgent.browser.url, '');
+    assert.equal(beforeAgent.browserRequest, 0);
+    assert.equal(beforeAgent.operationsBrowser.url, `${manualUrl}?manual=two`);
+    assert.ok(runtime.events.some(event => event.event === 'operations_browser_state' && event.state.url === `${manualUrl}?manual=two`));
     const skill = await rpc('skill_library_create', { name: 'browser-proof', description: 'Read references/query.txt and use MCP before browser operations.' });
     await rpc('skill_library_mkdir', { id: skill.id, path: 'references' });
     const writeReference = text => rpc('skill_library_write', { id: skill.id, path: 'references/query.txt', data: Buffer.from(text).toString('base64'), replace: true });
@@ -150,7 +167,10 @@ test('client JSONL runs complete pinned Skills and real MCP through LangGraph an
       return rpc('run_get', { runId });
     }
     const first = await run('one', 'stable-session');
-    assert.equal(await host.pages.get('stable-session').getByRole('searchbox').inputValue(), 'version-one');
+    let context = await chromeContext();
+    assert.deepEqual(await inputValues(context), ['version-one']);
+    assert.equal(await manualPage.getByRole('searchbox').inputValue(), 'manual-only');
+    const page = await context.newPage(), other = await context.newPage();
     assert.equal(page.url(), 'about:blank');
     assert.equal(other.url(), 'about:blank');
     assert.equal(first.status, 'completed');
@@ -160,17 +180,20 @@ test('client JSONL runs complete pinned Skills and real MCP through LangGraph an
     await writeReference('version-two');
     await rpc('agent_save', { id: agent.id, configuration: { ...configuration, instructions: 'Updated prompt for new sessions.' } });
     await runtime.close();
+    assert.equal(control.isConnected(), false, 'runtime shutdown closes its own external Chrome');
+    assert.equal(manualPage.isClosed(), false, 'runtime only disconnects from the native manual browser');
     const requestCount = model.requests.length;
-    runtime = await client(directory, endpoint, targetInfo.targetId, model, host);
+    runtime = await client(directory, model, manual);
+    assert.equal((await rpc('operations_browser_status')).url, `${manualUrl}?manual=two`);
     assert.equal((await rpc('runs_list')).length, 1);
     assert.deepEqual(await rpc('session_snapshot', { threadId: 'stable-session' }), first.snapshot);
     await delay(50); assert.equal(model.requests.length, requestCount);
     const second = await run('two', 'stable-session');
-    assert.equal(await host.pages.get('stable-session').getByRole('searchbox').inputValue(), 'version-one');
+    context = await chromeContext();
+    assert.deepEqual(await inputValues(context), ['version-one']);
     assert.deepEqual(second.snapshot, first.snapshot);
     const third = await run('three', 'fresh-session');
-    assert.equal(await host.pages.get('fresh-session').getByRole('searchbox').inputValue(), 'version-two');
-    assert.equal(await host.pages.get('stable-session').getByRole('searchbox').inputValue(), 'version-one');
+    assert.deepEqual(await inputValues(context), ['version-one', 'version-two']);
     assert.notEqual(third.snapshot.skills[0].contentId, first.snapshot.skills[0].contentId);
     assert.deepEqual(mcp.calls, ['version-one', 'version-one', 'version-two']);
     await assert.rejects(rpc('chat_start', { runId: 'one', threadId: 'stable-session', request: { messages: [{ role: 'user', text: 'duplicate' }] } }), error => error.kind === 'duplicate-run');
@@ -178,7 +201,7 @@ test('client JSONL runs complete pinned Skills and real MCP through LangGraph an
     await until(() => runtime.events.some(event => event.runId === 'interrupted' && event.data?.type === 'started'));
     await runtime.close(true);
     const beforeRestart = model.requests.length;
-    runtime = await client(directory, endpoint, targetInfo.targetId, model, host);
+    runtime = await client(directory, model, manual);
     const interrupted = await rpc('run_get', { runId: 'interrupted' });
     assert.equal(interrupted.status, 'interrupted');
     assert.match(interrupted.error.message, /结果未知/);
@@ -187,7 +210,7 @@ test('client JSONL runs complete pinned Skills and real MCP through LangGraph an
     const records = JSON.stringify(await rpc('runs_list'));
     for (const secret of ['local-model-private', 'local-mcp-private']) assert.equal(records.includes(secret), false);
   } finally {
-    await runtime?.close(); await control?.close(); await browserServer?.close();
+    await runtime?.close(); await control?.close(); await manualControl?.close(); await manualServer?.close();
     await model?.close(); await mcp?.close(); await writable(directory); await rm(directory, { recursive: true, force: true });
   }
 });

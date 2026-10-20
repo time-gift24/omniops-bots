@@ -4,6 +4,7 @@ import {
   ArrowRight01Icon,
   FolderOpenIcon,
   GitMergeIcon,
+  Globe02Icon,
   PlusSignIcon,
 } from "@hugeicons-pro/core-stroke-rounded";
 import type { RecommendedSite } from "@/workbench/backend";
@@ -128,18 +129,21 @@ export function StartPage({
   onOpenFiles,
   onNewTab,
   onOpenSite,
+  onOpenOperationsBrowser,
 }: {
   sites: BackendDataState<readonly RecommendedSite[]>;
   onOpenChanges: () => void;
   onOpenFiles: () => void;
   onNewTab: () => void;
   onOpenSite: (site: RecommendedSite) => void;
+  onOpenOperationsBrowser: () => void;
 }) {
   return (
     <div className="h-full overflow-auto px-4 py-5">
       <section aria-label="工具">
         <h3 className="px-1 text-xs font-medium text-muted-foreground">工具</h3>
         <ul className="mt-1.5 space-y-0.5">
+          <ToolRow icon={Globe02Icon} label="运维浏览器" description="在应用内手动操作网页" onClick={onOpenOperationsBrowser} />
           <ToolRow
             icon={GitMergeIcon}
             label="变更"

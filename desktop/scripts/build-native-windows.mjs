@@ -123,7 +123,8 @@ async function verifyPackage() {
   const node = join(root, 'crates/omniops-bots-desktop/binaries', `omniops-bots-node-${target}.exe`);
   const sqliteAddon = join(resources, 'runtime/node_modules/better-sqlite3/build/Release/better_sqlite3.node');
   const manifest = JSON.parse(await readFile(join(resources, 'runtime-manifest.json'), 'utf8'));
-  assert.equal(manifest.browserMode, 'embedded');
+  assert.equal(manifest.browserMode, 'external-chrome');
+  assert.equal(manifest.operationsBrowser, 'embedded-cef');
   assert.equal(manifest.target, target);
   assert.equal(manifest.nodeSha256, await digest(node));
   assert.equal(manifest.sqlite.platform, 'win32');
@@ -181,7 +182,7 @@ async function verifyPackage() {
   const runtimeSourceMatchesStagedFiles = (await Promise.all(sourceFiles.map(async name => await digest(join(root, 'desktop/runtime', name)) === await digest(join(resources, 'runtime', name))))).every(Boolean);
   assert.ok(runtimeSourceMatchesStagedFiles, 'Re-prepare changed runtime source before packaging');
   const summary = {
-    version: config.version, target, browserMode: 'embedded', builtOn: process.platform === 'win32' ? 'Windows x64' : 'macOS arm64 (cross compiled)',
+    version: config.version, target, browserMode: manifest.browserMode, operationsBrowser: manifest.operationsBrowser, builtOn: process.platform === 'win32' ? 'Windows x64' : 'macOS arm64 (cross compiled)',
     installer: installerPath, installerBytes: (await stat(installerPath)).size, installerSha256: await digest(installerPath), installerMachine: await peMachine(installerPath),
     componentMachines: machines, nodeSha256MatchesManifest: true, runtimeSourceMatchesStagedFiles, sqlite: manifest.sqlite,
     cef: manifest.chromium, sandbox: { ...manifest.sandbox, windowsTokenValidation: 'not_run: requires Windows host or VM' }, launchExecutableMatchesUpstreamBootstrap: true, exportsRunWinMain: true,
@@ -215,7 +216,7 @@ async function main() {
   process.chdir(root);
   configureTools();
   if (mode === '--verify-only') { await verifyPackage(); return; }
-  execFileSync(process.execPath, ['desktop/scripts/prepare.mjs', '--embedded', '--target', target], { stdio: 'inherit', env });
+  execFileSync(process.execPath, ['desktop/scripts/prepare.mjs', '--target', target], { stdio: 'inherit', env });
   await prepareCEF();
   env.OMNIOPS_BOTS_RUNTIME_PREPARED = '1';
   if (mode === '--prepare-only') return;

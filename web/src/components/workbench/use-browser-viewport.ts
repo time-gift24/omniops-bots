@@ -4,9 +4,7 @@ import type { BrowserViewport, DesktopRuntime } from "@/desktop/runtime"
 /** Native web content must yield to application portals, which cannot cover a CEF surface. */
 export function useBrowserViewport(
   visible: boolean,
-  interactive: boolean,
-  setViewport: DesktopRuntime["setBrowserViewport"] | undefined,
-  browserThreadId: string | null = null
+  setViewport: DesktopRuntime["setBrowserViewport"]
 ) {
   const ref = useRef<HTMLDivElement>(null)
   const [error, setError] = useState<string>()
@@ -44,10 +42,9 @@ export function useBrowserViewport(
           y = Math.max(0, rect.y)
         const width = Math.min(innerWidth, rect.right) - x,
           height = Math.min(innerHeight, rect.bottom) - y
-        if (width >= 1 && height >= 1)
-          bounds = { x, y, width, height, interactive }
+        if (width >= 1 && height >= 1) bounds = { x, y, width, height }
       }
-      const key = JSON.stringify({ bounds, browserThreadId })
+      const key = JSON.stringify(bounds)
       if (key === previous) return
       previous = key
       void setViewport(bounds).then(
@@ -90,6 +87,6 @@ export function useBrowserViewport(
       document.removeEventListener("visibilitychange", schedule)
       void setViewport(null).catch(() => {})
     }
-  }, [visible, interactive, setViewport, browserThreadId])
+  }, [visible, setViewport])
   return { ref, error }
 }

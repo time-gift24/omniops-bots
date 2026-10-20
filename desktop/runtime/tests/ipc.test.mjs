@@ -10,7 +10,7 @@ test('JSONL entry returns structured safe errors, exact snapshots and clean shut
   const directory = await mkdtemp(join(tmpdir(), 'omniops-bots-ipc-'));
   const child = spawn(process.execPath, ['main.mjs'], { cwd: new URL('..', import.meta.url), env: {
     ...process.env, OMNIOPS_BOTS_DATA_DIR: directory, OMNIOPS_BOTS_LOCAL_ROOT: join(directory, 'local'), OMNIOPS_BOTS_MODEL: '', OPENAI_API_KEY: '', OPENAI_BASE_URL: '',
-    OMNIOPS_BOTS_BROWSER_CDP_ENDPOINT: 'http://127.0.0.1:1', OMNIOPS_BOTS_BROWSER_TARGET_ID: 'fixture-only', OMNIOPS_BOTS_MAX_CONCURRENT_RUNS: '5',
+    OMNIOPS_BOTS_MAX_CONCURRENT_RUNS: '5',
   }, stdio: ['pipe', 'pipe', 'pipe'] });
   let id = 0;
   const pending = new Map(), ready = Promise.withResolvers(), exited = Promise.withResolvers();
@@ -33,8 +33,13 @@ test('JSONL entry returns structured safe errors, exact snapshots and clean shut
   try {
     await ready.promise;
     const status = (await rpc('status')).result;
-    assert.deepEqual(Object.keys(status).sort(), ['browser', 'browserRequest', 'browserThreadId', 'simulated', 'task', 'tasks']);
+    assert.deepEqual(Object.keys(status).sort(), ['browser', 'browserRequest', 'browserThreadId', 'operationsBrowser', 'simulated', 'task', 'tasks']);
+    assert.equal(status.operationsBrowser.status, 'error');
+    assert.equal((await rpc('operations_browser_navigate', { url: 'https://example.com' })).error.kind, 'unavailable');
+    assert.deepEqual((await rpc('operations_browser_status')).result, status.operationsBrowser);
     assert.deepEqual(status.tasks, []);
+    assert.equal((await rpc('browser_select', { threadId: 'idle-chat', focus: 'yes' })).error.kind, 'invalid-request');
+    assert.deepEqual((await rpc('browser_select', { threadId: 'idle-chat' })).result, { selected: true });
     assert.equal(status.browserThreadId, null);
     assert.equal(status.simulated, false);
     assert.deepEqual((await rpc('settings_get')).result, { maxConcurrentRuns: 5 });

@@ -218,9 +218,27 @@ function readTask(value: unknown): DesktopTask {
   }
   return task
 }
+export function readBrowserSnapshot(
+  value: unknown
+): DesktopSnapshot["browser"] {
+  const browser = object(value)
+  return {
+    url: string(browser.url),
+    title: string(browser.title),
+    status: choice(browser.status, [
+      "empty",
+      "loading",
+      "ready",
+      "error",
+    ] as const),
+    canGoBack: boolean(browser.canGoBack),
+    canGoForward: boolean(browser.canGoForward),
+    error: optional(browser.error),
+  }
+}
+
 export function readDesktopSnapshot(value: unknown): DesktopSnapshot {
-  const raw = object(value),
-    browser = object(raw.browser)
+  const raw = object(value)
   if (raw.simulated !== false) throw new Error("桌面服务未连接真实浏览器。")
   const legacyTask = raw.task === null ? null : readTask(raw.task)
   const tasks =
@@ -247,18 +265,9 @@ export function readDesktopSnapshot(value: unknown): DesktopSnapshot {
     browserThreadId,
     task: tasks.find((task) => task.threadId === browserThreadId) ?? null,
     browserRequest: number(raw.browserRequest),
-    browser: {
-      url: string(browser.url),
-      title: string(browser.title),
-      status: choice(browser.status, [
-        "empty",
-        "loading",
-        "ready",
-        "error",
-      ] as const),
-      canGoBack: boolean(browser.canGoBack),
-      canGoForward: boolean(browser.canGoForward),
-      error: optional(browser.error),
-    },
+    browser: readBrowserSnapshot(raw.browser),
+    ...(raw.operationsBrowser === undefined
+      ? {}
+      : { operationsBrowser: readBrowserSnapshot(raw.operationsBrowser) }),
   }
 }

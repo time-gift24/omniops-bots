@@ -140,8 +140,7 @@ async function windowsNode(pinned) {
 async function main() {
   process.chdir(root);
   const args = process.argv.slice(2);
-  if (args[0] === '--embedded') args.shift();
-  if (args.length && (args.length !== 2 || args[0] !== '--target')) throw new Error('Usage: node desktop/scripts/prepare.mjs [--embedded] [--target x86_64-pc-windows-msvc]');
+  if (args.length && (args.length !== 2 || args[0] !== '--target')) throw new Error('Usage: node desktop/scripts/prepare.mjs [--target x86_64-pc-windows-msvc]');
   const host = execFileSync('rustc', ['--print', 'host-tuple'], { encoding: 'utf8' }).trim();
   const plan = preparationPlan(host, args[1]);
   const pinned = '26.11.1';
@@ -187,12 +186,13 @@ async function main() {
     playwright: JSON.parse(await readFile(join(staged, 'node_modules/playwright-core/package.json'), 'utf8')).version,
     deepagents: JSON.parse(await readFile('desktop/runtime/package.json', 'utf8')).dependencies.deepagents,
     sqlite,
-    browserMode: 'embedded',
+    browserMode: 'external-chrome',
+    operationsBrowser: 'embedded-cef',
     chromium: { cef: '154.0.34', version: '154.0.8037.98' },
     target: plan.target,
   };
   await writeFile(join(resources, 'runtime-manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
-  console.log(`Prepared private Node ${pinned}, Playwright ${manifest.playwright}, native CEF for ${plan.target}.`);
+  console.log(`Prepared private Node ${pinned}, Playwright ${manifest.playwright}, Agent Chrome and manual CEF for ${plan.target}.`);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) await main();

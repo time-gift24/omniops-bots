@@ -39,7 +39,7 @@ use tracing_appender::non_blocking::{NonBlocking, WorkerGuard};
 use tracing_subscriber::{EnvFilter, Layer, filter::filter_fn, layer::SubscriberExt};
 
 static INITIALIZED: AtomicBool = AtomicBool::new(false);
-const DEFAULT_FILTER: &str = "warn,omniops_bots_core=info,omniops_bots_provider=info,omniops_bots_cli=info,omniops_bots_desktop=info,omniops_bots_collector=info";
+const DEFAULT_FILTER: &str = "warn,omniops_bots_desktop=info,omniops_bots_collector=info";
 
 /// One process-wide collection lifetime. Dropping does not wait for output.
 /// Initialization is one-shot, even after shutdown; global hot replacement is unsupported.

@@ -334,44 +334,48 @@ test("file attachments preserve bytes, URLs are validated, and model/history/ins
   assert.deepEqual(received.request.history, request.history)
 })
 
-test("native viewport writes coalesce while pending and hiding never stops a task", async t => {
+test("Chrome page selection and refocus use the runtime without native surface commands", async t => {
   const { createTauriRuntime } = await load(t)
-  const pending = deferred()
-  let writes = 0
-  const host = bridge(command => command === "browser_set_bounds" && writes++ === 0 ? pending.promise : {})
+  const host = bridge(() => ({}))
   const runtime = createTauriRuntime(host)
-  const first = runtime.desktop.setBrowserViewport({ x: 1, y: 2, width: 300, height: 400, interactive: true })
-  void runtime.desktop.setBrowserViewport(null)
-  void runtime.desktop.setBrowserViewport({ x: 5, y: 6, width: 500, height: 600, interactive: false })
-  pending.resolve({})
-  await first
-  assert.equal(host.calls.length, 2)
-  assert.deepEqual(host.calls.at(-1)[1].bounds, { x: 5, y: 6, width: 500, height: 600, pageId: "__manual__", visible: true, interactive: false })
-  await runtime.desktop.setBrowserViewport(null)
-  assert.equal(host.calls.at(-1)[1].bounds.visible, false)
+  await runtime.initialize()
+  const task = { runId: "active", threadId: "b", title: "Inspect", phase: "running" }
+  host.emit({ event: "desktop_state", state: snapshot([task], "b") })
+  await runtime.desktop.selectBrowserThread("a")
+  await runtime.desktop.selectBrowserThread("b", { focus: false })
+  await runtime.desktop.selectBrowserThread("b", { focus: true })
+  await runtime.desktop.selectBrowserThread(null)
+  await runtime.desktop.selectBrowserThread(null, { focus: true })
+  assert.deepEqual(host.calls.filter(([, args]) => args?.method === "browser_select").map(([, args]) => args.params), [
+    { threadId: "a" }, { threadId: "b", focus: false }, { threadId: "b", focus: true },
+    { threadId: null }, { threadId: null, focus: true },
+  ])
+  const beforeInvalid = host.calls.length
+  for (const focus of [null, "true", 0, 1, {}])
+    await assert.rejects(runtime.desktop.selectBrowserThread("a", { focus }), /布尔值/)
+  assert.equal(host.calls.length, beforeInvalid, "invalid focus options must not cross the runtime boundary")
+  assert.equal(runtime.desktop.getState().browserThreadId, null)
+  assert.equal(runtime.desktop.getState().tasks[0].runId, "active", "selection must preserve active tasks")
+  runtime.dispose()
+  const bounds = host.calls.filter(([command]) => command === "browser_set_bounds")
+  assert.ok(bounds.every(([, args]) => args.bounds.pageId === "__manual__" && !args.bounds.visible), "Chrome selection must never display or rebind the manual surface")
   assert.equal(host.calls.some(([, args]) => args?.method === "stop"), false)
 })
 
-test("browser selection resends unchanged viewport bounds with the selected page identity", async t => {
+test("failed Chrome page selection preserves the current page and remains retryable", async t => {
   const { createTauriRuntime } = await load(t)
-  const pending = deferred()
-  let writes = 0
-  const host = bridge(command => command === "browser_set_bounds" && writes++ === 0 ? pending.promise : {})
+  let fail = false
+  const host = bridge(() => { if (fail) throw new Error("Chrome unavailable"); return {} })
   const runtime = createTauriRuntime(host)
   await runtime.initialize()
-  const bounds = { x: 5, y: 6, width: 500, height: 600, interactive: false }
-  const initial = runtime.desktop.setBrowserViewport(bounds)
   await runtime.desktop.selectBrowserThread("a")
+  fail = true
+  await assert.rejects(runtime.desktop.selectBrowserThread("b"), /浏览器会话切换失败/)
+  assert.equal(runtime.desktop.getState().browserThreadId, "a")
+  fail = false
   await runtime.desktop.selectBrowserThread("b")
-  pending.resolve({})
-  await initial
-  const sent = host.calls.filter(([command]) => command === "browser_set_bounds")
-  assert.deepEqual(sent.map(([, args]) => args.bounds.pageId), ["__manual__", "b"])
-  assert.deepEqual(sent.at(-1)[1].bounds, { ...bounds, pageId: "b", visible: true })
   assert.equal(runtime.desktop.getState().browserThreadId, "b")
-  await runtime.desktop.selectBrowserThread(null)
-  await tick()
-  assert.equal(host.calls.at(-1)[1].bounds.pageId, "__manual__")
+  runtime.dispose()
 })
 
 test("navigation captures its page identity and an outstanding page does not block another page", async t => {
@@ -504,4 +508,84 @@ test("durable native sessions reject in-place retries but accept a manual next t
   assert.equal(requests[1].threadId, "durable")
   assert.equal(store.getState().messages[1].state, "failed")
   assert.equal(store.getState().messages.at(-1).parts[0].text, "next turn")
+})
+
+test("manual operations and native bounds remain independent of Agent Chrome tasks and page selection", async t => {
+  const { createTauriRuntime } = await load(t)
+  const navigating = deferred()
+  const operations = { url: "https://ops.test/", title: "Operations", status: "ready", canGoBack: false, canGoForward: false }
+  const host = bridge((_command, args) => {
+    if (args.method === "operations_browser_status") return operations
+    if (args.method === "operations_browser_navigate") return navigating.promise
+    return {}
+  })
+  const runtime = createTauriRuntime(host)
+  await runtime.initialize()
+  const task = { runId: "run", threadId: "agent", title: "Agent task", phase: "running" }
+  host.emit({ event: "desktop_state", state: snapshot([task], "agent") })
+  const chrome = runtime.desktop.getState().browser
+  await runtime.desktop.readOperationsBrowser()
+  const navigation = runtime.desktop.operationsNavigate("ops.test/next")
+  await assert.rejects(runtime.desktop.operationsBack(), /正在导航/)
+  await assert.rejects(runtime.desktop.navigate("https://agent.test/"), /等待/)
+  await runtime.desktop.setBrowserViewport({ x: 1, y: 2, width: 300, height: 400 })
+  await runtime.desktop.selectBrowserThread("other")
+  const visible = host.calls.filter(([command]) => command === "browser_set_bounds").at(-1)[1].bounds
+  assert.deepEqual(visible, { pageId: "__manual__", x: 1, y: 2, width: 300, height: 400, visible: true, interactive: true })
+  host.emit({ event: "operations_browser_state", state: { ...operations, url: "https://ops.test/new" } })
+  assert.equal(runtime.desktop.getState().browser, chrome)
+  assert.equal(runtime.desktop.getState().operationsBrowser.url, "https://ops.test/new")
+  assert.equal(runtime.desktop.getState().tasks[0].runId, "run")
+  assert.deepEqual(host.calls.find(([, args]) => args?.method === "operations_browser_navigate")[1].params, { url: "https://ops.test/next" })
+  navigating.resolve({ navigated: true }); await navigation
+  for (const url of ["javascript:alert(1)", "file:///tmp/private", "https://user:secret@ops.test/"])
+    await assert.rejects(runtime.desktop.operationsNavigate(url))
+  await runtime.desktop.setBrowserViewport(null)
+  runtime.dispose()
+})
+
+test("manual snapshot failures and late reads cannot overwrite Agent state or newer operations events", async t => {
+  const { createTauriRuntime } = await load(t)
+  const pending = deferred()
+  const host = bridge((_command, args) => args.method === "operations_browser_status" ? pending.promise : {})
+  const runtime = createTauriRuntime(host)
+  await runtime.initialize()
+  const task = { runId: "run", threadId: "agent", title: "Agent task", phase: "running" }
+  host.emit({ event: "desktop_state", state: snapshot([task], "agent") })
+  const read = runtime.desktop.readOperationsBrowser()
+  const operations = { url: "https://ops.test/new", title: "New", status: "ready", canGoBack: true, canGoForward: false }
+  host.emit({ event: "operations_browser_state", state: operations })
+  pending.resolve({ ...operations, url: "https://ops.test/old" }); await read
+  assert.equal(runtime.desktop.getState().operationsBrowser.url, operations.url)
+  host.emit({ event: "operations_browser_state", state: { invalid: true } })
+  assert.equal(runtime.desktop.getState().operationsBrowser.status, "error")
+  assert.equal(runtime.desktop.getState().task.runId, "run")
+  await runtime.desktop.selectBrowserThread("agent", { focus: true })
+  assert.equal(runtime.desktop.getState().tasks[0].runId, "run")
+  runtime.dispose()
+})
+
+test("manual viewport updates coalesce with a fixed page and recover after host failure", async t => {
+  const { createTauriRuntime } = await load(t)
+  const pending = deferred()
+  let writes = 0, fail = false
+  const host = bridge(command => {
+    if (command !== "browser_set_bounds") return {}
+    if (fail) throw new Error("surface unavailable")
+    return writes++ === 0 ? pending.promise : {}
+  })
+  const runtime = createTauriRuntime(host)
+  const first = runtime.desktop.setBrowserViewport({ x: 1, y: 2, width: 300, height: 400 })
+  await tick()
+  void runtime.desktop.setBrowserViewport(null)
+  void runtime.desktop.setBrowserViewport({ x: 5, y: 6, width: 500, height: 600 })
+  pending.resolve({}); await first
+  assert.equal(host.calls.length, 2)
+  assert.equal(host.calls.at(-1)[1].bounds.pageId, "__manual__")
+  assert.equal(host.calls.at(-1)[1].bounds.interactive, true)
+  fail = true
+  await assert.rejects(runtime.desktop.setBrowserViewport(null), /画面暂时无法显示/)
+  fail = false
+  await runtime.desktop.setBrowserViewport(null)
+  assert.equal(host.calls.at(-1)[1].bounds.visible, false)
 })

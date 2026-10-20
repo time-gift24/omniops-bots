@@ -8,6 +8,10 @@ pub(crate) mod native_browser;
 pub(crate) mod native_browser;
 
 use error::{Error, IpcError};
+#[cfg(all(
+    feature = "native-browser",
+    any(target_os = "macos", target_os = "windows")
+))]
 use serde::Deserialize;
 use serde_json::{Value, json};
 use std::{
@@ -43,7 +47,6 @@ struct Inner {
     pending: HashMap<u64, oneshot::Sender<Reply>>,
     starting: HashSet<u64>,
     preparing: HashSet<String>,
-    browser_requests: HashSet<u64>,
     task_active: bool,
     shutting_down: bool,
     exit_allowed: bool,
@@ -59,7 +62,6 @@ impl Runtime {
                 pending: HashMap::new(),
                 starting: HashSet::new(),
                 preparing: HashSet::new(),
-                browser_requests: HashSet::new(),
                 task_active: false,
                 shutting_down: false,
                 exit_allowed: false,
@@ -109,7 +111,6 @@ impl Runtime {
         inner.error = Some(error.clone());
         inner.starting.clear();
         inner.preparing.clear();
-        inner.browser_requests.clear();
         inner.task_active = false;
         for (_, sender) in inner.pending.drain() {
             let _ = sender.send(Err(error.clone()));
@@ -209,29 +210,6 @@ impl Runtime {
             return Err(Error::InvalidInput("Runtime response is too large"));
         }
         let message: Value = serde_json::from_slice(line)?;
-        if message["event"] == "browser_host_request" {
-            let id = message["id"]
-                .as_u64()
-                .filter(|id| *id > 0 && *id <= 9_007_199_254_740_991)
-                .ok_or(Error::InvalidInput("Browser host request ID is invalid"))?;
-            if !matches!(
-                message["method"].as_str(),
-                Some("create" | "select" | "release")
-            ) || message["pageId"].as_str().is_none_or(|page_id| {
-                page_id.trim().is_empty()
-                    || page_id.len() > 256
-                    || page_id.chars().any(char::is_control)
-            }) {
-                return Err(Error::InvalidInput("Browser host request is invalid"));
-            }
-            let mut inner = self.inner.lock().unwrap();
-            if inner.browser_requests.len() >= 64 || !inner.browser_requests.insert(id) {
-                return Err(Error::InvalidInput(
-                    "Too many or duplicate browser host requests",
-                ));
-            }
-            return Ok(Some(message));
-        }
         if let Some(id) = message["id"].as_u64() {
             let mut inner = self.inner.lock().unwrap();
             inner.starting.remove(&id);
@@ -273,28 +251,11 @@ impl Runtime {
                 self.inner.lock().unwrap().task_active = !tasks.is_empty();
                 Ok(Some(message))
             }
-            Some("chat_event" | "runtime_exit" | "exit") => Ok(Some(message)),
+            Some("operations_browser_state" | "chat_event" | "runtime_exit" | "exit") => {
+                Ok(Some(message))
+            }
             _ => Ok(None),
         }
-    }
-
-    fn browser_response(&self, id: u64, result: Result<Value, Error>) -> Result<(), Error> {
-        let mut inner = self.inner.lock().unwrap();
-        if !inner.browser_requests.remove(&id) {
-            return Ok(());
-        }
-        let message = match result {
-            Ok(result) => json!({ "browserHostResponse": id, "result": result }),
-            Err(error) => json!({ "browserHostResponse": id, "error": IpcError::from(error) }),
-        };
-        let mut line = serde_json::to_vec(&message)?;
-        line.push(b'\n');
-        inner
-            .child
-            .as_mut()
-            .ok_or(Error::Unavailable("Agent runtime is unavailable"))?
-            .write(&line)?;
-        Ok(())
     }
 
     fn terminated(&self) {
@@ -384,6 +345,10 @@ async fn runtime_request(method: String, params: Value, runtime: State<'_, Arc<R
         .map_err(Into::into)
 }
 
+#[cfg(all(
+    feature = "native-browser",
+    any(target_os = "macos", target_os = "windows")
+))]
 #[derive(Clone, Deserialize)]
 struct BrowserBounds {
     x: f64,
@@ -396,11 +361,19 @@ struct BrowserBounds {
     page_id: Option<String>,
 }
 
+#[cfg(all(
+    feature = "native-browser",
+    any(target_os = "macos", target_os = "windows")
+))]
 #[tauri::command]
 async fn browser_set_bounds(app: tauri::AppHandle, bounds: BrowserBounds) -> Result<(), IpcError> {
+    let page_id = bounds.page_id.unwrap_or_else(|| "__manual__".to_owned());
+    if page_id != "__manual__" {
+        return Err(Error::InvalidInput("Only the manual browser can be embedded").into());
+    }
     native_browser::set_bounds(
         app,
-        bounds.page_id.unwrap_or_else(|| "__manual__".to_owned()),
+        page_id,
         native_browser::Bounds {
             x: bounds.x,
             y: bounds.y,
@@ -494,47 +467,28 @@ async fn host_confirm(app: tauri::AppHandle, message: String) -> Result<bool, Ip
     .map_err(|_| Error::Unavailable("Confirmation dialog was interrupted").into())
 }
 
-async fn browser_host_request(app: tauri::AppHandle, runtime: Arc<Runtime>, message: Value) {
-    let (Some(id), Some(page_id)) = (message["id"].as_u64(), message["pageId"].as_str()) else {
-        return;
-    };
-    let page_id = page_id.to_owned();
-    let result = match message["method"].as_str() {
-        Some("create") if runtime.inner.lock().unwrap().shutting_down => {
-            Err(Error::Unavailable("Desktop is shutting down"))
-        }
-        Some("create") => native_browser::create_page(app, page_id).await
-            .map(|connection| json!({ "endpoint": connection.endpoint, "targetId": connection.target_id })),
-        Some("select") => native_browser::select_page(app, page_id).await
-            .map(|()| json!({ "selected": true })),
-        Some("release") => native_browser::release_page(app, page_id).await
-            .map(|()| json!({ "released": true })),
-        _ => Err(Error::InvalidInput("Browser host operation is invalid")),
-    };
-    if let Err(error) = runtime.browser_response(id, result) {
-        runtime.fail(error.into());
-    }
-}
-
 fn start_runtime(
     app: &tauri::AppHandle,
     runtime: Arc<Runtime>,
     data_dir: PathBuf,
-    connection: native_browser::Connection,
+    manual_connection: Option<(String, String)>,
 ) -> Result<(), Error> {
     let script = app.path().resource_dir()?.join("runtime/main.mjs");
     if !script.is_file() {
         return Err(Error::Unavailable("Bundled agent runtime is missing"));
     }
-    let (mut receiver, child) = app
+    let mut command = app
         .shell()
         .sidecar("omniops-bots-node")?
         .arg(script)
         .env("OMNIOPS_BOTS_DATA_DIR", data_dir)
-        .env("OMNIOPS_BOTS_BROWSER_CDP_ENDPOINT", connection.endpoint)
-        .env("OMNIOPS_BOTS_BROWSER_TARGET_ID", connection.target_id)
-        .set_process_group(true)
-        .spawn()?;
+        .set_process_group(true);
+    if let Some((endpoint, target_id)) = manual_connection {
+        command = command
+            .env("OMNIOPS_BOTS_MANUAL_BROWSER_CDP_ENDPOINT", endpoint)
+            .env("OMNIOPS_BOTS_MANUAL_BROWSER_TARGET_ID", target_id);
+    }
+    let (mut receiver, child) = command.spawn()?;
     {
         let mut inner = runtime.inner.lock().unwrap();
         if inner.shutting_down {
@@ -548,13 +502,6 @@ fn start_runtime(
         while let Some(event) = receiver.recv().await {
             match event {
                 CommandEvent::Stdout(line) => match runtime.receive(&line) {
-                    Ok(Some(message)) if message["event"] == "browser_host_request" => {
-                        tauri::async_runtime::spawn(browser_host_request(
-                            app.clone(),
-                            runtime.clone(),
-                            message,
-                        ));
-                    }
                     Ok(Some(message)) => {
                         let _ = app.emit_to("main", "runtime-event", message);
                     }
@@ -613,7 +560,11 @@ fn start_runtime(
     Ok(())
 }
 
-#[cfg(debug_assertions)]
+#[cfg(all(
+    debug_assertions,
+    feature = "native-browser",
+    any(target_os = "macos", target_os = "windows")
+))]
 async fn smoke_native_pages(app: tauri::AppHandle) -> Result<Value, Error> {
     let first = native_browser::create_page(app.clone(), "smoke-a".into()).await?;
     let second = native_browser::create_page(app.clone(), "smoke-b".into()).await?;
@@ -693,6 +644,10 @@ async fn smoke_native_pages(app: tauri::AppHandle) -> Result<Value, Error> {
     )
 }
 
+#[cfg(all(
+    feature = "native-browser",
+    any(target_os = "macos", target_os = "windows")
+))]
 async fn close_native_browser(app: &tauri::AppHandle) {
     let (sender, receiver) = oneshot::channel();
     if app
@@ -737,6 +692,10 @@ pub(crate) fn run() -> Result<i32, Error> {
 }
 
 fn run_app() -> Result<i32, Error> {
+    #[cfg(all(
+        feature = "native-browser",
+        any(target_os = "macos", target_os = "windows")
+    ))]
     native_browser::prepare_framework().inspect_err(|error| {
         tracing::warn!(
             component = "browser",
@@ -753,6 +712,10 @@ fn run_app() -> Result<i32, Error> {
             runtime_request,
             runtime_prepare_run,
             runtime_release_run,
+            #[cfg(all(
+                feature = "native-browser",
+                any(target_os = "macos", target_os = "windows")
+            ))]
             browser_set_bounds,
             host_copy_text,
             host_open_external,
@@ -763,20 +726,30 @@ fn run_app() -> Result<i32, Error> {
             std::fs::create_dir_all(&data_dir)?;
             let runtime = Arc::new(Runtime::new());
             app.manage(runtime.clone());
-            let window = app
-                .get_webview_window("main")
-                .ok_or(Error::Unavailable("Main window is missing"))?;
-            if let native_browser::Initialization::AlreadyRunning =
-                native_browser::initialize(&window)?
+            #[cfg(all(
+                feature = "native-browser",
+                any(target_os = "macos", target_os = "windows")
+            ))]
             {
-                runtime.inner.lock().unwrap().exit_allowed = true;
-                window.hide()?;
-                app.handle().exit(0);
-                return Ok(());
+                let window = app
+                    .get_webview_window("main")
+                    .ok_or(Error::Unavailable("Main window is missing"))?;
+                if let native_browser::Initialization::AlreadyRunning =
+                    native_browser::initialize(&window)?
+                {
+                    runtime.inner.lock().unwrap().exit_allowed = true;
+                    window.hide()?;
+                    app.handle().exit(0);
+                    return Ok(());
+                }
             }
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
-                #[cfg(debug_assertions)]
+                #[cfg(all(
+                    debug_assertions,
+                    feature = "native-browser",
+                    any(target_os = "macos", target_os = "windows")
+                ))]
                 if let Some(report_path) = std::env::var_os("OMNIOPS_BOTS_BROWSER_SMOKE_REPORT") {
                     let result = match native_browser::wait_ready(Duration::from_secs(15)).await {
                         Ok(_) => smoke_native_pages(handle.clone()).await,
@@ -792,10 +765,24 @@ fn run_app() -> Result<i32, Error> {
                     handle.exit(if written { code } else { 1 });
                     return;
                 }
-                let result = match native_browser::wait_ready(Duration::from_secs(15)).await {
-                    Ok(connection) => start_runtime(&handle, runtime.clone(), data_dir, connection),
-                    Err(error) => Err(error),
-                };
+                let result = async {
+                    #[cfg(all(
+                        feature = "native-browser",
+                        any(target_os = "macos", target_os = "windows")
+                    ))]
+                    let manual_connection = {
+                        let connection =
+                            native_browser::wait_ready(Duration::from_secs(15)).await?;
+                        Some((connection.endpoint, connection.target_id))
+                    };
+                    #[cfg(not(all(
+                        feature = "native-browser",
+                        any(target_os = "macos", target_os = "windows")
+                    )))]
+                    let manual_connection = None;
+                    start_runtime(&handle, runtime.clone(), data_dir, manual_connection)
+                }
+                .await;
                 if let Err(error) = result {
                     tracing::warn!(
                         component = "runtime",
@@ -858,6 +845,10 @@ fn run_app() -> Result<i32, Error> {
                 let app = app.clone();
                 tauri::async_runtime::spawn(async move {
                     runtime.shutdown().await;
+                    #[cfg(all(
+                        feature = "native-browser",
+                        any(target_os = "macos", target_os = "windows")
+                    ))]
                     close_native_browser(&app).await;
                     runtime.inner.lock().unwrap().exit_allowed = true;
                     app.exit(code.unwrap_or(0));
@@ -872,6 +863,10 @@ fn run_app() -> Result<i32, Error> {
             _ => {}
         }
     });
+    #[cfg(all(
+        feature = "native-browser",
+        any(target_os = "macos", target_os = "windows")
+    ))]
     native_browser::finish_shutdown()?;
     Ok(exit_code)
 }
@@ -879,6 +874,24 @@ fn run_app() -> Result<i32, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(all(
+        feature = "native-browser",
+        any(target_os = "macos", target_os = "windows")
+    ))]
+    #[test]
+    fn browser_bounds_require_explicit_input_ownership() {
+        let mut value = serde_json::json!({
+            "x": 0, "y": 0, "width": 500, "height": 600, "visible": true,
+        });
+        assert!(serde_json::from_value::<BrowserBounds>(value.clone()).is_err());
+        value["interactive"] = Value::Bool(false);
+        assert!(
+            !serde_json::from_value::<BrowserBounds>(value)
+                .unwrap()
+                .interactive
+        );
+    }
 
     #[test]
     fn task_preparation_and_shutdown_cannot_both_acquire_the_host() {
@@ -908,6 +921,29 @@ mod tests {
         barrier.wait();
         let closing = runtime.begin_shutdown().is_ok_and(|started| started);
         assert_ne!(preparing.join().unwrap(), closing);
+    }
+
+    #[test]
+    fn operations_browser_updates_reach_frontend_without_changing_task_lifecycle() {
+        let runtime = Runtime::new();
+        runtime.inner.lock().unwrap().task_active = true;
+        let message = json!({
+            "event": "operations_browser_state",
+            "state": {
+                "url": "https://example.com/",
+                "title": "Example Domain",
+                "status": "ready",
+                "canGoBack": false,
+                "canGoForward": false,
+            },
+        });
+        assert_eq!(
+            runtime
+                .receive(&serde_json::to_vec(&message).unwrap())
+                .unwrap(),
+            Some(message)
+        );
+        assert!(runtime.begin_shutdown().is_err());
     }
 
     #[test]
@@ -1002,33 +1038,6 @@ mod tests {
     }
 
     #[test]
-    fn host_requests_are_routed_before_normal_rpc_replies_and_bounded() {
-        let runtime = Runtime::new();
-        let request =
-            br#"{"event":"browser_host_request","id":1,"method":"create","pageId":"thread-a"}"#;
-        let message = runtime.receive(request).unwrap().unwrap();
-        assert_eq!(message["pageId"], "thread-a");
-        assert!(runtime.receive(request).is_err());
-        assert!(runtime.receive(br#"{"event":"browser_host_request","id":2,"method":"close","pageId":"thread-a"}"#).is_err());
-        assert!(runtime.receive(br#"{"event":"browser_host_request","id":2,"method":"create","pageId":"bad\npage"}"#).is_err());
-        assert_eq!(runtime.inner.lock().unwrap().browser_requests.len(), 1);
-    }
-
-    #[test]
-    fn browser_bounds_require_explicit_input_ownership() {
-        let mut value = serde_json::json!({
-            "x": 0, "y": 0, "width": 500, "height": 600, "visible": true,
-        });
-        assert!(serde_json::from_value::<BrowserBounds>(value.clone()).is_err());
-        value["interactive"] = Value::Bool(false);
-        assert!(
-            !serde_json::from_value::<BrowserBounds>(value)
-                .unwrap()
-                .interactive
-        );
-    }
-
-    #[test]
     fn privileged_runtime_methods_never_cross_ui_boundary() {
         assert!(validate_method("shutdown").is_err());
         assert!(validate_method("conversation_run").is_ok());
@@ -1062,6 +1071,12 @@ mod tests {
         assert!(
             runtime
                 .receive(br#"{"event":"untrusted"}"#)
+                .unwrap()
+                .is_none()
+        );
+        assert!(
+            runtime
+                .receive(br#"{"event":"browser_host_request","id":1,"method":"create","pageId":"agent"}"#)
                 .unwrap()
                 .is_none()
         );

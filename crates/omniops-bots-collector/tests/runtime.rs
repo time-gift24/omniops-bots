@@ -1,11 +1,5 @@
 mod support;
-use futures_util::{StreamExt, stream};
 use omniops_bots_collector::{Collector, Error};
-use omniops_bots_core::{
-    AssistantMessage, EventStream, Finish, FinishReason, GenerationEvent, GenerationMetadata,
-    GenerationRequest, GenerationResponse, InputPart, Message, Model, PartDelta, Protocol,
-    Provider, Usage,
-};
 use opentelemetry_proto::tonic::{
     collector::{
         logs::v1::ExportLogsServiceRequest, metrics::v1::ExportMetricsServiceRequest,
@@ -17,54 +11,23 @@ use prost::Message as _;
 use std::{
     io::{BufRead, BufReader, Write},
     process::{Command, Stdio},
-    sync::Arc,
     time::{Duration, Instant},
 };
 use support::*;
 
-struct Echo;
-#[async_trait::async_trait]
-impl Protocol for Echo {
-    fn name(&self) -> &'static str {
-        "test.echo"
-    }
-    async fn generate(
-        &self,
-        p: &Provider,
-        m: &str,
-        _: GenerationRequest,
-    ) -> Result<GenerationResponse, omniops_bots_core::Error> {
-        Ok(GenerationResponse::new(
-            AssistantMessage::text("SECRET_REPLY"),
-            Finish::new(FinishReason::Stop, None),
-            Usage::builder().input_tokens(0).output_tokens(10).build(),
-            GenerationMetadata::builder()
-                .provider_name(p.name())
-                .protocol_name(self.name())
-                .requested_model(m)
-                .request_id("upstream-42")
-                .build(),
-        ))
-    }
-    async fn stream(
-        &self,
-        p: &Provider,
-        m: &str,
-        r: GenerationRequest,
-    ) -> Result<EventStream, omniops_bots_core::Error> {
-        let response = self.generate(p, m, r).await?;
-        Ok(Box::pin(stream::iter(vec![
-            Ok(GenerationEvent::Started(response.metadata().clone())),
-            Ok(GenerationEvent::Delta {
-                part: 0,
-                delta: PartDelta::Text("SECRET_REPLY".into()),
-            }),
-            Ok(GenerationEvent::Usage(
-                Usage::builder().output_tokens(5).build(),
-            )),
-            Ok(GenerationEvent::Completed(response)),
-        ])))
-    }
+fn emit_signals() {
+    let meter = opentelemetry::global::meter("fixture");
+    let span = tracing::info_span!(target: "omniops_bots_desktop", "fixture.operation", request_id = "fixture-42");
+    let _entered = span.enter();
+    tracing::info!(target: "omniops_bots_desktop", "operation.started");
+    meter.u64_counter("fixture.calls").build().add(1, &[]);
+    meter.u64_counter("fixture.tokens").build().add(10, &[]);
+    meter
+        .f64_histogram("fixture.duration")
+        .with_unit("s")
+        .build()
+        .record(0.01, &[]);
+    tracing::info!(target: "omniops_bots_desktop", "operation.completed");
 }
 
 #[test]
@@ -110,29 +73,7 @@ fn child() {
             Err(Error::AlreadyInitialized { .. })
         ));
     }
-    let model = Model::new(
-        Arc::new(Provider::new("fixture-provider", "http://example.test").unwrap()),
-        "fixture-model",
-        Arc::new(Echo),
-    )
-    .unwrap();
-    tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .unwrap()
-        .block_on(async {
-            let request = GenerationRequest::new(vec![Message::User(vec![InputPart::Text(
-                "SECRET_PROMPT".into(),
-            )])])
-            .unwrap();
-            let mut events = model.stream(request).await.unwrap();
-            while let Some(event) = events.next().await {
-                let event = event.unwrap();
-                if mode == "cancel" && matches!(event, GenerationEvent::Delta { .. }) {
-                    break;
-                }
-            }
-        });
+    emit_signals();
     if mode == "cardinality" {
         let counter = opentelemetry::global::meter("fixture")
             .u64_counter("fixture.cardinality")
@@ -144,7 +85,7 @@ fn child() {
     if mode == "backpressure" {
         let text = "x".repeat(1024);
         for _ in 0..10000 {
-            tracing::warn!(target:"omniops_bots_core", padding=text, "pressure");
+            tracing::warn!(target:"omniops_bots_desktop", padding=text, "pressure");
         }
         println!("business-progress");
         std::io::stdout().flush().unwrap();
@@ -201,7 +142,7 @@ fn no_init_local_conflict_invalid_and_drop_contracts() {
         let output = run(mode, &[]);
         assert!(String::from_utf8_lossy(&output.stdout).contains("business-done"));
         if !matches!(mode, "drop" | "zero") {
-            assert!(String::from_utf8_lossy(&output.stderr).contains("generation.completed"));
+            assert!(String::from_utf8_lossy(&output.stderr).contains("operation.completed"));
         }
     }
     let output = run("host", &[]);
@@ -222,7 +163,7 @@ fn no_init_local_conflict_invalid_and_drop_contracts() {
     assert!(receiver.requests.try_recv().is_err());
 }
 #[test]
-fn exports_three_signals_with_correlation_usage_and_bounded_attributes() {
+fn exports_three_signals_with_correlation_and_bounded_attributes() {
     let receiver = Receiver::new(false, None);
     let output = run(
         "cardinality",
@@ -244,7 +185,6 @@ fn exports_three_signals_with_correlation_usage_and_bounded_attributes() {
     let mut metrics = vec![];
     for request in &requests {
         assert!(request.headers.contains("SECRET_TELEMETRY"));
-        assert!(!request.headers.contains("SECRET_MODEL_KEY"));
         match request.path.as_str() {
             "/v1/logs" => {
                 for resource in ExportLogsServiceRequest::decode(request.body.as_slice())
@@ -284,32 +224,19 @@ fn exports_three_signals_with_correlation_usage_and_bounded_attributes() {
     }
     assert!(!logs.is_empty());
     assert_eq!(spans.len(), 1);
-    assert_eq!(spans[0].name, "generation");
+    assert_eq!(spans[0].name, "fixture.operation");
     assert!(
         logs.iter()
             .all(|log| log.trace_id == spans[0].trace_id && log.span_id == spans[0].span_id)
     );
-    for name in [
-        "started",
-        "finished",
-        "in_flight",
-        "duration",
-        "time_to_first_text",
-        "tokens",
-        "usage_reports",
-    ] {
+    for name in ["calls", "tokens", "duration"] {
         assert!(
-            metrics
-                .iter()
-                .any(|m| m.name == format!("omniops-bots.generation.{name}")),
+            metrics.iter().any(|m| m.name == format!("fixture.{name}")),
             "missing {name}"
         );
     }
     assert!(!metrics.iter().any(|m| m.name == "before.calls"));
-    let tokens = metrics
-        .iter()
-        .find(|m| m.name == "omniops-bots.generation.tokens")
-        .unwrap();
+    let tokens = metrics.iter().find(|m| m.name == "fixture.tokens").unwrap();
     let Some(Data::Sum(sum)) = &tokens.data else {
         panic!("sum expected")
     };
@@ -345,10 +272,8 @@ fn exports_three_signals_with_correlation_usage_and_bounded_attributes() {
         "{logs:?}{spans:?}{metrics:?}{}",
         String::from_utf8_lossy(&output.stderr)
     );
-    for secret in ["SECRET_PROMPT", "SECRET_REPLY", "SECRET_TELEMETRY"] {
-        assert!(!dump.contains(secret), "leaked {secret}");
-    }
-    assert!(!format!("{metrics:?}").contains("upstream-42"));
+    assert!(!dump.contains("SECRET_TELEMETRY"));
+    assert!(!format!("{metrics:?}").contains("fixture-42"));
 }
 #[test]
 fn filters_and_sampling_do_not_reduce_metrics() {
@@ -371,10 +296,7 @@ fn filters_and_sampling_do_not_reduce_metrics() {
         {
             for scope in resource.scope_metrics {
                 for metric in scope.metrics {
-                    if matches!(
-                        metric.name.as_str(),
-                        "omniops-bots.generation.started" | "omniops-bots.generation.finished"
-                    ) {
+                    if metric.name == "fixture.calls" {
                         let Some(Data::Sum(sum)) = metric.data else {
                             panic!("sum expected")
                         };
@@ -503,41 +425,4 @@ fn stalled_network_and_stderr_do_not_block_business_or_extend_total_shutdown() {
     let lines: Vec<_> = rx.try_iter().collect();
     assert!(lines.iter().any(|l| l == "business-done"));
     assert!(lines.iter().all(|l| !l.contains("Failed to send shutdown")));
-}
-
-#[test]
-fn cancelled_stream_exports_one_cancelled_terminal() {
-    let receiver = Receiver::new(false, None);
-    run(
-        "cancel",
-        &[("OTEL_EXPORTER_OTLP_ENDPOINT", &receiver.endpoint)],
-    );
-    let mut found = false;
-    for request in receiver
-        .requests
-        .try_iter()
-        .filter(|r| r.path == "/v1/metrics")
-    {
-        for resource in ExportMetricsServiceRequest::decode(request.body.as_slice())
-            .unwrap()
-            .resource_metrics
-        {
-            for scope in resource.scope_metrics {
-                for metric in scope.metrics {
-                    if metric.name == "omniops-bots.generation.finished" {
-                        let Some(Data::Sum(sum)) = metric.data else {
-                            panic!("sum expected")
-                        };
-                        assert_eq!(sum.data_points.len(), 1);
-                        assert_eq!(sum.data_points[0].value, Some(Value::AsInt(1)));
-                        assert!(
-                            format!("{:?}", sum.data_points[0].attributes).contains("cancelled")
-                        );
-                        found = true;
-                    }
-                }
-            }
-        }
-    }
-    assert!(found);
 }
