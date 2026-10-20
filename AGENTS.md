@@ -12,6 +12,8 @@
 - `web/` 是 React + TypeScript 前端，由 Tauri 加载；普通浏览器入口用于演示与测试，复用同一套页面和业务 interface。
 - `desktop/runtime/` 是随包交付的私有 Node.js runtime。`main.mjs` 组装依赖并处理 IPC；`runtime.mjs` 负责桌面任务；`execution/` 负责 LangGraph 执行生命周期与证据；`chat/` 负责聊天适配与历史；`browser/` 负责 Chrome／Playwright；资源与配置由各自模块管理。
 - `crates/omniops-bots-desktop` 承担 Tauri 原生壳、Node 子进程与 IPC、系统能力、内嵌 CEF 及进程生命周期；`omniops-bots-desktop-helper` 是 macOS CEF helper。业务后端能力放在 Node.js，不在 Rust 中再实现一套。
+- Agent 的浏览器工具只操作应用管理的外部 Google Chrome；Node 通过 Playwright 管理专用 profile，并按 thread 固定页面。普通会话选择不启动或聚焦 Chrome；「显示 Chrome」显式请求创建或聚焦页面。
+- CEF 保留为运维人员手动使用的内嵌浏览器，固定 `__manual__` 页面；独立维护地址、历史、布局与输入，不复用 Agent 页面或任务锁。
 - `omniops-bots-collector` 已接入原生壳，管理该进程的可观测输出；它不是 Node.js 业务后端或独立服务。
 - 服务端是外部接入方。`docs/requirements-walkthrough/` 中的发布、同步、远端任务和诊断 API 是客户端所需契约，完成情况以文档中的明确标记为准，不代表本仓负责服务端实现。
 - 旧 Rust harness、Scheduler、LLM Provider 库与 PostgreSQL 后端计划已取消。不得据此恢复 core／HTTP／CLI／数据库 crate 或预建空层；本地持久化沿用现有文件与 SQLite checkpoint。
@@ -21,7 +23,7 @@
 - Node.js 使用 `26.11.1`，与 `Makefile`、runtime engines 和打包脚本保持一致；JavaScript／TypeScript 使用 ESM。runtime 的 TypeScript 必须能由随包 Node 直接加载，遵守其 `tsconfig.json`。
 - 前端依赖由 `web/package.json` 管理，后端依赖由 `desktop/runtime/package.json` 管理，各自提交 `package-lock.json`，安装用 `npm ci`。先用 Node 标准库和已有依赖，不为假设需求新增框架。
 - 图编排与模型接入复用现有 LangGraph.js、Deep Agents、LangChain 和 MCP SDK；不自建通用调度器、协议库或依赖注入容器。
-- 原生部分使用 Rust 2024，工具链与格式以 `rust-toolchain.toml`、`rustfmt.toml` 为准。共享依赖版本统一声明在根 `Cargo.toml` 的 `[workspace.dependencies]`，使用方通过 `workspace = true` 引入，遵守 `deny.toml`。
+- 原生部分使用 Rust 2024，工具链固定为 Rust `1.92.0`；工具链与格式以 `rust-toolchain.toml`、`rustfmt.toml` 为准。共享依赖版本统一声明在根 `Cargo.toml` 的 `[workspace.dependencies]`，使用方通过 `workspace = true` 引入，遵守 `deny.toml`。
 - 凭据不得提交仓库。当前单模型入口读取环境变量／未跟踪的 `model.env`；后续 Provider 管理遵循第 11 章的系统凭据库方案，普通配置只存凭据引用。不得提交本地数据、生成的原生资源或 `.npmrc`。
 
 ## 模块与接口

@@ -5,6 +5,7 @@ context: |
   web/ 是 React/TypeScript 共享前端与浏览器开发预览；Tauri adapter 接入本地能力，demo adapter 用于预览。
   desktop/runtime/ 负责 LangGraph/DeepAgents 图执行、Agent/Skill 装配、模型/MCP 接入、浏览器自动化与本地文件/SQLite 持久化。
   Rust/Tauri 只承担原生桌面、浏览器、IPC、Node sidecar 生命周期与打包；不再建设独立 Rust backend harness。
+  Agent 使用应用管理的外部 Google Chrome；内嵌 CEF 仅供运维手动操作，两者页面与导航独立。Node 26.11.1、Playwright 和 CEF 随包，Chrome 单独安装；Rust 固定为 1.92.0。
   模型服务、MCP 服务和业务系统通过外部接口接入，本仓不实现独立服务端或 Web 运维后端。
   术语和设计约束见 CONTEXT.md、PRODUCT.md、DESIGN.md；修改规范类关键文档需用户明确授权。
   复用现有模块与依赖，不为未来场景预建抽象。Run 必须显式发起，失败、取消或重启中断后不自动续跑。

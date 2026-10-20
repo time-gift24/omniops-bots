@@ -15,7 +15,7 @@
 | 桌面更新 | 静态 `latest.json` 和已签名整包 | 用户确认下载与安装，空闲时更新 |
 | 故障诊断 | 接收指定 thread 的包、回执、只读检索及附件 | 从本地 SQLite 导出 checkpoint，预览脱敏材料后上传 |
 
-HTTPS 传输物料、发布请求和诊断包；WebSocket 传输任务控制与结果，不传 Skill 文件包，也不持续上报每条模型输出。Playwright 与内置 Chrome／Chromium 运行在客户端，服务端不远程暴露浏览器 CDP 端口或接收浏览器 profile。
+HTTPS 传输物料、发布请求和诊断包；WebSocket 传输任务控制与结果，不传 Skill 文件包，也不持续上报每条模型输出。Playwright 与外部 Google Chrome 运行在客户端，服务端不远程暴露浏览器 CDP 端口或接收浏览器 profile。
 
 [11 · Provider](./11-Provider.md) 的配置由客户端本地维护，仅支持 OpenAI Chat Completions 兼容接口及自定义 base URL，本期不新增平台 Provider 管理、配置下发或 Key 同步 API。Key 可选，有值时使用 Bearer，无值时不发送认证头；Key 存操作系统凭据库，普通配置只保存引用。运行快照与诊断材料均不包含 Key 或原始认证头，Provider／模型选择也不进入 Agent 发布内容 ID。手动连接测试由客户端向选定模型发送固定最小请求，不使用任务通道、不读取会话或执行工具。
 
@@ -172,7 +172,7 @@ Skill 服务端修订存于 `skills/drafts/<skillId>/revisions/<draftRevisionId>
 
 示例域名和签名需由交付配置替换。`version` 使用有效 SemVer，不能使用资产标签 `v.1.0.0`；`signature` 是签名正文，不是签名下载 URL。macOS 使用更新专用 `.app.tar.gz`，Windows 使用选定的已签名 NSIS EXE 或 MSI；签名与 URL 必须对应同一份产物。[Tauri 官方 updater 契约](https://v2.tauri.app/plugin/updater/)规定了这些字段与平台键。
 
-先上传并验证两个平台产物，再原子更新 `latest.json`；同版本产物、URL 和签名不变。签名私钥只在受控构建流程中，站点仅分发产物；客户端内置公钥。前端、Tauri、Node、CEF／内置浏览器和 Playwright 等随包运行时一起更新，不靠 Skill 同步安装浏览器工具。
+先上传并验证两个平台产物，再原子更新 `latest.json`；同版本产物、URL 和签名不变。签名私钥只在受控构建流程中，站点仅分发产物；客户端内置公钥。前端、Tauri、Node、运维 CEF 和 Playwright 等随包运行时一起更新；Agent 使用的外部 Google Chrome 单独安装和更新，不靠 Skill 同步安装浏览器工具。
 
 无更高版本时客户端保持当前版；下载成功仍需用户确认并重新检查空闲才能安装。本期没有强制更新、静默安装、差分或自动回滚。实际 updater 接入、签名配置及两平台旧版升级验收仍待实施。
 

@@ -42,8 +42,8 @@
     {
       "id": "chrome",
       "type": "frontend",
-      "label": "内置 Chrome",
-      "sublabel": "CEF / Chromium",
+      "label": "外部 Chrome",
+      "sublabel": "专用 profile · CDP",
       "pos": [
         860,
         70

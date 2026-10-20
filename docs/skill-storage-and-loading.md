@@ -105,7 +105,7 @@ sequenceDiagram
 ```json
 {
   "name": "浏览器助手",
-  "description": "按任务要求操作内置浏览器。",
+  "description": "按任务要求操作专用 Chrome。",
   "instructions": "按任务要求操作 Chrome。",
   "skillIds": ["local/<localId>"],
   "toolIds": ["inspect_browser", "read_playwright_script"],

@@ -16,6 +16,8 @@ Desktop（Tauri 桌面壳 + Node.js 主后端 + React 共享前端）
 
 omniops-bots 是面向企业业务构建者的 agent 桌面工作台。Node.js 主后端在本机管理 Agent／Skill 装配、LangGraph 图执行、模型与 MCP 接入、浏览器自动化和本地持久化；Tauri／Rust 负责桌面宿主、原生浏览器、IPC、进程生命周期与打包。
 
+Agent 使用应用管理的外部 Google Chrome 执行浏览器任务；桌面工作台保留独立的内嵌 CEF 运维浏览器供人工操作。Node、Playwright 与 CEF 随桌面应用交付，Google Chrome 单独安装和更新。
+
 模型服务、MCP 和业务系统通过外部接口接入；这些服务的服务端实现不属于本仓范围。此前规划的独立 Rust backend harness 不再作为本仓的实现方向。
 
 成功意味着：业务构建者敢用、能建成；本地任务状态、结果和失败原因可检查；桌面执行能力可靠且可控。

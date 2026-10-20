@@ -2,6 +2,19 @@
 
 本仓专注桌面客户端。Node.js 是 desktop 的主后端，负责业务执行与本地数据；Rust 保留在 Tauri／原生宿主边界，不再建设独立 Rust backend harness。
 
+## 仓库结构
+
+| 路径 | 当前职责 |
+| --- | --- |
+| `web/` | 共享前端、Tauri 与 demo adapter、界面测试 |
+| `desktop/runtime/` | Node.js 业务后端、图执行、聊天、资源、浏览器和本地持久化 |
+| `desktop/scripts/` | Node 运行资源准备、构建与跨平台打包 |
+| `crates/omniops-bots-desktop/` | Tauri 原生宿主、IPC、CEF、sidecar 与退出协调 |
+| `crates/omniops-bots-desktop-helper/` | macOS CEF 子进程入口 |
+| `crates/omniops-bots-collector/` | Rust 宿主的进程内遥测输出与生命周期 |
+
+Rust workspace 只包含上述三个 crate，采用 Rust 2024／`1.92.0`；桌面 Node 固定为 `26.11.1`。
+
 ## 运行与数据边界
 
 - `web/`：React／TypeScript 共享前端；桌面模式使用 Tauri adapter，浏览器预览使用 demo adapter。UI 通过既有接口访问宿主能力，不直接实现模型调用、图执行或文件系统访问。
@@ -11,6 +24,12 @@
 - Node 将 Agent、Skill、MCP 配置、Run 记录、会话历史与装配快照保存在本地文件中，将原生 LangGraph checkpoint 保存在本地 SQLite 中。默认资源根目录为 `~/.omnimind-ops`；桌面应用数据目录另存客户端设置、模型环境配置与浏览器数据。
 - 前端工作区／会话导航目前是内存状态；后端保存运行记录不等于前端已支持刷新恢复，也不等于任务允许自动续跑。
 - 模型服务、MCP 服务与业务系统是外部接入边界；本仓不实现它们的独立服务端，也不提供独立 Web 运维后端。
+
+## 两类浏览器
+
+- **Agent Chrome**：本机已安装的外部 Google Chrome，由 Node／Playwright 按需启动。使用应用数据目录下独立的 `chrome/` profile，各 thread 固定自己的页面，工具只能访问指定 target；不同会话共享该专用 profile 的登录态。普通会话切换读取状态，显式「显示 Chrome」创建或聚焦页面。
+- **运维浏览器**：随包 CEF 的内嵌手动页面，固定身份 `__manual__`。Node 通过宿主提供的本地 CDP 连接维护状态，Rust 管理画面布局和输入。运维导航与 Agent 任务相互独立；Agent 工具不接入该页面。
+- Node、Playwright 和 CEF 随应用交付；外部 Google Chrome 单独安装和更新。应用专用 profile 与用户日常浏览器数据隔离；不会复制日常 profile 或将 Cookie 写入运行快照。
 
 ## 对话与模型调用
 
