@@ -15,12 +15,12 @@
     {
       "id": "caller",
       "type": "backend",
-      "label": "LangGraph 服务"
+      "label": "服务端 Agent"
     },
     {
       "id": "client",
-      "type": "frontend",
-      "label": "客户端"
+      "type": "backend",
+      "label": "后台客户端"
     },
     {
       "id": "cache",
@@ -39,7 +39,7 @@
       "from": "caller",
       "to": "client",
       "y": 180,
-      "label": "调用与指定 Agent",
+      "label": "下发指定 Agent 版本任务",
       "variant": "emphasis"
     },
     {
@@ -104,8 +104,8 @@
       "dot": "emerald",
       "title": "会话固定快照",
       "items": [
-        "新会话使用同步后的装配",
-        "已有手动会话不切版本"
+        "每次任务固定所需装配",
+        "已有调试会话不切版本"
       ]
     },
     {

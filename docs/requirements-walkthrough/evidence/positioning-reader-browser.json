@@ -1,0 +1,349 @@
+{
+  "date": "2026-10-20",
+  "scope": "需求串讲阅读页定位一致性；只验证文档，不代表线上后台能力已实现",
+  "status": "pass",
+  "artifact": {
+    "path": "index.html",
+    "sha256": "78fcf4514204c2bfacb86893733b3f3af34f923a47d5dcdb4b4f2f490330d217",
+    "bytes": 224557
+  },
+  "chapters": 12,
+  "chapterViewportChecks": 24,
+  "checks": [
+    {
+      "chapter": "00-overview",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scrollWidth": 1440,
+      "activeCount": 1,
+      "consolePosition": true,
+      "debugScope": true,
+      "images": 6,
+      "imagesLoaded": true
+    },
+    {
+      "chapter": "01-skill",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scrollWidth": 1440,
+      "activeCount": 1,
+      "consolePosition": true,
+      "debugScope": true,
+      "images": 11,
+      "imagesLoaded": true
+    },
+    {
+      "chapter": "02-mcp",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scrollWidth": 1440,
+      "activeCount": 1,
+      "consolePosition": true,
+      "debugScope": true,
+      "images": 4,
+      "imagesLoaded": true
+    },
+    {
+      "chapter": "03-builtintool",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scrollWidth": 1440,
+      "activeCount": 1,
+      "consolePosition": true,
+      "debugScope": true,
+      "images": 4,
+      "imagesLoaded": true
+    },
+    {
+      "chapter": "04-agent",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scrollWidth": 1440,
+      "activeCount": 1,
+      "consolePosition": true,
+      "debugScope": true,
+      "images": 7,
+      "imagesLoaded": true
+    },
+    {
+      "chapter": "05-updater",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scrollWidth": 1440,
+      "activeCount": 1,
+      "consolePosition": true,
+      "debugScope": true,
+      "images": 4,
+      "imagesLoaded": true
+    },
+    {
+      "chapter": "06-sync",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scrollWidth": 1440,
+      "activeCount": 1,
+      "consolePosition": true,
+      "debugScope": true,
+      "images": 4,
+      "imagesLoaded": true
+    },
+    {
+      "chapter": "07-execution",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scrollWidth": 1440,
+      "activeCount": 1,
+      "consolePosition": true,
+      "debugScope": true,
+      "images": 10,
+      "imagesLoaded": true
+    },
+    {
+      "chapter": "08-frontend",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scrollWidth": 1440,
+      "activeCount": 1,
+      "consolePosition": true,
+      "debugScope": true,
+      "images": 5,
+      "imagesLoaded": true
+    },
+    {
+      "chapter": "09-operations",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scrollWidth": 1440,
+      "activeCount": 1,
+      "consolePosition": true,
+      "debugScope": true,
+      "images": 0,
+      "imagesLoaded": true
+    },
+    {
+      "chapter": "10-server-api",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scrollWidth": 1440,
+      "activeCount": 1,
+      "consolePosition": true,
+      "debugScope": true,
+      "images": 0,
+      "imagesLoaded": true
+    },
+    {
+      "chapter": "11-provider",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scrollWidth": 1440,
+      "activeCount": 1,
+      "consolePosition": true,
+      "debugScope": true,
+      "images": 1,
+      "imagesLoaded": true
+    },
+    {
+      "chapter": "00-overview",
+      "viewport": [
+        390,
+        844
+      ],
+      "scrollWidth": 390,
+      "activeCount": 1,
+      "consolePosition": true,
+      "debugScope": true,
+      "images": 6,
+      "imagesLoaded": true
+    },
+    {
+      "chapter": "01-skill",
+      "viewport": [
+        390,
+        844
+      ],
+      "scrollWidth": 390,
+      "activeCount": 1,
+      "consolePosition": true,
+      "debugScope": true,
+      "images": 11,
+      "imagesLoaded": true
+    },
+    {
+      "chapter": "02-mcp",
+      "viewport": [
+        390,
+        844
+      ],
+      "scrollWidth": 390,
+      "activeCount": 1,
+      "consolePosition": true,
+      "debugScope": true,
+      "images": 4,
+      "imagesLoaded": true
+    },
+    {
+      "chapter": "03-builtintool",
+      "viewport": [
+        390,
+        844
+      ],
+      "scrollWidth": 390,
+      "activeCount": 1,
+      "consolePosition": true,
+      "debugScope": true,
+      "images": 4,
+      "imagesLoaded": true
+    },
+    {
+      "chapter": "04-agent",
+      "viewport": [
+        390,
+        844
+      ],
+      "scrollWidth": 390,
+      "activeCount": 1,
+      "consolePosition": true,
+      "debugScope": true,
+      "images": 7,
+      "imagesLoaded": true
+    },
+    {
+      "chapter": "05-updater",
+      "viewport": [
+        390,
+        844
+      ],
+      "scrollWidth": 390,
+      "activeCount": 1,
+      "consolePosition": true,
+      "debugScope": true,
+      "images": 4,
+      "imagesLoaded": true
+    },
+    {
+      "chapter": "06-sync",
+      "viewport": [
+        390,
+        844
+      ],
+      "scrollWidth": 390,
+      "activeCount": 1,
+      "consolePosition": true,
+      "debugScope": true,
+      "images": 4,
+      "imagesLoaded": true
+    },
+    {
+      "chapter": "07-execution",
+      "viewport": [
+        390,
+        844
+      ],
+      "scrollWidth": 390,
+      "activeCount": 1,
+      "consolePosition": true,
+      "debugScope": true,
+      "images": 10,
+      "imagesLoaded": true
+    },
+    {
+      "chapter": "08-frontend",
+      "viewport": [
+        390,
+        844
+      ],
+      "scrollWidth": 390,
+      "activeCount": 1,
+      "consolePosition": true,
+      "debugScope": true,
+      "images": 5,
+      "imagesLoaded": true
+    },
+    {
+      "chapter": "09-operations",
+      "viewport": [
+        390,
+        844
+      ],
+      "scrollWidth": 390,
+      "activeCount": 1,
+      "consolePosition": true,
+      "debugScope": true,
+      "images": 0,
+      "imagesLoaded": true
+    },
+    {
+      "chapter": "10-server-api",
+      "viewport": [
+        390,
+        844
+      ],
+      "scrollWidth": 390,
+      "activeCount": 1,
+      "consolePosition": true,
+      "debugScope": true,
+      "images": 0,
+      "imagesLoaded": true
+    },
+    {
+      "chapter": "11-provider",
+      "viewport": [
+        390,
+        844
+      ],
+      "scrollWidth": 390,
+      "activeCount": 1,
+      "consolePosition": true,
+      "debugScope": true,
+      "images": 1,
+      "imagesLoaded": true
+    }
+  ],
+  "pageErrors": [],
+  "captures": [
+    {
+      "chapter": "07-execution",
+      "viewport": [
+        1440,
+        900
+      ],
+      "theme": "light",
+      "file": "positioning-reader.1440x900.light.png"
+    },
+    {
+      "chapter": "08-frontend",
+      "viewport": [
+        390,
+        844
+      ],
+      "theme": "dark",
+      "file": "positioning-reader.390x844.dark.png"
+    }
+  ],
+  "visualReview": "passed",
+  "visualReviewScope": "实际查看07章桌面浅色与08章窄屏深色截图，标题、定位摘要与角色说明可读，无横向裁切。"
+}

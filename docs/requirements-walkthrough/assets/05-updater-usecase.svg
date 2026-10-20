@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1000" height="520" viewBox="0 0 1000 520" role="img" aria-labelledby="title desc">
     <title id="title">桌面端更新用例图</title>
-    <desc id="desc">桌面更新的主要用例：检查新版与更新说明；自主下载与确认安装；空闲安装并保留数据；发布签名完整安装包。角色与椭圆之间为无方向参与关系，未表示执行先后。</desc>
+    <desc id="desc">本机基础维护入口中的桌面更新用例：检查新版与更新说明；自主下载与确认安装；空闲安装并保留数据；发布签名完整安装包。角色与椭圆之间为无方向参与关系，未表示执行先后。</desc>
     <style>
       text { font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; fill:#16354b; }
       .heading { font-size:28px; font-weight:700; }
@@ -17,7 +17,7 @@
     <rect width="1000" height="520" fill="#ffffff" />
     <text x="32" y="44" class="heading">桌面端更新 · 用例</text>
     <rect x="250" y="76" width="500" height="400" rx="10" class="boundary" />
-    <text x="270" y="106" class="boundary-label">桌面更新</text>
+    <text x="270" y="106" class="boundary-label">客户端基础维护 · 更新</text>
 <line x1="157" y1="250" x2="290" y2="160" class="association" />
 <line x1="157" y1="250" x2="290" y2="250" class="association" />
 <line x1="157" y1="250" x2="290" y2="340" class="association" />

@@ -1,20 +1,23 @@
 {
   "diagram_type": "sequence",
   "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-local-session.html",
-  "artifact_sha256": "dec0a194b3c4ff97883d560c25df93e357bc523273f587b94d29224a597e1976",
-  "artifact_bytes": 704777,
+  "specification_sha256": "e709374779ec89768045cd334fb1966bf460201844c7c1ce19fc7ee98621c71b",
+  "artifact_sha256": "b17de522f221f6c1417cb894d1622cec3730b290d6b0d50c2a7bec3abee155dc",
+  "artifact_bytes": 704914,
   "validation": "9/9 showcase, 0 errors, 0 warnings",
   "browser_evidence": "passed",
+  "browser_receipt": "diagrams/runtime/04-local-session.visual-check.json",
   "visual_review": "passed",
-  "reviewer": "image-capable agent /root/runtime_sessions",
+  "reviewer": "image-capable agent /root/align_resources",
   "reviewed_screenshots": [
-    "diagrams/runtime/04-local-session.visual-check.2048x1320.light.png",
-    "diagrams/runtime/04-local-session.visual-check.1440x900.dark.png"
+    "diagrams/runtime/04-local-session.visual-check.1440x900.light.png",
+    "diagrams/runtime/04-local-session.visual-check.1440x900.dark.png",
+    "diagrams/runtime/04-local-session.visual-check.2048x1320.light.png"
   ],
   "observations": [
-    "已读取真实浏览器截图；中文标签与消息顺序可读，参与者与箭头关系明确。",
-    "浅色大屏及深色桌面图无截断、重叠或标签遮挡，纵向布局平衡。",
-    "浏览器四视口包含性由独立 visual-check 回执记录；本视觉审查不替代自动检查。"
+    "实际查看默认 READ/Still 的浅深色浏览器截图，角色、中文标签和消息顺序可读，无截断或标签遮挡。",
+    "大屏截图主图与必要结论卡保持可读，四桌面视口包含性由独立 automated-browser 回执记录。",
+    "保留原有拓扑；仅按 Console 业务入口、后台任务执行或运维调试语义修改短文本。"
   ],
-  "correction_rounds": 1
+  "correction_rounds": 0
 }

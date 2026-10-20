@@ -326,8 +326,8 @@ rect.c-bg-rect { fill: var(--bg); }
         <path data-edge-from="process-restarted" data-edge-to="interrupted-unknown" data-edge-label="原任务未完成" data-edge-key="2" data-edge-id="unfinished-on-restart" data-composition-points="461,413;651,413" d="M 461 413 L 651 413" class="a-security" stroke-width="1.1" marker-end="url(#arrowhead-security)"/>
 
         <!-- States -->
-        <g id="node-call-received" data-node-id="call-received" data-node-label="接收调用" tabindex="0" role="button" aria-label="聚焦接收调用，独立会话 · 原调用 ID, 调用与交付" aria-pressed="false" data-node-kind="start" data-node-sublabel="独立会话 · 原调用 ID" data-node-context="调用与交付">
-          <title>接收调用 · 独立会话 · 原调用 ID · 调用与交付</title>
+        <g id="node-call-received" data-node-id="call-received" data-node-label="接收服务端任务" tabindex="0" role="button" aria-label="聚焦接收服务端任务，服务端 Agent · 调用 ID, 调用与交付" aria-pressed="false" data-node-kind="start" data-node-sublabel="服务端 Agent · 调用 ID" data-node-context="调用与交付">
+          <title>接收服务端任务 · 服务端 Agent · 调用 ID · 调用与交付</title>
           <rect x="35" y="126" width="118" height="62" rx="7" class="c-mask"/>
           <rect x="35" y="126" width="118" height="62" rx="7" class="c-frontend" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="start" class="semantic-sigil s-frontend" transform="translate(136 132) scale(0.6875)">
@@ -335,8 +335,8 @@ rect.c-bg-rect { fill: var(--bg); }
             <path d="m7 5.4 3.6 2.6L7 10.6Z" class="sigil-fill"/>
           </g>
         <text x="45" y="140" class="t-frontend" font-size="7" font-weight="700">01</text>
-          <text data-node-label="" x="94" y="147" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">接收调用</text>
-          <text x="94" y="163" class="t-muted" font-size="7" text-anchor="middle">独立会话 · 原调用 ID</text>
+          <text data-node-label="" x="94" y="147" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">接收服务端任务</text>
+          <text x="94" y="163" class="t-muted" font-size="7" text-anchor="middle">服务端 Agent · 调用 ID</text>
         </g>
 
         <g id="node-assembly-ready" data-node-id="assembly-ready" data-node-label="装配就绪" tabindex="0" role="button" aria-label="聚焦装配就绪，核对版本与内置工具, 调用与交付" aria-pressed="false" data-node-kind="active" data-node-sublabel="核对版本与内置工具" data-node-context="调用与交付">
@@ -375,8 +375,8 @@ rect.c-bg-rect { fill: var(--bg); }
           <text x="556" y="163" class="t-muted" font-size="7" text-anchor="middle">结果与快照已存本地</text>
         </g>
 
-        <g id="node-result-acknowledged" data-node-id="result-acknowledged" data-node-label="交付完成" tabindex="0" role="button" aria-label="聚焦交付完成，服务端确认收到, 调用与交付" aria-pressed="false" data-node-kind="success" data-node-sublabel="服务端确认收到" data-node-context="调用与交付">
-          <title>交付完成 · 服务端确认收到 · 调用与交付</title>
+        <g id="node-result-acknowledged" data-node-id="result-acknowledged" data-node-label="交付完成" tabindex="0" role="button" aria-label="聚焦交付完成，服务端确认 · Console 展示, 调用与交付" aria-pressed="false" data-node-kind="success" data-node-sublabel="服务端确认 · Console 展示" data-node-context="调用与交付">
+          <title>交付完成 · 服务端确认 · Console 展示 · 调用与交付</title>
           <rect x="651" y="126" width="118" height="62" rx="7" class="c-mask"/>
           <rect x="651" y="126" width="118" height="62" rx="7" class="c-database" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="success" class="semantic-sigil s-database" transform="translate(752 132) scale(0.6875)">
@@ -385,7 +385,7 @@ rect.c-bg-rect { fill: var(--bg); }
           </g>
         <text x="661" y="140" class="t-database" font-size="7" font-weight="700">05</text>
           <text data-node-label="" x="710" y="147" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">交付完成</text>
-          <text x="710" y="163" class="t-muted" font-size="7" text-anchor="middle">服务端确认收到</text>
+          <text x="710" y="163" class="t-muted" font-size="7" text-anchor="middle">服务端确认 · Console 展示</text>
         </g>
 
         <g id="node-execution-stopped" data-node-id="execution-stopped" data-node-label="停止后续步骤" tabindex="0" role="button" aria-label="聚焦停止后续步骤，已完成操作不回滚, 停止执行" aria-pressed="false" data-node-kind="failure" data-node-sublabel="已完成操作不回滚" data-node-context="停止执行">

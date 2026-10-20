@@ -6,12 +6,12 @@
   "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/02-mcp-failure.json",
   "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/02-mcp-failure.html",
   "specification": {
-    "sha256": "68eb53d0eea8f8a95803a9e52b1f5c16a4d24fd5fca75d8dbe84187a7b6cd08f",
-    "bytes": 1687
+    "sha256": "ce2f8323f2f73aa2513cceccfd8cba796d42c53d1d8c66b336db69bafc50e1fc",
+    "bytes": 1702
   },
   "artifact": {
-    "sha256": "71a9cf1e29d6cae552564060ca3854f8631894d751aac5d80336dc6d58d8a1b6",
-    "bytes": 701153
+    "sha256": "e9182f026d87bba2b5044d8baf4702ed35633e12a712221c57a28e50fb54ddc8",
+    "bytes": 701204
   },
   "validation": {
     "checksPassed": 9,

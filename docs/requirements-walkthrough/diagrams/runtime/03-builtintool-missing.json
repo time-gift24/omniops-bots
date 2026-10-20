@@ -15,12 +15,12 @@
     {
       "id": "caller",
       "type": "external",
-      "label": "调用方"
+      "label": "服务端 Agent"
     },
     {
       "id": "client",
       "type": "frontend",
-      "label": "桌面客户端"
+      "label": "客户端后台 Agent"
     },
     {
       "id": "tools",
@@ -34,7 +34,7 @@
       "from": "caller",
       "to": "client",
       "y": 180,
-      "label": "发起本轮任务",
+      "label": "下发本轮任务",
       "variant": "emphasis"
     },
     {
@@ -57,7 +57,7 @@
       "from": "client",
       "to": "caller",
       "y": 505,
-      "label": "结束本轮，提示更新桌面端",
+      "label": "回传失败及客户端更新提示",
       "variant": "return"
     }
   ],
@@ -67,7 +67,7 @@
       "title": "条件：缺少任一所需工具",
       "items": [
         "检查失败，不开始 Chrome 操作",
-        "记录缺失工具；远端调用回传失败"
+        "Console 展示缺失原因及更新要求"
       ]
     },
     {

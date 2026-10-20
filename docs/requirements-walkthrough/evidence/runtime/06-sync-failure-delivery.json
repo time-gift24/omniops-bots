@@ -6,12 +6,12 @@
   "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/06-sync-failure.json",
   "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/06-sync-failure.html",
   "specification": {
-    "sha256": "e75bf9fc994cc62d7b79e4e4f8453a3cf9bb96046b03f8c4ce19ce90a7df2a2c",
-    "bytes": 1553
+    "sha256": "b318afe2e12a5a13231cfccfc5aaeb50feb53d0e8ffd0b13498b6f032610f49c",
+    "bytes": 1561
   },
   "artifact": {
-    "sha256": "20bf70d92e5957a90e3ecadf90ba211365819196b7d0e4be3e3a9e1f62fe5456",
-    "bytes": 702643
+    "sha256": "d8ce2d066ec6a35b7deec4f9d70a635b282f810c93155a7a6234c180548b49e8",
+    "bytes": 702415
   },
   "validation": {
     "checksPassed": 9,

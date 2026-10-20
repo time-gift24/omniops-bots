@@ -15,11 +15,17 @@
   {
     "name": "01-skill",
     "file": "assets/01-skill.svg",
+    "source": "diagrams/01-skill.html",
+    "source_sha256": "91eecffaf56fb2c5be523ec220b170ca498671e82cb62590ca042ffece287e16",
     "data-last-export-format": "svg",
-    "data-last-export-bytes": "50660",
+    "data-last-export-bytes": "50726",
     "data-last-export-canonical": "true",
-    "checked_in_bytes": 50640,
-    "post_export_normalization": "移除行尾空格并增加文件末尾换行；原导出字节数保留，详见 format-normalization.json"
+    "format_normalization": {
+      "raw_sha256": "90634bec9e3834f5470c67d09a8a20c0612cb80549dd750f17cc2c9d38a487df",
+      "checked_in_sha256": "83c2b97daed9f176e388ce5fb8059d9351bd7f2bdab12eb1fe6057cadd4f1834",
+      "checked_in_bytes": 50706,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
   },
   {
     "name": "02-mcp",
@@ -33,46 +39,91 @@
   {
     "name": "03-builtintool",
     "file": "assets/03-builtintool.svg",
+    "source": "diagrams/03-builtintool.html",
+    "source_sha256": "8704ac012ed3a1c76de96111bf40e966f21d03bf0661e22ddd65e0eba50202ef",
     "data-last-export-format": "svg",
-    "data-last-export-bytes": "51195",
+    "data-last-export-bytes": "51367",
     "data-last-export-canonical": "true",
-    "checked_in_bytes": 51175,
-    "post_export_normalization": "移除行尾空格并增加文件末尾换行；原导出字节数保留，详见 format-normalization.json"
+    "format_normalization": {
+      "raw_sha256": "a2f09eb24f1830ce9adf944ac88cdfa1be48cbae8d097fce1684bdab9f75f4b7",
+      "checked_in_sha256": "0b926e5ff8025dda045e1da59b9411da21e5d89a380b96f83b1a1f24feadf944",
+      "checked_in_bytes": 51347,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
   },
   {
     "name": "04-agent",
     "file": "assets/04-agent.svg",
+    "source": "diagrams/04-agent.html",
+    "source_sha256": "8a9545bb758019795fd777b45c1add22d54ad589083cfaac0909ffea3ccaf78c",
     "data-last-export-format": "svg",
-    "data-last-export-bytes": "49838",
+    "data-last-export-bytes": "49850",
     "data-last-export-canonical": "true",
-    "checked_in_bytes": 49818,
-    "post_export_normalization": "移除行尾空格并增加文件末尾换行；原导出字节数保留，详见 format-normalization.json"
+    "format_normalization": {
+      "raw_sha256": "f34c6799121917411c92b892d20ecbe2dbf99682a37a4f13b28061328de453ba",
+      "checked_in_sha256": "a02259302af2587fdc4921ae860c13ee3bc54b1a43bdbfd2fda4472ec1429375",
+      "checked_in_bytes": 49830,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
   },
   {
     "name": "05-updater",
     "file": "assets/05-updater.svg",
+    "source": "diagrams/05-updater.html",
+    "source_sha256": "5b252090e6c5d99b4c0db3004b29623325102dfd22c59af845caeccbe5b5f312",
     "data-last-export-format": "svg",
-    "data-last-export-bytes": "52127",
+    "data-last-export-bytes": "52136",
     "data-last-export-canonical": "true",
-    "checked_in_bytes": 52107,
-    "post_export_normalization": "移除行尾空格并增加文件末尾换行；原导出字节数保留，详见 format-normalization.json"
+    "format_normalization": {
+      "raw_sha256": "ccc7178ea52b0bafdc7132f4bc61ca68e32430e89df8bf8d40cdefecd8c7a16e",
+      "checked_in_sha256": "0c67e8a08489f096082edccc223e9c512238c42568dfd628751a955a7671ac3c",
+      "checked_in_bytes": 52116,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
   },
   {
     "name": "06-sync",
     "file": "assets/06-sync.svg",
+    "source": "diagrams/06-sync.html",
+    "source_sha256": "b38794b6c3196045da9c12c4a1b3fbd6af8a8d978a96216b5a4dcf1613dbee9f",
     "data-last-export-format": "svg",
-    "data-last-export-bytes": "49002",
+    "data-last-export-bytes": "48874",
     "data-last-export-canonical": "true",
-    "checked_in_bytes": 48982,
-    "post_export_normalization": "移除行尾空格并增加文件末尾换行；原导出字节数保留，详见 format-normalization.json"
+    "format_normalization": {
+      "raw_sha256": "ee8015b30eb6b860f075d3d428ee0302285898d57b3b4d7b2978f4b02f9d782b",
+      "checked_in_sha256": "617de9a289c0162937bfc39df2f263106927e5c618a3556935b44a0f8cecc336",
+      "checked_in_bytes": 48854,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
   },
   {
     "name": "07-execution",
     "file": "assets/07-execution.svg",
+    "source": "diagrams/07-execution.html",
+    "source_sha256": "def7c136ad1f81b79cab13ae9f63893260fff686fc9447efc7732a2c6eaeecd0",
     "data-last-export-format": "svg",
-    "data-last-export-bytes": "53104",
+    "data-last-export-bytes": "53208",
     "data-last-export-canonical": "true",
-    "checked_in_bytes": 53084,
-    "post_export_normalization": "移除行尾空格并增加文件末尾换行；原导出字节数保留，详见 format-normalization.json"
+    "format_normalization": {
+      "raw_sha256": "fdd322f3b1c2b2661767e1559e7c47dc88c48ed25471dd61e658ae962507da89",
+      "checked_in_sha256": "9ef538bd364fff9668869e6055716a91a946c225d09f2220b0fd3198e7b10f0d",
+      "checked_in_bytes": 53188,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
+  },
+  {
+    "name": "11-provider",
+    "file": "assets/11-provider.svg",
+    "source": "diagrams/11-provider.html",
+    "source_sha256": "80918591cd544acfe28e7dff566194b98b5df7c821ce5ecb2a5f31137a8b5ed5",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "56303",
+    "data-last-export-canonical": "true",
+    "format_normalization": {
+      "raw_sha256": "b48d5716ffcb935a1f527a72c8b37c09280b07db9139e25fc12d9ba1491100e9",
+      "checked_in_sha256": "4ac9a75e97ec6956d8e578caea6a7a51581344cdae7380147bb0742544d6cd6d",
+      "checked_in_bytes": 56283,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
   }
 ]

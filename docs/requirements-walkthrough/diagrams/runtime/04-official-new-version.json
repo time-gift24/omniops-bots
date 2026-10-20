@@ -2,7 +2,7 @@
   "schema_version": 1,
   "diagram_type": "sequence",
   "meta": {
-    "title": "官方发布新版后：旧会话与新会话",
+    "title": "运维调试：新版发布后的会话快照",
     "locale": "zh-CN",
     "quality_profile": "showcase",
     "column_fit": "spread",
@@ -15,12 +15,12 @@
     {
       "id": "user",
       "type": "external",
-      "label": "用户"
+      "label": "调试使用者"
     },
     {
       "id": "client",
       "type": "frontend",
-      "label": "桌面客户端"
+      "label": "运维调试工作台"
     },
     {
       "id": "local",
@@ -71,7 +71,7 @@
       "from": "user",
       "to": "client",
       "y": 346,
-      "label": "另开一个官方 Agent 会话",
+      "label": "另开官方 Agent 调试会话",
       "variant": "emphasis"
     },
     {

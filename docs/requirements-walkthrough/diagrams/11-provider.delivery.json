@@ -6,12 +6,12 @@
   "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/11-provider.json",
   "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/11-provider.html",
   "specification": {
-    "sha256": "2919eca3e856420101eea3a7cad9ee683dbff75424a547dadfdf98c110ffc841",
-    "bytes": 4648
+    "sha256": "e4ef6c19a24b811558605cb4929e56d4645c0b24c4c38e0c268bbffda7a1ba14",
+    "bytes": 4670
   },
   "artifact": {
-    "sha256": "f4cddcb698211c30b49a8ffd63acac1ad75ea837a1176ce3f9a2264370966a60",
-    "bytes": 712962
+    "sha256": "80918591cd544acfe28e7dff566194b98b5df7c821ce5ecb2a5f31137a8b5ed5",
+    "bytes": 712845
   },
   "validation": {
     "checksPassed": 9,

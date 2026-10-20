@@ -1,20 +1,14 @@
 {
-  "diagram_type": "sequence",
-  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/06-download-missing.html",
-  "artifact_sha256": "fc19fd146ea050d3c42c87649c072ef918896ab5ef95a0e44f421a04f35e318b",
-  "artifact_bytes": 704874,
-  "validation": "9/9 showcase, 0 errors, 0 warnings",
-  "browser_evidence": "passed",
+  "artifact": "diagrams/runtime/06-download-missing.html",
+  "artifact_sha256": "3b4490855bcf82737012606b0b078f093874a751e48086f17b43c0030edb31eb",
+  "artifact_bytes": 704609,
   "visual_review": "passed",
-  "reviewer": "image-capable agent /root/runtime_sessions",
-  "reviewed_screenshots": [
-    "diagrams/runtime/06-download-missing.visual-check.2048x1320.light.png",
-    "diagrams/runtime/06-download-missing.visual-check.1440x900.dark.png"
+  "reviewer": "image-capable Codex agent",
+  "scope": "Actual visual-check screenshots at 1440x900 light and 2048x1320 dark; labels, routes, node fit, composition, and theme contrast inspected",
+  "screenshots": [
+    "diagrams/runtime/06-download-missing.visual-check.1440x900.light.png",
+    "diagrams/runtime/06-download-missing.visual-check.2048x1320.dark.png"
   ],
-  "observations": [
-    "已读取真实浏览器截图；中文标签与消息顺序可读，参与者与箭头关系明确。",
-    "浅色大屏及深色桌面图无截断、重叠或标签遮挡，纵向布局平衡。",
-    "浏览器四视口包含性由独立 visual-check 回执记录；本视觉审查不替代自动检查。"
-  ],
+  "observations": "No visible clipping, label collisions, or unrelated-node route crossings. Updated roles distinguish background execution, Console reporting, and local maintenance/debugging.",
   "correction_rounds": 0
 }

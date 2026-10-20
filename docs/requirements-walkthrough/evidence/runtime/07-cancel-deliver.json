@@ -6,12 +6,12 @@
   "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/07-cancel.json",
   "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/07-cancel.html",
   "specification": {
-    "sha256": "f87990ba417b45ad7e2972ecc290c32182dbff431c08a422438c32e74b0b4c77",
-    "bytes": 2146
+    "sha256": "72fb8cf03d811191c940867d3fe942e01cedf5d0f7b04cbbbcf792b05f27da66",
+    "bytes": 2167
   },
   "artifact": {
-    "sha256": "46ceb9df0d6a4d6f0315bb629b4cb8a0cf02bf450cb9f50bb97b314ee0819b39",
-    "bytes": 704005
+    "sha256": "e9511e66393fbf678c2ac9d1724661b606fc24f6e5fd9651344703d0bedda159",
+    "bytes": 703845
   },
   "validation": {
     "checksPassed": 9,

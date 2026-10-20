@@ -1,8 +1,8 @@
 {
   "diagram_type": "architecture",
   "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/11-provider.html",
-  "specification_sha256": "2919eca3e856420101eea3a7cad9ee683dbff75424a547dadfdf98c110ffc841",
-  "artifact_sha256": "f4cddcb698211c30b49a8ffd63acac1ad75ea837a1176ce3f9a2264370966a60",
+  "specification_sha256": "e4ef6c19a24b811558605cb4929e56d4645c0b24c4c38e0c268bbffda7a1ba14",
+  "artifact_sha256": "80918591cd544acfe28e7dff566194b98b5df7c821ce5ecb2a5f31137a8b5ed5",
   "validation": "9/9 showcase, 0 errors, 0 warnings",
   "browser_evidence": "passed",
   "browser_receipt": "../diagrams/11-provider.visual-check.json",
@@ -17,23 +17,21 @@
       "11-provider.visual-check.2048x1320.dark.png"
     ],
     "observations": [
-      "Reviewed both themes at 1440x900 and 2048x1320; routes, labels, node text and cards remain legible without overlaps.",
-      "Largest viewport uses the diagram and necessary boundary cards with balanced vertical space.",
-      "Reviewed native PNG export; no viewer controls, focus state or export menu appear in the image."
-    ],
-    "embedded_svg_loaded": true,
-    "reader_mobile_390_no_horizontal_overflow": true
+      "Reviewed both themes at 1440x900 and 2048x1320; labels, routes, node text and cards are legible without overlaps.",
+      "The larger viewport preserves balanced diagram and boundary-card spacing without an empty lower band.",
+      "Reviewed native PNG export: model resolution uses the local default for online tasks, while manual selection is identified as debugging; no viewer controls or export menu appear."
+    ]
   },
   "exports": [
     {
       "path": "../assets/11-provider.svg",
-      "sha256": "d54bc8c3b071a949110611ab36c81c6eda8aa975245ef4942cb30f0367976cdb",
-      "bytes": 56419
+      "sha256": "4ac9a75e97ec6956d8e578caea6a7a51581344cdae7380147bb0742544d6cd6d",
+      "bytes": 56283
     },
     {
       "path": "../assets/11-provider.png",
-      "sha256": "606af5eac78cec55790125137636d3558ca998f0d00548505fd1c448706bfde5",
-      "bytes": 538166
+      "sha256": "bb4597f856732b216d14a6cab11743ee4cf3e3d669457b51eec78b644fc88d85",
+      "bytes": 538020
     }
   ]
 }

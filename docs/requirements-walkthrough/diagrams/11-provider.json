@@ -2,7 +2,7 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "Provider 本地接入设计",
+    "title": "运维配置与后台模型调用",
     "locale": "zh-CN",
     "quality_profile": "showcase",
     "viewBox": [
@@ -14,8 +14,8 @@
     {
       "id": "provider-settings",
       "type": "frontend",
-      "label": "Provider 管理",
-      "sublabel": "手填模型 · 配置默认项",
+      "label": "运维 Provider 管理",
+      "sublabel": "本机预配置 · 设置默认项",
       "pos": [
         70,
         40
@@ -41,9 +41,9 @@
     },
     {
       "id": "new-session-choice",
-      "type": "frontend",
-      "label": "新会话选择",
-      "sublabel": "默认 Provider＋模型 · 可改选",
+      "type": "backend",
+      "label": "解析本机模型",
+      "sublabel": "线上用默认 · 调试可改选",
       "pos": [
         400,
         230
@@ -56,7 +56,7 @@
     {
       "id": "pinned-session",
       "type": "backend",
-      "label": "会话固定快照",
+      "label": "任务固定快照",
       "sublabel": "开始后固定 · 不含密钥",
       "pos": [
         730,
@@ -153,7 +153,7 @@
       "id": "pin-session-selection",
       "from": "new-session-choice",
       "to": "pinned-session",
-      "label": "开始会话",
+      "label": "准备任务",
       "variant": "emphasis"
     },
     {
@@ -212,9 +212,9 @@
       "dot": "emerald",
       "title": "运行边界",
       "items": [
-        "会话开始后固定，不可用时报错且不自动切换",
+        "线上任务复用本机配置，开始后固定且不自动切换",
         "连接测试不读取会话内容、不执行工具",
-        "保存配置不自动测试；本图表示待实现设计"
+        "本地 Provider 已接入；远端任务通道仍待接入"
       ]
     }
   ]

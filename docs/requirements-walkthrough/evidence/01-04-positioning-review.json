@@ -1,0 +1,824 @@
+{
+  "schemaVersion": 1,
+  "scope": "01–04 章节的线上 Console、客户端后台执行和运维调试入口定位一致性",
+  "chapters_reviewed": 4,
+  "chapters": [
+    {
+      "file": "01-SKILL.md",
+      "sha256": "87965d5c88653e91e846a7d0729ad73823a62b0d52cd0416182f021d259d27c1",
+      "before_sha256": "86490879fab0fee95bded02c346848c8b959bd27c45d6ffcec23060db1b90b6e",
+      "local_links_checked": 18,
+      "whitespace_and_final_newline": "passed"
+    },
+    {
+      "file": "02-MCP.md",
+      "sha256": "8ecfe6db7f4331bd09e10b206763f0e0e10c5575f4980b9139be6e31195bfe55",
+      "before_sha256": "fb3f135d81c7d23571ac94cae48bbca4bc8a7be301685e8b0f55af83c01e5fa4",
+      "local_links_checked": 6,
+      "whitespace_and_final_newline": "passed"
+    },
+    {
+      "file": "03-buildintool.md",
+      "sha256": "217171bffeafa0e17d911d14af1262c5c4e410b3c902ba3062ec8b4c1b93030e",
+      "before_sha256": "231b23a23f1988d0a62dee6c7b40018f6c8389743b30a5146c65a6e1a729b2de",
+      "local_links_checked": 7,
+      "whitespace_and_final_newline": "passed"
+    },
+    {
+      "file": "04-agent.md",
+      "sha256": "fbc9f85d97fb0b527c7de6b6efa094ef34b9035cddf8c2623bbb2ee941c9a337",
+      "before_sha256": "6e49cd2460bdc7c78916cafe8d09bba6bf20b263f1dd50ce6d8ca2dc9258acda",
+      "local_links_checked": 22,
+      "whitespace_and_final_newline": "passed"
+    }
+  ],
+  "modified_interactive_diagrams": 13,
+  "diagrams": [
+    {
+      "diagram_type": "workflow",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/01-skill.html",
+      "specification_sha256": "990fcd34e0a3139e8ce43573ee705fbe1b06496626ece1de1f172a8a215d716e",
+      "artifact_sha256": "91eecffaf56fb2c5be523ec220b170ca498671e82cb62590ca042ffece287e16",
+      "artifact_bytes": 707016,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "browser_receipt": "diagrams/01-skill.visual-check.json",
+      "visual_review": "passed",
+      "reviewer": "image-capable agent /root/align_resources",
+      "reviewed_screenshots": [
+        "diagrams/01-skill.visual-check.1440x900.light.png",
+        "diagrams/01-skill.visual-check.1440x900.dark.png",
+        "diagrams/01-skill.visual-check.2048x1320.light.png"
+      ],
+      "observations": [
+        "实际查看默认 READ/Still 的浅深色浏览器截图，角色、中文标签和消息顺序可读，无截断或标签遮挡。",
+        "大屏截图主图与必要结论卡保持可读，四桌面视口包含性由独立 automated-browser 回执记录。",
+        "保留原有拓扑；仅按 Console 业务入口、后台任务执行或运维调试语义修改短文本。"
+      ],
+      "correction_rounds": 0,
+      "svg_export": {
+        "diagram": "diagrams/01-skill.html",
+        "file": "assets/01-skill.svg",
+        "data-last-export-format": "svg",
+        "data-last-export-bytes": "50726",
+        "data-last-export-canonical": "true",
+        "rawSha256": "90634bec9e3834f5470c67d09a8a20c0612cb80549dd750f17cc2c9d38a487df",
+        "rawBytes": 50726,
+        "sha256": "83c2b97daed9f176e388ce5fb8059d9351bd7f2bdab12eb1fe6057cadd4f1834",
+        "bytes": 50706,
+        "normalization": "Trailing whitespace and final newline only"
+      }
+    },
+    {
+      "diagram_type": "workflow",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/03-builtintool.html",
+      "specification_sha256": "a145bfbb3a4185db3382ceeb13fefbc0e6b232c0c389fc912be17d1a0208662c",
+      "artifact_sha256": "8704ac012ed3a1c76de96111bf40e966f21d03bf0661e22ddd65e0eba50202ef",
+      "artifact_bytes": 707736,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "browser_receipt": "diagrams/03-builtintool.visual-check.json",
+      "visual_review": "passed",
+      "reviewer": "image-capable agent /root/align_resources",
+      "reviewed_screenshots": [
+        "diagrams/03-builtintool.visual-check.1440x900.light.png",
+        "diagrams/03-builtintool.visual-check.1440x900.dark.png",
+        "diagrams/03-builtintool.visual-check.2048x1320.light.png"
+      ],
+      "observations": [
+        "实际查看默认 READ/Still 的浅深色浏览器截图，角色、中文标签和消息顺序可读，无截断或标签遮挡。",
+        "大屏截图主图与必要结论卡保持可读，四桌面视口包含性由独立 automated-browser 回执记录。",
+        "保留原有拓扑；仅按 Console 业务入口、后台任务执行或运维调试语义修改短文本。"
+      ],
+      "correction_rounds": 0,
+      "svg_export": {
+        "diagram": "diagrams/03-builtintool.html",
+        "file": "assets/03-builtintool.svg",
+        "data-last-export-format": "svg",
+        "data-last-export-bytes": "51367",
+        "data-last-export-canonical": "true",
+        "rawSha256": "a2f09eb24f1830ce9adf944ac88cdfa1be48cbae8d097fce1684bdab9f75f4b7",
+        "rawBytes": 51367,
+        "sha256": "0b926e5ff8025dda045e1da59b9411da21e5d89a380b96f83b1a1f24feadf944",
+        "bytes": 51347,
+        "normalization": "Trailing whitespace and final newline only"
+      }
+    },
+    {
+      "diagram_type": "architecture",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/04-agent.html",
+      "specification_sha256": "052d1660248faec6e49e27440fd1842ab2f86cbbc4628c0442b5f3786986135f",
+      "artifact_sha256": "8a9545bb758019795fd777b45c1add22d54ad589083cfaac0909ffea3ccaf78c",
+      "artifact_bytes": 706192,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "browser_receipt": "diagrams/04-agent.visual-check.json",
+      "visual_review": "passed",
+      "reviewer": "image-capable agent /root/align_resources",
+      "reviewed_screenshots": [
+        "diagrams/04-agent.visual-check.1440x900.light.png",
+        "diagrams/04-agent.visual-check.1440x900.dark.png",
+        "diagrams/04-agent.visual-check.2048x1320.light.png"
+      ],
+      "observations": [
+        "实际查看默认 READ/Still 的浅深色浏览器截图，角色、中文标签和消息顺序可读，无截断或标签遮挡。",
+        "大屏截图主图与必要结论卡保持可读，四桌面视口包含性由独立 automated-browser 回执记录。",
+        "保留原有拓扑；仅按 Console 业务入口、后台任务执行或运维调试语义修改短文本。"
+      ],
+      "correction_rounds": 0,
+      "svg_export": {
+        "diagram": "diagrams/04-agent.html",
+        "file": "assets/04-agent.svg",
+        "data-last-export-format": "svg",
+        "data-last-export-bytes": "49850",
+        "data-last-export-canonical": "true",
+        "rawSha256": "f34c6799121917411c92b892d20ecbe2dbf99682a37a4f13b28061328de453ba",
+        "rawBytes": 49850,
+        "sha256": "a02259302af2587fdc4921ae860c13ee3bc54b1a43bdbfd2fda4472ec1429375",
+        "bytes": 49830,
+        "normalization": "Trailing whitespace and final newline only"
+      }
+    },
+    {
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/01-skill-experiment.html",
+      "specification_sha256": "59c0a09eb0dd1857e6dce982683499689dc257861978406283ecb241fdfbf35d",
+      "artifact_sha256": "1c997d738eb8f0cf713a3a21b6377d4002207cf7ef3dffc827067642a8a184a3",
+      "artifact_bytes": 704026,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "browser_receipt": "diagrams/runtime/01-skill-experiment.visual-check.json",
+      "visual_review": "passed",
+      "reviewer": "image-capable agent /root/align_resources",
+      "reviewed_screenshots": [
+        "diagrams/runtime/01-skill-experiment.visual-check.1440x900.light.png",
+        "diagrams/runtime/01-skill-experiment.visual-check.1440x900.dark.png",
+        "diagrams/runtime/01-skill-experiment.visual-check.2048x1320.light.png"
+      ],
+      "observations": [
+        "实际查看默认 READ/Still 的浅深色浏览器截图，角色、中文标签和消息顺序可读，无截断或标签遮挡。",
+        "大屏截图主图与必要结论卡保持可读，四桌面视口包含性由独立 automated-browser 回执记录。",
+        "保留原有拓扑；仅按 Console 业务入口、后台任务执行或运维调试语义修改短文本。"
+      ],
+      "correction_rounds": 0,
+      "svg_export": {
+        "diagram": "diagrams/runtime/01-skill-experiment.html",
+        "file": "assets/runtime/01-skill-experiment.svg",
+        "data-last-export-format": "svg",
+        "data-last-export-bytes": "48340",
+        "data-last-export-canonical": "true",
+        "rawSha256": "474189c27d9609d13aa197df08815635992eb001741a3b1715abf3550ad88b40",
+        "rawBytes": 48340,
+        "sha256": "55063ed1c287ad9cc872270bb73090a67e5101e5a1bbaf029bf0b3213a1711a9",
+        "bytes": 48320,
+        "normalization": "Trailing whitespace and final newline only"
+      }
+    },
+    {
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/01-skill-file-conflict.html",
+      "specification_sha256": "36201759d3c02f04120c68080e8f1e78181efe2999322f36169007acf9363d10",
+      "artifact_sha256": "4a89a8eba97f1c650d8848e34f62c6e890c979a6db2c5a81dab96a592a219f9c",
+      "artifact_bytes": 702703,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "browser_receipt": "diagrams/runtime/01-skill-file-conflict.visual-check.json",
+      "visual_review": "passed",
+      "reviewer": "image-capable agent /root/align_resources",
+      "reviewed_screenshots": [
+        "diagrams/runtime/01-skill-file-conflict.visual-check.1440x900.light.png",
+        "diagrams/runtime/01-skill-file-conflict.visual-check.1440x900.dark.png",
+        "diagrams/runtime/01-skill-file-conflict.visual-check.2048x1320.light.png"
+      ],
+      "observations": [
+        "实际查看默认 READ/Still 的浅深色浏览器截图，角色、中文标签和消息顺序可读，无截断或标签遮挡。",
+        "大屏截图主图与必要结论卡保持可读，四桌面视口包含性由独立 automated-browser 回执记录。",
+        "保留原有拓扑；仅按 Console 业务入口、后台任务执行或运维调试语义修改短文本。"
+      ],
+      "correction_rounds": 0,
+      "svg_export": {
+        "diagram": "diagrams/runtime/01-skill-file-conflict.html",
+        "file": "assets/runtime/01-skill-file-conflict.svg",
+        "data-last-export-format": "svg",
+        "data-last-export-bytes": "46992",
+        "data-last-export-canonical": "true",
+        "rawSha256": "865943d5288f47fae749dea94ae77d5e8587b5db322c4180e5f613ae0a0591cf",
+        "rawBytes": 46992,
+        "sha256": "ab747a18749f7c38946a839661571c057c8d6c9a2bdf56729ce309ffc6b077b6",
+        "bytes": 46972,
+        "normalization": "Trailing whitespace and final newline only"
+      }
+    },
+    {
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/01-skill-file-upload.html",
+      "specification_sha256": "273048a96de85bfa2e4eeb8cbcdf1ea1e79e50f01050da8a4cafb951fecdbe6a",
+      "artifact_sha256": "92bdd50f6dc3e892256c1751803defd2575054e208561acbac3dc90fa6bf9129",
+      "artifact_bytes": 702767,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "browser_receipt": "diagrams/runtime/01-skill-file-upload.visual-check.json",
+      "visual_review": "passed",
+      "reviewer": "image-capable agent /root/align_resources",
+      "reviewed_screenshots": [
+        "diagrams/runtime/01-skill-file-upload.visual-check.1440x900.light.png",
+        "diagrams/runtime/01-skill-file-upload.visual-check.1440x900.dark.png",
+        "diagrams/runtime/01-skill-file-upload.visual-check.2048x1320.light.png"
+      ],
+      "observations": [
+        "实际查看默认 READ/Still 的浅深色浏览器截图，角色、中文标签和消息顺序可读，无截断或标签遮挡。",
+        "大屏截图主图与必要结论卡保持可读，四桌面视口包含性由独立 automated-browser 回执记录。",
+        "保留原有拓扑；仅按 Console 业务入口、后台任务执行或运维调试语义修改短文本。"
+      ],
+      "correction_rounds": 0,
+      "svg_export": {
+        "diagram": "diagrams/runtime/01-skill-file-upload.html",
+        "file": "assets/runtime/01-skill-file-upload.svg",
+        "data-last-export-format": "svg",
+        "data-last-export-bytes": "47041",
+        "data-last-export-canonical": "true",
+        "rawSha256": "cf503eb3425fc95ff3440e51c2e964827a5d9323e743aa77fd1ec54f78eb77a2",
+        "rawBytes": 47041,
+        "sha256": "59a51602e415aa2483f08313a776ab119c029487aa862a98cd1bad1b05999407",
+        "bytes": 47021,
+        "normalization": "Trailing whitespace and final newline only"
+      }
+    },
+    {
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/02-mcp-call.html",
+      "specification_sha256": "34c556de3c32988a5a3e5e34b3cf7dbddcbb25eb4e037475452c3546d048247f",
+      "artifact_sha256": "c085ea6b1d189c7d45038458424e8d59a0f805e34efbd8917dfb1ce363ffa3a1",
+      "artifact_bytes": 702463,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "browser_receipt": "diagrams/runtime/02-mcp-call.visual-check.json",
+      "visual_review": "passed",
+      "reviewer": "image-capable agent /root/align_resources",
+      "reviewed_screenshots": [
+        "diagrams/runtime/02-mcp-call.visual-check.1440x900.light.png",
+        "diagrams/runtime/02-mcp-call.visual-check.1440x900.dark.png",
+        "diagrams/runtime/02-mcp-call.visual-check.2048x1320.light.png"
+      ],
+      "observations": [
+        "实际查看默认 READ/Still 的浅深色浏览器截图，角色、中文标签和消息顺序可读，无截断或标签遮挡。",
+        "大屏截图主图与必要结论卡保持可读，四桌面视口包含性由独立 automated-browser 回执记录。",
+        "保留原有拓扑；仅按 Console 业务入口、后台任务执行或运维调试语义修改短文本。"
+      ],
+      "correction_rounds": 0,
+      "svg_export": {
+        "diagram": "diagrams/runtime/02-mcp-call.html",
+        "file": "assets/runtime/02-mcp-call.svg",
+        "data-last-export-format": "svg",
+        "data-last-export-bytes": "46831",
+        "data-last-export-canonical": "true",
+        "rawSha256": "63a0d1ac7a2e45ad370f9b46142e02709d75466aa03259c792604d4512865537",
+        "rawBytes": 46831,
+        "sha256": "fa3ba292d73898a1cf0fee631e9a455d1c03465b2de2a4cedc0e9b9fdb08e163",
+        "bytes": 46811,
+        "normalization": "Trailing whitespace and final newline only"
+      }
+    },
+    {
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/02-mcp-failure.html",
+      "specification_sha256": "ce2f8323f2f73aa2513cceccfd8cba796d42c53d1d8c66b336db69bafc50e1fc",
+      "artifact_sha256": "e9182f026d87bba2b5044d8baf4702ed35633e12a712221c57a28e50fb54ddc8",
+      "artifact_bytes": 701204,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "browser_receipt": "diagrams/runtime/02-mcp-failure.visual-check.json",
+      "visual_review": "passed",
+      "reviewer": "image-capable agent /root/align_resources",
+      "reviewed_screenshots": [
+        "diagrams/runtime/02-mcp-failure.visual-check.1440x900.light.png",
+        "diagrams/runtime/02-mcp-failure.visual-check.1440x900.dark.png",
+        "diagrams/runtime/02-mcp-failure.visual-check.2048x1320.light.png"
+      ],
+      "observations": [
+        "实际查看默认 READ/Still 的浅深色浏览器截图，角色、中文标签和消息顺序可读，无截断或标签遮挡。",
+        "大屏截图主图与必要结论卡保持可读，四桌面视口包含性由独立 automated-browser 回执记录。",
+        "保留原有拓扑；仅按 Console 业务入口、后台任务执行或运维调试语义修改短文本。"
+      ],
+      "correction_rounds": 0,
+      "svg_export": {
+        "diagram": "diagrams/runtime/02-mcp-failure.html",
+        "file": "assets/runtime/02-mcp-failure.svg",
+        "data-last-export-format": "svg",
+        "data-last-export-bytes": "45591",
+        "data-last-export-canonical": "true",
+        "rawSha256": "20f27420ab9f6b17556d4ec6f15e057169cd7a9f98ab841d62f7fb6626051454",
+        "rawBytes": 45591,
+        "sha256": "5c1bdaf74660a96b5378e1f557b1a1aa91885d7e37b033c148ae37dc016f6e8c",
+        "bytes": 45571,
+        "normalization": "Trailing whitespace and final newline only"
+      }
+    },
+    {
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/03-builtintool-missing.html",
+      "specification_sha256": "44e2a23380900603cc5d10ffcb9db21b15c2f626b44e9002363c61da23579a8b",
+      "artifact_sha256": "f2da4290ee2c54e0e3ae69a6b4b9cce6f1095b37bef389bc126526170fb90746",
+      "artifact_bytes": 701068,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "browser_receipt": "diagrams/runtime/03-builtintool-missing.visual-check.json",
+      "visual_review": "passed",
+      "reviewer": "image-capable agent /root/align_resources",
+      "reviewed_screenshots": [
+        "diagrams/runtime/03-builtintool-missing.visual-check.1440x900.light.png",
+        "diagrams/runtime/03-builtintool-missing.visual-check.1440x900.dark.png",
+        "diagrams/runtime/03-builtintool-missing.visual-check.2048x1320.light.png"
+      ],
+      "observations": [
+        "实际查看默认 READ/Still 的浅深色浏览器截图，角色、中文标签和消息顺序可读，无截断或标签遮挡。",
+        "大屏截图主图与必要结论卡保持可读，四桌面视口包含性由独立 automated-browser 回执记录。",
+        "保留原有拓扑；仅按 Console 业务入口、后台任务执行或运维调试语义修改短文本。"
+      ],
+      "correction_rounds": 0,
+      "svg_export": {
+        "diagram": "diagrams/runtime/03-builtintool-missing.html",
+        "file": "assets/runtime/03-builtintool-missing.svg",
+        "data-last-export-format": "svg",
+        "data-last-export-bytes": "45486",
+        "data-last-export-canonical": "true",
+        "rawSha256": "a8f2d5e0df13462fa801076ad8d8a4321cb14b01de6c7fc8f2bce84b39d73b62",
+        "rawBytes": 45486,
+        "sha256": "4b95ad5ac2547ee6d642d43a943390c8fb62e4bd907cc75e0e4c67da7c749a6b",
+        "bytes": 45466,
+        "normalization": "Trailing whitespace and final newline only"
+      }
+    },
+    {
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/03-builtintool-ready.html",
+      "specification_sha256": "0546558ed045818824ac350a4a0901f260b8d005b9fd075bf46132fa6f985cc3",
+      "artifact_sha256": "1c1144830bfcd8d196d88d7d2f836470231efda3fda0158dfa7ea9b6cd7079b7",
+      "artifact_bytes": 703973,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "browser_receipt": "diagrams/runtime/03-builtintool-ready.visual-check.json",
+      "visual_review": "passed",
+      "reviewer": "image-capable agent /root/align_resources",
+      "reviewed_screenshots": [
+        "diagrams/runtime/03-builtintool-ready.visual-check.1440x900.light.png",
+        "diagrams/runtime/03-builtintool-ready.visual-check.1440x900.dark.png",
+        "diagrams/runtime/03-builtintool-ready.visual-check.2048x1320.light.png"
+      ],
+      "observations": [
+        "实际查看默认 READ/Still 的浅深色浏览器截图，角色、中文标签和消息顺序可读，无截断或标签遮挡。",
+        "大屏截图主图与必要结论卡保持可读，四桌面视口包含性由独立 automated-browser 回执记录。",
+        "保留原有拓扑；仅按 Console 业务入口、后台任务执行或运维调试语义修改短文本。"
+      ],
+      "correction_rounds": 0,
+      "svg_export": {
+        "diagram": "diagrams/runtime/03-builtintool-ready.html",
+        "file": "assets/runtime/03-builtintool-ready.svg",
+        "data-last-export-format": "svg",
+        "data-last-export-bytes": "48288",
+        "data-last-export-canonical": "true",
+        "rawSha256": "bb49322d4582970b7afbb9c68698e1072c7173acde0e70eea812dfa18f4b829f",
+        "rawBytes": 48288,
+        "sha256": "f97982c75e456bc5dd87511f70e58e6b071f3a0878e7aac9bc5ba3ede4b266e8",
+        "bytes": 48268,
+        "normalization": "Trailing whitespace and final newline only"
+      }
+    },
+    {
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-assembly-failure.html",
+      "specification_sha256": "a56e0dea2f835a89fa2bb8d4285692f1b7676536237e91513f5c8d82ed9de19f",
+      "artifact_sha256": "ee394a3ef2862cd8d195aefcebcfb5d8b1fe3c63d22be2116342bdc415d34281",
+      "artifact_bytes": 705453,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "browser_receipt": "diagrams/runtime/04-assembly-failure.visual-check.json",
+      "visual_review": "passed",
+      "reviewer": "image-capable agent /root/align_resources",
+      "reviewed_screenshots": [
+        "diagrams/runtime/04-assembly-failure.visual-check.1440x900.light.png",
+        "diagrams/runtime/04-assembly-failure.visual-check.1440x900.dark.png",
+        "diagrams/runtime/04-assembly-failure.visual-check.2048x1320.light.png"
+      ],
+      "observations": [
+        "实际查看默认 READ/Still 的浅深色浏览器截图，角色、中文标签和消息顺序可读，无截断或标签遮挡。",
+        "大屏截图主图与必要结论卡保持可读，四桌面视口包含性由独立 automated-browser 回执记录。",
+        "保留原有拓扑；仅按 Console 业务入口、后台任务执行或运维调试语义修改短文本。"
+      ],
+      "correction_rounds": 0,
+      "svg_export": {
+        "diagram": "diagrams/runtime/04-assembly-failure.html",
+        "file": "assets/runtime/04-assembly-failure.svg",
+        "data-last-export-format": "svg",
+        "data-last-export-bytes": "49845",
+        "data-last-export-canonical": "true",
+        "rawSha256": "d1dadcb6908cc90409ad0feb2c0652198b34f2a2843cccb99b1c7bcbf013b8d4",
+        "rawBytes": 49845,
+        "sha256": "286fd1f507eec345b82883130152455d979bf8292e0a4ceb9fc6d87539abd3f0",
+        "bytes": 49825,
+        "normalization": "Trailing whitespace and final newline only"
+      }
+    },
+    {
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-local-session.html",
+      "specification_sha256": "e709374779ec89768045cd334fb1966bf460201844c7c1ce19fc7ee98621c71b",
+      "artifact_sha256": "b17de522f221f6c1417cb894d1622cec3730b290d6b0d50c2a7bec3abee155dc",
+      "artifact_bytes": 704914,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "browser_receipt": "diagrams/runtime/04-local-session.visual-check.json",
+      "visual_review": "passed",
+      "reviewer": "image-capable agent /root/align_resources",
+      "reviewed_screenshots": [
+        "diagrams/runtime/04-local-session.visual-check.1440x900.light.png",
+        "diagrams/runtime/04-local-session.visual-check.1440x900.dark.png",
+        "diagrams/runtime/04-local-session.visual-check.2048x1320.light.png"
+      ],
+      "observations": [
+        "实际查看默认 READ/Still 的浅深色浏览器截图，角色、中文标签和消息顺序可读，无截断或标签遮挡。",
+        "大屏截图主图与必要结论卡保持可读，四桌面视口包含性由独立 automated-browser 回执记录。",
+        "保留原有拓扑；仅按 Console 业务入口、后台任务执行或运维调试语义修改短文本。"
+      ],
+      "correction_rounds": 0,
+      "svg_export": {
+        "diagram": "diagrams/runtime/04-local-session.html",
+        "file": "assets/runtime/04-local-session.svg",
+        "data-last-export-format": "svg",
+        "data-last-export-bytes": "49895",
+        "data-last-export-canonical": "true",
+        "rawSha256": "780982f24d1235c930992e1f195b428236c82e3bf900408dd4020fc30a5867b9",
+        "rawBytes": 49895,
+        "sha256": "8edf64da895f26ad0fd47540bd9e9a88e85cd916518d447c930256e40da66c9e",
+        "bytes": 49875,
+        "normalization": "Trailing whitespace and final newline only"
+      }
+    },
+    {
+      "diagram_type": "sequence",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-official-new-version.html",
+      "specification_sha256": "67c48d45fdb5a424a046f124e59437d19892113a88420845012fc32d06a3937d",
+      "artifact_sha256": "4505c4206f0840cbcdd34e73e28c15a49f8e67af320e74556e31631de7baacd8",
+      "artifact_bytes": 704873,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "browser_receipt": "diagrams/runtime/04-official-new-version.visual-check.json",
+      "visual_review": "passed",
+      "reviewer": "image-capable agent /root/align_resources",
+      "reviewed_screenshots": [
+        "diagrams/runtime/04-official-new-version.visual-check.1440x900.light.png",
+        "diagrams/runtime/04-official-new-version.visual-check.1440x900.dark.png",
+        "diagrams/runtime/04-official-new-version.visual-check.2048x1320.light.png"
+      ],
+      "observations": [
+        "实际查看默认 READ/Still 的浅深色浏览器截图，角色、中文标签和消息顺序可读，无截断或标签遮挡。",
+        "大屏截图主图与必要结论卡保持可读，四桌面视口包含性由独立 automated-browser 回执记录。",
+        "保留原有拓扑；仅按 Console 业务入口、后台任务执行或运维调试语义修改短文本。"
+      ],
+      "correction_rounds": 0,
+      "svg_export": {
+        "diagram": "diagrams/runtime/04-official-new-version.html",
+        "file": "assets/runtime/04-official-new-version.svg",
+        "data-last-export-format": "svg",
+        "data-last-export-bytes": "49862",
+        "data-last-export-canonical": "true",
+        "rawSha256": "bc09860dc0697c3732d6c0dfcb9708dc3617cd7d41597f2427818e5eefdee761",
+        "rawBytes": 49862,
+        "sha256": "7acb6bffad55d2064b39b61c22d5ad8f7ed99746d8fdff11b81d3218e391c152",
+        "bytes": 49842,
+        "normalization": "Trailing whitespace and final newline only"
+      }
+    }
+  ],
+  "modified_usecase_svgs": [
+    {
+      "file": "assets/01-skill-usecase.svg",
+      "width": 1000,
+      "height": 520,
+      "textBounds": [
+        {
+          "text": "SKILL · 用例",
+          "x": 32,
+          "y": 14,
+          "width": 167.21875,
+          "height": 40,
+          "outside": false
+        },
+        {
+          "text": "Skill 运维调试与使用",
+          "x": 270,
+          "y": 85,
+          "width": 186.40625,
+          "height": 28,
+          "outside": false
+        },
+        {
+          "text": "编辑与上传完整草稿",
+          "x": 401,
+          "y": 145,
+          "width": 198,
+          "height": 30,
+          "outside": false
+        },
+        {
+          "text": "选择 Agent 实验草稿",
+          "x": 396.1640625,
+          "y": 235,
+          "width": 207.671875,
+          "height": 30,
+          "outside": false
+        },
+        {
+          "text": "发布 Skill 并联动 Agent",
+          "x": 381.890625,
+          "y": 325,
+          "width": 236.21875,
+          "height": 30,
+          "outside": false
+        },
+        {
+          "text": "使用官方 / 复制为本地",
+          "x": 388.171875,
+          "y": 415,
+          "width": 223.65625,
+          "height": 30,
+          "outside": false
+        },
+        {
+          "text": "运维人员",
+          "x": 81,
+          "y": 296,
+          "width": 88,
+          "height": 30,
+          "outside": false
+        },
+        {
+          "text": "本地调试者",
+          "x": 820,
+          "y": 476,
+          "width": 110,
+          "height": 30,
+          "outside": false
+        },
+        {
+          "text": "角色参与关系 · 无方向关联线 · 不表示执行顺序",
+          "x": 32,
+          "y": 487,
+          "width": 426.640625,
+          "height": 28,
+          "outside": false
+        }
+      ],
+      "sha256": "bf7fbb5d6ffb30fbca4b1b2b84f0813acedf6fb55aa70c4f14df885cc8e13e25",
+      "bytes": 3065,
+      "visual_review": "passed",
+      "observations": "实际查看浏览器渲染；参与角色明确，文字可读且均在 SVG viewBox 内。"
+    },
+    {
+      "file": "assets/02-mcp-usecase.svg",
+      "width": 1000,
+      "height": 520,
+      "textBounds": [
+        {
+          "text": "MCP · 用例",
+          "x": 32,
+          "y": 14,
+          "width": 152.78125,
+          "height": 40,
+          "outside": false
+        },
+        {
+          "text": "MCP 运维调试与接入",
+          "x": 270,
+          "y": 85,
+          "width": 192.46875,
+          "height": 28,
+          "outside": false
+        },
+        {
+          "text": "配置 Agent 所需 MCP",
+          "x": 389.4140625,
+          "y": 165,
+          "width": 221.171875,
+          "height": 30,
+          "outside": false
+        },
+        {
+          "text": "调试连接并调用工具",
+          "x": 401,
+          "y": 285,
+          "width": 198,
+          "height": 30,
+          "outside": false
+        },
+        {
+          "text": "查看实际 MCP 与工具清单",
+          "x": 368.578125,
+          "y": 405,
+          "width": 262.84375,
+          "height": 30,
+          "outside": false
+        },
+        {
+          "text": "运维人员",
+          "x": 81,
+          "y": 226,
+          "width": 88,
+          "height": 30,
+          "outside": false
+        },
+        {
+          "text": "本地调试者",
+          "x": 820,
+          "y": 406,
+          "width": 110,
+          "height": 30,
+          "outside": false
+        },
+        {
+          "text": "角色参与关系 · 无方向关联线 · 不表示执行顺序",
+          "x": 32,
+          "y": 487,
+          "width": 426.640625,
+          "height": 28,
+          "outside": false
+        }
+      ],
+      "sha256": "16118adc364480026c7eafd2fb3f5e2954337a354a7239db005aa82d829af38a",
+      "bytes": 2835,
+      "visual_review": "passed",
+      "observations": "实际查看浏览器渲染；参与角色明确，文字可读且均在 SVG viewBox 内。"
+    },
+    {
+      "file": "assets/03-builtintool-usecase.svg",
+      "width": 1000,
+      "height": 520,
+      "textBounds": [
+        {
+          "text": "builtinTool · 用例",
+          "x": 32,
+          "y": 14,
+          "width": 228.65625,
+          "height": 40,
+          "outside": false
+        },
+        {
+          "text": "内置工具使用",
+          "x": 270,
+          "y": 85,
+          "width": 120,
+          "height": 28,
+          "outside": false
+        },
+        {
+          "text": "选择 Agent 所需工具",
+          "x": 396.1640625,
+          "y": 165,
+          "width": 207.671875,
+          "height": 30,
+          "outside": false
+        },
+        {
+          "text": "Console 查看缺失与更新",
+          "x": 377.1484375,
+          "y": 285,
+          "width": 245.703125,
+          "height": 30,
+          "outside": false
+        },
+        {
+          "text": "Console 追溯执行版本",
+          "x": 388.1484375,
+          "y": 405,
+          "width": 223.703125,
+          "height": 30,
+          "outside": false
+        },
+        {
+          "text": "运维人员",
+          "x": 81,
+          "y": 226,
+          "width": 88,
+          "height": 30,
+          "outside": false
+        },
+        {
+          "text": "线上用户",
+          "x": 831,
+          "y": 406,
+          "width": 88,
+          "height": 30,
+          "outside": false
+        },
+        {
+          "text": "角色参与关系 · 无方向关联线 · 不表示执行顺序",
+          "x": 32,
+          "y": 487,
+          "width": 426.640625,
+          "height": 28,
+          "outside": false
+        }
+      ],
+      "sha256": "462f907a204d0cc0b9c7c6f26b7985855c8226c7711f21d62b87312fe0d32097",
+      "bytes": 2823,
+      "visual_review": "passed",
+      "observations": "实际查看浏览器渲染；参与角色明确，文字可读且均在 SVG viewBox 内。"
+    },
+    {
+      "file": "assets/04-agent-usecase.svg",
+      "width": 1000,
+      "height": 520,
+      "textBounds": [
+        {
+          "text": "Agent · 用例",
+          "x": 32,
+          "y": 14,
+          "width": 166.796875,
+          "height": 40,
+          "outside": false
+        },
+        {
+          "text": "Agent 运维与后台执行",
+          "x": 270,
+          "y": 85,
+          "width": 202.484375,
+          "height": 28,
+          "outside": false
+        },
+        {
+          "text": "调试：编辑 / 使用 Agent",
+          "x": 376.0078125,
+          "y": 145,
+          "width": 247.984375,
+          "height": 30,
+          "outside": false
+        },
+        {
+          "text": "发布固定装配与标签",
+          "x": 401,
+          "y": 235,
+          "width": 198,
+          "height": 30,
+          "outside": false
+        },
+        {
+          "text": "以任务调用官方 Agent",
+          "x": 388.828125,
+          "y": 325,
+          "width": 222.34375,
+          "height": 30,
+          "outside": false
+        },
+        {
+          "text": "追溯会话装配快照",
+          "x": 412,
+          "y": 415,
+          "width": 176,
+          "height": 30,
+          "outside": false
+        },
+        {
+          "text": "调试使用者",
+          "x": 70,
+          "y": 341,
+          "width": 110,
+          "height": 30,
+          "outside": false
+        },
+        {
+          "text": "运维人员",
+          "x": 831,
+          "y": 281,
+          "width": 88,
+          "height": 30,
+          "outside": false
+        },
+        {
+          "text": "服务端 Agent",
+          "x": 807.6328125,
+          "y": 446,
+          "width": 134.734375,
+          "height": 30,
+          "outside": false
+        },
+        {
+          "text": "角色参与关系 · 无方向关联线 · 不表示执行顺序",
+          "x": 32,
+          "y": 487,
+          "width": 426.640625,
+          "height": 28,
+          "outside": false
+        }
+      ],
+      "sha256": "042c98d5eff7940433218fd7a941a22392e0e95ab2b35162c48aa65ebeb754b1",
+      "bytes": 3330,
+      "visual_review": "passed",
+      "observations": "实际查看浏览器渲染；参与角色明确，文字可读且均在 SVG viewBox 内。"
+    }
+  ],
+  "source_html_svg_text_consistency": "passed",
+  "permissions": "保留普通用户官方只读、本地资源可自由管理、官方写入仅运维；未新增 UI 授权限制。",
+  "implementation_status": "保留现有实现与待接入标记；04 的 Provider 现状改为引用第 11 章，未实现远端接口。",
+  "telemetry": "仅文档与配图职责对齐，不改变执行路径，无需新增埋点。",
+  "remaining_issues": []
+}

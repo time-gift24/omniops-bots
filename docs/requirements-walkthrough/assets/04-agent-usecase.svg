@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1000" height="520" viewBox="0 0 1000 520" role="img" aria-labelledby="title desc">
     <title id="title">Agent用例图</title>
-    <desc id="desc">Agent 装配与使用的主要用例：编辑本地 / 使用官方 Agent；发布固定装配与标签；独立调用官方 Agent；追溯会话装配快照。角色与椭圆之间为无方向参与关系，未表示执行先后。</desc>
+    <desc id="desc">Agent 运维调试与后台执行用例（线上用户在服务端 Console 操作）：调试：编辑 / 使用 Agent；发布固定装配与标签；以任务调用官方 Agent；追溯会话装配快照。角色与椭圆之间为无方向参与关系，未表示执行先后。</desc>
     <style>
       text { font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; fill:#16354b; }
       .heading { font-size:28px; font-weight:700; }
@@ -17,28 +17,28 @@
     <rect width="1000" height="520" fill="#ffffff" />
     <text x="32" y="44" class="heading">Agent · 用例</text>
     <rect x="250" y="76" width="500" height="400" rx="10" class="boundary" />
-    <text x="270" y="106" class="boundary-label">Agent 装配与使用</text>
+    <text x="270" y="106" class="boundary-label">Agent 运维与后台执行</text>
 <line x1="157" y1="295" x2="290" y2="160" class="association" />
 <line x1="157" y1="295" x2="290" y2="430" class="association" />
 <line x1="843" y1="235" x2="710" y2="250" class="association" />
 <line x1="843" y1="400" x2="710" y2="340" class="association" />
-<ellipse cx="500" cy="160" rx="210" ry="31" class="usecase" /><text x="500" y="160" class="usecase-label">编辑本地 / 使用官方 Agent</text>
+<ellipse cx="500" cy="160" rx="210" ry="31" class="usecase" /><text x="500" y="160" class="usecase-label">调试：编辑 / 使用 Agent</text>
 <ellipse cx="500" cy="250" rx="210" ry="31" class="usecase" /><text x="500" y="250" class="usecase-label">发布固定装配与标签</text>
-<ellipse cx="500" cy="340" rx="210" ry="31" class="usecase" /><text x="500" y="340" class="usecase-label">独立调用官方 Agent</text>
+<ellipse cx="500" cy="340" rx="210" ry="31" class="usecase" /><text x="500" y="340" class="usecase-label">以任务调用官方 Agent</text>
 <ellipse cx="500" cy="430" rx="210" ry="31" class="usecase" /><text x="500" y="430" class="usecase-label">追溯会话装配快照</text>
-<g class="actor" aria-label="用户">
+<g class="actor" aria-label="调试使用者">
       <circle cx="125" cy="255" r="14" />
       <path d="M 125 269 V 306 M 101 285 H 149 M 125 306 L 102 335 M 125 306 L 148 335" />
-      <text x="125" y="364" class="actor-label">用户</text>
+      <text x="125" y="364" class="actor-label">调试使用者</text>
     </g>
 <g class="actor" aria-label="运维人员">
       <circle cx="875" cy="195" r="14" />
       <path d="M 875 209 V 246 M 851 225 H 899 M 875 246 L 852 275 M 875 246 L 898 275" />
       <text x="875" y="304" class="actor-label">运维人员</text>
     </g>
-<g class="actor" aria-label="服务端调用方">
+<g class="actor" aria-label="服务端 Agent">
       <circle cx="875" cy="360" r="14" />
       <path d="M 875 374 V 411 M 851 390 H 899 M 875 411 L 852 440 M 875 411 L 898 440" />
-      <text x="875" y="469" class="actor-label">服务端调用方</text>
+      <text x="875" y="469" class="actor-label">服务端 Agent</text>
     </g>
 <text x="32" y="508" class="legend">角色参与关系 · 无方向关联线 · 不表示执行顺序</text></svg>

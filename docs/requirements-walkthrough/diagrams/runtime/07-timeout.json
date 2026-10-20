@@ -19,8 +19,8 @@
     },
     {
       "id": "client",
-      "label": "桌面客户端",
-      "type": "frontend"
+      "label": "后台客户端",
+      "type": "backend"
     },
     {
       "id": "record",
@@ -29,7 +29,7 @@
     },
     {
       "id": "server",
-      "label": "服务端",
+      "label": "服务端 Agent",
       "type": "backend"
     }
   ],
@@ -78,10 +78,10 @@
     },
     {
       "dot": "cyan",
-      "title": "本地和远端分别呈现",
+      "title": "Console 与运维各自呈现",
       "items": [
-        "本地轮次在客户端展示超时",
-        "图中远端任务还需要结果回传与确认"
+        "服务端 Agent 消费超时，Console 展示",
+        "本地逐条证据留在运维调试入口"
       ]
     }
   ]

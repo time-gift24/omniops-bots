@@ -10,17 +10,17 @@
     },
     {
       "path": "assets/01-skill.svg",
-      "before_sha256": "ec2a071ac2889adb10c402374e5d6a0c5e92596030bfbe6602ee7a0641bc46e2",
-      "after_sha256": "50e6633aecb19d2d8001e2f99c14d935ad4688e416bf32fef6733c03d579165f",
-      "before_bytes": 50660,
-      "after_bytes": 50640
+      "before_sha256": "90634bec9e3834f5470c67d09a8a20c0612cb80549dd750f17cc2c9d38a487df",
+      "after_sha256": "83c2b97daed9f176e388ce5fb8059d9351bd7f2bdab12eb1fe6057cadd4f1834",
+      "before_bytes": 50726,
+      "after_bytes": 50706
     },
     {
       "path": "assets/07-execution.svg",
-      "before_sha256": "c55bd74a82b0909ddb8fefd45d1b6e0ce5bf0320c576ea82f5e14687d3b0aff7",
-      "after_sha256": "8a8fb08981e06be1c2a8710097c90ccff5d8b9c9146ef3e607c63d5663b819ce",
-      "before_bytes": 53104,
-      "after_bytes": 53084
+      "before_sha256": "fdd322f3b1c2b2661767e1559e7c47dc88c48ed25471dd61e658ae962507da89",
+      "after_sha256": "9ef538bd364fff9668869e6055716a91a946c225d09f2220b0fd3198e7b10f0d",
+      "before_bytes": 53208,
+      "after_bytes": 53188
     },
     {
       "path": "assets/02-mcp.svg",
@@ -31,31 +31,31 @@
     },
     {
       "path": "assets/05-updater.svg",
-      "before_sha256": "ff97d29426c002735e27a61bedac0180e6e5278913ad079d7e436768976dbdfe",
-      "after_sha256": "bbd30e0198e8a467fcc84c47487161a7d38552709b0046c5d0832c62c3afc70a",
-      "before_bytes": 52127,
-      "after_bytes": 52107
+      "before_sha256": "ccc7178ea52b0bafdc7132f4bc61ca68e32430e89df8bf8d40cdefecd8c7a16e",
+      "after_sha256": "0c67e8a08489f096082edccc223e9c512238c42568dfd628751a955a7671ac3c",
+      "before_bytes": 52136,
+      "after_bytes": 52116
     },
     {
       "path": "assets/06-sync.svg",
-      "before_sha256": "4799a47082058469504a5b6c87157b8d225c38d8b7240a71945f4cce460bee53",
-      "after_sha256": "d0aad08ce909e2a3f31d097d6907267a001c0c351125c290ad9c11e3bf7c33ae",
-      "before_bytes": 49002,
-      "after_bytes": 48982
+      "before_sha256": "ee8015b30eb6b860f075d3d428ee0302285898d57b3b4d7b2978f4b02f9d782b",
+      "after_sha256": "617de9a289c0162937bfc39df2f263106927e5c618a3556935b44a0f8cecc336",
+      "before_bytes": 48874,
+      "after_bytes": 48854
     },
     {
       "path": "assets/04-agent.svg",
-      "before_sha256": "21ad499975a3da4df16b4c8e15ae710e82b59be32ad697738252950eb191cd58",
-      "after_sha256": "37aa47fbdb7c60cb122ee6c5fe68407de09692d66778ce7107cff1fd65e79220",
-      "before_bytes": 49838,
-      "after_bytes": 49818
+      "before_sha256": "f34c6799121917411c92b892d20ecbe2dbf99682a37a4f13b28061328de453ba",
+      "after_sha256": "a02259302af2587fdc4921ae860c13ee3bc54b1a43bdbfd2fda4472ec1429375",
+      "before_bytes": 49850,
+      "after_bytes": 49830
     },
     {
       "path": "assets/03-builtintool.svg",
-      "before_sha256": "d057beac4647cb5b2362523d6dba0ae33245a663f4a5a9b098b5dcfcd091b96c",
-      "after_sha256": "23e709c395f14c1ea77149d8d3d4bc1539463176f362fa175309bfa0da9eddb8",
-      "before_bytes": 51195,
-      "after_bytes": 51175
+      "before_sha256": "a2f09eb24f1830ce9adf944ac88cdfa1be48cbae8d097fce1684bdab9f75f4b7",
+      "after_sha256": "0b926e5ff8025dda045e1da59b9411da21e5d89a380b96f83b1a1f24feadf944",
+      "before_bytes": 51367,
+      "after_bytes": 51347
     },
     {
       "path": "assets/fonts/LICENSES.md",
@@ -70,6 +70,174 @@
       "after_sha256": "1e559cfd55bd06cd8c0ec70c96f7d13fb03fc952e86b3b7f541dac4e080eced0",
       "before_bytes": 65063,
       "after_bytes": 65064
+    },
+    {
+      "path": "assets/runtime/01-skill-experiment.svg",
+      "before_sha256": "474189c27d9609d13aa197df08815635992eb001741a3b1715abf3550ad88b40",
+      "after_sha256": "55063ed1c287ad9cc872270bb73090a67e5101e5a1bbaf029bf0b3213a1711a9",
+      "before_bytes": 48340,
+      "after_bytes": 48320
+    },
+    {
+      "path": "assets/runtime/01-skill-file-conflict.svg",
+      "before_sha256": "865943d5288f47fae749dea94ae77d5e8587b5db322c4180e5f613ae0a0591cf",
+      "after_sha256": "ab747a18749f7c38946a839661571c057c8d6c9a2bdf56729ce309ffc6b077b6",
+      "before_bytes": 46992,
+      "after_bytes": 46972
+    },
+    {
+      "path": "assets/runtime/01-skill-file-upload.svg",
+      "before_sha256": "cf503eb3425fc95ff3440e51c2e964827a5d9323e743aa77fd1ec54f78eb77a2",
+      "after_sha256": "59a51602e415aa2483f08313a776ab119c029487aa862a98cd1bad1b05999407",
+      "before_bytes": 47041,
+      "after_bytes": 47021
+    },
+    {
+      "path": "assets/runtime/02-mcp-call.svg",
+      "before_sha256": "63a0d1ac7a2e45ad370f9b46142e02709d75466aa03259c792604d4512865537",
+      "after_sha256": "fa3ba292d73898a1cf0fee631e9a455d1c03465b2de2a4cedc0e9b9fdb08e163",
+      "before_bytes": 46831,
+      "after_bytes": 46811
+    },
+    {
+      "path": "assets/runtime/02-mcp-failure.svg",
+      "before_sha256": "20f27420ab9f6b17556d4ec6f15e057169cd7a9f98ab841d62f7fb6626051454",
+      "after_sha256": "5c1bdaf74660a96b5378e1f557b1a1aa91885d7e37b033c148ae37dc016f6e8c",
+      "before_bytes": 45591,
+      "after_bytes": 45571
+    },
+    {
+      "path": "assets/runtime/03-builtintool-missing.svg",
+      "before_sha256": "a8f2d5e0df13462fa801076ad8d8a4321cb14b01de6c7fc8f2bce84b39d73b62",
+      "after_sha256": "4b95ad5ac2547ee6d642d43a943390c8fb62e4bd907cc75e0e4c67da7c749a6b",
+      "before_bytes": 45486,
+      "after_bytes": 45466
+    },
+    {
+      "path": "assets/runtime/03-builtintool-ready.svg",
+      "before_sha256": "bb49322d4582970b7afbb9c68698e1072c7173acde0e70eea812dfa18f4b829f",
+      "after_sha256": "f97982c75e456bc5dd87511f70e58e6b071f3a0878e7aac9bc5ba3ede4b266e8",
+      "before_bytes": 48288,
+      "after_bytes": 48268
+    },
+    {
+      "path": "assets/runtime/04-assembly-failure.svg",
+      "before_sha256": "d1dadcb6908cc90409ad0feb2c0652198b34f2a2843cccb99b1c7bcbf013b8d4",
+      "after_sha256": "286fd1f507eec345b82883130152455d979bf8292e0a4ceb9fc6d87539abd3f0",
+      "before_bytes": 49845,
+      "after_bytes": 49825
+    },
+    {
+      "path": "assets/runtime/04-local-session.svg",
+      "before_sha256": "780982f24d1235c930992e1f195b428236c82e3bf900408dd4020fc30a5867b9",
+      "after_sha256": "8edf64da895f26ad0fd47540bd9e9a88e85cd916518d447c930256e40da66c9e",
+      "before_bytes": 49895,
+      "after_bytes": 49875
+    },
+    {
+      "path": "assets/runtime/04-official-new-version.svg",
+      "before_sha256": "bc09860dc0697c3732d6c0dfcb9708dc3617cd7d41597f2427818e5eefdee761",
+      "after_sha256": "7acb6bffad55d2064b39b61c22d5ad8f7ed99746d8fdff11b81d3218e391c152",
+      "before_bytes": 49862,
+      "after_bytes": 49842
+    },
+    {
+      "path": "assets/runtime/05-update-busy.svg",
+      "before_sha256": "d029e1a4b196449c760c45354054ba43da1779375aa4cb16e29126e4d1fdb949",
+      "after_sha256": "01797601c07dfdd00edf06dde3da78af0edc06b589b191214bb2e9b1af3b228a",
+      "before_bytes": 47545,
+      "after_bytes": 47525
+    },
+    {
+      "path": "assets/runtime/05-update-rejected.svg",
+      "before_sha256": "5ac909ea62ca8be97e6e0bc8de86e5da439cad57046a062ac0fad52e06f94fad",
+      "after_sha256": "db80a7e975ad93f694cc42ebfeca4c0907a8967486508fbeca52134335973750",
+      "before_bytes": 45502,
+      "after_bytes": 45482
+    },
+    {
+      "path": "assets/runtime/05-update-success.svg",
+      "before_sha256": "94a0bd4145cd35650d22a4ac096eed57d6bd8c52dce763dbbb319b67c98fe8ac",
+      "after_sha256": "dc8e6d51a118da6b2b82b06e5d83c6f04cf0e9a58a5b88784ccf102eaeb6c65c",
+      "before_bytes": 50454,
+      "after_bytes": 50434
+    },
+    {
+      "path": "assets/runtime/06-cache-ready.svg",
+      "before_sha256": "0260931b0cc6ef614855992342cbe9b65870af8579fa0ec505bf6746557fcf3a",
+      "after_sha256": "47b74d1dd3df81281470855a6fb3f3054ef75f1d8ebbc6cda7af2acac94c1bd1",
+      "before_bytes": 48883,
+      "after_bytes": 48863
+    },
+    {
+      "path": "assets/runtime/06-download-missing.svg",
+      "before_sha256": "cc10da37ca2762534c1ef7a315424a969e86a9a522db27ea0fbb138f3cd7fa2d",
+      "after_sha256": "8653440ed15cc24d7bf9317302a8892ea1266ad37ffef2714b526934c429d328",
+      "before_bytes": 49598,
+      "after_bytes": 49578
+    },
+    {
+      "path": "assets/runtime/06-sync-failure.svg",
+      "before_sha256": "ce0bbadb1ed56e2eab329933efdb3eb869bd5379ceb71f38850da92e66d4a412",
+      "after_sha256": "c32ae7033182c9a7d978913ee81e572e20067aaa66771162ecc3c0a00b10c0b3",
+      "before_bytes": 47476,
+      "after_bytes": 47456
+    },
+    {
+      "path": "assets/runtime/07-busy.svg",
+      "before_sha256": "f597950eeb067aa00c1fe331e8929c2bb5b6c0ab6e57791d5354061a3a6dfad3",
+      "after_sha256": "bb029800c3b9d23b2850f95f866a95719a0b34a3e949a3b924358aa9dd4c8b5a",
+      "before_bytes": 45400,
+      "after_bytes": 45380
+    },
+    {
+      "path": "assets/runtime/07-cancel.svg",
+      "before_sha256": "6cfa16274fb744cb085fdbce4b4d2a0e775bdb10c9bfa374cfeeba7d7a8de76b",
+      "after_sha256": "c811ee57eb3d3077a957666602b1ab8215eb3e25742b7c66fa7b9adffdd13083",
+      "before_bytes": 48205,
+      "after_bytes": 48185
+    },
+    {
+      "path": "assets/runtime/07-disconnect.svg",
+      "before_sha256": "fc7c539efc72e779aabea2ecda21d49e976f93b1beb508b0ae73fb8e6f7cc809",
+      "after_sha256": "cc83452bb36aa28776ec879389eeaa6784606cdebc16a9e73953f7405f9f7d92",
+      "before_bytes": 48811,
+      "after_bytes": 48791
+    },
+    {
+      "path": "assets/runtime/07-login.svg",
+      "before_sha256": "4ffdccd4fd413cf97f2d6e4a0a3847615002a2d2cb135695a42afd68e77c3c4c",
+      "after_sha256": "1d783666a70b82d3063613ac0e55ceffa03b7dfe46e8a21e3acde1200572669b",
+      "before_bytes": 48199,
+      "after_bytes": 48179
+    },
+    {
+      "path": "assets/runtime/07-restart-complete.svg",
+      "before_sha256": "e1504345ab76dc7acefe4d378361968f2a98e5577117116010ec9c58b478016d",
+      "after_sha256": "e71d3adec5b06edcd3be64a69ff4a371fa68484f12086bb70cdaca32a414b701",
+      "before_bytes": 48332,
+      "after_bytes": 48312
+    },
+    {
+      "path": "assets/runtime/07-restart-incomplete.svg",
+      "before_sha256": "d2cbd1cc55dd3137af8ef5ca04cc308eb10c27ec6d320dd1f1a56e2efbd9ca83",
+      "after_sha256": "06adfda1a11562e4543ca0b5a45be79213f3558e5ccb76b6aa35fe915bb241db",
+      "before_bytes": 48407,
+      "after_bytes": 48387
+    },
+    {
+      "path": "assets/runtime/07-timeout.svg",
+      "before_sha256": "3090f2f3cf0d9672382ca46886a542d109d31f9fa0a72c3b65113dff19d271b0",
+      "after_sha256": "eb36040278e0f366b0f7c7a40d2b0c1bb99e33d629f1ac569bca22ab2a68fc6a",
+      "before_bytes": 46771,
+      "after_bytes": 46751
+    },
+    {
+      "path": "assets/11-provider.svg",
+      "before_sha256": "b48d5716ffcb935a1f527a72c8b37c09280b07db9139e25fc12d9ba1491100e9",
+      "after_sha256": "4ac9a75e97ec6956d8e578caea6a7a51581344cdae7380147bb0742544d6cd6d",
+      "before_bytes": 56303,
+      "after_bytes": 56283
     }
   ]
 }

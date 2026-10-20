@@ -6,12 +6,12 @@
   "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/03-builtintool-ready.json",
   "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/03-builtintool-ready.html",
   "specification": {
-    "sha256": "ff1d9b26441512028b49d79260cf7ec7fa8de2d03f868a7308825912611f7c54",
-    "bytes": 2087
+    "sha256": "0546558ed045818824ac350a4a0901f260b8d005b9fd075bf46132fa6f985cc3",
+    "bytes": 2122
   },
   "artifact": {
-    "sha256": "a7c1034696a7cf9324a3f89031003241f7312fe6462b629d80df85b84732a2e9",
-    "bytes": 703891
+    "sha256": "1c1144830bfcd8d196d88d7d2f836470231efda3fda0158dfa7ea9b6cd7079b7",
+    "bytes": 703973
   },
   "validation": {
     "checksPassed": 9,

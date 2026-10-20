@@ -15,12 +15,12 @@
     {
       "id": "user",
       "type": "external",
-      "label": "用户 / 运维人员"
+      "label": "调试使用者"
     },
     {
       "id": "client",
       "type": "frontend",
-      "label": "Skill 文件管理"
+      "label": "调试 Skill 文件管理"
     },
     {
       "id": "storage",

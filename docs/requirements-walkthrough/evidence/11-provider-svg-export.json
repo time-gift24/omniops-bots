@@ -1,15 +1,15 @@
 {
   "method": "native-viewer-svg-export",
   "sourceArtifact": "../diagrams/11-provider.html",
-  "artifactSha256": "f4cddcb698211c30b49a8ffd63acac1ad75ea837a1176ce3f9a2264370966a60",
+  "artifactSha256": "80918591cd544acfe28e7dff566194b98b5df7c821ce5ecb2a5f31137a8b5ed5",
   "nativeExport": {
-    "sha256": "1fdaddc47fd68b7aacd8ad16a4d6623d089e7cce828da28b4d6aa36cce822cb7",
-    "bytes": 56439
+    "sha256": "b48d5716ffcb935a1f527a72c8b37c09280b07db9139e25fc12d9ba1491100e9",
+    "bytes": 56303
   },
-  "normalization": "Remove trailing line whitespace and ensure one EOF newline; parsed SVG tags, attributes, text and tails unchanged apart from trailing whitespace.",
+  "normalization": "Remove trailing line whitespace and ensure one EOF newline; parsed SVG tags, attributes, text and tails unchanged apart from trailing line whitespace.",
   "savedExport": {
     "path": "../assets/11-provider.svg",
-    "sha256": "d54bc8c3b071a949110611ab36c81c6eda8aa975245ef4942cb30f0367976cdb",
-    "bytes": 56419
+    "sha256": "4ac9a75e97ec6956d8e578caea6a7a51581344cdae7380147bb0742544d6cd6d",
+    "bytes": 56283
   }
 }

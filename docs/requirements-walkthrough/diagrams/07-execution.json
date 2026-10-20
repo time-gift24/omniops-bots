@@ -28,8 +28,8 @@
     {
       "id": "call-received",
       "type": "start",
-      "label": "接收调用",
-      "sublabel": "独立会话 · 原调用 ID",
+      "label": "接收服务端任务",
+      "sublabel": "服务端 Agent · 调用 ID",
       "lane": "main",
       "col": 0,
       "step": "01"
@@ -65,7 +65,7 @@
       "id": "result-acknowledged",
       "type": "success",
       "label": "交付完成",
-      "sublabel": "服务端确认收到",
+      "sublabel": "服务端确认 · Console 展示",
       "lane": "main",
       "col": 4,
       "step": "05"
@@ -124,10 +124,10 @@
   "cards": [
     {
       "dot": "cyan",
-      "title": "会话页面与运行容量",
+      "title": "后台执行与运维调试",
       "items": [
-        "每个会话固定页面；同页流程串行，不同会话并发。",
-        "默认最多 4 轮；等待输入释放容量，保留页面。"
+        "每会话固定页面；不同会话并发，默认最多 4 轮。",
+        "逐条过程留在运维调试桌面，线上用户操作 Console。"
       ]
     },
     {
@@ -142,7 +142,7 @@
       "dot": "rose",
       "title": "重启后不续跑",
       "items": [
-        "未完成任务回报“执行中断、结果未知”，由服务端决定后续。",
+        "中断未知交给服务端 Agent，Console 展示后续状态。",
         "任务运行时阻止正常退出；取消、超时均不自动重试。"
       ]
     }

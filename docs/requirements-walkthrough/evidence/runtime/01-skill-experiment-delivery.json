@@ -6,12 +6,12 @@
   "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/01-skill-experiment.json",
   "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/01-skill-experiment.html",
   "specification": {
-    "sha256": "02bac6d846d589a6336bfaca54b3ad32812b90a77254366c9bf5e43f83469c48",
-    "bytes": 2086
+    "sha256": "59c0a09eb0dd1857e6dce982683499689dc257861978406283ecb241fdfbf35d",
+    "bytes": 2108
   },
   "artifact": {
-    "sha256": "c736d23b57a7d5d33865b6cce5cf654a9146dee7caae9a85217d6ae6f23fe3e9",
-    "bytes": 703959
+    "sha256": "1c997d738eb8f0cf713a3a21b6377d4002207cf7ef3dffc827067642a8a184a3",
+    "bytes": 704026
   },
   "validation": {
     "checksPassed": 9,

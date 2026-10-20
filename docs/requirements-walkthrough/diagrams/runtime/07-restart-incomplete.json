@@ -14,13 +14,13 @@
   "participants": [
     {
       "id": "user",
-      "label": "用户",
+      "label": "本机用户",
       "type": "external"
     },
     {
       "id": "client",
-      "label": "桌面客户端",
-      "type": "frontend"
+      "label": "后台客户端",
+      "type": "backend"
     },
     {
       "id": "record",
@@ -29,7 +29,7 @@
     },
     {
       "id": "server",
-      "label": "服务端",
+      "label": "服务端 Agent",
       "type": "backend"
     }
   ],
@@ -96,7 +96,7 @@
       "dot": "cyan",
       "title": "后续由服务端决定",
       "items": [
-        "回报明确保留“结果未知”含义",
+        "服务端 Agent 消费回报，Console 呈现任务状态",
         "不把进程重启判定为业务成功或失败"
       ]
     }

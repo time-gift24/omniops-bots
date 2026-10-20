@@ -270,26 +270,28 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <p>服务端高可用和内部编排实现另行定义；客户端依赖的 HTTPS API、WebSocket 消息和接收确认契约统一见 <a href="#10-server-api">10 · 服务端 API</a>。</p>
 <footer><span class="footer-label">客户端 MVP 设计 · 2026-10-20</span><a href="#01-skill">下一章：SKILL</a></footer></article><article id="01-skill" data-file="01-SKILL.md" hidden><h1>01 · SKILL</h1>
 <blockquote>
-<p>串讲重点：客户端提供 Skill 列表与包内文件管理，支持文件级上传、编辑和实验；运维人员上传完整草稿、发布完整文件包，服务端配合保存和分发。</p>
+<p>串讲重点：线上用户在服务端 Console 发起业务，服务端 Agent 以任务调用客户端 Agent，客户端在后台按固定 Skill 包执行；Skill 文件管理、草稿实验与发布属于客户端运维调试工作台。</p>
 </blockquote>
 <h2 id="01-skill-US">US</h2>
-<h3>界面设计</h3>
-<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/01-skill-list.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/01-skill-list.png" alt="Skill 列表：搜索、来源筛选与本地管理"></a><figcaption>本次实现的 Web 界面实拍，图中使用演示数据。浏览器预览保存到 IndexedDB，桌面客户端保存到当前用户的 <code>.omnimind-ops/skills</code>。</figcaption></figure>
-<p>Skill 页面分为两层：列表管理 Skill，进入一个 Skill 后管理包内目录与文件。资源标明本地或官方来源，版本记录以完整文件包为单位。用户上传、查看和编辑具体文件，在页面选择 Agent 发起草稿实验；运维人员可上传草稿，并手填 Skill 与受影响 Agent 的标签完成联动发布。</p>
+<h3>运维调试界面设计</h3>
+<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/01-skill-list.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/01-skill-list.png" alt="Skill 列表：搜索、来源筛选与本地管理"></a><figcaption>客户端运维调试工作台的 Web 界面实拍，图中使用演示数据。浏览器预览保存到 IndexedDB，桌面客户端保存到当前用户的 <code>.omnimind-ops/skills</code>。</figcaption></figure>
+<p>线上用户在服务端 Console 发起业务并查看结果，客户端通常作为后台进程运行，仅提供连接状态等基础信息。以下 Skill 页面面向运维维护与本地调试，不是线上用户日常业务入口；入口定位不改变本地资源可自由管理、官方发布包普通用户只读及官方写入仅限运维的既有权限。</p>
+<p>调试工作台的 Skill 页面分为两层：列表管理 Skill，进入一个 Skill 后管理包内目录与文件。资源标明本地或官方来源，版本记录以完整文件包为单位。本地调试时可上传、查看和编辑具体文件，在页面选择 Agent 发起草稿实验；运维人员可上传草稿，并手填 Skill 与受影响 Agent 的标签完成联动发布。</p>
 <ol>
 <li>作为运维人员，我在客户端编辑草稿并按需上传，让服务端集中保存修订。</li>
 <li>作为运维人员，我在 Skill 页面勾选一个 Agent，即可实验尚未上传的草稿。</li>
 <li>作为运维人员，我手填 Skill 和受影响 Agent 的新标签，一次完成正式发布。</li>
-<li>作为用户，我使用官方已发布 Skill；需要修改时复制成本地 Skill，保留官方原件。</li>
-<li>作为用户，我能在列表中找到、新建或复制 Skill，进入后向指定目录上传文件，并看到每个文件的保存结果。</li>
+<li>作为线上用户，我在服务端 Console 发起业务，由客户端后台使用官方已发布 Skill 执行服务端 Agent 下发的任务。</li>
+<li>作为本地调试使用者，我能查看官方只读 Skill，按需复制成本地副本，在列表中找到、新建或管理本地 Skill，向指定目录上传文件并看到保存结果。</li>
 </ol>
-<figure class="usecase"><a class="screenshot-link" href="./assets/01-skill-usecase.svg" target="_blank" rel="noopener" aria-label="放大用例图"><img src="./assets/01-skill-usecase.svg" alt="Skill 用例图：编辑、实验、发布与使用"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure><h2 id="01-skill-简要设计">简要设计</h2>
-<p>客户端围绕“编辑 → 实验 → 上传或发布”组织 Skill 操作。用户可以自由编辑、保存本地 Skill，不设发布标签；在页面勾选现有 Agent，就能运行尚未上传的草稿。实验前固定完整快照，日志、截图等实验产物另存。</p>
+<figure class="usecase"><a class="screenshot-link" href="./assets/01-skill-usecase.svg" target="_blank" rel="noopener" aria-label="放大用例图"><img src="./assets/01-skill-usecase.svg" alt="Skill 用例图：编辑、实验、发布与使用"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure>
+<h2 id="01-skill-简要设计">简要设计</h2>
+<p>客户端后台按服务端任务指定的 Agent 版本准备并使用 Skill，结果回到服务端 Console。运维调试工作台围绕“编辑 → 实验 → 上传或发布”组织 Skill 操作；本地资源仍可自由编辑、保存，不设发布标签；在页面勾选现有 Agent，就能运行尚未上传的草稿。实验前固定完整快照，日志、截图等实验产物另存。</p>
 <p>客户端按<strong>整个文件包</strong>保存和装配 Skill，包括说明、脚本、引用资料和随包资源。官方发布包只读，普通用户可同步、查看和使用；运维人员可上传草稿修订、发布新版本。服务端配合集中保存这些官方物料，客户端保留未同步编辑、下载缓存和已下载的历史版本。</p>
-<h3>页面方案：Skill 列表 → 包内文件管理</h3>
+<h3>调试页面方案：Skill 列表 → 包内文件管理</h3>
 <p>已安装 <a href="https://pro.beui.dev/components/file-manager"><code>@beui-pro/file-manager-workspace</code></a>，接入 Skill 列表与包内文件管理。目录导航、搜索、文件列表、预览和上传交互使用客户端的暖灰底色、绿色强调、细边框及 Geist / MiSans 字体。</p>
-<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/01-skill-files.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/01-skill-files.png" alt="已实现的 Skill 包内文件管理"></a><figcaption>本次实现的 Web 界面实拍：可浏览目录、搜索文件、上传、新建、重命名和删除；官方已发布包只读。</figcaption></figure>
-<p>已完成列表管理、文件级上传、文本编辑及真实内容持久化。下表保留完整页面目标，其中官方草稿维护、历史版本切换、选 Agent 实验、服务端草稿上传与联动发布尚未接入。当前页面不提供这些操作的假成功入口。</p>
+<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/01-skill-files.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/01-skill-files.png" alt="已实现的 Skill 包内文件管理"></a><figcaption>客户端运维调试工作台的 Web 界面实拍：可浏览目录、搜索文件、上传、新建、重命名和删除；官方已发布包只读。</figcaption></figure>
+<p>调试工作台已完成列表管理、文件级上传、文本编辑及真实内容持久化。下表保留完整页面目标，其中官方草稿维护、历史版本切换、选 Agent 实验、服务端草稿上传与联动发布尚未接入。当前页面不提供这些操作的假成功入口。</p>
 <table>
 <thead>
 <tr>
@@ -354,45 +356,47 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tbody></table>
 <p>文件级上传不产生独立文件版本，也不直接改写已发布包。同名文件先展示目标路径，由用户选择替换或跳过，不静默改名；目录失效则停止对应写入，不把文件改放到根目录。批量上传分别显示成功和失败，失败项可重试，原文件与其他已成功项保留。重命名、删除前展示目标路径并提醒可能影响包内引用，不自动改写其他文件的内容。</p>
 <details>
-<summary>早期编辑界面与组件参考</summary>
-
-<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/01-skill-edit.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/01-skill-edit.png" alt="现有 Skill 草稿编辑器"></a><figcaption>现有 Web 实拍 · 演示数据 · 点击查看原图</figcaption></figure><p>早期单文件编辑器截图。当前包内编辑继续提供源码、预览和分栏模式；完整草稿实验与发布尚未接入。</p>
+<summary>早期编辑界面与组件参考</summary><figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/01-skill-edit.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/01-skill-edit.png" alt="现有 Skill 草稿编辑器"></a><figcaption>现有 Web 实拍 · 演示数据 · 点击查看原图</figcaption></figure>
+<p>早期单文件编辑器截图。当前包内编辑继续提供源码、预览和分栏模式；完整草稿实验与发布尚未接入。</p>
 <figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/01-file-manager-reference.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/01-file-manager-reference.png" alt="指定 File Manager 组件的上游 Web 截图"></a><figcaption>上游组件参考，来源：pro.beui.dev/components/file-manager；英文内容为组件示例。</figcaption></figure>
-</details>
-
-<h2 id="01-skill-客户端">客户端</h2>
+</details><h2 id="01-skill-客户端">客户端</h2>
 <ul>
-<li>提供 Skill 列表、新建本地 Skill、官方复制本地，以及包内文件和目录管理；官方发布版本保持只读。</li>
+<li>在运维调试工作台提供 Skill 列表、新建本地 Skill、官方复制本地，以及包内文件和目录管理；官方发布版本保持只读。</li>
 <li>文件级上传保存真实文件内容、相对路径与当前草稿变更，支持文本和二进制资源；不把浏览器临时地址当作已持久化文件。</li>
-<li>提供编辑、保存、实验、上传草稿与发布入口；清楚区分本地已保存、未同步编辑、服务端草稿修订与正式发布标签。</li>
+<li>在运维调试工作台提供编辑、保存、实验、上传草稿与发布入口；清楚区分本地已保存、未同步编辑、服务端草稿修订与正式发布标签。</li>
 <li>实验只需在页面选择现有 Agent，临时装配当前草稿，运行前固定完整快照，在本地实验会话中展示过程与结果。</li>
 <li>未上传草稿也可实验，不修改模板 Agent，不要求发布标签或实验通过证明。</li>
-<li>新会话按 Agent 清单下载缺失包；保留已下载旧版本，不自动覆盖或清理。已有会话继续使用初始快照。</li>
+<li>服务端任务及本地调试新会话按 Agent 清单下载缺失包；保留已下载旧版本，不自动覆盖或清理。已有会话继续使用初始快照。</li>
 </ul>
 <h2 id="01-skill-详细设计">详细设计</h2>
 <h3>运行模型一：向当前 Skill 上传文件</h3>
-<p><strong>条件：</strong> 用户从 Skill 列表进入本地 Skill，或运维人员进入官方草稿，选择目标目录后上传文件。该操作先写入本机，符合客户端保留未同步编辑的约定。</p>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/01-skill-file-upload.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/01-skill-file-upload.svg" alt="运行模型：向 Skill 当前目录上传文件并保存"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/01-skill-file-upload.html">打开交互顺序图：Skill 文件级上传</a></p>
-<p><strong>结果：</strong> 客户端在实际写入完成后更新文件列表及保存状态，重启后可读取。官方草稿显示未同步编辑；用户按需选择实验，运维人员按需上传完整草稿或正式发布。普通用户的本地文件操作不触发服务端写入。</p>
+<p><strong>条件：</strong> 本地调试时，从工作台 Skill 列表进入本地 Skill，或运维人员进入官方草稿，选择目标目录后上传文件。该操作先写入本机，符合客户端保留未同步编辑的约定。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/01-skill-file-upload.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/01-skill-file-upload.svg" alt="运行模型：向 Skill 当前目录上传文件并保存"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
+<p><a href="./diagrams/runtime/01-skill-file-upload.html">打开交互顺序图：Skill 文件级上传</a></p>
+<p><strong>结果：</strong> 客户端在实际写入完成后更新文件列表及保存状态，重启后可读取。官方草稿显示未同步编辑；本地调试使用者按需选择实验，运维人员按需上传完整草稿或正式发布。普通用户的本地文件操作不触发服务端写入。</p>
 <h3>运行模型二：同名替换失败，保留原文件</h3>
 <p><strong>条件：</strong> 上传文件与目标目录中的文件同名。客户端先询问替换或跳过；本图展示选择替换但本地写入失败的情况。</p>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/01-skill-file-conflict.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/01-skill-file-conflict.svg" alt="运行模型：同名文件替换失败时保留原内容"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/01-skill-file-conflict.html">打开交互顺序图：同名冲突与写入失败</a></p>
-<p><strong>结果：</strong> 原文件保持可读，失败项展示原因，不能标为已保存。用户重试时仍以明确的目标路径写入；选择跳过则不写入该项。批次中其他已成功文件不撤销。新建、编辑、重命名和删除失败也保留可恢复的原内容与当前未保存编辑，不生成新的完整包版本。</p>
-<h3>运行模型三：在客户端实验草稿</h3>
-<p><strong>条件：</strong> 用户在 Skill 页面勾选现有 Agent 作为模板；草稿可以尚未上传。客户端准备好其他物料、完成工具检查，并在并发容量可用时绑定实验会话自己的页面后开始实验。</p>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/01-skill-experiment.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/01-skill-experiment.svg" alt="运行模型：在客户端实验未上传的 Skill 草稿"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/01-skill-experiment.html">打开交互顺序图：Skill 草稿实验</a></p>
-<p><strong>结果：</strong> 实验使用运行前固定的完整装配快照，过程与结果展示在本地实验会话。原 Agent 和已发布 Skill 不变，不要求发布标签；日志、截图等产物另存，不混入 Skill 文件包。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/01-skill-file-conflict.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/01-skill-file-conflict.svg" alt="运行模型：同名文件替换失败时保留原内容"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
+<p><a href="./diagrams/runtime/01-skill-file-conflict.html">打开交互顺序图：同名冲突与写入失败</a></p>
+<p><strong>结果：</strong> 原文件保持可读，失败项展示原因，不能标为已保存。调试使用者重试时仍以明确的目标路径写入；选择跳过则不写入该项。批次中其他已成功文件不撤销。新建、编辑、重命名和删除失败也保留可恢复的原内容与当前未保存编辑，不生成新的完整包版本。</p>
+<h3>运行模型三：在客户端调试工作台实验草稿</h3>
+<p><strong>条件：</strong> 本地调试时，在工作台 Skill 页面勾选现有 Agent 作为模板；草稿可以尚未上传。客户端准备好其他物料、完成工具检查，并在并发容量可用时绑定实验会话自己的页面后开始实验。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/01-skill-experiment.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/01-skill-experiment.svg" alt="运行模型：在客户端实验未上传的 Skill 草稿"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
+<p><a href="./diagrams/runtime/01-skill-experiment.html">打开交互顺序图：Skill 草稿实验</a></p>
+<p><strong>结果：</strong> 实验使用运行前固定的完整装配快照，过程与结果展示在本地调试实验会话。线上业务由 Console 发起，服务端 Agent 调用客户端后台执行，不经过这个手动实验入口。原 Agent 和已发布 Skill 不变，不要求发布标签；日志、截图等产物另存，不混入 Skill 文件包。</p>
 <h3>运行模型四：上传草稿修订</h3>
 <p><strong>条件：</strong> 运维人员选择上传当前完整 Skill 文件包。客户端先固定已保存草稿的完整快照，再使用现有登录与 Token 上传，权限由服务端判断；上传开始后的继续编辑不改变本次快照。</p>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/01-skill-draft-upload.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/01-skill-draft-upload.svg" alt="运行模型：运维人员上传 Skill 草稿修订"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/01-skill-draft-upload.html">打开交互顺序图：Skill 草稿上传</a></p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/01-skill-draft-upload.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/01-skill-draft-upload.svg" alt="运行模型：运维人员上传 Skill 草稿修订"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
+<p><a href="./diagrams/runtime/01-skill-draft-upload.html">打开交互顺序图：Skill 草稿上传</a></p>
 <p><strong>结果：</strong> 成功后客户端显示服务端保存的草稿修订。此时不发布 Skill，也不联动 Agent；权限不符或上传失败时展示原因，本地草稿仍保留。对于官方 Skill，普通用户只同步、查看和使用已发布版本；本地 Skill 仍可自由管理。</p>
 <h3>运行模型五：正式联动发布</h3>
 <p><strong>条件：</strong> 运维人员决定发布完整 Skill 快照，并手填 Skill 与所有受影响官方 Agent 的新标签，统一使用 <code>v.1.0.0</code> 形式。提交表示已经确认，不设置审核或强制实验门槛。</p>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/01-skill-publish.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/01-skill-publish.svg" alt="运行模型：客户端发起 Skill 与 Agent 联动发布"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/01-skill-publish.html">打开交互顺序图：Skill 与 Agent 联动发布</a></p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/01-skill-publish.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/01-skill-publish.svg" alt="运行模型：客户端发起 Skill 与 Agent 联动发布"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
+<p><a href="./diagrams/runtime/01-skill-publish.html">打开交互顺序图：Skill 与 Agent 联动发布</a></p>
 <p><strong>结果：</strong> 服务端一次完成 Skill 发布、受影响 Agent 装配更新、新 Agent ID 生成及手填标签保存；客户端显示本次发布结果。权限或标签校验失败则显示原因，不显示发布成功。已发布内容不可变，标签不能改指向、覆盖或重用。</p>
 <p>本地 Agent 可直接装配官方已发布 Skill。需要修改官方内容时，复制成本地 Skill；维护官方内容则编辑草稿并发布新版。两条路径都不改写历史发布包，也不自动清理旧版本。</p>
 <h2 id="01-skill-服务端配合">服务端配合</h2>
-<p>为支持客户端的草稿保存、发布与同步，服务端需要配合：</p>
+<p>为支持客户端后台装配以及运维调试工作台的草稿保存、发布与同步，服务端需要配合：</p>
 <ul>
 <li>基于现有登录与 Token 返回用户身份和运维权限，并校验草稿上传、创建版本、正式发布请求。</li>
 <li>接收包含目录、相对路径及真实文件内容的完整草稿修订与不可变发布包，提供版本清单和 HTTPS 下载。文件级编辑发生在客户端，不新增文件级发布或服务端审批流程。</li>
@@ -402,36 +406,39 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </ul>
 <footer><span class="footer-label">客户端 MVP 设计 · 2026-10-18</span><a href="#02-mcp">下一章：MCP</a></footer></article><article id="02-mcp" data-file="02-MCP.md" hidden><h1>02 · MCP</h1>
 <blockquote>
-<p>串讲重点：客户端随 Agent 获取 MCP 配置，连接远端 MCP 并展示调用过程；服务端配合提供官方配置。</p>
+<p>串讲重点：线上用户在服务端 Console 操作，服务端 Agent 以任务调用客户端；客户端后台按 Agent 配置连接远端 MCP、调用工具并回传结果，完整配置和调用过程留在运维调试工作台。</p>
 </blockquote>
 <h2 id="02-mcp-US">US</h2>
-<h3>界面设计</h3>
-<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/02-mcp.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/02-mcp.png" alt="现有 MCP 能力详情：工具、资源与提示词"></a><figcaption>界面实拍，图中使用演示数据。</figcaption></figure>
-<p>MCP 位于 Agent 的能力配置区，支持选择服务、查看工具/资源/提示词清单，以及展示连接配置或引用、连接状态和失败原因。官方 Agent 的配置只读；配置随 Agent 同步，MCP 服务本身不纳入发布版本。</p>
+<h3>运维调试界面设计</h3>
+<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/02-mcp.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/02-mcp.png" alt="现有 MCP 能力详情：工具、资源与提示词"></a><figcaption>客户端运维调试工作台实拍，图中使用演示数据；线上客户端仅提供连接状态等基础信息。</figcaption></figure>
+<p>MCP 位于客户端调试工作台的 Agent 能力配置区，支持选择服务、查看工具/资源/提示词清单，以及展示连接配置或引用、连接状态和失败原因。官方 Agent 的配置只读；配置随 Agent 同步，MCP 服务本身不纳入发布版本。</p>
 <ol>
-<li>作为运维人员，我为官方 Agent 配好所需 MCP，让用户同步 Agent 后获得对应配置。</li>
-<li>作为用户，我通过客户端连接远端 MCP，包括内部服务提供的 MCP，执行 Agent 所需操作。</li>
-<li>作为用户，我查看当次启用的 MCP 和工具清单，了解运行时实际使用了哪些能力。</li>
+<li>作为运维人员，我为官方 Agent 配好所需 MCP，供客户端随官方 Agent 后台同步并装配。</li>
+<li>作为线上用户，我在服务端 Console 发起业务，由服务端 Agent 下发任务，客户端后台连接远端 MCP，包括内部服务提供的 MCP，执行所需操作。</li>
+<li>作为线上用户，我在 Console 查看任务结果和失败信息；运维调试时可在客户端查看当次启用的 MCP、工具清单和调用过程，追溯实际能力。</li>
 </ol>
-<figure class="usecase"><a class="screenshot-link" href="./assets/02-mcp-usecase.svg" target="_blank" rel="noopener" aria-label="放大用例图"><img src="./assets/02-mcp-usecase.svg" alt="MCP 用例图：配置、同步、连接与追溯"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure><h2 id="02-mcp-简要设计">简要设计</h2>
-<p>用户在客户端的 Agent 能力区选择 MCP、查看能力清单；客户端运行 Agent 时，按装配配置连接对应的远端 MCP 并调用工具。MCP 可以来自内部服务，也可以来自其他已配置的远端地址。</p>
+<figure class="usecase"><a class="screenshot-link" href="./assets/02-mcp-usecase.svg" target="_blank" rel="noopener" aria-label="放大用例图"><img src="./assets/02-mcp-usecase.svg" alt="MCP 用例图：配置、同步、连接与追溯"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure>
+<h2 id="02-mcp-简要设计">简要设计</h2>
+<p>运维调试时，在客户端的 Agent 能力区选择 MCP、查看能力清单；线上任务由服务端 Agent 从 Console 业务流程中发起，客户端在后台运行 Agent 时，按装配配置连接对应的远端 MCP 并调用工具。MCP 可以来自内部服务，也可以来自其他已配置的远端地址。</p>
 <p>官方 Agent 所需的 MCP 连接配置或引用随 Agent 一并同步，客户端保持只读；本地 Agent 使用自己的配置。配置选择参与 Agent 内容 ID，更改官方装配需要形成新的 Agent 版本。<strong>外部 MCP 服务实现本身不进入本项目的版本与发布体系</strong>，不固定其工具行为或发布周期。</p>
 <h2 id="02-mcp-客户端">客户端</h2>
 <ul>
 <li>随官方 Agent 同步所需 MCP 连接配置，按当次装配建立远端连接并使用工具。</li>
 <li>官方 Agent 的 MCP 配置保持只读；本地 Agent 按自身配置使用 MCP。</li>
-<li>在会话中展示工具调用过程；运行快照记录启用的 MCP 与工具清单。</li>
+<li>后台保存工具调用过程，向服务端回传任务结果与失败信息，供线上用户在 Console 查看；完整过程在客户端运维调试会话中展示，运行快照记录启用的 MCP 与工具清单。</li>
 <li>密钥和 Token 不进入运行快照；配置的同步不意味着将凭据写入可观测记录。</li>
 </ul>
 <h2 id="02-mcp-详细设计">详细设计</h2>
 <h3>运行模型一：连接成功并调用 MCP</h3>
 <p><strong>条件：</strong> 客户端已固定本轮使用的 Agent 装配；官方 MCP 配置或引用随 Agent 同步，本地 Agent 使用自己的配置。所需远端 MCP 可用。</p>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/02-mcp-call.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/02-mcp-call.svg" alt="运行模型：客户端连接 MCP 并调用工具"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/02-mcp-call.html">打开交互顺序图：MCP 连接与调用</a></p>
-<p><strong>结果：</strong> 客户端取得能力清单后执行所需工具调用，展示过程，并将工具结果纳入本轮任务结果。运行快照记录启用的 MCP 与工具清单，不包含密钥和 Token。图中的 Agent 物料是当次装配，不表示每次工具调用都重新同步。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/02-mcp-call.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/02-mcp-call.svg" alt="运行模型：客户端连接 MCP 并调用工具"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
+<p><a href="./diagrams/runtime/02-mcp-call.html">打开交互顺序图：MCP 连接与调用</a></p>
+<p><strong>结果：</strong> 客户端取得能力清单后在后台执行所需工具调用并记录过程，将工具结果纳入回传服务端的任务结果，供 Console 展示；运维调试工作台可查看完整过程。运行快照记录启用的 MCP 与工具清单，不包含密钥和 Token。图中的 Agent 物料是当次装配，不表示每次工具调用都重新同步。</p>
 <h3>运行模型二：所需 MCP 连接失败</h3>
-<p><strong>条件：</strong> 本轮所需 MCP 无法连接或鉴权失败。调用方可以是用户或发起远端任务的服务端。</p>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/02-mcp-failure.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/02-mcp-failure.svg" alt="运行模型：所需 MCP 连接失败"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/02-mcp-failure.html">打开交互顺序图：MCP 连接失败</a></p>
-<p><strong>结果：</strong> 客户端不进入该 MCP 的工具调用，记录并展示失败原因；远端任务按任务结果回传规则通知服务端。连接成功后若实际工具调用失败，同样记录该调用错误并纳入本轮失败结果，不把失败伪装为成功。</p>
+<p><strong>条件：</strong> 本轮所需 MCP 无法连接或鉴权失败。线上调用方是服务端 Agent；本地手动调用只用于运维调试。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/02-mcp-failure.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/02-mcp-failure.svg" alt="运行模型：所需 MCP 连接失败"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
+<p><a href="./diagrams/runtime/02-mcp-failure.html">打开交互顺序图：MCP 连接失败</a></p>
+<p><strong>结果：</strong> 客户端不进入该 MCP 的工具调用，记录失败原因并按任务结果回传规则通知服务端，由 Console 呈现；运维调试工作台可查看失败详情。连接成功后若实际工具调用失败，同样记录该调用错误并纳入本轮失败结果，不把失败伪装为成功。</p>
 <p>MCP 可以由内部服务或其他远端服务提供。服务端作为配置来源、MCP 作为工具服务，是两个职责，部署在同一处也不合并其含义。MVP 不增加 MCP 发布标签、服务实现下载、独立升级器或监控平台；具体鉴权方式和传输参数随实际接入确定。</p>
 <h2 id="02-mcp-服务端配合">服务端配合</h2>
 <p>为支持客户端获取配置、连接 MCP，服务端需要配合：</p>
@@ -440,39 +447,42 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <li>校验官方配置写入者的运维权限，向普通用户提供已发布配置。</li>
 <li>若由内部服务提供 MCP，提供可供客户端连接的接入点；其内部实现和发布流程不在本规格范围内。</li>
 </ul>
-<p>LangGraph 编排流程时调用客户端 Agent；客户端承担实际执行及 MCP 调用。MCP 的来源不改变这一边界。</p>
+<p>线上用户在服务端 Console 操作；服务端 Agent 经 LangGraph 编排，以独立任务调用客户端 Agent。客户端后台承担实际执行及 MCP 调用，回传结果。MCP 的来源不改变这一边界。</p>
 <footer><span class="footer-label">客户端 MVP 设计 · 2026-10-18</span><a href="#03-builtintool">下一章：builtinTool</a></footer></article><article id="03-builtintool" data-file="03-buildintool.md" hidden><h1>03 · builtinTool</h1>
 <blockquote>
-<p>串讲重点：用户在客户端为 Agent 选择内置工具；客户端运行前检查是否齐全，缺失时提示更新桌面端。</p>
+<p>串讲重点：线上用户在服务端 Console 操作，客户端后台执行服务端 Agent 下发的任务并检查所需内置工具；工具选择属于运维调试配置，缺失时回传失败并提示更新客户端。</p>
 </blockquote>
 <h2 id="03-builtintool-US">US</h2>
-<h3>界面设计</h3>
-<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/03-tools.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/03-tools.png" alt="现有 Agent 工具勾选页签"></a><figcaption>界面实拍，图中使用演示数据。</figcaption></figure>
-<p>Agent 能力区的“工具”页签展示并选择 builtinTool。运行前检查所需工具；缺失时列出工具名称、说明失败原因，并提供桌面更新入口。截图中的“操作前先确认”不属于本期 MVP 流程。</p>
+<h3>运维调试界面设计</h3>
+<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/03-tools.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/03-tools.png" alt="现有 Agent 工具勾选页签"></a><figcaption>客户端运维调试工作台实拍，图中使用演示数据；线上客户端仅提供连接状态等基础信息。</figcaption></figure>
+<p>客户端运维调试工作台的 Agent 能力区通过“工具”页签展示并选择 builtinTool，线上用户在服务端 Console 发起业务，不进入该配置页。运行前检查所需工具；缺失时列出工具名称、说明失败原因，并提供桌面更新入口。截图中的“操作前先确认”不属于本期 MVP 流程。</p>
 <ol>
 <li>作为运维人员，我为 Agent 选择所需内置工具，让装配明确表达执行需要。</li>
-<li>作为用户，我运行 Agent 前获知缺少的工具，按提示更新桌面端。</li>
-<li>作为用户，我查看当次工具清单和桌面端版本，追溯实际执行环境。</li>
+<li>作为线上用户，我在 Console 获知任务因缺少工具失败，按提示完成客户端更新后重新发起业务。</li>
+<li>作为线上用户，我在 Console 查看任务结果；运维调试时可在客户端追溯当次工具清单和桌面端版本。</li>
 </ol>
-<figure class="usecase"><a class="screenshot-link" href="./assets/03-builtintool-usecase.svg" target="_blank" rel="noopener" aria-label="放大用例图"><img src="./assets/03-builtintool-usecase.svg" alt="builtinTool 用例图：选择、检查、更新与追溯"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure><h2 id="03-builtintool-简要设计">简要设计</h2>
-<p>客户端在 Agent 的“工具”页签展示可选 builtinTool，保存用户选定的工具清单。每次运行前，对照已安装桌面版本提供的工具检查装配是否齐全；缺失就结束本次任务并提示更新桌面端。</p>
+<figure class="usecase"><a class="screenshot-link" href="./assets/03-builtintool-usecase.svg" target="_blank" rel="noopener" aria-label="放大用例图"><img src="./assets/03-builtintool-usecase.svg" alt="builtinTool 用例图：选择、检查、更新与追溯"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure>
+<h2 id="03-builtintool-简要设计">简要设计</h2>
+<p>运维调试工作台在 Agent 的“工具”页签展示可选 builtinTool，保存选定的工具清单；官方装配写入仍须运维权限，本地 Agent 可自由编辑。线上由服务端 Agent 以任务调用客户端，客户端在后台执行。每次运行前，对照已安装桌面版本提供的工具检查装配是否齐全；缺失就结束本次任务，向服务端回传缺失原因供 Console 提示，并通过客户端基础更新入口处理更新。</p>
 <p>builtinTool 的实现随桌面应用版本交付，不建立独立工具包发布与同步系统。<strong>Agent 版本固定工具选择；桌面端版本说明实际实现。</strong> 所选 builtinTool 参与 Agent 内容 ID；客户端运行快照记录实际桌面版本和工具清单，不另设工具发布标签。</p>
 <h2 id="03-builtintool-客户端">客户端</h2>
 <ul>
 <li>根据已安装桌面版本提供可用内置工具，执行前检查 Agent 所需工具是否齐全。</li>
 <li>缺少任一所需工具时直接失败，明确提示缺失原因及更新桌面端；不带着不完整装配开始执行。</li>
-<li>工具齐全后按 Agent 装配执行，并在客户端展示工具调用过程。</li>
+<li>工具齐全后在后台按 Agent 装配执行，保存工具调用过程并向服务端回传结果；完整过程供客户端运维调试工作台查看。</li>
 <li>运行快照记录启用的工具清单和桌面端版本；调用状态、错误与起止时间仍放入执行记录。</li>
 </ul>
 <h2 id="03-builtintool-详细设计">详细设计</h2>
 <h3>运行模型一：所需工具齐全</h3>
-<p><strong>条件：</strong> 客户端收到一轮任务，按固定的 Agent 装配检查所需 builtinTool。调用方可以是用户或服务端；物料准备、其他运行检查均成功，本会话空闲且并发容量可用。</p>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/03-builtintool-ready.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/03-builtintool-ready.svg" alt="运行模型：所需 builtinTool 齐全时执行"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/03-builtintool-ready.html">打开交互顺序图：builtinTool 齐全</a></p>
-<p><strong>结果：</strong> 客户端固定运行快照后执行本轮任务，展示过程并保存结果；远端任务按回传规则返回结果。快照记录当次工具清单与桌面端版本，工具实现由该桌面版本确定。</p>
+<p><strong>条件：</strong> 客户端收到一轮任务，按固定的 Agent 装配检查所需 builtinTool。线上由服务端 Agent 下发任务，本地手动调用只用于运维调试；物料准备、其他运行检查均成功，本会话空闲且并发容量可用。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/03-builtintool-ready.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/03-builtintool-ready.svg" alt="运行模型：所需 builtinTool 齐全时执行"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
+<p><a href="./diagrams/runtime/03-builtintool-ready.html">打开交互顺序图：builtinTool 齐全</a></p>
+<p><strong>结果：</strong> 客户端固定运行快照后在后台执行本轮任务，保存过程与结果，并按回传规则返回服务端，供线上用户在 Console 查看；完整过程可在运维调试工作台查看。快照记录当次工具清单与桌面端版本，工具实现由该桌面版本确定。</p>
 <h3>运行模型二：缺少所需工具</h3>
 <p><strong>条件：</strong> 运行前发现至少一个 Agent 所需 builtinTool 不在当前桌面版本中。</p>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/03-builtintool-missing.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/03-builtintool-missing.svg" alt="运行模型：缺少 builtinTool 时直接失败"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/03-builtintool-missing.html">打开交互顺序图：builtinTool 缺失</a></p>
-<p><strong>结果：</strong> 本轮直接失败，不开始 Chrome 操作。客户端列出缺失工具并提示更新桌面端；远端任务回传失败原因。完成更新后由用户或服务端重新发起调用，不自动重跑该失败任务。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/03-builtintool-missing.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/03-builtintool-missing.svg" alt="运行模型：缺少 builtinTool 时直接失败"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
+<p><a href="./diagrams/runtime/03-builtintool-missing.html">打开交互顺序图：builtinTool 缺失</a></p>
+<p><strong>结果：</strong> 本轮直接失败，不开始 Chrome 操作。客户端记录缺失工具并向服务端回传失败原因，Console 提示任务失败与更新要求，客户端基础更新入口和运维调试工作台提供对应说明。完成更新后由用户在 Console 重新发起业务，或由服务端 Agent 显式发起新任务；本地调试可手动重试，不自动重跑该失败任务。</p>
 <p>Skill 缺失仍按物料同步规则下载完整文件包；builtinTool 缺失通过桌面应用更新解决。桌面版本检查、下载和安装见 <a href="#05-updater">05 · 桌面端更新</a>。MVP 不增加内置工具独立安装、热更新或单独版本仓库。</p>
 <h2 id="03-builtintool-服务端配合">服务端配合</h2>
 <p>为支持客户端装配与检查，服务端需要配合：</p>
@@ -484,22 +494,22 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <p>builtinTool 实现由桌面应用交付，服务端物料同步不单独分发工具实现，也不将其混入 Skill 文件包。</p>
 <footer><span class="footer-label">客户端 MVP 设计 · 2026-10-18</span><a href="#04-agent">下一章：Agent</a></footer></article><article id="04-agent" data-file="04-agent.md" hidden><h1>04 · Agent：装配、发布与会话</h1>
 <blockquote>
-<p>串讲重点：客户端将确定的提示词、Skill 完整包、builtinTool 与远端 MCP 组装成一次可运行的 Agent；核心资产按版本演进，每周发布已确认的改进。</p>
+<p>串讲重点：线上用户在服务端 Console 操作，服务端 Agent 以独立任务调用客户端 Agent；客户端后台完成装配与执行并回传结果，完整编辑、手动会话和过程工作台用于运维调试；核心资产按版本演进。</p>
 </blockquote>
 <h2 id="04-agent-US">US</h2>
-<h3>界面设计</h3>
-<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/04-agent.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/04-agent.png" alt="现有 Agent 配置、能力装配与系统提示词"></a><figcaption>界面实拍，图中使用演示数据。</figcaption></figure>
-<p>Agent 页面包含名称、描述、系统提示词及 MCP、builtinTool、Skill 装配配置。资源标明本地或官方来源，展示内容 ID、发布标签与固定的 Skill 版本。官方发布配置只读；用户可发起会话并查看该会话的运行快照。</p>
+<h3>运维调试界面设计</h3>
+<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/04-agent.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/04-agent.png" alt="现有 Agent 配置、能力装配与系统提示词"></a><figcaption>客户端运维调试工作台实拍，图中使用演示数据；线上客户端通常作为后台进程运行，仅提供连接状态等基础信息。</figcaption></figure>
+<p>客户端运维调试工作台的 Agent 页面包含名称、描述、系统提示词及 MCP、builtinTool、Skill 装配配置。资源标明本地或官方来源，展示内容 ID、发布标签与固定的 Skill 版本。官方发布配置只读；本地调试时可发起手动会话并查看运行快照。线上业务发起、交互及结果查看都在服务端 Console，不以调试桌面为用户入口。</p>
 <ol>
-<li>作为用户，我能自由编辑本地 Agent，也能选择官方 Agent 发起自己的会话。</li>
+<li>作为线上用户，我在服务端 Console 发起业务，由服务端 Agent 以任务调用客户端后台执行，并在 Console 查看结果。</li>
 <li>作为运维人员，我能发布固定装配的官方 Agent，用手填标签标识发布版本。</li>
-<li>作为用户，我能在客户端查看服务端发起的独立任务会话、执行过程和结果。</li>
+<li>作为运维或本地调试使用者，我能自由编辑本地 Agent、选择官方 Agent 发起手动调试会话，并在工作台查看远端任务的独立只读会话与过程。</li>
 <li>作为使用者，我能追溯实际装配和运行条件，已有会话不受新发布影响。</li>
 </ol>
-<figure class="usecase"><a class="screenshot-link" href="./assets/04-agent-usecase.svg" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/04-agent-usecase.svg" alt="Agent 用例图：用户选择与编辑、运维发布、服务端调用"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure>
+<figure class="usecase"><a class="screenshot-link" href="./assets/04-agent-usecase.svg" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/04-agent-usecase.svg" alt="Agent 用例图：运维调试、官方发布、服务端 Agent 任务调用"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure>
 <h2 id="04-agent-简要设计">简要设计</h2>
-<p>客户端提供本地 Agent 编辑和官方 Agent 使用两条路径。本地 Agent 可以随时编辑、保存，不设发布标签，服务端不会调用它。用户同步官方 Agent 后，可以查看只读配置并主动发起会话；运维人员在客户端维护官方草稿并发布新版本，由服务端配合保存和分发。</p>
-<p>客户端开始会话时固定 Agent 与 Skill 快照，并按装配执行。用户主动发起的会话允许正常输入；接到服务端调用时，客户端使用传入的上下文新建独立会话，该会话仅供本地查看过程和结果。</p>
+<p>线上主链路是用户在服务端 Console 发起业务，服务端 Agent 以任务调用确定版本的官方客户端 Agent；客户端在后台固定装配、执行并回传结果，用户在 Console 继续业务操作。客户端运维调试工作台另提供本地 Agent 编辑和官方 Agent 调试两条路径，入口定位不改变既有资源读写权限。本地 Agent 可以随时编辑、保存，不设发布标签，服务端不会调用它。调试时同步官方 Agent 后，可以查看只读配置并主动发起手动会话；运维人员在客户端维护官方草稿并发布新版本，由服务端配合保存和分发。</p>
+<p>客户端开始会话时固定 Agent 与 Skill 快照，并按装配执行。运维调试时主动发起的手动会话允许正常输入；接到服务端 Agent 调用时，客户端使用传入的上下文新建独立任务会话，后台执行并向服务端回传结果。该会话在本地调试工作台只供查看过程和结果，不接受追加指令；线上用户通过 Console 查看结果，不需要打开调试桌面。</p>
 <p>Agent 的内容 ID 根据系统提示词、固定 Skill 版本、所选 builtinTool 和 MCP 装配配置生成。正式发布时手填 <code>v.1.0.0</code> 形式的标签，已发布内容和标签指向不可变。Provider、模型和推理参数属于运行条件，不参与内容 ID；Provider 的非敏感接入身份、实际模型与参数记录于运行快照。</p>
 <h3>装配清单里保存什么</h3>
 <table>
@@ -543,7 +553,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 </tbody></table>
 <p>配置保存的是“本次需要哪些能力”，运行装配则将它们解析为实际文件和可调用工具。MVP 保持 MCP 服务级选择：连接选中的服务并取得工具清单，不新增逐工具授权管理界面。密钥、Token 从运行时凭据来源取得，其值不进入发布指纹或快照。</p>
-<p>按 <a href="#11-provider">11 · Provider</a> 的目标设计，客户端本地维护全局默认 Provider 与模型，新会话开始前允许改选，开始后固定；后续轮次不跟随默认项变化。所选接入不可用时明确失败，不自动更换地址或模型。Provider Key 从系统凭据库读取，其值不进入 Agent 包、运行快照或诊断材料；管理界面和系统凭据存储仍待实现，当前桌面为环境变量／<code>model.env</code> 单模型接入。</p>
+<p>Provider 管理、系统凭据存储、多模型选择与手动连接测试的当前状态以 <a href="#11-provider">11 · Provider</a> 为准。客户端接入配置属于部署与运维调试；手动新会话开始前可改选本地默认 Provider 与模型，开始后固定，后续轮次不跟随默认项变化。线上任务沿用明确的本地接入条件，不通过任务正文传递密钥或自动切换模型。所选接入不可用时明确失败；Provider Key 从系统凭据库读取，其值不进入 Agent 包、运行快照或诊断材料。</p>
 <h3>两端一致的 Agent 版本文件</h3>
 <p>服务端与客户端均采用 <code>agents/releases/&lt;agentId&gt;/&lt;contentId&gt;/</code>：<code>agentId</code> 是稳定资源身份，<code>contentId</code> 是确定装配的版本摘要。每个版本只包含 <code>prompt.md</code> 和 <code>agent.json</code>；人工标签保存在上一级 <code>tags.json</code>，不进入版本包。正式调用携带的 <code>agentContentId</code> 就是这里的 <code>contentId</code>。</p>
 <table>
@@ -576,16 +586,16 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <p><a href="./diagrams/04-agent.html">打开装配关系图</a></p>
 </details><h2 id="04-agent-客户端">客户端</h2>
 <ul>
-<li>提供本地 Agent 编辑；允许直接引用官方已发布 Skill，修改官方 Skill 时先复制成本地副本。</li>
-<li>官方配置保持只读，但用户主动发起的会话可以正常输入。服务端发起的会话只展示执行过程和结果，不接受本地追加指令。</li>
+<li>在运维调试工作台提供本地 Agent 编辑；允许直接引用官方已发布 Skill，修改官方 Skill 时先复制成本地副本。</li>
+<li>官方配置保持只读；运维调试手动会话可以正常输入。线上服务端任务在后台执行并回传 Console，调试工作台可查看其独立只读会话，不接受本地追加指令。</li>
 <li>远端每次调用创建独立会话；手动会话固定开始时的 Agent、Skill 快照，新版只对新会话生效。</li>
-<li>Skill 实验页面勾选现有 Agent 作为模板，临时替换为草稿装配，不修改原 Agent，也不产生发布标签。</li>
+<li>运维调试工作台的 Skill 实验页面勾选现有 Agent 作为模板，临时替换为草稿装配，不修改原 Agent，也不产生发布标签。</li>
 <li>将 MCP 配置解析为远端连接及工具，将 builtinTool ID 解析为本机实现，将 Skill 引用解析为完整包快照；装配成功后才构造 Agent 并开始执行。</li>
 <li>发现物料缺失、工具缺失或 MCP 接入失败时，显示具体失败项并停止本次准备；不静默删除能力后继续运行。</li>
 </ul>
 <h2 id="04-agent-详细设计">详细设计</h2>
 <h3>运行模型一：完整装配后开始执行</h3>
-<p><strong>条件：</strong> 用户选定 Agent 发起新会话，或服务端传入确定的官方 Agent 版本与上下文。图中展示官方 Agent 缺少部分 Skill 包、同步和各项检查均成功的情况；缓存已齐全则跳过下载。本地 Agent 读取当前已保存配置，并在本次准备中固定其内容。</p>
+<p><strong>条件：</strong> 线上由服务端 Agent 传入确定的官方 Agent 版本与上下文，以任务调用客户端；运维调试时也可手动选定 Agent 发起新会话。图中展示官方 Agent 缺少部分 Skill 包、同步和各项检查均成功的情况；缓存已齐全则跳过下载。本地 Agent 读取当前已保存配置，并在本次准备中固定其内容。</p>
 <figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/04-assembly-ready.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/04-assembly-ready.svg" alt="完整装配：提示词、Skill、builtinTool 与 MCP 进入同一次运行"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
 <p><a href="./diagrams/runtime/04-assembly-ready.html">打开运行模型：Agent 完整装配</a></p>
 <p>装配按下面的顺序完成。表中的步骤是客户端职责，不要求拆成独立服务：</p>
@@ -676,20 +686,20 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 <tr>
 <td>同一会话正在执行、其页面正在手动导航或总并发容量已满</td>
-<td>返回“忙”，由用户或服务端重新安排，不排入客户端任务队列</td>
+<td>返回“忙”，由 Console 业务操作或服务端 Agent 显式重新安排；本地调试可手动重试，不排入客户端任务队列</td>
 </tr>
 </tbody></table>
-<p><strong>结果：</strong> 客户端展示失败环节和原因；远端任务按原调用 ID 回传失败。若已受理则释放该轮运行容量，已有缓存与未同步编辑保留，不自动重试整次任务。此处沿用已确认的状态、错误与运行快照观测边界，本次文档补充不新增日志、span 或指标要求。</p>
-<h3>运行模型三：编辑本地 Agent 后开始会话</h3>
-<p>**条件：**用户编辑本地 Agent 并保存；本次所需物料已准备好，builtinTool 检查通过。客户端在并发容量可用并绑定本会话页面后执行。</p>
+<p><strong>结果：</strong> 客户端记录失败环节和原因，按原调用 ID 向服务端回传失败，供 Console 展示；运维调试工作台可查看详情。若已受理则释放该轮运行容量，已有缓存与未同步编辑保留，不自动重试整次任务。此处沿用已确认的状态、错误与运行快照观测边界，本次文档补充不新增日志、span 或指标要求。</p>
+<h3>运行模型三：运维调试时编辑本地 Agent 后开始手动会话</h3>
+<p>**条件：**运维或本地调试使用者在工作台编辑本地 Agent 并保存；本次所需物料已准备好，builtinTool 检查通过。客户端在并发容量可用并绑定本会话页面后执行。</p>
 <figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/04-local-session.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/04-local-session.svg" alt="本地 Agent 运行顺序：保存装配、读取物料、固定快照、执行"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
 <p><a href="./diagrams/runtime/04-local-session.html">打开运行模型</a></p>
-<p>**结果：**本轮按确定的 Agent、Skill 和运行条件执行。之后再编辑本地 Agent，也不会改变这个会话已经固定的快照；修改从新会话生效。本地 Agent 不设发布标签，也不接受服务端调用。缺包、缺少工具和忙时的处理分别见<a href="#06-sync">同步与装配</a>、<a href="#03-builtintool">builtinTool</a>与<a href="#07-execution">任务执行与恢复</a>。</p>
-<h3>运行模型四：官方发布新版，已有会话继续使用原快照</h3>
-<p>**条件：**已有手动会话已经固定快照；随后官方发布了新的 Agent 装配。图中先展示用户继续旧会话，再展示另开新会话，两次输入分别触发各自的准备和执行。</p>
+<p>**结果：**本轮手动调试按确定的 Agent、Skill 和运行条件执行。之后再编辑本地 Agent，也不会改变这个会话已经固定的快照；修改从新会话生效。本地 Agent 不设发布标签，也不接受服务端调用。缺包、缺少工具和忙时的处理分别见<a href="#06-sync">同步与装配</a>、<a href="#03-builtintool">builtinTool</a>与<a href="#07-execution">任务执行与恢复</a>。</p>
+<h3>运行模型四：官方发布新版，已有调试会话继续使用原快照</h3>
+<p>**条件：**运维调试工作台已有手动会话已经固定快照；随后官方发布了新的 Agent 装配。图中先展示调试者继续旧会话，再展示另开新会话，两次输入分别触发各自的准备和执行。</p>
 <figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/04-official-new-version.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/04-official-new-version.svg" alt="官方 Agent 新版发布后的顺序：旧会话保持原快照，新会话同步新版"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
 <p><a href="./diagrams/runtime/04-official-new-version.html">打开运行模型</a></p>
-<p>**结果：**旧会话的原 Agent、Skill 版本保持不变；新会话按用户所选的官方新版同步物料并固定新快照。官方配置始终只读，但用户主动发起的会话可以继续输入。服务端发起的任务另建独立只读会话，具体运行模型见<a href="#07-execution">任务执行与恢复</a>。</p>
+<p>**结果：**旧会话的原 Agent、Skill 版本保持不变；新调试会话按所选官方新版同步物料并固定新快照。官方配置始终只读，手动调试会话可以继续输入。线上每次服务端 Agent 任务调用另建独立会话，在后台执行并回传 Console，本地调试只读查看；具体运行模型见<a href="#07-execution">任务执行与恢复</a>。</p>
 <table>
 <thead>
 <tr>
@@ -716,19 +726,19 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tbody></table>
 <p>运行快照保留 Agent/Skill 内容身份、官方标签、启用工具和 MCP 清单、桌面端版本、Provider 非敏感接入身份、实际模型与参数；密钥和 Token 不进入快照。调用 ID、状态和错误属于执行记录。仅调整 Provider、模型或参数不发布新 Agent，实际选择记录在新会话的运行快照中。</p>
 <h2 id="04-agent-服务端配合">服务端配合</h2>
-<p>为支持客户端维护、同步和执行官方 Agent，服务端需要配合：</p>
+<p>为支持 Console 业务主链路、客户端后台执行以及运维调试维护官方 Agent，服务端需要配合：</p>
 <ul>
 <li>接收并保存官方 Agent 草稿修订、装配清单、内容 ID 和手填发布标签，校验运维写入权限，并提供同步物料。</li>
 <li>按与客户端相同的 <code>agents/releases/&lt;agentId&gt;/&lt;contentId&gt;/</code> 保存完整版本，提供 <code>prompt.md</code>、<code>agent.json</code> 和包外标签映射；清单固定 Skill 内容 ID、builtinTool ID 与完整非敏感 MCP 配置，凭据值不进入发布文件或运行快照。</li>
 <li>Skill 正式发布时向客户端提供受影响 Agent，更新装配并生成新的内容 ID；接收同次手填的新标签完成联动发布。保存 Skill 草稿不联动。</li>
 <li>支持每周发布已确认的提示词与 Skill 改进并保留历史装配；只改提示词时可单独发布 Agent，MCP 服务和内置工具实现不随资产周发布复制一份。</li>
-<li>通过 LangGraph 调用客户端 Agent，传入每次独立任务的上下文，接收执行结果。每个 Agent 的业务输入输出由服务端单独定义，本章不展开。</li>
+<li>接收线上用户在 Console 的业务操作，由服务端 Agent 经 LangGraph 以独立任务调用客户端 Agent，传入确定版本与上下文，接收执行结果并在 Console 呈现。每个 Agent 的业务输入输出由服务端单独定义，本章不展开。</li>
 </ul>
 <footer><span class="footer-label">客户端 MVP 设计 · 2026-10-20</span><a href="#05-updater">下一章：桌面端更新</a></footer></article><article id="05-updater" data-file="05-桌面端更新.md" hidden><h1>05 桌面端更新</h1>
-<p>串讲重点：<strong>用户决定下载和安装时机，只有空闲时才能安装重启。</strong> 桌面更新与 Skill、Agent 物料同步分别进行。</p>
+<p>串讲重点：<strong>客户端日常后台执行服务端 Agent 下发的任务；更新通过本机基础状态／维护入口处理，由用户决定下载和安装时机，只有空闲时才能安装重启。</strong> 桌面更新与 Skill、Agent 物料同步分别进行。</p>
 <h2 id="05-updater-US">US</h2>
 <h3>界面设计</h3>
-<p>桌面更新位于设置中，展示当前版本、新版说明和下载进度。用户主动检查、下载并确认安装；页面明确区分下载中、待安装、等待任务结束和失败状态。</p>
+<p>线上用户在服务端 Console 发起业务、查看任务状态与结果；客户端仅在基础状态／维护入口提供更新设置，展示当前版本、新版说明和下载进度。用户主动检查、下载并确认安装；页面明确区分下载中、待安装、等待任务结束和失败状态。处理升级不要求打开完整调试工作台，也不改为服务端远程确认安装。</p>
 <ol>
 <li>作为用户，我希望启动后得知新版，也能手动检查，查看版本和更新说明。</li>
 <li>作为用户，我希望自己决定何时下载、何时安装，并在下载期间继续工作。</li>
@@ -742,14 +752,14 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <h2 id="05-updater-客户端">客户端</h2>
 <ul>
 <li>客户端交付流程在受控构建环境生成最终整包并签名；已安装客户端仅内置公钥，私钥不进入安装包。</li>
-<li>主界面可用后非阻塞检查一次，设置保留手动入口；可稍后处理，不增加定时轮询。</li>
+<li>客户端启动就绪后非阻塞检查一次，基础状态／维护设置保留手动入口；可稍后处理，不增加定时轮询。</li>
 <li>展示适配当前系统、架构的更高版本；用户点击才下载，展示真实进度。</li>
 <li>使用 HTTPS 校验和内置公钥验签；网络、清单、下载或验签错误明确提示，不安装、不退出当前应用。</li>
 <li>下载成功只进入待安装，仍须用户确认；同版或更旧版本不覆盖当前应用。</li>
 </ul>
 <h2 id="05-updater-详细设计">详细设计</h2>
 <h3>运行模型一：检查、下载并在空闲时安装</h3>
-<p>**条件：**存在适配当前系统、架构的更高版本，包下载和校验成功。主界面可用后检查一次，或由用户在设置中主动检查；两者之后使用相同流程。</p>
+<p>**条件：**存在适配当前系统、架构的更高版本，包下载和校验成功。客户端启动就绪后检查一次，或由用户在基础状态／维护设置中主动检查；两者之后使用相同流程。</p>
 <figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/05-update-success.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/05-update-success.svg" alt="更新正常运行顺序：检查新版、用户下载、验签、确认、空闲安装与重启"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
 <p><a href="./diagrams/runtime/05-update-success.html">打开运行模型</a></p>
 <p>**结果：**下载后停留在待安装，用户确认后才再次核对执行活动；空闲时阻止新任务进入，完成运行时与浏览器进程清理，再交给安装器。安装与启动都完成才算成功。更新保留安装包外的会话、配置、脚本、运行证据及本地物料。</p>
@@ -757,7 +767,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <p>**条件：**更新包已经校验成功，但用户确认安装时还有执行活动。</p>
 <figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/05-update-busy.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/05-update-busy.svg" alt="更新忙时运行顺序：发现任务、等待结束、用户再次确认"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
 <p><a href="./diagrams/runtime/05-update-busy.html">打开运行模型</a></p>
-<p>**结果：**客户端提示等待，不安装、不退出。任务结束只改变可安装条件，不代替用户确认；用户再次确认后，重新进入模型一的空闲检查和安装准备。任务先开始则安装等待，安装准备先开始则新任务被明确拒绝。下载完成和任务结束都不会自动安装。</p>
+<p>**结果：**客户端提示等待，不安装、不退出。任务结束只改变可安装条件，不代替用户确认；用户再次确认后，重新进入模型一的空闲检查和安装准备。任务先开始则安装等待，安装准备先开始则新任务被明确拒绝；服务端 Agent 接收拒绝结果，Console 向用户说明客户端暂不可执行。下载完成和任务结束都不会自动安装。</p>
 <h3>运行模型三：下载或校验失败</h3>
 <p>**条件：**本次下载失败，或已下载的包未通过完整性校验、签名验证。图中的两种原因都是直接失败的替代情况，不是连续执行的两个步骤。</p>
 <figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/05-update-rejected.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/05-update-rejected.svg" alt="更新失败运行顺序：下载或校验失败、展示原因、保留当前应用"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
@@ -773,20 +783,21 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </ul>
 <footer><span class="footer-label">客户端 MVP 设计 · 2026-10-18</span><a href="#06-sync">下一章：同步与装配</a></footer></article><article id="06-sync" data-file="06-同步与装配.md" hidden><h1>06 · 同步与装配：清单先行、物料按需</h1>
 <blockquote>
-<p>串讲重点：客户端在新会话开始前核对版本、补齐缺包，再按 Agent 清单装配；准备失败就停止本次运行。</p>
+<p>串讲重点：线上用户在服务端 Console 发起业务，服务端 Agent 以任务调用客户端；客户端在后台核对指定版本、补齐缺包，再按 Agent 清单装配，准备失败就停止本次运行。</p>
 </blockquote>
 <h2 id="06-sync-US">US</h2>
 <h3>界面设计</h3>
-<p>新会话入口展示准备过程：核对版本、下载缺失物料、检查工具、准备完成或失败。资源详情展示版本与本地缓存情况。已有会话继续使用开始时的快照；同步到的新版本从新会话生效。</p>
+<p>线上 Console 展示任务准备、执行或失败状态，服务端 Agent 消费客户端回传的准备状态和失败原因。客户端日常后台完成版本核对、缺包下载与工具检查；本机仅展示连接等基础状态。完整准备过程、资源版本与缓存详情、新建会话均属于运维调试入口。已有调试会话继续使用开始时的快照；同步到的新版本从新会话生效。</p>
 <ol>
-<li>作为用户，我希望新会话使用同步后的官方资源，已有会话继续使用开始时的快照。</li>
-<li>作为用户，我希望客户端接到远端调用后先核对指定 Agent 版本，避免使用其他版本替代。</li>
-<li>作为用户，我希望只下载当前所需物料，并保留已下载的 Skill 版本轨迹。</li>
-<li>作为使用者，我希望同步或工具检查失败时看到明确原因，以便处理后重新发起。</li>
+<li>作为线上用户，我希望在服务端 Console 发起业务并查看准备状态，所需物料由客户端后台准备。</li>
+<li>作为服务端 Agent 调用方，我希望客户端先核对任务指定的 Agent 版本，避免使用其他版本替代。</li>
+<li>作为运维人员，我希望客户端只下载当前所需物料，并能在调试入口检查已下载的 Skill 版本轨迹。</li>
+<li>作为线上用户，我希望同步或工具检查失败时在 Console 看到明确原因；运维处理后，由服务端 Agent 发起新任务。</li>
 </ol>
-<figure class="usecase"><a class="screenshot-link" href="./assets/06-sync-usecase.svg" target="_blank" rel="noopener" aria-label="放大用例图"><img src="./assets/06-sync-usecase.svg" alt="同步用例图：同步清单、获取缺失物料、按指定装配运行"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure><h2 id="06-sync-简要设计">简要设计</h2>
+<figure class="usecase"><a class="screenshot-link" href="./assets/06-sync-usecase.svg" target="_blank" rel="noopener" aria-label="放大用例图"><img src="./assets/06-sync-usecase.svg" alt="同步用例图：同步清单、获取缺失物料、按指定装配运行"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure>
+<h2 id="06-sync-简要设计">简要设计</h2>
 <p>客户端同步分两步：先获取版本清单，再按当前 Agent 的装配清单补齐缺失物料。不会为了同步清单下载全部历史包。官方资源按版本保存在本地，旧包不自动覆盖或清理；运行时选择对应版本装配。</p>
-<p>HTTPS 负责清单和物料传输。WebSocket 负责调用和结果，不承担文件包同步。未上传的本地草稿可以直接实验，运行前固定完整快照，不要求先上传为官方版本。</p>
+<p>HTTPS 负责清单和物料传输。WebSocket 负责调用和结果，不承担文件包同步。运维在调试入口维护的未上传本地草稿可以直接实验，运行前固定完整快照，不要求先上传为官方版本。</p>
 <h3>服务端版本库与客户端缓存一一对应</h3>
 <table>
 <thead>
@@ -826,53 +837,58 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <p>先取得确定 Agent 版本的两个文件，再按 <code>agent.json.skills</code> 补齐独立 Skill 包；MCP 完整非敏感配置随 Agent 文件取得，不套用本地可变配置。tool 只核对本机实现，不下载实现包。Agent 正式目录与同步尚待接入，当前本地单文件保存及会话快照不变。</p>
 <h2 id="06-sync-客户端">客户端</h2>
 <ul>
-<li>官方新会话同步版本清单；每次远端调用核对所需版本，不匹配或缺少物料就先同步。</li>
+<li>每次服务端 Agent 任务调用核对所需版本，不匹配或缺少物料就先同步；运维在调试入口发起官方新会话时也同步版本清单。</li>
 <li>按清单下载缺失 Skill 包及其他 Agent 物料，复用本地已有的相同版本；同步失败则本次调用失败，不降级到旧版。</li>
-<li>运行前检查所需 builtinTool；缺失时提示更新桌面端，不尝试通过 Skill 同步安装内置工具。</li>
+<li>运行前检查所需 builtinTool；缺失时回传需要更新客户端的失败原因，并在本机维护入口提示更新，不尝试通过 Skill 同步安装内置工具。</li>
 <li>Skill 文件固定保存在当前用户主目录下的 <code>.omnimind-ops/skills</code>（macOS 为 <code>~/.omnimind-ops/skills</code>）。本地可编辑包与官方版本缓存分开；Windows 当前同样使用用户主目录，不硬编码盘符。</li>
 </ul>
 <p>当前已接入本地文件持久化、官方缓存完整包摘要校验和会话固定快照；服务端清单、完整包下载与来源验证仍待接入。目录、内容 ID 与人工标签的对应关系，以及当前 LangGraph.js 加载路径见<a href="../skill-storage-and-loading.md">Skill 存储与运行加载</a>。</p>
 <h2 id="06-sync-详细设计">详细设计</h2>
 <h3>运行模型一：所需版本已在本地</h3>
-<p>**条件：**用户发起官方 Agent 新会话；客户端从服务端核对版本清单后，发现本次所需完整物料都已缓存。远端调用也执行相同核对，但以服务端指定的 Agent 版本为准。</p>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/06-cache-ready.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/06-cache-ready.svg" alt="缓存命中运行顺序：核对清单、检查缓存、固定装配"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/06-cache-ready.html">打开运行模型</a></p>
+<p>**条件：**服务端 Agent 下发指定官方 Agent 版本的任务；客户端核对版本清单后，发现本次所需完整物料都已缓存。运维在调试入口发起官方新会话也执行同样准备，但不作为线上用户入口。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/06-cache-ready.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/06-cache-ready.svg" alt="缓存命中运行顺序：核对清单、检查缓存、固定装配"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
+<p><a href="./diagrams/runtime/06-cache-ready.html">打开运行模型</a></p>
 <p>**结果：**相同版本不重复下载。客户端检查 builtinTool 并固定运行快照后，才进入执行流程；本地有旧包不代表可以跳过所需版本的核对。</p>
 <h3>运行模型二：下载本次缺失的物料</h3>
 <p>**条件：**版本清单已明确本次装配，但本地缺少其中某些完整 Skill 包或其他 Agent 物料。本图只展示下载成功的情况。</p>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/06-download-missing.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/06-download-missing.svg" alt="按需下载运行顺序：清单核对、识别缺失、下载保存、固定快照"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/06-download-missing.html">打开运行模型</a></p>
-<p>**结果：**客户端只下载缺失项，按版本保存后装配。完整非敏感 MCP 配置与 Agent 一并准备，凭据值运行时取得；旧 Agent 与 Skill 包继续保留，不自动覆盖或清理。已有手动会话继续使用原快照，同步取得的新版只用于新会话。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/06-download-missing.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/06-download-missing.svg" alt="按需下载运行顺序：清单核对、识别缺失、下载保存、固定快照"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
+<p><a href="./diagrams/runtime/06-download-missing.html">打开运行模型</a></p>
+<p>**结果：**客户端只下载缺失项，按版本保存后装配。完整非敏感 MCP 配置与 Agent 一并准备，凭据值运行时取得；旧 Agent 与 Skill 包继续保留，不自动覆盖或清理。已有运维调试会话继续使用原快照，同步取得的新版只用于新会话。</p>
 <h3>运行模型三：核对或下载失败</h3>
 <p>**条件：**核对清单失败，或者下载所需物料失败、物料不可取得。任一条件都直接结束本次准备，不再继续后面的装配与执行。</p>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/06-sync-failure.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/06-sync-failure.svg" alt="同步失败运行顺序：请求失败、保留缓存、反馈本次失败"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure><p><a href="./diagrams/runtime/06-sync-failure.html">打开运行模型</a></p>
-<p>**结果：**客户端展示明确原因，本次调用失败，不降级到旧版，不使用不完整装配。远端调用按原调用 ID 记录并回传失败；本地已有缓存与未同步编辑保留。用户或服务端处理原因后重新发起。</p>
-<p>物料齐备但缺少所需 builtinTool 时同样不能执行：客户端提示更新桌面端，不通过 Skill 同步补装内置工具，具体顺序见<a href="#03-builtintool">builtinTool</a>。未上传的本地草稿实验直接固定完整快照，不要求先经过官方同步。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/06-sync-failure.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/06-sync-failure.svg" alt="同步失败运行顺序：请求失败、保留缓存、反馈本次失败"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
+<p><a href="./diagrams/runtime/06-sync-failure.html">打开运行模型</a></p>
+<p>**结果：**本次调用失败，不降级到旧版，不使用不完整装配；按原调用 ID 记录并向服务端 Agent 回传明确原因，Console 向线上用户展示任务失败。运维调试入口保留准备详情、本地已有缓存与未同步编辑。原因处理后由服务端 Agent 发起新任务；本地调试调用由运维重新发起。</p>
+<p>物料齐备但缺少所需 builtinTool 时同样不能执行：客户端回传更新要求，在本机维护入口提示更新，不通过 Skill 同步补装内置工具，具体顺序见<a href="#03-builtintool">builtinTool</a>。运维在调试入口运行未上传的本地草稿实验时直接固定完整快照，不要求先经过官方同步。</p>
 <p>MVP 不引入 Git 仓库、全量历史镜像或自动清理机制。Skill 磁盘布局已确定：本地包位于 <code>local/&lt;localId&gt;</code>，两端官方完整版本均位于 <code>releases/&lt;skillId&gt;/&lt;contentId&gt;</code>；会话完整包快照另存 <code>.omnimind-ops/runs/&lt;sha256(threadId)&gt;/skills/&lt;mountName&gt;/</code>。准备完成后的页面绑定与运行并发、结果补传和重启恢复见<a href="#07-execution">任务执行与恢复</a>。</p>
 <h2 id="06-sync-服务端配合">服务端配合</h2>
 <p>为支持客户端核对版本与按需装配，服务端需要：</p>
 <ul>
 <li>提供官方已发布 Agent、Skill 的版本清单和缺失物料下载；Agent 版本包包含完整非敏感 MCP 配置及凭据引用。</li>
 <li>使用与客户端相同的 Agent、Skill 版本相对目录、包内路径、内容 ID 算法及标签映射；只有完整包与关联 Agent 均可取得后才公布正式发布结果。</li>
-<li>远端调用通过 <code>agentId + agentContentId</code> 明确所需版本，客户端据此核对；接口约定见 <a href="#10-server-api">10 · 服务端 API</a>。</li>
+<li>服务端 Agent 以任务调用客户端，通过 <code>agentId + agentContentId</code> 明确所需版本，客户端据此核对；接口约定见 <a href="#10-server-api">10 · 服务端 API</a>。</li>
 <li>保留已发布版本和标签的不可变关系。Skill 发布产生新 Agent 装配，不改写历史版本。</li>
+<li>在 Console 呈现线上任务准备状态和失败原因；逐条准备详情、资源缓存和实验入口留给运维调试。</li>
 <li>按现有身份体系开放相应读取和运维写入能力，不新增客户端账号体系。</li>
 </ul>
 <footer><span class="footer-label">客户端 MVP 设计 · 2026-10-18</span><a href="#07-execution">下一章：任务执行与恢复</a></footer></article><article id="07-execution" data-file="07-任务执行与恢复.md" hidden><h1>07 · 任务执行与恢复：执行一次、结果可补传</h1>
 <blockquote>
-<p>串讲重点：客户端统一管理 Chrome 执行、过程展示和结果保存；断线后补传结果，重启后不续跑未完成任务。</p>
+<p>串讲重点：线上用户在服务端 Console 操作，服务端 Agent 以任务调用客户端 Agent；客户端后台管理 Chrome 执行与结果保存，向服务端交付状态和结果，逐条过程留在运维调试入口。断线后补传结果，重启后不续跑未完成任务。</p>
 </blockquote>
 <h2 id="07-execution-US">US</h2>
-<h3>界面设计</h3>
-<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/07-debug.jpg" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/07-debug.jpg" alt="打包客户端实拍：Playwright 工具执行过程与内置浏览器同屏"></a><figcaption>历史 macOS 桌面包实拍（旧 Agent CEF 模式，不代表当前双浏览器分工），展开真实执行的 <code>inspect_browser</code>、<code>write_playwright_script</code> 和 <code>run_playwright_script</code>；右侧 CEF 搜索框已填入 <code>abcd</code>，未提交。模型与目标页面为本地测试夹具。</figcaption></figure>
-<p>会话展示消息与工具调用过程，任务横条展示执行状态。服务端发起的会话明确标识来源并保持只读。执行记录包含调用 ID、起止时间、结果或错误、运行快照，以及结果待确认、已交付或重启中断状态。</p>
+<h3>运维调试界面与线上基础状态</h3>
+<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/07-debug.jpg" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/07-debug.jpg" alt="历史运维调试桌面：Playwright 工具执行过程与内置浏览器同屏"></a><figcaption>历史 macOS 运维调试桌面实拍（不是线上用户入口，旧 Agent CEF 模式不代表当前双浏览器分工），展开真实执行的 <code>inspect_browser</code>、<code>write_playwright_script</code> 和 <code>run_playwright_script</code>；右侧 CEF 搜索框已填入 <code>abcd</code>，未提交。模型与目标页面为本地测试夹具。</figcaption></figure>
+<p>线上用户在 Console 发起业务、查看任务状态与最终结果，并经服务端请求取消；服务端 Agent 接收忙、失败、取消、超时、中断和结果交付状态，决定后续处理。客户端日常作为后台进程，仅对线上用户提供连接等基础状态与维护入口。完整本地会话、工具过程、任务横条与执行记录属于运维调试桌面；服务端发起的调试会话明确标识来源并保持只读。记录包含调用 ID、起止时间、结果或错误、运行快照，以及结果待确认、已交付或重启中断状态。远端调用、结果交付与线上基础状态界面仍待接入，不能以已有本地调试能力视为完成。</p>
 <ol>
-<li>作为用户，我希望本地与远端任务共用专用 Chrome，保留登录态，并让不同会话在各自标签页并发执行。</li>
-<li>作为用户，我希望客户端明确展示忙、取消、超时等状态，并把远端任务的结果回传给服务端。</li>
-<li>作为使用者，我希望断线时任务继续执行，恢复连接后能取得结果。</li>
-<li>作为用户，我希望重启后知道哪些任务已经完成、哪些执行中断，不自动重做操作。</li>
+<li>作为线上用户，我希望从 Console 发起的任务由客户端后台使用专用 Chrome 执行，保留登录态，并让不同会话在各自标签页并发执行。</li>
+<li>作为线上用户，我希望在 Console 看到忙、取消、超时等任务状态和最终结果，客户端将其回传给服务端 Agent。</li>
+<li>作为线上用户，我希望客户端断线时任务继续执行，恢复连接后能在 Console 取得结果。</li>
+<li>作为线上用户，我希望重启后在 Console 知道哪些任务已经完成、哪些执行中断，不自动重做操作。</li>
+<li>作为运维人员，我希望通过调试桌面查看本地会话、逐条过程和执行证据，定位故障而不改变线上任务目标。</li>
 </ol>
-<figure class="usecase"><a class="screenshot-link" href="./assets/07-execution-usecase.svg" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/07-execution-usecase.svg" alt="执行用例图：发起任务、查看过程、取消任务、接收结果"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure>
+<figure class="usecase"><a class="screenshot-link" href="./assets/07-execution-usecase.svg" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/07-execution-usecase.svg" alt="执行用例图：服务端 Agent 调用、取消与接收结果，运维查看本地证据"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure>
 <h2 id="07-execution-简要设计">简要设计</h2>
-<p>Node.js 后端按需管理一个外部 Google Chrome 专用环境；工作台另保留独立的手动运维 CEF 页面。本地、实验和远端任务按 <code>threadId</code> 绑定各自标签页，以精确 <code>targetId</code> 寻址；不同会话可以并发，同一会话同时只接纳一轮。默认最多 4 轮并发，用户可在「设置 → 偏好设置」调整「并发任务上限」（1～64 的整数）；同一会话已有运行、其绑定页面正在手动导航或总容量已满时返回“忙”，客户端不排队。手动会话等待用户输入时释放运行容量，标签页与固定快照继续保留，下一轮复用同一页面。</p>
+<p>Node.js 后端按需管理一个外部 Google Chrome 专用环境；运维调试工作台另保留独立的手动 CEF 页面。本地、实验和远端任务按 <code>threadId</code> 绑定各自标签页，以精确 <code>targetId</code> 寻址；不同会话可以并发，同一会话同时只接纳一轮。默认最多 4 轮并发，运维人员可在调试桌面的「设置 → 偏好设置」调整「并发任务上限」（1～64 的整数）；同一会话已有运行、其绑定页面正在手动导航或总容量已满时返回“忙”，客户端不排队。运维调试会话等待输入时释放运行容量，标签页与固定快照继续保留，下一轮复用同一页面。</p>
 <p>会话页面与手动页面分开管理。任务结束、失败、取消或超时后仍保留所属页面，供查看与后续轮次复用；runtime 关闭时只释放它创建的会话页面，不关闭外部或手动页面。页面丢失时本次操作失败，不回退到当前选中页或其他会话页面。</p>
 <p>所有标签页仍使用同一专用 profile，共享 Cookie、登录态和站点状态；独立页面不代表独立账号或后端业务资源，退出登录和切换账号可能影响其他会话。脚本沿用既有页面约束，不新增创建页面或 BrowserContext 的能力；弹窗不自动成为任务目标。</p>
 <p>一轮任务可以包含多次模型调用，单次模型输出结束不等于任务结束。任务终止与结果交付分别处理：执行已结束但尚未收到服务端确认时，保留结果等待补传。</p>
@@ -884,9 +900,9 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <p><a href="./diagrams/07-execution.html">打开状态概览</a></p>
 </details><h2 id="07-execution-客户端">客户端</h2>
 <ul>
-<li>展示逐条模型输出和工具调用过程；远端任务会话保持只读，正常执行不向服务端逐条传输过程内容。故障排查时由用户另行确认上传指定 thread 的诊断包，见<a href="#09-operations">运维与诊断上传</a>。</li>
+<li>仅在运维调试桌面展示逐条模型输出和工具调用过程；远端任务会话保持只读，正常执行不向服务端逐条传输过程内容。服务端 Agent 消费任务级状态、最终结果与快照，Console 展示线上用户所需状态和结果。故障排查时由运维在诊断入口准备指定 thread 的材料，经有权用户预览、同意后上传，见<a href="#09-operations">运维与诊断上传</a>。</li>
 <li>每轮采用统一、可配置的兜底超时。取消或超时后停止后续步骤，回传相应结果；已完成的 Chrome 操作不回滚。</li>
-<li>遇到人工登录或验证直接失败并说明原因，用户处理后重新发起，不暂停等待。</li>
+<li>遇到人工登录或验证直接失败，并向服务端 Agent 回传原因，由 Console 提示用户处理；用户按明确提示在专用 Chrome 完成必要验证后，在 Console 重新发起业务，由服务端 Agent 下发新任务，不暂停等待，也不要求打开完整调试桌面。</li>
 <li>有任务运行时阻止正常退出并提示等待，结束后由用户退出；强制退出或崩溃按重启规则处理。</li>
 </ul>
 <h2 id="07-execution-详细设计">详细设计</h2>
@@ -901,7 +917,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </thead>
 <tbody><tr>
 <td>设置入口</td>
-<td>设置 → 偏好设置 → 并发任务上限；显示当前有效值，修改后保存</td>
+<td>运维调试桌面 → 设置 → 偏好设置 → 并发任务上限；显示当前有效值，修改后保存</td>
 </tr>
 <tr>
 <td>默认与范围</td>
@@ -935,85 +951,85 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <p>本地、实验和远端任务使用同一并发上限，但各自绑定独立标签页。图中表示同一会话已有任务，或默认 4 个运行容量已全部占用；仅有另一会话运行时，不应拒绝新任务。本会话绑定页面若正在手动导航，也暂时拒绝本会话新运行；其他页面仍可接纳任务。</p>
 <figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-busy.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-busy.svg" alt="场景一：同会话运行中或并发容量已满"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
 <p><a href="./diagrams/runtime/07-busy.html">打开顺序图：场景一：同会话运行中或并发容量已满</a></p>
-<p>本轮返回忙，不排队、不自动重试。等待输入时不占运行容量，保留所属标签页与快照；下一轮重新检查。不同会话的任务仍可同时运行在各自页面，切换当前展示页面不影响执行目标。</p>
+<p>本轮向服务端 Agent 返回忙，由 Console 展示暂不可执行；运维本地调试调用在调试桌面显示同样原因。不排队、不自动重试。等待输入时不占运行容量，保留所属标签页与快照；下一轮重新检查。不同会话的任务仍可同时运行在各自页面，切换当前展示页面不影响执行目标。</p>
 <h3>场景二：执行中 WebSocket 断线</h3>
 <p>客户端进程仍在运行。图中任务先执行完成，连接随后恢复；退避重连与执行可以并行。</p>
 <figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-disconnect.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-disconnect.svg" alt="场景二：执行中 WebSocket 断线"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
 <p><a href="./diagrams/runtime/07-disconnect.html">打开顺序图：场景二：执行中 WebSocket 断线</a></p>
-<p>当前任务继续，结果与快照先保存本地。恢复连接后按原调用 ID 补传；确认之前保留，不重新执行。</p>
+<p>当前任务继续，结果与快照先保存本地。恢复连接后按原调用 ID 向服务端 Agent 补传，由 Console 更新任务状态与结果；确认之前保留，不重新执行。本机基础入口显示连接状态，详细交付记录仅在运维调试入口查看。</p>
 <h3>场景三：重启发现已完成、未确认的结果</h3>
 <p>上次任务已完成并持久化结果，但服务端尚未确认。</p>
 <figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-restart-complete.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-restart-complete.svg" alt="场景三：重启发现已完成、未确认的结果"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
 <p><a href="./diagrams/runtime/07-restart-complete.html">打开顺序图：场景三：重启发现已完成、未确认的结果</a></p>
-<p>只恢复结果交付，不装配或重跑任务。已有记录继续保留。</p>
+<p>只向服务端 Agent 恢复结果交付，由 Console 展示完成结果，不装配或重跑任务。已有记录继续保留供运维排查。</p>
 <h3>场景四：重启发现未完成任务</h3>
 <p>客户端此前强退或崩溃，磁盘记录中任务未完成。</p>
 <figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-restart-incomplete.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-restart-incomplete.svg" alt="场景四：重启发现未完成任务"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
 <p><a href="./diagrams/runtime/07-restart-incomplete.html">打开顺序图：场景四：重启发现未完成任务</a></p>
-<p>回报“执行中断、结果未知”，不续跑、不自动重试，已有记录保留，由服务端决定后续处理。</p>
-<p>新增运维设计将 LangGraph checkpoint 持久化到客户端 SQLite，供重启后按 thread 导出排查。它保留每个 run 的图状态证据，不改变本场景“不自动续跑”的约定；用户继续会话仍创建新 run。当前实现已将原生 LangGraph checkpoint 保存到本地 SQLite，每个 run 使用独立 graphThreadId，保留根图与子图 namespace；诊断导出、上传和服务端接收仍待实现，具体边界见第 09 章。</p>
+<p>向服务端 Agent 回报“执行中断、结果未知”，Console 向用户保留该含义；不续跑、不自动重试，已有记录留给运维排查，由服务端 Agent 决定后续处理。</p>
+<p>新增运维设计将 LangGraph checkpoint 持久化到客户端 SQLite，供重启后按 thread 导出排查。它保留每个 run 的图状态证据，不改变本场景“不自动续跑”的约定；线上用户经 Console 发起后续业务、或运维继续调试会话时，均创建新 run。当前实现已将原生 LangGraph checkpoint 保存到本地 SQLite，每个 run 使用独立 graphThreadId，保留根图与子图 namespace；诊断导出、上传和服务端接收仍待实现，具体边界见第 09 章。</p>
 <h3>场景五：服务端按调用 ID 取消</h3>
 <p>远端任务正在执行，客户端收到取消请求。</p>
 <figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-cancel.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-cancel.svg" alt="场景五：服务端按调用 ID 取消"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
 <p><a href="./diagrams/runtime/07-cancel.html">打开顺序图：场景五：服务端按调用 ID 取消</a></p>
-<p>只停止该调用所属 run 的后续步骤并排空其已启动操作，保存并回传取消结果；已完成操作不回滚，其他 run 继续执行。所属页面保留供查看，客户端远端会话保持只读。</p>
+<p>Console 上的取消请求经服务端 Agent 按调用 ID 下发。客户端只停止该调用所属 run 的后续步骤并排空其已启动操作，保存并向服务端 Agent 回传取消结果，Console 据此更新状态；已完成操作不回滚，其他 run 继续执行。所属页面保留供运维查看，客户端远端调试会话保持只读。</p>
 <h3>场景六：本轮执行超时</h3>
 <p>每轮使用统一、可配置的客户端兜底超时。图中展示远端任务的结果交付。</p>
 <figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-timeout.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-timeout.svg" alt="场景六：本轮执行超时"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
 <p><a href="./diagrams/runtime/07-timeout.html">打开顺序图：场景六：本轮执行超时</a></p>
-<p>只停止超时 run 的后续步骤，记录并回传“执行超时”；本地会话展示相同终止原因。其他 run 继续执行，所属页面保留；已完成操作不回滚，不自动重试。</p>
+<p>只停止超时 run 的后续步骤，记录并向服务端 Agent 回传“执行超时”，Console 展示终止原因；运维本地调试会话展示相同原因。其他 run 继续执行，所属页面保留；已完成操作不回滚，不自动重试。</p>
 <h3>场景七：需要人工登录或验证</h3>
 <p>图中为远端任务：Chrome 操作触发需要人处理的登录或验证。</p>
 <figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-login.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-login.svg" alt="场景七：需要人工登录或验证"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
 <p><a href="./diagrams/runtime/07-login.html">打开顺序图：场景七：需要人工登录或验证</a></p>
-<p>本次任务直接失败，客户端提示原因。用户在专用 Chrome 处理后发起新任务；远端任务由服务端重新调用，不暂停恢复原任务。</p>
-<p>执行记录保存调用 ID、状态、起止时间与错误；快照保存实际装配与运行条件，不含密钥和 Token。本轮可观测范围是这些记录与客户端过程展示，不新增监控平台。通信恢复不重复启动任务，但不承诺外部 Chrome 操作的副作用恰好发生一次。</p>
+<p>本次任务直接失败并向服务端 Agent 回传原因，Console 提示用户完成必要的本机登录或验证；基础维护入口可提供所需指引，运维调试入口保留详细证据。用户在专用 Chrome 处理后，经 Console 重新发起业务，由服务端 Agent 下发新任务，不暂停恢复原任务。</p>
+<p>执行记录保存调用 ID、状态、起止时间与错误；快照保存实际装配与运行条件，不含密钥和 Token。本轮可观测范围是这些记录与运维调试桌面的过程展示，不新增监控平台。通信恢复不重复启动任务，但不承诺外部 Chrome 操作的副作用恰好发生一次。</p>
 <h2 id="07-execution-服务端配合">服务端配合</h2>
 <p>为支持客户端接收任务并交付结果，服务端需要：</p>
 <ul>
-<li>通过 WebSocket 发送调用、上下文和按调用 ID 发起的取消请求；后续调度由 LangGraph 决定。</li>
-<li>接收任务状态、最终结果、运行快照，并确认收到。</li>
+<li>用户在 Console 发起业务或取消请求，由服务端 Agent 通过 WebSocket 发送任务调用、上下文和按调用 ID 发起的取消请求；后续调度由服务端 LangGraph 决定。</li>
+<li>服务端 Agent 接收任务状态、最终结果、运行快照，并确认收到；Console 向线上用户呈现任务级状态、失败原因和结果，不以客户端调试桌面承接业务操作。</li>
 <li>收到“忙”或“执行中断、结果未知”后决定后续处理；客户端不自动重跑。</li>
 <li>按第 09 章提供独立的诊断接收与查询能力；诊断包回执与任务结果确认分别处理，收到 checkpoint 不触发任务恢复。</li>
 </ul>
 <footer><span class="footer-label">客户端 MVP 设计 · 2026-10-20</span><a href="#08-frontend">下一章：前端现状与缺口</a></footer></article><article id="08-frontend" data-file="08-前端现状与缺口.md" hidden><h1>08 · 前端现状与缺口</h1>
 <blockquote>
-<p>串讲重点：围绕客户端页面和用户操作，说明界面、交互与执行能力的完成情况，最后列出所需的服务端配合。</p>
+<p>串讲重点：线上用户在服务端 Console 操作，客户端后台执行服务端 Agent 下发的任务。本章区分已有运维调试桌面与待完成的线上基础状态／维护界面，说明各自完成情况及服务端接入缺口。</p>
 </blockquote>
 <h2 id="08-frontend-US">US</h2>
 <ol>
 <li>作为串讲参与者，我能结合页面理解完整业务流程，并知道各项能力的完成情况。</li>
-<li>作为使用者，我能知道资源来自本地还是官方、使用哪个版本，以及任务执行和结果交付到了哪一步。</li>
-<li>作为运维人员，我在 Skill、Agent 页面完成编辑、实验与发布。</li>
+<li>作为线上用户，我在 Console 发起业务、查看任务状态与结果；客户端日常后台运行，本机只需提供连接等基础状态与必要维护入口。</li>
+<li>作为运维人员，我在调试桌面查看资源来源、版本、执行与交付详情，并在 Skill、Agent 页面完成编辑、实验与发布。</li>
 </ol>
 <h2 id="08-frontend-简要设计">简要设计</h2>
-<p>前端由左侧导航、中央业务页面与右侧工作台组成。会话承载执行与交互，Agent 页面管理装配，Skill 页面管理文件包与版本，工作台展示浏览器和执行过程。视觉采用<strong>暖灰底色、绿色强调、细边框、轻量圆角，以及 Geist / MiSans 字体</strong>。</p>
-<p>本章工作区截图保留历史 macOS 桌面包实拍，右侧为旧 Agent CEF 模式；当前 Agent 使用外部 Chrome，内嵌 CEF 改为运维手动浏览器，两者独立；后面的资源管理截图仍为前期 Web 页面与演示数据。下表依据当前本地 LangGraph 客户端实现区分已具备能力与剩余接入。</p>
-<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/00-workspace.jpg" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/00-workspace.jpg" alt="打包客户端：左侧会话、中央执行结果与右侧内置浏览器"></a><figcaption>历史测试记录（旧 Agent CEF 模式）：本地测试模型驱动真实工具调用，Playwright 在内置浏览器的测试页面填入 <code>abcd</code>，执行结果与页面同屏展示。</figcaption></figure>
+<p>现有前端是运维调试桌面，由左侧导航、中央调试页面与右侧工作台组成。会话承载本地实验与调试交互，Agent 页面管理装配，Skill 页面管理文件包与版本，工作台展示浏览器和执行过程。它不作为线上用户入口。线上业务入口在服务端 Console；客户端后台接收服务端 Agent 的任务调用，面向线上用户的本机界面仅提供连接等基础状态与必要维护入口，这部分仍待实现。视觉采用<strong>暖灰底色、绿色强调、细边框、轻量圆角，以及 Geist / MiSans 字体</strong>。</p>
+<p>本章工作区截图保留历史 macOS 运维调试桌面实拍，右侧为旧 Agent CEF 模式；当前 Agent 使用外部 Chrome，内嵌 CEF 改为运维手动浏览器，两者独立；后面的资源管理截图仍为前期 Web 页面与演示数据。下表依据当前本地 LangGraph 客户端实现区分已具备能力与剩余接入。</p>
+<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/00-workspace.jpg" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/00-workspace.jpg" alt="历史运维调试桌面：左侧会话、中央执行结果与右侧内置浏览器"></a><figcaption>历史调试测试记录（不是线上用户入口，旧 Agent CEF 模式）：本地测试模型驱动真实工具调用，Playwright 在内置浏览器的测试页面填入 <code>abcd</code>，执行结果与页面同屏展示。</figcaption></figure>
 <h2 id="08-frontend-客户端">客户端</h2>
-<p>前端目标围绕四组业务流程组织：</p>
+<p>已有及计划中的运维调试桌面围绕四组流程组织；线上用户的业务发起、取消和结果查看由 Console 承接：</p>
 <ol>
 <li><strong>资源身份与发布</strong>：Skill、Agent 页面区分本地与官方资源，管理版本、只读配置、草稿实验、运维上传和手填标签发布。</li>
 <li><strong>同步与开始运行</strong>：在新会话入口展示版本核对、缺失物料下载和工具检查；准备失败说明原因，准备完成固定快照。</li>
-<li><strong>执行与结果交付</strong>：按会话分别展示运行状态、执行过程和停止入口；工作台切换对应会话的 Chrome 状态，通过「显示 Chrome」查看真实页面，切换不改变后台运行目标。不同会话可并发，同会话运行中、其页面正在手动导航或总容量已满时显示忙；服务端会话只读，执行记录呈现快照、结果待确认与重启中断状态。</li>
+<li><strong>执行与结果交付</strong>：仅供运维按会话分别展示运行状态、执行过程和停止入口；工作台切换对应会话的 Chrome 状态，通过「显示 Chrome」查看真实页面，切换不改变后台运行目标。不同会话可并发，同会话运行中、其页面正在手动导航或总容量已满时显示忙；服务端会话只读，执行记录呈现快照、结果待确认与重启中断状态。</li>
 <li><strong>故障诊断上传</strong>：从执行记录选择指定 thread，查看 checkpoint 与材料清单，提交后以服务端持久保存的回执确认接收。</li>
 </ol>
-<p>「设置 → 偏好设置」提供「并发任务上限」，默认 4，可保存 1～64 的整数；保存后立即用于新任务受理，下调不取消现有任务，重启后保留。读取失败提供重试，保存失败保留输入与原有效值。Web 演示只在内存中保存。设置中的桌面更新入口计划展示检查、下载、待安装和失败状态，尚未实现。</p>
+<p>运维调试桌面的「设置 → 偏好设置」提供「并发任务上限」，默认 4，可保存 1～64 的整数；保存后立即用于新任务受理，下调不取消现有任务，重启后保留。读取失败提供重试，保存失败保留输入与原有效值。Web 演示只在内存中保存。线上用户基础状态／维护入口中的桌面更新计划展示检查、下载、待安装和失败状态，保留用户手动确认，尚未实现；处理连接、更新和必要验证不要求进入完整调试工作台。</p>
 <h3>完成情况</h3>
 <table>
 <thead>
 <tr>
 <th>对应章节</th>
-<th>已具备的界面能力</th>
+<th>已具备的运维调试／维护界面能力</th>
 <th>尚未完成的界面能力</th>
 <th>业务接入边界</th>
 </tr>
 </thead>
 <tbody><tr>
 <td>00 总体</td>
-<td>导航、会话、工作台</td>
-<td>登录身份、运维权限、连接与重连状态</td>
-<td>现有 Token、权限和 WebSocket</td>
+<td>运维调试导航、会话、工作台</td>
+<td>线上基础状态／维护界面、登录身份、运维权限、连接与重连状态</td>
+<td>现有 Token、权限和 WebSocket；Console 承接线上业务入口</td>
 </tr>
 <tr>
 <td>01 Skill</td>
@@ -1042,20 +1058,20 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <tr>
 <td>05 桌面更新</td>
 <td>当前没有更新入口</td>
-<td>当前版本、检查、说明、下载进度、待安装、空闲时手动安装与错误提示</td>
+<td>基础状态／维护入口中的当前版本、检查、说明、下载进度、待安装、空闲时手动安装与错误提示</td>
 <td>整包更新、验签、安装与任务互斥</td>
 </tr>
 <tr>
 <td>06 同步装配</td>
-<td>准备/失败状态、本机官方缓存身份、运行快照查看；已有会话沿用原装配</td>
-<td>远端版本核对、缺包下载和版本轨迹</td>
+<td>调试会话准备/失败状态、本机官方缓存身份、运行快照查看；已有会话沿用原装配</td>
+<td>后台任务的远端版本核对、缺包下载和运维版本轨迹</td>
 <td>远端清单与下载；本地完整包捕获、缓存内容摘要校验、快照固定与篡改检查已接入</td>
 </tr>
 <tr>
 <td>07 执行恢复</td>
-<td>流式对话、真实工具过程、按会话运行状态与停止、独立浏览器页面及切换；不同会话默认最多 4 轮并发，偏好设置支持将上限保存为 1～64 并立即用于新任务，同会话运行中、其页面手动导航中或容量满时拒绝；超时/中断提示，执行记录含 run/thread ID、起止时间、结果/错误、运行快照，可继续原会话</td>
-<td>远端会话来源及只读流程、结果待确认/已交付状态</td>
-<td>WebSocket 任务与取消、结果确认与补传；本地记录/会话持久化、兜底超时、重启标记中断且不自动重跑已接入</td>
+<td>运维调试流式对话、真实工具过程、按会话运行状态与停止、独立浏览器页面及切换；不同会话默认最多 4 轮并发，偏好设置支持将上限保存为 1～64 并立即用于新任务，同会话运行中、其页面手动导航中或容量满时拒绝；超时/中断提示，执行记录含 run/thread ID、起止时间、结果/错误、运行快照，可继续原会话</td>
+<td>运维远端会话来源及只读流程、结果待确认/已交付状态；线上任务状态由 Console 展示</td>
+<td>服务端 Agent 的 WebSocket 任务与取消、结果确认与补传；本地记录/会话持久化、兜底超时、重启标记中断且不自动重跑已接入</td>
 </tr>
 <tr>
 <td><a href="#09-operations">09 运维诊断</a></td>
@@ -1070,18 +1086,18 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <td>Node.js 配置只存凭据引用；macOS Keychain 已验证，Windows Credential Manager 已接入但待实机验收；本期不依赖服务端配置下发</td>
 </tr>
 </tbody></table>
-<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/04-agent.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/04-agent.png" alt="现有 Agent 页面：配置、能力选择与系统提示词"></a><figcaption>图为前期 Agent 页面。当前本地实现已支持从 Agent 开始新会话，以及从 Skill 页面选择 Agent 实验完整本地草稿；官方发布流程仍待接入。</figcaption></figure>
-<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/01-skill-list.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/01-skill-list.png" alt="Skill 列表：已实现的来源筛选与本地管理"></a><figcaption>本次 Web 界面实拍。Skill 列表和包内文件管理已实现；图片中的数据为演示内容。</figcaption></figure>
+<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/04-agent.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/04-agent.png" alt="现有 Agent 页面：配置、能力选择与系统提示词"></a><figcaption>图为前期运维调试 Agent 页面。当前本地实现已支持从 Agent 开始新会话，以及从 Skill 页面选择 Agent 实验完整本地草稿；官方发布流程仍待接入。</figcaption></figure>
+<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/01-skill-list.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/01-skill-list.png" alt="Skill 列表：已实现的来源筛选与本地管理"></a><figcaption>运维调试 Web 界面实拍。Skill 列表和包内文件管理已实现；图片中的数据为演示内容。</figcaption></figure>
 <p>Skill 页面见 <a href="#01-skill">01 SKILL</a>：已安装 <code>@beui-pro/file-manager-workspace</code> 并接入真实文件内容保存。浏览器使用 IndexedDB；桌面通过 JavaScript runtime 保存到 <code>.omnimind-ops/skills</code>。文件上传与服务端草稿上传、正式发布是三个不同动作，后两项尚未接入。</p>
 <p>桌面 Skill 读取和 Agent 可选清单使用同一目录。<code>assembly.ts</code> 已在会话开始时捕获完整包、固定装配与内容身份；<code>graphs/browser-agent.ts</code> 通过只读 <code>FilesystemBackend</code> 与 <code>skills</code> 挂载所选快照，支持按需读取入口和引用文件。现有会话继续使用原快照，包缺失、被修改或 MCP 工具定义变化时明确失败，不能静默换成新版本。实际调用链见<a href="../skill-storage-and-loading.md">Skill 存储与运行加载</a>。</p>
 <p>完成情况与范围：</p>
 <ul>
 <li><strong>审批不属于本期 MVP 流程。</strong> 真实本地运行不经过操作审批；旧截图和演示适配器中的审批内容不代表桌面执行流程，正式发布也无审核环节。</li>
-<li><strong>本地草稿实验已完成。</strong> 先保存当前编辑，再选择 Agent 新建实验会话；运行时固定完整草稿，不修改模板 Agent 或已有会话。</li>
+<li><strong>运维本地草稿实验已完成。</strong> 先保存当前编辑，再选择 Agent 新建实验会话；运行时固定完整草稿，不修改模板 Agent 或已有会话。</li>
 <li><strong>Provider 首版已接入。</strong> 设置页支持多个 OpenAI 兼容接入、模型与可选 Key，普通配置只存系统凭据引用；全局默认值与会话固定选择已接入。手动测试对已保存模型发送固定最小请求，15 秒总超时且支持取消，不读取会话或执行工具，保存配置不自动测试。Windows 凭据实机验收待完成，迁移与旧会话边界见第 11 章。</li>
-<li><strong>本地多会话并发已接入。</strong> 每个 thread 固定浏览器页面；切换工作台不改变运行目标，停止仅作用于所选 run。真实 CDP 回归已覆盖一个页面导航阻塞时另一任务与脚本完成、独立取消、共享登录态及下一轮复用原页面；Agent 现在使用外部 Chrome，原生 CEF 只保留运维手动页；运维导航、地址历史、任务运行与 Chrome 聚焦的独立性已有回归覆盖。历史单会话截图不作为这些并发行为的验证依据。</li>
+<li><strong>运维本地多会话并发已接入。</strong> 每个 thread 固定浏览器页面；切换工作台不改变运行目标，停止仅作用于所选 run。真实 CDP 回归已覆盖一个页面导航阻塞时另一任务与脚本完成、独立取消、共享登录态及下一轮复用原页面；Agent 现在使用外部 Chrome，原生 CEF 只保留运维手动页；运维导航、地址历史、任务运行与 Chrome 聚焦的独立性已有回归覆盖。历史单会话截图不作为这些并发行为的验证依据。</li>
 <li><strong>本地会话持久化不等于 checkpoint 持久化。</strong> <code>.sessions</code> 保存消息和装配快照，<code>.records</code> 保存运行证据；图状态已由 execution 使用原生 SQLite saver 单独保存，诊断导出与上传仍待实现，见第 09 章。</li>
-<li><strong>服务端接入与桌面更新仍未完成。</strong> 登录权限、官方同步/发布、WebSocket 任务与结果交付不能以本地链路通过作为完成依据。</li>
+<li><strong>线上基础界面、服务端接入与桌面更新仍未完成。</strong> 线上基础状态／维护界面、登录权限、官方同步/发布、WebSocket 任务与结果交付不能以本地调试链路通过作为完成依据；也不能把现有完整工作台直接交给线上用户作为业务入口。</li>
 </ul>
 <details>
 <summary>查看前端源证据</summary><ul>
@@ -1096,38 +1112,39 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <li>视觉依据：<a href="../../web/src/index.css">index.css</a> 第 13–14、57–92 行；<a href="../../web/src/components/premium/docs-pages/docs-article.css">文档阅读样式</a> 第 20–25、41–83 行。</li>
 </ul>
 </details><h2 id="08-frontend-详细设计">详细设计</h2>
-<p>前端状态按运行模型呈现。下面两种场景展示用户在客户端观察到的开始、运行和交付；各模块的其他失败情况见对应章节顺序图。</p>
-<h3>正常开始：准备完成后进入会话</h3>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/00-manual.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/00-manual.svg" alt="用户发起会话的运行模型"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
-<p><a href="./diagrams/runtime/00-manual.html">打开顺序图：用户发起会话的运行模型</a></p>
-<p>界面先展示准备状态，准备完成后展示执行过程，结束后展示结果并允许下一轮输入。准备或工具检查失败时停在失败状态，按同步与 builtinTool 章节的运行模型处理。</p>
+<p>前端状态按入口区分：Console 展示线上任务状态与结果，本机基础界面展示连接等状态，运维调试桌面展示准备、逐条过程和交付证据。下面的本地手动场景仅用于调试，线上正常调用见 <a href="#00-overview">00 章服务端 Agent 任务调用模型</a>；各模块的其他失败情况见对应章节顺序图。</p>
+<h3>运维调试开始：准备完成后进入本地会话</h3>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/00-manual.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/00-manual.svg" alt="运维手动调试会话的运行模型"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
+<p><a href="./diagrams/runtime/00-manual.html">打开顺序图：运维手动调试会话的运行模型</a></p>
+<p>运维调试桌面先展示准备状态，准备完成后展示执行过程，结束后展示结果并允许下一轮输入。线上用户始终在 Console 操作，由服务端 Agent 调用后台客户端。准备或工具检查失败时停在失败状态，按同步与 builtinTool 章节的运行模型处理。</p>
 <h3>执行中断线：区分执行结果与交付状态</h3>
 <figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/07-disconnect.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/07-disconnect.svg" alt="断线继续执行与结果补传"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
 <p><a href="./diagrams/runtime/07-disconnect.html">打开顺序图：断线继续执行与结果补传</a></p>
-<p>界面同时表达连接状态与任务状态：连接断开时任务仍可运行，任务结束后可处于“结果待确认”，确认收到后转为“已交付”。连接恢复本身不触发重新执行。</p>
+<p>本机基础界面表达连接状态；任务连接断开时仍可后台运行，任务结束后可处于“结果待确认”，确认收到后转为“已交付”。客户端将状态与结果交给服务端 Agent，Console 更新线上用户可见的任务状态和结果；运维调试桌面可查看本地详细记录。连接恢复本身不触发重新执行。</p>
 <h2 id="08-frontend-服务端配合">服务端配合</h2>
-<p>客户端页面与业务接入依赖以下服务端能力：</p>
+<p>线上 Console 与客户端各自界面的业务接入依赖以下服务端能力：</p>
 <ul>
 <li>提供已有登录身份与运维权限，客户端据此展示写入入口，服务端继续执行权限校验。</li>
 <li>提供官方草稿修订、发布版本、版本清单与物料下载；Skill 发布联动受影响 Agent。</li>
-<li>通过 WebSocket 调用与取消任务，接收状态、结果、快照并确认收到。</li>
+<li>Console 承接线上业务发起、任务状态与结果查看及取消请求，由服务端 Agent 通过 WebSocket 以任务调用或取消客户端 Agent，接收状态、结果、快照并确认收到。</li>
 <li>提供桌面更新清单和整包下载。</li>
 <li>提供诊断上传身份与权限校验、指定 thread 材料接收、持久保存回执和运维只读查看；不因接收 checkpoint 启动原任务。</li>
 </ul>
 <footer><span class="footer-label">客户端 MVP 设计 · 2026-10-20</span><a href="#09-operations">下一章：运维与诊断上传</a></footer></article><article id="09-operations" data-file="09-运维与诊断上传.md" hidden><h1>09 · 运维与诊断上传：把指定 thread 交给服务端排查</h1>
 <blockquote>
-<p>串讲重点：客户端出问题后，用户选择一个 thread，将 SQLite 中已落盘的 checkpoint、执行记录和运行快照导出为诊断包；服务端校验、保存并返回接收回执，运维据此排查。</p>
+<p>串讲重点：线上用户在服务端 Console 使用业务，服务端 Agent 以任务调用后台客户端。故障排查时，运维通过客户端诊断入口选择 thread，将 SQLite 中已落盘的 checkpoint、执行记录和运行快照导出为诊断包；经有权用户知情确认后上传，服务端校验、保存并返回接收回执。</p>
 </blockquote>
 <p><strong>本章的 SQLite checkpointer 已接入；诊断导出、上传接口和诊断页面仍未实现。</strong> 文档阅读页的「本章评论」用于串讲时记录意见，不属于客户端产品的会话功能。</p>
 <h2 id="09-operations-US">US</h2>
 <ol>
-<li>作为用户，我能选择出问题的 thread，说明现象，预览将要上传的内容后提交，不必上传整台客户端的数据。</li>
-<li>作为用户，客户端重启后仍能取得已落盘的 checkpoint；主界面打不开时也有独立的诊断导出入口。</li>
-<li>作为用户，我能区分「正在上传」「接收待确认」「服务端已接收」和「上传失败」，断网后重试不会重复生成工单材料。</li>
+<li>作为运维人员，我能在客户端诊断入口选择出问题的 thread，说明现象并协助预览上传材料；有权用户知情确认后提交，不必上传整台客户端的数据。</li>
+<li>作为有权用户或运维人员，客户端重启后我仍能取得已落盘的 checkpoint；主调试桌面打不开时也有独立的诊断导出入口。</li>
+<li>作为提交诊断的有权用户或运维人员，我能区分「正在上传」「接收待确认」「服务端已接收」和「上传失败」，断网后重试不会重复生成工单材料。</li>
 <li>作为运维人员，我能在服务端按诊断编号找到来源 thread、各轮运行、checkpoint 和故障位置，看到材料缺失与脱敏说明。</li>
 <li>作为运维人员，查看故障材料不会启动模型、MCP、浏览器或恢复原任务；浏览器操作结果不确定时保留“结果未知”。</li>
 </ol>
 <h2 id="09-operations-简要设计">简要设计</h2>
+<p>诊断属于故障排查流程，不是线上用户的日常操作入口。线上客户端通常作为后台进程运行，只展示连接状态等基础信息；完整会话、执行记录和逐条工具过程在运维调试桌面查看。普通用户仍可提交自己有权访问的 thread，并在上传前预览、选择材料和明确同意。</p>
 <p><strong>checkpoint 固定存放在客户端本地 SQLite。</strong> SQLite 承担客户端图状态的持久化；外部业务服务端的存储实现不属于本仓范围。诊断上传走 HTTPS，与 WebSocket 上的任务调用、取消和最终结果回传分开。</p>
 <table>
 <thead>
@@ -1138,11 +1155,11 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </thead>
 <tbody><tr>
 <td>业务 thread</td>
-<td>用户看到的一次会话，包含多个 run；上传范围以这个 thread 为边界</td>
+<td>客户端归档任务或运维调试会话的身份，包含多个 run；不等同于 Console 会话，上传范围以这个 thread 为边界</td>
 </tr>
 <tr>
 <td>run</td>
-<td>用户明确发起的一轮执行；失败、取消或重启中断后不自动重跑</td>
+<td>一轮客户端执行，由服务端任务调用或运维显式调试发起；失败、取消或重启中断后不自动重跑</td>
 </tr>
 <tr>
 <td>SQLite checkpoint</td>
@@ -1165,14 +1182,14 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <p>当前 <a href="../../desktop/runtime/main.mjs">main.mjs</a> 打开本地 SQLite，<a href="../../desktop/runtime/execution/index.ts">execution</a> 统一管理准入、图驱动、取消、checkpoint 与收尾。<a href="../../desktop/runtime/execution/records.ts">records.ts</a> 保存通用 <code>.records</code>，聊天 adapter 通过 <code>details</code> 保存消息展示与工具证据；<a href="../../desktop/runtime/chat/history.mjs">history.mjs</a> 保存 <code>.sessions</code> 的消息、固定快照和最后结算身份。每个 run 使用独立 graphThreadId；继续会话创建新图执行，不 resume 旧任务。</p>
 <p>SQLite 已保留已提交 checkpoint，但诊断导出与上传入口仍待实现，不能将本地重开验证视为上传能力完成。旧版历史只导出已有记录，并明确标记 <code>checkpoint-missing</code>，不从消息推造 checkpoint。<a href="https://docs.langchain.com/oss/javascript/langgraph/persistence">LangGraph 官方持久化说明</a>也区分了内存 saver 与可跨重启保存的持久化 saver。</p>
 <h2 id="09-operations-客户端">客户端</h2>
-<h3>从执行记录上传</h3>
-<p>在执行记录详情增加「上传诊断」入口，也可在运维页按 thread ID 搜索。页面展示会话标题、thread ID、关联 run、状态、最后更新时间、checkpoint 可用情况、材料大小，以及问题描述输入框。上传前明确显示接收服务和当前账号。</p>
+<h3>从运维诊断入口上传</h3>
+<p>在运维调试桌面的执行记录详情增加「上传诊断」入口，也可在独立诊断入口按 thread ID 搜索。页面展示会话标题、thread ID、关联 run、状态、最后更新时间、checkpoint 可用情况、材料大小，以及问题描述输入框。上传前明确显示接收服务和当前账号。诊断入口按授权开放，不要求线上用户日常进入完整调试桌面。</p>
 <p>用户查看材料清单与脱敏摘要后提交。完整 thread 的已保存消息、工具过程、运行快照与 checkpoint 是主要材料；截图、脚本和其他产物作为明确列出的可选附件。用户取消准备或上传，不取消原任务，也不删除原会话。</p>
 <p>客户端已有 Playwright 脚本结束时保存本轮绑定的外部 Chrome 页面视口截图的能力，上传复用该 run 关联的已有产物。强制终止、超时或浏览器崩溃可能没有截图，此时明确列为缺失；不自动打开网站补拍，也不将稍后拍摄的页面冒充故障时现场。截图的消息展示与诊断上传仍按各自完成情况实现。</p>
-<p>首版只导出已结束或已排空写入的 thread。目标 thread 正在准备、执行或停止时，提示等待，或由用户主动停止后再导出；不为了上传偷偷停止任务。其他 thread 可以继续使用客户端。</p>
+<p>首版只导出已结束或已排空写入的 thread。目标 thread 正在准备、执行或停止时，提示等待，或由用户主动停止后再导出；不为了上传偷偷停止任务。其他 thread 的后台任务可以继续执行。</p>
 <p>上传状态为：<code>准备材料 → 待用户确认 → 上传中 → 接收待确认 → 已接收／失败</code>。服务端回执带材料不完整标记时，显示「已接收，材料不完整」及具体原因，不显示“完整恢复成功”。</p>
-<h3>主界面无法打开</h3>
-<p>提供不依赖主 UI、浏览器和 Agent 启动的诊断导出入口，可列出本机 thread 并按 ID 导出。它只读取当前用户有权限的本地数据，不启动任务、不调用模型、不初始化 MCP，也不要求执行记录全部正常才能打开。</p>
+<h3>主调试桌面无法打开</h3>
+<p>提供不依赖主调试桌面、浏览器和 Agent 启动的诊断导出入口，可列出本机 thread 并按 ID 导出。它只读取当前用户有权限的本地数据，不启动任务、不调用模型、不初始化 MCP，也不要求执行记录全部正常才能打开。</p>
 <p>某条记录损坏时，保留原件，继续收集该 thread 的可读材料，将损坏项记入清单。无法可靠确定记录属于所选 thread 时，不将它混入包。SQLite 完全不可读时，仍可导出会话／执行记录及 SQLite 错误类别，标记 checkpoint 缺失；不自动修库或上传整个数据库。</p>
 <p>网络或登录不可用时，先导出本地诊断包。客户端恢复后可选择同一个包上传；运维也可在有权限的服务端接收页上传该包，服务端使用相同的接收校验。导出成功不等于服务端收到。</p>
 <h2 id="09-operations-详细设计">详细设计</h2>
@@ -1182,7 +1199,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <li>当前使用官方 <code>@langchain/langgraph-checkpoint-sqlite</code> 的 <code>SqliteSaver</code>，通过 <code>getTuple</code>／<code>list</code>／<code>put</code>／<code>putWrites</code> 保存和读取 checkpoint 与 pending writes；启动时校验 schema／序列化版本，事务提交成功才记为“已持久化”。SQLite 存储失败须明确反馈，不能静默回退为内存并继续声称可恢复。</li>
 <li>启用 WAL，使用 <code>synchronous=FULL</code>，并为读取与写入设置有界等待；不将 <code>NORMAL</code> 描述为断电后仍保留所有已确认提交。SQLite 将 WAL 合并回主文件的 checkpoint 与 LangGraph checkpoint 是两个不同概念。失败处理保留业务侧已发生操作的“不确定”状态，不因存储错误自动重试模型或工具。数据库升级前保留可恢复副本，失败时不清空旧库。</li>
 <li><strong>按 run 隔离图执行状态，按业务 thread 聚合归档。</strong> 本地保存 <code>threadId → runId → graphThreadId</code> 的映射，每个 run 有独立的图执行标识；根图、子图继续保留各自的 <code>checkpoint_ns</code>。包内记录映射，不假定业务 thread ID 与图 <code>thread_id</code> 永远相同。</li>
-<li>聊天适配器每轮将保存的消息重新交给新图。SQLite 接入已保留这一执行语义，避免直接复用旧图状态再输入全量历史，造成消息重复或挂起任务继续执行。用户继续会话会创建新 run，不对失败 run 调用 <code>resume</code>。</li>
+<li>聊天适配器每轮将保存的消息重新交给新图。SQLite 接入已保留这一执行语义，避免直接复用旧图状态再输入全量历史，造成消息重复或挂起任务继续执行。运维继续本地调试会话会创建新 run，不对失败 run 调用 <code>resume</code>；线上任务按服务端每次显式调用独立执行。</li>
 <li>正常退出前排空已发起的 checkpoint 写入；强退后只承诺已提交部分。checkpoint 未记录到某个工具结果，不代表外部操作没有发生。</li>
 <li>保留策略按 thread／run 管理，不能删除仍被保留 checkpoint 依赖的祖先或增量数据。正在导出的材料在冻结完成前不被清理；超出容量时明确告知，不能无限增长或静默裁剪。</li>
 </ul>
@@ -1287,7 +1304,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <td>接收可读材料，运维看到完整性标记；不根据缺失结果判断操作未执行</td>
 </tr>
 <tr>
-<td>主 UI 启动失败</td>
+<td>主调试桌面启动失败</td>
 <td>独立入口只读导出；无法联网则保存本地包</td>
 <td>后续通过客户端或接收页上传相同包</td>
 </tr>
@@ -1312,7 +1329,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <td>未取得的 checkpoint 明确缺失，不伪造恢复成功</td>
 </tr>
 </tbody></table>
-<p>上传失败不改变原 run 结果，不重试原工具。客户端重启后展示已确认过的待上传包，由用户重试；不会自动扫描并上传其他 thread。暂存包清理与原会话数据清理分开，收到回执后也不自动删除原始会话。</p>
+<p>上传失败不改变原 run 结果，不重试原工具。客户端重启后在诊断入口展示已确认过的待上传包，由有权用户或运维人员重试；不会自动扫描并上传其他 thread。暂存包清理与原会话数据清理分开，收到回执后也不自动删除原始会话。</p>
 <h2 id="09-operations-服务端配合">服务端配合</h2>
 <ul>
 <li>提供鉴权后的诊断上传、幂等查询、只读检索和附件下载；普通用户可提交自己有权查看的 thread，运维查看范围由服务端授权。</li>
@@ -1323,7 +1340,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <p>本章新增的是持久化诊断业务记录，不新增日志平台、span 或指标。上传 ID、状态、稳定错误类别和服务端回执已覆盖首版排查与验收需要；用户消息、checkpoint 内容、工具正文和凭据不写入遥测。若后续增加上传成功率、耗时等监控，另按项目规范确认统计口径。</p>
 <h2 id="09-operations-验收边界">验收边界</h2>
 <ol>
-<li>macOS ARM64 与 Windows x64 均验证 SQLite 落盘、重启可读、异常退出后已提交 checkpoint 保留；原生 SQLite 依赖随正确架构的包交付。</li>
+<li>验证诊断入口由有权用户或运维人员按需使用，主调试桌面不可用时仍可独立导出；线上日常使用不要求进入调试桌面。macOS ARM64 与 Windows x64 均验证 SQLite 落盘、重启可读、异常退出后已提交 checkpoint 保留；原生 SQLite 依赖随正确架构的包交付。</li>
 <li>两个 thread 同时存在时，只导出所选 thread；覆盖多 run、根／子图 namespace、父链、pending writes 与版本匹配。</li>
 <li>正在执行时不能取得半写入快照；停止、超时、崩溃、SQLite 损坏和磁盘写满均有明确结果，未提交部分不冒充已保存。</li>
 <li>覆盖凭据嵌入在消息、工具输出、metadata 与 checkpoint 中的情况；默认无浏览器登录态和其他会话材料。</li>
@@ -1333,10 +1350,11 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </ol>
 <footer><span class="footer-label">客户端 MVP 设计 · 2026-10-20</span><a href="#10-server-api">下一章：服务端 API</a></footer></article><article id="10-server-api" data-file="10-服务端API.md" hidden><h1>10 · 服务端 API：客户端接入所需的最小契约</h1>
 <blockquote>
-<p>串讲重点：服务端提供身份与权限、官方物料、草稿与发布、远端任务通道、桌面更新和诊断接收；每项接口都明确何时才算成功，以及断线后怎样查询或重试。</p>
+<p>串讲重点：线上用户在服务端 Console 发起业务、查看任务状态与结果；服务端 Agent 以任务调用客户端 Agent，客户端作为后台进程执行并回传结果。服务端提供身份与权限、官方物料、草稿与发布、任务通道、桌面更新和诊断接收，明确成功边界及断线后的查询与重试。</p>
 </blockquote>
 <p><strong>本章是拟定的接入契约，相关平台 API 和 WebSocket 通道尚未实现。</strong> 路径名称可适配现有平台网关，输入输出与成功边界保持一致；不据此另建账号体系、审批平台或文件级发布服务。客户端已实现的本地能力见<a href="#08-frontend">第 08 章</a>。</p>
 <h2 id="10-server-api-API分组与边界">API 分组与边界</h2>
+<p>线上客户端只向用户展示连接状态等基础信息；资源编辑、实验、本地会话、逐条过程和 Provider 管理属于运维调试入口。下列客户端职责同时包含后台执行与运维操作，不将完整调试桌面作为线上业务入口；Console 按既有任务状态与最终结果契约展示业务。</p>
 <table>
 <thead>
 <tr>
@@ -1348,22 +1366,22 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <tbody><tr>
 <td>身份与权限</td>
 <td>复用现有登录、Token、组织及设备身份，返回可执行操作</td>
-<td>展示身份与权限，使用当前登录态请求</td>
+<td>维护登录与连接等基础状态，按身份和权限请求</td>
 </tr>
 <tr>
 <td>官方物料</td>
 <td>Agent／Skill 版本清单、确定装配、完整包下载</td>
-<td>校验、按需缓存、固定会话快照</td>
+<td>后台校验、按需缓存、固定运行快照；运维按权限查看</td>
 </tr>
 <tr>
 <td>草稿与发布</td>
 <td>保存完整修订，校验标签，原子发布关联资源</td>
-<td>本地编辑与实验，提交明确修订和手填标签</td>
+<td>运维在调试桌面编辑与实验，提交明确修订和手填标签</td>
 </tr>
 <tr>
 <td>远端任务</td>
-<td>WebSocket 下发调用／取消，持久接收结果并确认</td>
-<td>按会话页面并发执行、过程展示、结果落盘与补传</td>
+<td>服务端 Agent 经 WebSocket 下发调用／取消，持久接收结果并确认，供 Console 展示</td>
+<td>后台并发执行，按 thread 固定浏览器页面，结果落盘与补传；完整过程仅供运维调试</td>
 </tr>
 <tr>
 <td>桌面更新</td>
@@ -1373,16 +1391,16 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <tr>
 <td>故障诊断</td>
 <td>接收指定 thread 的包、回执、只读检索及附件</td>
-<td>从本地 SQLite 导出 checkpoint，预览脱敏材料后上传</td>
+<td>在运维诊断入口从本地 SQLite 导出 checkpoint，经有权用户预览同意后上传</td>
 </tr>
 </tbody></table>
 <p>HTTPS 传输物料、发布请求和诊断包；WebSocket 传输任务控制与结果，不传 Skill 文件包，也不持续上报每条模型输出。Playwright 与外部 Google Chrome 运行在客户端，服务端不远程暴露浏览器 CDP 端口或接收浏览器 profile。</p>
-<p><a href="#11-provider">11 · Provider</a> 的配置由客户端本地维护，仅支持 OpenAI Chat Completions 兼容接口及自定义 base URL，本期不新增平台 Provider 管理、配置下发或 Key 同步 API。Key 可选，有值时使用 Bearer，无值时不发送认证头；Key 存操作系统凭据库，普通配置只保存引用。运行快照与诊断材料均不包含 Key 或原始认证头，Provider／模型选择也不进入 Agent 发布内容 ID。手动连接测试由客户端向选定模型发送固定最小请求，不使用任务通道、不读取会话或执行工具。</p>
+<p><a href="#11-provider">11 · Provider</a> 的配置由运维在客户端本地预配置，线上任务复用本机配置并固定运行快照，仅支持 OpenAI Chat Completions 兼容接口及自定义 base URL，本期不新增平台 Provider 管理、配置下发或 Key 同步 API。Key 可选，有值时使用 Bearer，无值时不发送认证头；Key 存操作系统凭据库，普通配置只保存引用。运行快照与诊断材料均不包含 Key 或原始认证头，Provider／模型选择也不进入 Agent 发布内容 ID。手动连接测试由运维在客户端向选定模型发送固定最小请求，不使用任务通道、不读取会话或执行工具。</p>
 <h2 id="10-server-api-统一契约">统一契约</h2>
 <p>业务 API 使用 HTTPS <code>/api/…</code>，JSON 使用 UTF-8，时间为带时区的 RFC 3339；业务 JSON 请求体、成功响应和 WebSocket 报文携带 <code>schemaVersion: 1</code>，不支持的版本明确拒绝。GET 请求无需 JSON 请求体；二进制上传在 manifest 声明版本，二进制下载与 Tauri 更新清单遵循各自格式，不套 JSON 业务响应。</p>
 <ul>
 <li>复用现有 Bearer Token 或平台既有安全会话机制；服务端从已验证凭据确定用户、组织和权限，不相信请求正文自报的身份。下载 URL 与诊断附件同样需要授权，可使用短时有效的受限下载地址。</li>
-<li>普通用户读取有权使用的官方版本、执行自己的任务并提交自己的诊断；运维人员维护官方草稿和发布。仅在前端隐藏按钮不能代替服务端权限检查。</li>
+<li>普通用户通过服务端 Console 使用有权访问的官方能力、发起自己的任务并查看状态结果，也可知情提交自己有权访问的诊断；运维人员通过调试入口维护官方草稿和发布。仅在前端隐藏按钮不能代替服务端权限检查。</li>
 <li>列表请求使用 <code>cursor</code>、<code>limit</code>，服务端限制最大页长；返回 <code>items</code>、<code>nextCursor</code>。游标包含固定列表修订，列表变化使旧游标失效时明确要求重新读取，不能静默漏项。详情与单次发布不分页。</li>
 <li>创建草稿修订、正式发布等写请求携带 <code>Idempotency-Key</code>。同一鉴权范围、操作和键绑定请求内容：相同内容返回原结果，内容不同返回 <code>409 idempotency-conflict</code>。超时后用同一键重试；不能换键猜测上次是否成功。</li>
 <li>修改草稿头、提交发布时携带读取到的 <code>expectedRevision</code>／<code>expectedContentId</code>；服务端发现基线变化返回冲突，客户端重新展示差异。已经保存的修订、正式包和发布标签不原地覆盖。</li>
@@ -1526,7 +1544,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <p>服务端与客户端均保存为 <code>agents/releases/&lt;agentId&gt;/&lt;contentId&gt;/</code>，人工标签映射位于上一级 <code>tags.json</code>。Agent 文件清单同样列出相对路径、<code>kind</code>、字节数与 SHA-256；下载地址可以分别返回两个文件，也可以返回完整传输包。必须交付原始字节，不能只返回一个 JSON 对象让客户端重新序列化。完整目录、示例、摘要算法与运行模型见 <a href="../agent-version-layout.md">Agent 版本文件布局</a>。这里的包摘要是待接入的正式发布契约，不是当前本地配置文件摘要。</p>
 <p>Skill 清单逐项列出 POSIX 相对 <code>path</code>、<code>kind</code>，文件另有 <code>bytes</code> 与 <code>sha256</code>，空目录也保留。完整包内容摘要严格采用<a href="../skill-version-layout.md">Skill 版本文件布局</a>的规范化算法；传输 ZIP 的 SHA-256 与包 <code>contentId</code> 是两个值，不能混用。服务端提供跨语言摘要用例供客户端对照。</p>
 <p>正式内容保持 <code>skills/releases/&lt;skillId&gt;/&lt;contentId&gt;/</code> 的包内结构；人工标签和上传者等元数据在包外。下载在临时目录完成，拒绝路径穿越、符号链接、重复路径、大小写冲突及超限内容，客户端重算摘要后原子提交缓存。失效 URL 可重新取得，但同一内容 ID 对应的内容不能改变。</p>
-<p>客户端只请求当前装配缺少的包；已缓存相同完整版本可复用。新会话核对版本，已有会话继续使用固定快照。清单、权限、下载或摘要任一失败都停止本次准备，不回退旧版或移除缺失能力后继续执行。</p>
+<p>客户端只请求当前装配缺少的包；已缓存相同完整版本可复用。服务端调用指定官方内容版本，后台准备时核对版本并固定快照；运维已有调试会话继续使用其固定快照。清单、权限、下载或摘要任一失败都停止本次准备，不回退旧版或移除缺失能力后继续执行。</p>
 <h2 id="10-server-api-官方草稿修订">官方草稿修订</h2>
 <table>
 <thead>
@@ -1593,7 +1611,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <p>联动发布先校验和暂存所有完整物料，再一次提交 Skill 正式标签、受影响 Agent 的固定引用、新内容 ID 与人工标签。只有所有版本都已可取得，才对列表公布本次发布；不能先显示 Skill 成功，再补写 Agent。失败保留旧版本及草稿，暂存内容不作为正式版本出现。</p>
 <p>发布请求提交即表示运维确认，不加审批或强制实验门槛。旧标签和历史装配保持不可变；仅修改模型参数不发布 Agent。发布超时使用原幂等键重试获取同一发布结果，不能因重试再生成一轮标签或新发布。</p>
 <h2 id="10-server-api-WebSocket：调用、取消、结果和确认">WebSocket：调用、取消、结果和确认</h2>
-<p>客户端以现有身份连接 <code>WSS /api/clients/connect</code>。握手校验用户、组织及安装身份，连接归属不能由正文任意指定；凭据不放 URL 查询串。首帧协商 <code>schemaVersion</code>、<code>clientInstallationId</code>、桌面版本和支持的 builtinTool ID，服务端确认连接可用后再投递任务。</p>
+<p>后台客户端以现有身份连接 <code>WSS /api/clients/connect</code>。服务端 Agent 根据 Console 业务需要，通过此通道将客户端 Agent 作为任务调用；普通用户无需在本地新建会话或选择模型。握手校验用户、组织及安装身份，连接归属不能由正文任意指定；凭据不放 URL 查询串。首帧协商 <code>schemaVersion</code>、<code>clientInstallationId</code>、桌面版本和支持的 builtinTool ID，服务端确认连接可用后再投递任务。</p>
 <p>每条业务消息包含 <code>schemaVersion</code>、<code>type</code>、<code>messageId</code>、<code>callId</code>（连接级消息除外）与 <code>payload</code>。<code>messageId</code> 标识一次投递，<code>callId</code> 标识一次业务执行；重投可以有新消息 ID，但不能改变调用内容。每个 Agent 的业务 <code>input</code>／<code>result</code> schema 由该 Agent 对应的服务端业务单独定义。</p>
 <table>
 <thead>
@@ -1641,7 +1659,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tbody></table>
 <h3>调用去重与忙时处理</h3>
 <p>客户端在鉴权范围和安装身份内持久记录 <code>callId</code> 与不可变调用内容，<strong>先检查重复，再检查会话状态与并发容量</strong>。重复投递同一调用时，只返回已知受理状态或原结果，不开始第二次模型、MCP 或 Chrome 操作；同 ID 不同内容明确拒绝为 <code>call-conflict</code>。</p>
-<p>新调用只创建一个独立的客户端 thread／run，并绑定自己的 Chrome 页面。本地、实验与远端任务共用有界并发容量，默认最多 4 轮；客户端用户在「设置 → 偏好设置」将上限保存为 1～64 的整数后，立即用于后续受理。下调不取消已受理运行，活动数量低于新上限后才开放容量；偏好保存在本机，不由此接口同步或覆盖。准备和停止排空期间也占用容量；同一 thread 已有运行、其绑定页面正在手动导航或总容量已满时保存并返回 <code>busy</code>，不进入客户端队列。不同 thread 的任务可以同时执行；切换工作台显示页不改变各 run 绑定的目标。服务端如决定重试执行，使用新 <code>callId</code>；重新发送已返回忙的旧 ID 仍得到原拒绝结果。</p>
+<p>新调用只创建一个独立的客户端 thread／run，并绑定自己的 Chrome 页面。本地、实验与远端任务共用有界并发容量，默认最多 4 轮；运维人员在调试桌面的「设置 → 偏好设置」将上限保存为 1～64 的整数后，立即用于后续受理。下调不取消已受理运行，活动数量低于新上限后才开放容量；偏好保存在本机，不由此接口同步或覆盖。准备和停止排空期间也占用容量；同一 thread 已有运行、其绑定页面正在手动导航或总容量已满时保存并返回 <code>busy</code>，不进入客户端队列。不同 thread 的任务可以同时执行；关闭或切换调试桌面显示页不停止后台任务，也不改变各 run 绑定的目标。服务端如决定重试执行，使用新 <code>callId</code>；重新发送已返回忙的旧 ID 仍得到原拒绝结果。</p>
 <p>去重记录不能在服务端仍可能重投时提前清理；清理期限覆盖约定的最大重投窗口，过期调用明确拒绝，不能当成新任务。过期、权限不足、版本不匹配和准备失败均有明确结果，不用“收到消息”代替成功执行。</p>
 <h3>终态、结果补传与取消</h3>
 <p>执行终态区分 <code>completed</code>、<code>failed</code>、<code>cancelled</code>、<code>timed-out</code>、<code>interrupted-unknown</code>；未受理调用另返回 <code>busy</code> 等拒绝类别。终态和结果交付状态分别保存，运行结束先落盘，再发送结果。结果包含实际 Agent／Skill、启用工具／MCP、桌面版本及模型参数，排除凭据。</p>
@@ -1651,7 +1669,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <li>重启发现已完成结果：恢复交付，复用原 <code>resultId</code> 和摘要；不重新装配 Agent。</li>
 <li>重启发现未完成任务：保存并回传 <code>interrupted-unknown</code>，不自动续跑或重试。SQLite checkpoint 仅提供诊断证据，不改变该规则。</li>
 <li>收到取消或到达客户端兜底超时：停止后续步骤，等已发起操作排空后保存终态；取消回执与最终结果分开。任务已结束时返回原结果，不能改写终态。</li>
-<li>遇到人工登录／验证：本轮失败，用户在专用浏览器处理后新发起调用。已执行的外部操作不回滚，也不承诺外部副作用恰好发生一次。</li>
+<li>遇到人工登录／验证：本轮失败并回传，Console 呈现需人工处理；经用户或运维在客户端专用浏览器处理后，由 Console 重新发起业务，服务端 Agent 使用新调用 ID 投递。已执行的外部操作不回滚，也不承诺外部副作用恰好发生一次。</li>
 </ul>
 <p>正常任务通道不发送逐条模型正文、完整工具过程、SQLite 数据库或 checkpoint。需要这些材料时使用第 09 章的显式诊断上传；结果 ACK 与诊断接收回执互不替代。</p>
 <h2 id="10-server-api-桌面更新：静态站点即可">桌面更新：静态站点即可</h2>
@@ -1676,7 +1694,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <p>先上传并验证两个平台产物，再原子更新 <code>latest.json</code>；同版本产物、URL 和签名不变。签名私钥只在受控构建流程中，站点仅分发产物；客户端内置公钥。前端、Tauri、Node、运维 CEF 和 Playwright 等随包运行时一起更新；Agent 使用的外部 Google Chrome 单独安装和更新，不靠 Skill 同步安装浏览器工具。</p>
 <p>无更高版本时客户端保持当前版；下载成功仍需用户确认并重新检查空闲才能安装。本期没有强制更新、静默安装、差分或自动回滚。实际 updater 接入、签名配置及两平台旧版升级验收仍待实施。</p>
 <h2 id="10-server-api-诊断上传、查询与附件">诊断上传、查询与附件</h2>
-<p>以下沿用<a href="#09-operations">第 09 章</a>，不能用另外一套“文件上传成功”响应替代诊断接收回执。</p>
+<p>以下沿用<a href="#09-operations">第 09 章</a>。指定 thread 的材料选择与导出由运维诊断入口承载，有权用户上传前可预览并同意；主调试桌面无法打开时仍可独立导出。它是按需故障流程，不能用另外一套“文件上传成功”响应替代诊断接收回执。</p>
 <table>
 <thead>
 <tr>
@@ -1721,7 +1739,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <p>诊断存储与生产可执行 checkpointer 隔离，查看或下载不触发模型、MCP、Playwright，也不 <code>invoke</code>／<code>stream</code>／<code>resume</code> 原任务。附件权限、保留期限与删除按现有服务端策略执行。</p>
 <h2 id="10-server-api-联调验收与交付边界">联调验收与交付边界</h2>
 <ol>
-<li>用普通用户、运维和越权身份验证清单读取、草稿写入、发布、任务连接及诊断下载；前端隐藏操作不影响服务端权限判断。</li>
+<li>验证线上业务从 Console 发起，经服务端 Agent 调用后台客户端，状态与结果回到 Console；本地只需基础连接状态。用普通用户、运维和越权身份验证清单读取、草稿写入、发布、任务连接及诊断下载；前端隐藏操作不影响服务端权限判断。</li>
 <li>同一完整 Skill 包在两端得到相同内容 ID，目录与原始字节不变；缺包、损坏、过期下载地址及半包均不进入运行。</li>
 <li>覆盖草稿重试、并发发布、标签冲突和 Skill／Agent 联动失败，确认无部分发布；超时后原幂等键得到同一结果。</li>
 <li>覆盖调用重复、同 ID 不同内容、忙时拒绝、取消竞争、丢失结果 ACK、断线和重启；不重复执行，不重复推进服务端后续调度。</li>
@@ -1729,26 +1747,26 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <li>上传真实的指定 thread 诊断包，验证持久接收、回执幂等、权限、材料缺失和附件下载；浏览诊断不产生执行副作用。</li>
 </ol>
 <p>首版使用持久化的修订、发布结果、调用状态、交付确认和诊断回执完成排查，不新增日志平台、span 或指标。后续确需遥测时再确认字段与统计口径；用户正文、checkpoint 和浏览器凭据不作为遥测材料。</p>
-<footer><span class="footer-label">客户端 MVP 设计 · 2026-10-20</span><a href="#11-provider">下一章：Provider</a></footer></article><article id="11-provider" data-file="11-Provider.md" hidden><h1>11 · Provider：本地模型接入与选择</h1>
+<footer><span class="footer-label">客户端 MVP 设计 · 2026-10-20</span><a href="#11-provider">下一章：Provider</a></footer></article><article id="11-provider" data-file="11-Provider.md" hidden><h1>11 · Provider：运维配置本地模型，后台任务固定使用</h1>
 <blockquote>
-<p>串讲重点：用户在客户端维护多个 OpenAI 兼容接入，每个 Provider 配置多个模型；新会话选择确定的模型，凭据留在本机，配置不可用就明确报错。</p>
+<p>串讲重点：运维在客户端调试入口预配置 OpenAI 兼容接入与模型，凭据留在本机。线上用户在服务端 Console 操作，服务端 Agent 以任务调用后台客户端；任务复用本机模型配置并固定运行快照，配置不可用就明确报错。</p>
 </blockquote>
-<p><strong>本章首版已接入：Provider 管理、系统凭据存储、多模型选择与手动连接测试。</strong> Node.js runtime 通过 <code>@langchain/openai</code> 的 <code>ChatOpenAI</code> 使用明确的本地配置；macOS 凭据存储已验证，Windows 实机验收待完成。</p>
+<p><strong>本章本地首版已接入：运维调试入口的 Provider 管理、系统凭据存储、多模型选择与手动连接测试。</strong> Node.js runtime 通过 <code>@langchain/openai</code> 的 <code>ChatOpenAI</code> 使用明确的本地配置；macOS 凭据存储已验证，Windows 实机验收待完成。</p>
 <h2 id="11-provider-US">US</h2>
 <h3>界面设计</h3>
-<p>在客户端设置中提供 Provider 管理入口：列表展示名称、接入地址、鉴权是否已配置和模型数量；详情支持新增、编辑、删除 Provider，手动维护模型列表、设置全局默认模型，并选择一个模型手动测试连接。密钥只显示“已配置／未配置”，提供替换和清除操作。</p>
-<p>新会话入口默认选中全局默认的 Provider＋模型，开始前允许改选；开始后展示本会话的固定选择。测试结果属于设置页面的接入检查，不生成 Agent 会话或浏览器操作记录。本章不使用演示截图代替已完成界面的证据。</p>
+<p>在客户端运维调试桌面的设置中提供 Provider 管理入口：列表展示名称、接入地址、鉴权是否已配置和模型数量；详情支持新增、编辑、删除 Provider，手动维护模型列表、设置全局默认模型，并选择一个模型手动测试连接。密钥只显示“已配置／未配置”，提供替换和清除操作。</p>
+<p>运维新建本地调试会话时，入口默认选中全局默认的 Provider＋模型，开始前允许改选；开始后展示本会话的固定选择。线上任务使用本机预配置的默认组合并固定快照，不要求线上用户逐任务打开客户端选择模型，也不接收远端任务指定其他 Provider、模型或密钥。线上客户端只展示连接状态等基础信息。测试结果属于设置页面的接入检查，不生成 Agent 会话或浏览器操作记录。本章不使用演示截图代替已完成界面的证据。</p>
 <ol>
-<li>作为用户，我能配置多个接入地址，并在每个 Provider 下维护多个实际模型名称。</li>
-<li>作为用户，我能为需要鉴权的服务配置 API Key，也能连接无鉴权服务；密钥保存在本机操作系统凭据库。</li>
-<li>作为用户，我能设置默认模型，在新会话开始前改选，并明确知道本次实际使用哪个 Provider 和模型。</li>
-<li>作为用户，我能手动测试指定模型的接入，看到明确结果；保存配置不会自动发起模型请求。</li>
-<li>作为使用者，我能区分配置、凭据和调用失败；失败不会让客户端自动切换到另一个 Provider 或模型。</li>
+<li>作为运维人员，我能预配置多个接入地址，并在每个 Provider 下维护多个实际模型名称。</li>
+<li>作为运维人员，我能为需要鉴权的服务配置 API Key，也能连接无鉴权服务；密钥保存在本机操作系统凭据库。</li>
+<li>作为运维人员，我能设置线上任务使用的本机默认模型，在新建调试会话时按需改选，并核查实际固定的 Provider 和模型。</li>
+<li>作为运维人员，我能手动测试指定模型的接入，看到明确结果；保存配置不会自动发起模型请求。</li>
+<li>作为线上用户，我能在 Console 获知任务的配置、凭据或调用失败；失败不会让客户端自动切换到另一个 Provider 或模型。</li>
 </ol>
 <h2 id="11-provider-简要设计">简要设计</h2>
-<figure class="diagram"><a class="screenshot-link" href="./diagrams/11-provider.html" target="_blank" rel="noopener" aria-label="打开可缩放关系图"><img src="./assets/11-provider.svg" alt="Provider 本地接入：配置与凭据分开保存，会话调用和手动测试使用明确的模型选择"></a><figcaption>设计关系图 · 点击缩放查看</figcaption></figure>
+<figure class="diagram"><a class="screenshot-link" href="./diagrams/11-provider.html" target="_blank" rel="noopener" aria-label="打开可缩放关系图"><img src="./assets/11-provider.svg" alt="Provider 本地接入：运维预配置，后台任务固定模型快照，凭据留在本机"></a><figcaption>设计关系图 · 点击缩放查看</figcaption></figure>
 <p><a href="./diagrams/11-provider.html">打开可交互关系图</a></p>
-<p>图示为本地 Provider 的设计关系。配置、凭据读取、会话选择和连接测试均在客户端；只有模型请求访问所配地址。手动测试直接使用选定模型，不经过会话快照，也不读取历史内容。</p>
+<p>图示为本地 Provider 的配置与调用关系。运维管理、凭据读取、任务模型解析和连接测试均在客户端；只有模型请求访问所配地址。线上任务使用本机默认配置，调试会话允许运维开始前改选，两者均在开始时固定快照。手动测试直接使用选定模型，不经过会话快照，也不读取历史内容。</p>
 <h3>Provider 与模型的关系</h3>
 <p>Provider 是一个具名接入，首版统一使用 <strong>OpenAI Chat Completions 兼容接口</strong>，允许自定义 base URL。名称在本机配置内唯一；相同地址可以因使用不同凭据配置为不同 Provider。每个 Provider 下手动填写多个上游实际 <code>model</code> 名称，不自动拉取模型列表。</p>
 <table>
@@ -1788,16 +1806,18 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <p>普通配置文件只保存凭据引用，API Key 值写入操作系统凭据库。新增时留空表示无鉴权；编辑已有配置时明确区分保留、替换和清除，避免把未回显的密钥当作空值误删。清除后移除凭据引用，后续请求不再发送认证头。</p>
 <p><strong>主动选择无鉴权与凭据读取失败是不同状态。</strong> 配置仍有引用，但凭据缺失、库被锁定或访问被拒绝时，停止测试或调用，不降级成无鉴权请求。保存或凭据写入失败时保留输入和原有效配置，不把未完成的修改显示为已保存。</p>
 <p>密钥值不进入 Agent 发布包、内容摘要、运行快照、普通配置导出、诊断包或遥测；界面和错误信息不回显密钥、原始认证头或上游响应正文。凭据引用由本地解析，不通过服务端下发密钥。</p>
-<h3>默认模型与会话固定</h3>
-<p>新会话在开始前使用全局默认值，用户可以改选其他 Provider＋模型。开始时固定实际 Provider、模型、协议、接入地址和非敏感运行参数；这些属于运行条件，不参与 Agent 内容 ID 或发布标签。</p>
-<p>修改默认值只影响新会话。已有会话不重新绑定到同名的新配置，也不因为修改设置而切换正在执行的模型。后续调用仍使用固定运行条件；固定配置或所需凭据不可用时明确失败，保留已有会话内容，不自动选择其他接入。删除默认模型或其 Provider 后，要求重新选择默认值，不自动补成其他模型。</p>
+<h3>默认模型与任务／会话固定</h3>
+<p>以下线上任务行为为远端接入的目标契约与验收要求；当前已接入范围为本地配置、调试会话与连接测试。</p>
+<p>线上任务在后台准备时解析运维预配置的本机默认 Provider＋模型，不接受远端任务正文携带 Key 或覆盖本机模型选择。开始时固定实际 Provider、模型、协议、接入地址和非敏感运行参数；这些属于运行条件，不参与 Agent 内容 ID 或发布标签。</p>
+<p>运维新建本地调试会话时预选全局默认值，开始前可以改选其他 Provider＋模型，开始后同样固定运行条件。这是调试能力，不是线上任务的必经交互。</p>
+<p>修改默认值只影响后续新任务和新建调试会话。已受理任务与已有调试会话不重新绑定到同名的新配置，也不因为修改设置而切换正在执行的模型。后续调用仍使用固定运行条件；固定配置或所需凭据不可用时明确失败，保留已有任务记录或调试会话内容，不自动选择其他接入。删除默认模型或其 Provider 后，要求重新选择默认值，不自动补成其他模型。</p>
 <p>固定运行条件不代表把密钥复制进快照，也不保证外部模型服务行为永远不变。运行快照只记录非敏感选择；凭据值通过本机凭据边界取得。与 Agent 装配的关系见 <a href="#04-agent">04 · Agent</a>。</p>
 <h2 id="11-provider-客户端">客户端</h2>
 <ul>
-<li>提供本地 Provider 新增、编辑、删除与模型增删，展示空列表、保存中、保存失败和凭据不可用状态。</li>
-<li>设置一个全局默认模型；新会话开始前可改选，开始后展示实际固定选择。未配置默认值且没有明确选择时，提示配置或选择模型。</li>
+<li>在运维调试入口提供本地 Provider 新增、编辑、删除与模型增删，展示空列表、保存中、保存失败和凭据不可用状态。</li>
+<li>由运维设置一个本机全局默认模型；线上任务后台解析并固定使用，调试会话开始前可改选。线上任务缺少有效默认配置时明确失败，Console 接收安全错误，由运维修复配置后再显式发起新任务。</li>
 <li>用操作系统凭据库保存可选 API Key；普通配置只保存引用，列表和详情不读取并回显已有密钥。</li>
-<li>仅在用户选择模型并点击“测试连接”时发起检查；保存配置、打开页面和切换模型不自动测试。</li>
+<li>仅在运维选择模型并点击“测试连接”时发起检查；保存配置、打开页面和切换模型不自动测试。</li>
 <li>测试期间显示进行中，支持结束本地等待；展示本次 Provider、模型和结果。配置修改后，旧结果不能作为新配置已测试的证明。</li>
 <li>配置不可用、鉴权失败、超时或断流均明确报错；不自动切换 Provider、模型，不自动重发整次请求。</li>
 </ul>
@@ -1833,7 +1853,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 </tbody></table>
 <h3>运行模型二：手动测试指定模型</h3>
-<p><strong>条件：</strong> 用户在 Provider 详情选择已配置模型并点击“测试连接”。有修改时先保存，避免测试对象与已保存对象不一致。</p>
+<p><strong>条件：</strong> 运维在 Provider 详情选择已配置模型并点击“测试连接”。有修改时先保存，避免测试对象与已保存对象不一致。</p>
 <table>
 <thead>
 <tr>
@@ -1865,7 +1885,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tbody></table>
 <p>测试成功只说明这次模型请求成功，不代表支持全部工具、图像或扩展参数。界面区分字段无效、保存失败、凭据不可用、连接／TLS／超时、上游拒绝和响应不完整；能依据结构化上游错误确定时，再展示鉴权失败、模型不可用或限流等类别，不仅凭 HTTP 404 断定模型不存在。</p>
 <p>取消只结束本地等待，不承诺上游计算已经停止；测试取消或失败不会触发 Agent、工具、浏览器任务或自动重发。</p>
-<h3>运行模型三：新会话选择与后续使用</h3>
+<h3>运行模型三：后台任务解析与调试会话选择</h3>
 <table>
 <thead>
 <tr>
@@ -1874,24 +1894,28 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 </thead>
 <tbody><tr>
-<td>有有效全局默认值</td>
-<td>新会话预选默认组合，开始前允许明确改选</td>
+<td>线上任务有有效全局默认值</td>
+<td>后台解析本机默认组合，不要求用户在本地选择</td>
 </tr>
 <tr>
-<td>无默认值或默认组合不可用</td>
-<td>提示配置或选择有效模型，不任意选一个模型开始</td>
+<td>线上任务无有效默认值</td>
+<td>准备失败并回传安全错误，运维修复后由服务端显式安排新任务，不任意选一个模型开始</td>
 </tr>
 <tr>
-<td>开始会话</td>
+<td>运维新建调试会话</td>
+<td>预选默认组合，开始前允许改选；无有效组合时提示运维配置或选择</td>
+</tr>
+<tr>
+<td>开始任务或调试会话</td>
 <td>固定实际模型运行条件，按第 04 章完成 Agent 装配；失败不进入模型或工具执行</td>
 </tr>
 <tr>
-<td>会话后续轮次</td>
-<td>沿用固定选择；修改全局默认值不影响该会话</td>
+<td>运行中任务或调试会话后续轮次</td>
+<td>沿用固定选择；修改全局默认值不影响已固定的运行条件</td>
 </tr>
 <tr>
 <td>原配置或凭据不可用</td>
-<td>保留历史和固定选择，显示错误，不把历史发送给其他 Provider 或模型</td>
+<td>保留记录和固定选择，明确返回错误，不把历史发送给其他 Provider 或模型</td>
 </tr>
 </tbody></table>
 <h3>验收与观测边界</h3>
@@ -1900,16 +1924,16 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <li>验证有 Key 的 Bearer 头、无 Key 时无认证头、已有引用无法读取时不发送请求；普通配置、快照和诊断材料均无密钥值。</li>
 <li>验证字段错误、保存失败和凭据库访问失败后，原有效配置和输入保留，没有半完成的成功状态。</li>
 <li>验证手动测试不读取会话、不执行工具，保存时不自动测试；超时、取消、上游拒绝和断流不误报成功或自动重发。</li>
-<li>验证默认值持久保存、新会话改选、开始后固定，以及配置不可用时不自动切换；修改设置不改变正在执行的请求。</li>
+<li>验证默认值持久保存、调试会话开始前改选及开始后固定，以及配置不可用时不自动切换；修改设置不改变正在执行的请求。远端接入验收另验证线上任务复用本机默认配置，不要求本地逐任务选模型，拒绝远端密钥或模型覆盖。</li>
 </ol>
 <p>Provider 管理与连接测试首版不新增专门的日志、span 或指标：界面的操作状态、测试结果与稳定的脱敏错误类别满足本期排查和验收。模型生成调用的观测继续遵循已有规范，密钥、认证头、提示词与回复正文不写入遥测。</p>
 <h3>当前实现与接入缺口</h3>
-<p>已接入 <a href="../../web/src/components/settings/provider-settings.tsx">Provider 设置页</a> 与 <a href="../../web/src/providers/source.ts">ProviderSource</a>：可新增、编辑、删除接入，维护多个模型，设置全局默认值，并手动测试已保存模型；新会话开始前可改选，开始后固定。保存不触发测试；测试支持取消，不读取会话或执行工具。</p>
+<p>已在运维调试桌面接入 <a href="../../web/src/components/settings/provider-settings.tsx">Provider 设置页</a> 与 <a href="../../web/src/providers/source.ts">ProviderSource</a>：可新增、编辑、删除接入，维护多个模型，设置全局默认值，并手动测试已保存模型；本地调试会话开始前可改选，开始后固定。保存不触发测试；测试支持取消，不读取会话或执行工具。</p>
 <p><a href="../../desktop/runtime/providers.mjs">Node.js Provider 模块</a> 将配置原子保存到 <code>providers.json</code>，凭据字段只含 UUID 引用；<a href="../../desktop/runtime/credentials.mjs">凭据 IPC</a> 连接 <a href="../../crates/omniops-bots-desktop/src/credentials.rs">原生凭据边界</a>，分别使用 macOS Keychain 与 Windows Credential Manager。macOS 隔离 Keychain 验证已通过；Windows 尚未实机验证。无 Key 时不发送认证头，有引用但无法读取时明确失败，不自动降级或重试。</p>
-<p>兼容迁移仅在 <code>providers.json</code> 不存在时导入旧环境变量／<code>model.env</code>；原文件保留，不自动删除，导入后由用户自行管理旧文件中的敏感内容。新配置读取失败可重试，不回退到旧单模型。缺少 Provider 快照的旧会话仍可查看，但须新建会话才能运行。完成情况见 <a href="#08-frontend">08 · 前端现状与缺口</a>。</p>
+<p>兼容迁移仅在 <code>providers.json</code> 不存在时导入旧环境变量／<code>model.env</code>；原文件保留，不自动删除，导入后由运维自行管理旧文件中的敏感内容。新配置读取失败可重试，不回退到旧单模型。缺少 Provider 快照的旧调试会话仍可查看，但须新建调试会话才能运行。服务端 Console 到后台客户端的任务通道仍待接入，不能据此将线上后台任务链路标为已完成。完成情况见 <a href="#08-frontend">08 · 前端现状与缺口</a>。</p>
 <h2 id="11-provider-服务端配合">服务端配合</h2>
-<p>首版 Provider 配置和凭据由客户端本地管理，无需本项目服务端提供配置下发、凭据托管、模型发现或模型请求转发接口。接入地址可以指向既有内部网关，网关按自身约定提供 OpenAI 兼容服务。</p>
-<p>已有服务端契约见 <a href="#10-server-api">10 · 服务端 API</a>。远端任务接入时也不能通过任务正文携带密钥或要求客户端自动切换其他模型。</p>
+<p>首版 Provider 配置和凭据由运维在客户端本地预配置与管理，无需本项目服务端提供配置下发、凭据托管、模型发现或模型请求转发接口。接入地址可以指向既有内部网关，网关按自身约定提供 OpenAI 兼容服务。</p>
+<p>已有服务端契约见 <a href="#10-server-api">10 · 服务端 API</a>。线上用户通过 Console 发起业务，服务端 Agent 调用后台客户端时复用本机配置并固定快照；任务正文不能携带密钥或覆盖 Provider／模型选择，配置缺失或不可用时返回明确失败。</p>
 <footer><span class="footer-label">客户端 MVP 设计 · 2026-10-20</span><a href="#00-overview">回到客户端总体设计</a></footer></article></div></main><script>const chapters=[["00-overview","00-总体架构.md","客户端总体设计"],["01-skill","01-SKILL.md","SKILL"],["02-mcp","02-MCP.md","MCP"],["03-builtintool","03-buildintool.md","builtinTool"],["04-agent","04-agent.md","Agent"],["05-updater","05-桌面端更新.md","桌面端更新"],["06-sync","06-同步与装配.md","同步与装配"],["07-execution","07-任务执行与恢复.md","任务执行与恢复"],["08-frontend","08-前端现状与缺口.md","前端现状与缺口"],["09-operations","09-运维与诊断上传.md","运维与诊断上传"],["10-server-api","10-服务端API.md","服务端 API"],["11-provider","11-Provider.md","Provider"]];
 const navLinks=[...document.querySelectorAll('.chapter-nav a')];
 const articles=[...document.querySelectorAll('article')];

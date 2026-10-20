@@ -1,20 +1,14 @@
 {
-  "diagram_type": "sequence",
-  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/06-cache-ready.html",
-  "artifact_sha256": "857b61747b3068fd1cfe57343ac53566d7f390ebd24a8b70c1355ef49b3c9c2b",
-  "artifact_bytes": 704125,
-  "validation": "9/9 showcase, 0 errors, 0 warnings",
-  "browser_evidence": "passed",
+  "artifact": "diagrams/runtime/06-cache-ready.html",
+  "artifact_sha256": "4f56715ebbe6a72e3e75b4167549316aa1980d15ca4128f02a2bd5d4e77a76bb",
+  "artifact_bytes": 703866,
   "visual_review": "passed",
-  "reviewer": "image-capable agent /root/runtime_sessions",
-  "reviewed_screenshots": [
-    "diagrams/runtime/06-cache-ready.visual-check.2048x1320.light.png",
-    "diagrams/runtime/06-cache-ready.visual-check.1440x900.dark.png"
+  "reviewer": "image-capable Codex agent",
+  "scope": "Actual visual-check screenshots at 1440x900 light and 2048x1320 dark; labels, routes, node fit, composition, and theme contrast inspected",
+  "screenshots": [
+    "diagrams/runtime/06-cache-ready.visual-check.1440x900.light.png",
+    "diagrams/runtime/06-cache-ready.visual-check.2048x1320.dark.png"
   ],
-  "observations": [
-    "已读取真实浏览器截图；中文标签与消息顺序可读，参与者与箭头关系明确。",
-    "浅色大屏及深色桌面图无截断、重叠或标签遮挡，纵向布局平衡。",
-    "浏览器四视口包含性由独立 visual-check 回执记录；本视觉审查不替代自动检查。"
-  ],
-  "correction_rounds": 1
+  "observations": "No visible clipping, label collisions, or unrelated-node route crossings. Updated roles distinguish background execution, Console reporting, and local maintenance/debugging.",
+  "correction_rounds": 0
 }

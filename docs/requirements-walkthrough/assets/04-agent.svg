@@ -383,15 +383,15 @@ rect.c-bg-rect { fill: var(--bg); }
         <text x="550" y="419" class="t-muted" font-size="9" text-anchor="middle">启动前固定 · 排除凭据</text>
         </g>
 
-        <g id="node-session" data-node-id="session" data-node-label="客户端会话" tabindex="0" role="button" aria-label="聚焦客户端会话，本地输入 / 远端独立调用, 架构组件" aria-pressed="false" data-node-kind="backend" data-node-sublabel="本地输入 / 远端独立调用" data-node-context="架构组件">
-          <title>客户端会话 · 本地输入 / 远端独立调用 · 架构组件</title>
+        <g id="node-session" data-node-id="session" data-node-label="客户端后台执行" tabindex="0" role="button" aria-label="聚焦客户端后台执行，服务端任务 / 本地调试, 架构组件" aria-pressed="false" data-node-kind="backend" data-node-sublabel="服务端任务 / 本地调试" data-node-context="架构组件">
+          <title>客户端后台执行 · 服务端任务 / 本地调试 · 架构组件</title>
           <rect x="860" y="360" width="200" height="90" rx="6" class="c-mask"/>
           <rect x="860" y="360" width="200" height="90" rx="6" class="c-backend" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(866 366) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" x="960" y="403" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">客户端会话</text>
-        <text x="960" y="419" class="t-muted" font-size="9" text-anchor="middle">本地输入 / 远端独立调用</text>
+          <text data-node-label="" x="960" y="403" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">客户端后台执行</text>
+        <text x="960" y="419" class="t-muted" font-size="9" text-anchor="middle">服务端任务 / 本地调试</text>
         </g>
 
         <!-- Connection labels -->

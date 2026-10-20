@@ -14,13 +14,13 @@
   "participants": [
     {
       "id": "user",
-      "type": "external",
-      "label": "用户或服务端"
+      "type": "backend",
+      "label": "服务端 Agent"
     },
     {
       "id": "client",
-      "type": "frontend",
-      "label": "桌面客户端"
+      "type": "backend",
+      "label": "后台客户端"
     },
     {
       "id": "local",
@@ -39,7 +39,7 @@
       "from": "user",
       "to": "client",
       "y": 170,
-      "label": "选择官方 Agent 开始新会话",
+      "label": "下发指定 Agent 版本任务",
       "variant": "emphasis"
     },
     {
@@ -87,7 +87,7 @@
       "from": "client",
       "to": "user",
       "y": 434,
-      "label": "准备完成，进入本轮执行",
+      "label": "准备完成，后台进入执行",
       "variant": "return"
     }
   ]

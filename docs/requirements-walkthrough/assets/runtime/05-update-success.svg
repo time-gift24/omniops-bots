@@ -398,19 +398,19 @@ rect.c-bg-rect { fill: var(--bg); }
 
 
         <!-- Participants -->
-        <g id="node-user" data-node-id="user" data-node-label="用户" tabindex="0" role="button" aria-label="聚焦用户，时序参与者" aria-pressed="false" data-node-kind="external" data-node-context="时序参与者">
-          <title>用户 · 时序参与者</title>
+        <g id="node-user" data-node-id="user" data-node-label="本机用户" tabindex="0" role="button" aria-label="聚焦本机用户，时序参与者" aria-pressed="false" data-node-kind="external" data-node-context="时序参与者">
+          <title>本机用户 · 时序参与者</title>
           <rect x="62" y="72" width="190" height="54" rx="6" class="c-mask"/>
           <rect x="62" y="72" width="190" height="54" rx="6" class="c-external" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(68 78) scale(0.6875)">
             <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
             <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
           </g>
-          <text data-node-label="" x="157" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">用户</text>
+          <text data-node-label="" x="157" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">本机用户</text>
         </g>
 
-        <g id="node-client" data-node-id="client" data-node-label="桌面客户端" tabindex="0" role="button" aria-label="聚焦桌面客户端，时序参与者" aria-pressed="false" data-node-kind="frontend" data-node-context="时序参与者">
-          <title>桌面客户端 · 时序参与者</title>
+        <g id="node-client" data-node-id="client" data-node-label="客户端维护入口" tabindex="0" role="button" aria-label="聚焦客户端维护入口，时序参与者" aria-pressed="false" data-node-kind="frontend" data-node-context="时序参与者">
+          <title>客户端维护入口 · 时序参与者</title>
           <rect x="331.3333333333333" y="72" width="190" height="54" rx="6" class="c-mask"/>
           <rect x="331.3333333333333" y="72" width="190" height="54" rx="6" class="c-frontend" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="frontend" class="semantic-sigil s-frontend" transform="translate(337.3333333333333 78) scale(0.6875)">
@@ -419,7 +419,7 @@ rect.c-bg-rect { fill: var(--bg); }
             <circle cx="4.1" cy="4.8" r=".7" class="sigil-fill"/>
             <circle cx="6.3" cy="4.8" r=".7" class="sigil-fill"/>
           </g>
-          <text data-node-label="" x="426.3333333333333" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">桌面客户端</text>
+          <text data-node-label="" x="426.3333333333333" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">客户端维护入口</text>
         </g>
 
         <g id="node-site" data-node-id="site" data-node-label="HTTPS 更新站点" tabindex="0" role="button" aria-label="聚焦HTTPS 更新站点，时序参与者" aria-pressed="false" data-node-kind="backend" data-node-context="时序参与者">

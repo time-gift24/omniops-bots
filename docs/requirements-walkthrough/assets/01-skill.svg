@@ -285,7 +285,7 @@ svg[data-theme="light"] { --bg: #f8fafc; --grid: #e2e8f0; --text: #0f172a; --tex
 svg[data-theme="dark"] { --bg: #020617; --grid: #1e293b; --text: #ffffff; --text-muted: #94a3b8; --text-dim: #475569; --text-faint: #7d8da1; --panel: rgba(15, 23, 42, 0.5); --panel-border: #1e293b; --lane-fill: rgba(15, 23, 42, 0.22); --lane-stroke: #334155; --arrow: #64748b; --arrow-emphasis: #34d399; --mask: #0f172a; --frontend-fill: rgba(8, 51, 68, 0.4); --frontend-stroke: #22d3ee; --backend-fill: rgba(6, 78, 59, 0.4); --backend-stroke: #34d399; --database-fill: rgba(76, 29, 149, 0.4); --database-stroke: #a78bfa; --cloud-fill: rgba(120, 53, 15, 0.3); --cloud-stroke: #fbbf24; --security-fill: rgba(136, 19, 55, 0.4); --security-stroke: #fb7185; --messagebus-fill: rgba(251, 146, 60, 0.3); --messagebus-stroke: #fb923c; --external-fill: rgba(30, 41, 59, 0.5); --external-stroke: #94a3b8; --toolbar-bg: rgba(15, 23, 42, 0.8); --toolbar-border: #334155; --toolbar-text: #e2e8f0; --toolbar-hover: rgba(15, 23, 42, 0.95); --toolbar-menu-bg: #0f172a; }
 rect.c-bg-rect { fill: var(--bg); }
 </style><rect width="100%" height="100%" class="c-bg-rect"/>
-        <title id="archify-diagram-title">01 · Skill 草稿到正式发布</title>
+        <title id="archify-diagram-title">01 · Skill 运维调试与发布</title>
         <desc id="archify-diagram-description">由 Archify 生成的工作流图。</desc>
         <!-- Definitions -->
         <defs>
@@ -314,7 +314,7 @@ rect.c-bg-rect { fill: var(--bg); }
         <text x="54" y="74" class="t-dim" font-size="10" font-weight="600">01 / 正式发布</text>
 
         <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-1" x="40" y="176" width="826" height="104" rx="10" class="c-lane" stroke-width="1"/>
-        <text x="54" y="198" class="t-dim" font-size="10" font-weight="600">02 / 本地实验 · 可选</text>
+        <text x="54" y="198" class="t-dim" font-size="10" font-weight="600">02 / 本地调试实验 · 可选</text>
 
         <!-- Phase headers -->
 
@@ -330,8 +330,8 @@ rect.c-bg-rect { fill: var(--bg); }
         <path data-edge-from="choose" data-edge-to="trial-run" data-edge-label="临时装配" data-edge-key="4" data-edge-id="edge-4" data-composition-points="140,243;215.60000000000002,243" d="M 140 243 L 215.60000000000002 243" class="a-dashed" stroke-width="1.4" marker-end="url(#arrowhead-dashed)"/>
 
         <!-- Nodes -->
-        <g id="node-draft" data-node-id="draft" data-node-label="编辑完整草稿" tabindex="0" role="button" aria-label="聚焦编辑完整草稿，客户端保存未同步编辑, 正式发布" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="客户端保存未同步编辑" data-node-context="正式发布">
-          <title>编辑完整草稿 · 客户端保存未同步编辑 · 正式发布</title>
+        <g id="node-draft" data-node-id="draft" data-node-label="编辑完整草稿" tabindex="0" role="button" aria-label="聚焦编辑完整草稿，调试工作台保存本地编辑, 正式发布" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="调试工作台保存本地编辑" data-node-context="正式发布">
+          <title>编辑完整草稿 · 调试工作台保存本地编辑 · 正式发布</title>
           <rect x="48" y="93" width="92" height="52" rx="6" class="c-mask"/>
           <rect x="48" y="93" width="92" height="52" rx="6" class="c-frontend" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="frontend" class="semantic-sigil s-frontend" transform="translate(54 99) scale(0.6875)">
@@ -341,7 +341,7 @@ rect.c-bg-rect { fill: var(--bg); }
             <circle cx="6.3" cy="4.8" r=".7" class="sigil-fill"/>
           </g>
           <text data-node-label="" x="94" y="114" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">编辑完整草稿</text>
-          <text x="94" y="131" class="t-muted" font-size="7" text-anchor="middle">客户端保存未同步编辑</text>
+          <text x="94" y="131" class="t-muted" font-size="6.3" text-anchor="middle">调试工作台保存本地编辑</text>
         </g>
 
         <g id="node-tags" data-node-id="tags" data-node-label="手填发布标签" tabindex="0" role="button" aria-label="聚焦手填发布标签，Skill + 受影响 Agent, 正式发布" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="Skill + 受影响 Agent" data-node-context="正式发布">
@@ -381,8 +381,8 @@ rect.c-bg-rect { fill: var(--bg); }
           <text x="568" y="131" class="t-muted" font-size="8" text-anchor="middle">新 ID + 新标签</text>
         </g>
 
-        <g id="node-choose" data-node-id="choose" data-node-label="选择模板 Agent" tabindex="0" role="button" aria-label="聚焦选择模板 Agent，未上传也能实验, 本地实验 · 可选" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="未上传也能实验" data-node-context="本地实验 · 可选">
-          <title>选择模板 Agent · 未上传也能实验 · 本地实验 · 可选</title>
+        <g id="node-choose" data-node-id="choose" data-node-label="选择模板 Agent" tabindex="0" role="button" aria-label="聚焦选择模板 Agent，未上传也能实验, 本地调试实验 · 可选" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="未上传也能实验" data-node-context="本地调试实验 · 可选">
+          <title>选择模板 Agent · 未上传也能实验 · 本地调试实验 · 可选</title>
           <rect x="48" y="217" width="92" height="52" rx="6" class="c-mask"/>
           <rect x="48" y="217" width="92" height="52" rx="6" class="c-frontend" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="frontend" class="semantic-sigil s-frontend" transform="translate(54 223) scale(0.6875)">
@@ -395,8 +395,8 @@ rect.c-bg-rect { fill: var(--bg); }
           <text x="94" y="255" class="t-muted" font-size="8" text-anchor="middle">未上传也能实验</text>
         </g>
 
-        <g id="node-trial-run" data-node-id="trial-run" data-node-label="固定快照并实验" tabindex="0" role="button" aria-label="聚焦固定快照并实验，原 Agent 不变, 本地实验 · 可选" aria-pressed="false" data-node-kind="backend" data-node-sublabel="原 Agent 不变" data-node-context="本地实验 · 可选">
-          <title>固定快照并实验 · 原 Agent 不变 · 本地实验 · 可选</title>
+        <g id="node-trial-run" data-node-id="trial-run" data-node-label="固定快照并实验" tabindex="0" role="button" aria-label="聚焦固定快照并实验，原 Agent 不变, 本地调试实验 · 可选" aria-pressed="false" data-node-kind="backend" data-node-sublabel="原 Agent 不变" data-node-context="本地调试实验 · 可选">
+          <title>固定快照并实验 · 原 Agent 不变 · 本地调试实验 · 可选</title>
           <rect x="215.60000000000002" y="217" width="92" height="52" rx="6" class="c-mask"/>
           <rect x="215.60000000000002" y="217" width="92" height="52" rx="6" class="c-backend" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(221.60000000000002 223) scale(0.6875)">
@@ -431,17 +431,17 @@ rect.c-bg-rect { fill: var(--bg); }
         <!-- Legend -->
         <g data-legend="">
           <text x="20" y="304" class="t-primary" font-size="12" font-weight="650">图例</text>
-          <g data-legend-semantic-kind="frontend" data-legend-x="20" data-legend-baseline="324" data-legend-width="78">
+          <g data-legend-semantic-kind="frontend" data-legend-x="20" data-legend-baseline="324" data-legend-width="109">
             <rect x="20" y="316" width="14" height="9" rx="2" class="c-frontend" stroke-width="1"/>
-            <text x="42" y="324" class="t-muted" font-size="7.5" font-weight="500">用户操作</text>
+            <text x="42" y="324" class="t-muted" font-size="7.5" font-weight="500">运维 / 调试操作</text>
           </g>
-          <g data-legend-semantic-kind="backend" data-legend-x="105" data-legend-baseline="324" data-legend-width="78">
-            <rect x="105" y="316" width="14" height="9" rx="2" class="c-backend" stroke-width="1"/>
-            <text x="127" y="324" class="t-muted" font-size="7.5" font-weight="500">处理逻辑</text>
+          <g data-legend-semantic-kind="backend" data-legend-x="136" data-legend-baseline="324" data-legend-width="78">
+            <rect x="136" y="316" width="14" height="9" rx="2" class="c-backend" stroke-width="1"/>
+            <text x="158" y="324" class="t-muted" font-size="7.5" font-weight="500">处理逻辑</text>
           </g>
-          <g data-legend-semantic-kind="database" data-legend-x="190" data-legend-baseline="324" data-legend-width="91">
-            <rect x="190" y="316" width="14" height="9" rx="2" class="c-database" stroke-width="1"/>
-            <text x="212" y="324" class="t-muted" font-size="7.5" font-weight="500">版本 / 记录</text>
+          <g data-legend-semantic-kind="database" data-legend-x="221" data-legend-baseline="324" data-legend-width="91">
+            <rect x="221" y="316" width="14" height="9" rx="2" class="c-database" stroke-width="1"/>
+            <text x="243" y="324" class="t-muted" font-size="7.5" font-weight="500">版本 / 记录</text>
           </g>
         </g>
       </svg>

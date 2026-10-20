@@ -2,7 +2,7 @@
   "schema_version": 1,
   "diagram_type": "sequence",
   "meta": {
-    "title": "客户端连接 MCP 并调用工具",
+    "title": "客户端后台连接 MCP 并调用工具",
     "locale": "zh-CN",
     "quality_profile": "showcase",
     "column_fit": "spread",
@@ -20,7 +20,7 @@
     {
       "id": "client",
       "type": "frontend",
-      "label": "桌面客户端"
+      "label": "客户端后台 Agent"
     },
     {
       "id": "mcp",
@@ -90,7 +90,7 @@
       "dot": "cyan",
       "title": "结果：调用可观察",
       "items": [
-        "客户端展示调用过程，快照记录启用清单",
+        "回传 Console 任务结果，调试台查看过程",
         "密钥和 Token 不写入快照"
       ]
     }

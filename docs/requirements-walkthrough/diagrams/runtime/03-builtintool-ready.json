@@ -15,12 +15,12 @@
     {
       "id": "caller",
       "type": "external",
-      "label": "调用方"
+      "label": "服务端 Agent"
     },
     {
       "id": "client",
       "type": "frontend",
-      "label": "桌面客户端"
+      "label": "客户端后台 Agent"
     },
     {
       "id": "tools",
@@ -39,7 +39,7 @@
       "from": "caller",
       "to": "client",
       "y": 180,
-      "label": "发起本轮任务",
+      "label": "下发本轮任务",
       "variant": "emphasis"
     },
     {
@@ -78,7 +78,7 @@
       "from": "client",
       "to": "caller",
       "y": 505,
-      "label": "保存并展示或回传结果",
+      "label": "保存并回传结果供 Console 展示",
       "variant": "return"
     }
   ],
@@ -88,7 +88,7 @@
       "title": "条件：工具齐全且其他准备通过",
       "items": [
         "Skill 按同步规则准备，检查会话与并发容量",
-        "客户端展示模型与工具调用过程"
+        "完整模型与工具过程供调试台查看"
       ]
     },
     {

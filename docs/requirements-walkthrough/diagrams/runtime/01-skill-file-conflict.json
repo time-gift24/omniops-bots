@@ -15,12 +15,12 @@
     {
       "id": "user",
       "type": "external",
-      "label": "用户 / 运维人员"
+      "label": "调试使用者"
     },
     {
       "id": "client",
       "type": "frontend",
-      "label": "Skill 文件管理"
+      "label": "调试 Skill 文件管理"
     },
     {
       "id": "storage",
@@ -79,7 +79,7 @@
   "cards": [
     {
       "dot": "amber",
-      "title": "条件：用户明确选择替换",
+      "title": "条件：调试时明确选择替换",
       "items": [
         "同名不自动改名；选择跳过则不写入该项",
         "目录失效时停止写入，不改放到根目录"

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1000" height="520" viewBox="0 0 1000 520" role="img" aria-labelledby="title desc">
     <title id="title">SKILL用例图</title>
-    <desc id="desc">Skill 管理与使用的主要用例：编辑与上传完整草稿；选择 Agent 实验草稿；发布 Skill 并联动 Agent；使用官方 / 复制为本地。角色与椭圆之间为无方向参与关系，未表示执行先后。</desc>
+    <desc id="desc">运维调试工作台的 Skill 用例（线上业务在服务端 Console）：编辑与上传完整草稿；选择 Agent 实验草稿；发布 Skill 并联动 Agent；使用官方 / 复制为本地。角色与椭圆之间为无方向参与关系，未表示执行先后。</desc>
     <style>
       text { font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; fill:#16354b; }
       .heading { font-size:28px; font-weight:700; }
@@ -17,7 +17,7 @@
     <rect width="1000" height="520" fill="#ffffff" />
     <text x="32" y="44" class="heading">SKILL · 用例</text>
     <rect x="250" y="76" width="500" height="400" rx="10" class="boundary" />
-    <text x="270" y="106" class="boundary-label">Skill 管理与使用</text>
+    <text x="270" y="106" class="boundary-label">Skill 运维调试与使用</text>
 <line x1="157" y1="250" x2="290" y2="160" class="association" />
 <line x1="157" y1="250" x2="290" y2="250" class="association" />
 <line x1="157" y1="250" x2="290" y2="340" class="association" />
@@ -31,9 +31,9 @@
       <path d="M 125 224 V 261 M 101 240 H 149 M 125 261 L 102 290 M 125 261 L 148 290" />
       <text x="125" y="319" class="actor-label">运维人员</text>
     </g>
-<g class="actor" aria-label="用户">
+<g class="actor" aria-label="本地调试者">
       <circle cx="875" cy="390" r="14" />
       <path d="M 875 404 V 441 M 851 420 H 899 M 875 441 L 852 470 M 875 441 L 898 470" />
-      <text x="875" y="499" class="actor-label">用户</text>
+      <text x="875" y="499" class="actor-label">本地调试者</text>
     </g>
 <text x="32" y="508" class="legend">角色参与关系 · 无方向关联线 · 不表示执行顺序</text></svg>

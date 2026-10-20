@@ -2,7 +2,7 @@
   "schema_version": 1,
   "diagram_type": "sequence",
   "meta": {
-    "title": "编辑本地 Agent 后开始会话",
+    "title": "运维调试：编辑本地 Agent 后手动运行",
     "locale": "zh-CN",
     "quality_profile": "showcase",
     "column_fit": "spread",
@@ -15,12 +15,12 @@
     {
       "id": "user",
       "type": "external",
-      "label": "用户"
+      "label": "调试使用者"
     },
     {
       "id": "client",
       "type": "frontend",
-      "label": "桌面客户端"
+      "label": "运维调试工作台"
     },
     {
       "id": "local",
@@ -55,7 +55,7 @@
       "from": "user",
       "to": "client",
       "y": 258,
-      "label": "发起新会话并输入任务",
+      "label": "发起手动调试会话并输入任务",
       "variant": "emphasis"
     },
     {

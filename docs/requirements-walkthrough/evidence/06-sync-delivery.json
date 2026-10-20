@@ -6,12 +6,12 @@
   "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/06-sync.json",
   "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/06-sync.html",
   "specification": {
-    "sha256": "36675adf42cc61d415b17aafdd168fd3ddcb4e82c4917a71e6188148a8274859",
-    "bytes": 2446
+    "sha256": "b719c9f60c741b9f4df17e4fb98bd375658facd6d8d55b5cfa9d8d01302a361f",
+    "bytes": 2457
   },
   "artifact": {
-    "sha256": "d841e82ad4f0dbb36a0ee5d9eab06ebac33a7ae03dca57962cf38fa15e84e36a",
-    "bytes": 704912
+    "sha256": "b38794b6c3196045da9c12c4a1b3fbd6af8a8d978a96216b5a4dcf1613dbee9f",
+    "bytes": 704781
   },
   "validation": {
     "checksPassed": 9,

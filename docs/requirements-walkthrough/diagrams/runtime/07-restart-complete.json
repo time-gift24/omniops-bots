@@ -14,13 +14,13 @@
   "participants": [
     {
       "id": "user",
-      "label": "用户",
+      "label": "本机用户",
       "type": "external"
     },
     {
       "id": "client",
-      "label": "桌面客户端",
-      "type": "frontend"
+      "label": "后台客户端",
+      "type": "backend"
     },
     {
       "id": "record",
@@ -29,7 +29,7 @@
     },
     {
       "id": "server",
-      "label": "服务端",
+      "label": "服务端 Agent",
       "type": "backend"
     }
   ],
@@ -96,7 +96,7 @@
       "dot": "emerald",
       "title": "恢复的是交付",
       "items": [
-        "未确认时继续保留并等待补传",
+        "服务端 Agent 消费回报，Console 呈现任务状态",
         "不要求用户重新发起已完成任务"
       ]
     }

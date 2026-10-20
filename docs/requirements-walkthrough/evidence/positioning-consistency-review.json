@@ -1,0 +1,733 @@
+{
+  "date": "2026-10-20",
+  "scope": "01–11逐章定位复核，00与README交叉核对；不修改产品执行路径",
+  "positioning": "线上用户在服务端Console发起业务并查看任务状态结果；服务端Agent以任务调用客户端Agent；客户端后台执行。完整资源管理、本地会话、逐条过程与浏览器工作台用于运维调试。",
+  "chapters_reviewed": 12,
+  "chapters_modified": [
+    "01-SKILL.md",
+    "02-MCP.md",
+    "03-buildintool.md",
+    "04-agent.md",
+    "05-桌面端更新.md",
+    "06-同步与装配.md",
+    "07-任务执行与恢复.md",
+    "08-前端现状与缺口.md",
+    "09-运维与诊断上传.md",
+    "10-服务端API.md",
+    "11-Provider.md"
+  ],
+  "preserved": [
+    "官方资源与本地资源权限边界",
+    "更新由本机用户确认且空闲安装",
+    "人工登录后显式发起新任务，不自动续跑",
+    "诊断上传须有权用户预览同意",
+    "官方版本、客户端不排队、唯一终态与结果ACK",
+    "Provider本地已接入及Windows待验收；线上任务与基础状态界面仍待实现"
+  ],
+  "checks": {
+    "local_document_links": {
+      "status": "passed",
+      "count": 220
+    },
+    "source_to_reader": "12章Markdown渲染与HTML一致，保留导航/评论/图形外壳",
+    "reader_chapter_viewports": 24,
+    "reader_page_errors": 0,
+    "reader_visual_review": "passed",
+    "comments_regression": {
+      "command": "node --test docs/requirements-walkthrough/comments.test.mjs docs/requirements-walkthrough/comments.browser.mjs",
+      "tests": 6,
+      "passed": 6,
+      "failed": 0
+    },
+    "api_endpoint_tokens_unchanged": 25,
+    "task_message_schema_rows_unchanged": 7,
+    "independent_semantic_review": "passed；07诊断授权说明已修正",
+    "diagram_validation": "30图各9/9 showcase，0错误、0警告",
+    "diagram_browser_and_visual_review": "passed",
+    "hand_authored_usecases": 7,
+    "usecase_text_overflow": 0,
+    "observability": "纯文档与图形职责对齐，不新增日志/span/指标",
+    "reader_local_links_and_anchors": {
+      "status": "passed",
+      "count": 271
+    },
+    "changed_file_hygiene": "passed; no trailing whitespace, missing/extra EOF newline, conflict markers, or oversized files",
+    "svg_xml": "passed"
+  },
+  "group_reviews": [
+    "evidence/01-04-positioning-review.json",
+    "evidence/05-08-positioning-review.json",
+    "evidence/09-11-positioning-review.json"
+  ],
+  "reader_review": "evidence/positioning-reader-browser.json",
+  "diagrams": [
+    {
+      "name": "01-skill",
+      "diagram_type": "workflow",
+      "source": "diagrams/01-skill.json",
+      "output": "diagrams/01-skill.html",
+      "specification_sha256": "990fcd34e0a3139e8ce43573ee705fbe1b06496626ece1de1f172a8a215d716e",
+      "artifact_sha256": "91eecffaf56fb2c5be523ec220b170ca498671e82cb62590ca042ffece287e16",
+      "artifact_bytes": 707016,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "delivery_receipt": "evidence/01-skill-delivery.json",
+      "browser_receipt": "diagrams/01-skill.visual-check.json",
+      "visual_review_receipt": "evidence/01-04-positioning-review.json",
+      "svg": {
+        "path": "assets/01-skill.svg",
+        "sha256": "83c2b97daed9f176e388ce5fb8059d9351bd7f2bdab12eb1fe6057cadd4f1834",
+        "bytes": 50706,
+        "canonical": true
+      }
+    },
+    {
+      "name": "03-builtintool",
+      "diagram_type": "workflow",
+      "source": "diagrams/03-builtintool.json",
+      "output": "diagrams/03-builtintool.html",
+      "specification_sha256": "a145bfbb3a4185db3382ceeb13fefbc0e6b232c0c389fc912be17d1a0208662c",
+      "artifact_sha256": "8704ac012ed3a1c76de96111bf40e966f21d03bf0661e22ddd65e0eba50202ef",
+      "artifact_bytes": 707736,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "delivery_receipt": "evidence/03-builtintool-delivery.json",
+      "browser_receipt": "diagrams/03-builtintool.visual-check.json",
+      "visual_review_receipt": "evidence/01-04-positioning-review.json",
+      "svg": {
+        "path": "assets/03-builtintool.svg",
+        "sha256": "0b926e5ff8025dda045e1da59b9411da21e5d89a380b96f83b1a1f24feadf944",
+        "bytes": 51347,
+        "canonical": true
+      }
+    },
+    {
+      "name": "04-agent",
+      "diagram_type": "architecture",
+      "source": "diagrams/04-agent.json",
+      "output": "diagrams/04-agent.html",
+      "specification_sha256": "052d1660248faec6e49e27440fd1842ab2f86cbbc4628c0442b5f3786986135f",
+      "artifact_sha256": "8a9545bb758019795fd777b45c1add22d54ad589083cfaac0909ffea3ccaf78c",
+      "artifact_bytes": 706192,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "delivery_receipt": "evidence/04-agent-delivery.json",
+      "browser_receipt": "diagrams/04-agent.visual-check.json",
+      "visual_review_receipt": "evidence/01-04-positioning-review.json",
+      "svg": {
+        "path": "assets/04-agent.svg",
+        "sha256": "a02259302af2587fdc4921ae860c13ee3bc54b1a43bdbfd2fda4472ec1429375",
+        "bytes": 49830,
+        "canonical": true
+      }
+    },
+    {
+      "name": "01-skill-experiment",
+      "diagram_type": "sequence",
+      "source": "diagrams/runtime/01-skill-experiment.json",
+      "output": "diagrams/runtime/01-skill-experiment.html",
+      "specification_sha256": "59c0a09eb0dd1857e6dce982683499689dc257861978406283ecb241fdfbf35d",
+      "artifact_sha256": "1c997d738eb8f0cf713a3a21b6377d4002207cf7ef3dffc827067642a8a184a3",
+      "artifact_bytes": 704026,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "delivery_receipt": "evidence/runtime/01-skill-experiment-delivery.json",
+      "browser_receipt": "diagrams/runtime/01-skill-experiment.visual-check.json",
+      "visual_review_receipt": "evidence/01-04-positioning-review.json",
+      "svg": {
+        "path": "assets/runtime/01-skill-experiment.svg",
+        "sha256": "55063ed1c287ad9cc872270bb73090a67e5101e5a1bbaf029bf0b3213a1711a9",
+        "bytes": 48320,
+        "canonical": true
+      }
+    },
+    {
+      "name": "01-skill-file-conflict",
+      "diagram_type": "sequence",
+      "source": "diagrams/runtime/01-skill-file-conflict.json",
+      "output": "diagrams/runtime/01-skill-file-conflict.html",
+      "specification_sha256": "36201759d3c02f04120c68080e8f1e78181efe2999322f36169007acf9363d10",
+      "artifact_sha256": "4a89a8eba97f1c650d8848e34f62c6e890c979a6db2c5a81dab96a592a219f9c",
+      "artifact_bytes": 702703,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "delivery_receipt": "evidence/runtime/01-skill-file-conflict-delivery.json",
+      "browser_receipt": "diagrams/runtime/01-skill-file-conflict.visual-check.json",
+      "visual_review_receipt": "evidence/01-04-positioning-review.json",
+      "svg": {
+        "path": "assets/runtime/01-skill-file-conflict.svg",
+        "sha256": "ab747a18749f7c38946a839661571c057c8d6c9a2bdf56729ce309ffc6b077b6",
+        "bytes": 46972,
+        "canonical": true
+      }
+    },
+    {
+      "name": "01-skill-file-upload",
+      "diagram_type": "sequence",
+      "source": "diagrams/runtime/01-skill-file-upload.json",
+      "output": "diagrams/runtime/01-skill-file-upload.html",
+      "specification_sha256": "273048a96de85bfa2e4eeb8cbcdf1ea1e79e50f01050da8a4cafb951fecdbe6a",
+      "artifact_sha256": "92bdd50f6dc3e892256c1751803defd2575054e208561acbac3dc90fa6bf9129",
+      "artifact_bytes": 702767,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "delivery_receipt": "evidence/runtime/01-skill-file-upload-delivery.json",
+      "browser_receipt": "diagrams/runtime/01-skill-file-upload.visual-check.json",
+      "visual_review_receipt": "evidence/01-04-positioning-review.json",
+      "svg": {
+        "path": "assets/runtime/01-skill-file-upload.svg",
+        "sha256": "59a51602e415aa2483f08313a776ab119c029487aa862a98cd1bad1b05999407",
+        "bytes": 47021,
+        "canonical": true
+      }
+    },
+    {
+      "name": "02-mcp-call",
+      "diagram_type": "sequence",
+      "source": "diagrams/runtime/02-mcp-call.json",
+      "output": "diagrams/runtime/02-mcp-call.html",
+      "specification_sha256": "34c556de3c32988a5a3e5e34b3cf7dbddcbb25eb4e037475452c3546d048247f",
+      "artifact_sha256": "c085ea6b1d189c7d45038458424e8d59a0f805e34efbd8917dfb1ce363ffa3a1",
+      "artifact_bytes": 702463,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "delivery_receipt": "evidence/runtime/02-mcp-call-delivery.json",
+      "browser_receipt": "diagrams/runtime/02-mcp-call.visual-check.json",
+      "visual_review_receipt": "evidence/01-04-positioning-review.json",
+      "svg": {
+        "path": "assets/runtime/02-mcp-call.svg",
+        "sha256": "fa3ba292d73898a1cf0fee631e9a455d1c03465b2de2a4cedc0e9b9fdb08e163",
+        "bytes": 46811,
+        "canonical": true
+      }
+    },
+    {
+      "name": "02-mcp-failure",
+      "diagram_type": "sequence",
+      "source": "diagrams/runtime/02-mcp-failure.json",
+      "output": "diagrams/runtime/02-mcp-failure.html",
+      "specification_sha256": "ce2f8323f2f73aa2513cceccfd8cba796d42c53d1d8c66b336db69bafc50e1fc",
+      "artifact_sha256": "e9182f026d87bba2b5044d8baf4702ed35633e12a712221c57a28e50fb54ddc8",
+      "artifact_bytes": 701204,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "delivery_receipt": "evidence/runtime/02-mcp-failure-delivery.json",
+      "browser_receipt": "diagrams/runtime/02-mcp-failure.visual-check.json",
+      "visual_review_receipt": "evidence/01-04-positioning-review.json",
+      "svg": {
+        "path": "assets/runtime/02-mcp-failure.svg",
+        "sha256": "5c1bdaf74660a96b5378e1f557b1a1aa91885d7e37b033c148ae37dc016f6e8c",
+        "bytes": 45571,
+        "canonical": true
+      }
+    },
+    {
+      "name": "03-builtintool-missing",
+      "diagram_type": "sequence",
+      "source": "diagrams/runtime/03-builtintool-missing.json",
+      "output": "diagrams/runtime/03-builtintool-missing.html",
+      "specification_sha256": "44e2a23380900603cc5d10ffcb9db21b15c2f626b44e9002363c61da23579a8b",
+      "artifact_sha256": "f2da4290ee2c54e0e3ae69a6b4b9cce6f1095b37bef389bc126526170fb90746",
+      "artifact_bytes": 701068,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "delivery_receipt": "evidence/runtime/03-builtintool-missing-delivery.json",
+      "browser_receipt": "diagrams/runtime/03-builtintool-missing.visual-check.json",
+      "visual_review_receipt": "evidence/01-04-positioning-review.json",
+      "svg": {
+        "path": "assets/runtime/03-builtintool-missing.svg",
+        "sha256": "4b95ad5ac2547ee6d642d43a943390c8fb62e4bd907cc75e0e4c67da7c749a6b",
+        "bytes": 45466,
+        "canonical": true
+      }
+    },
+    {
+      "name": "03-builtintool-ready",
+      "diagram_type": "sequence",
+      "source": "diagrams/runtime/03-builtintool-ready.json",
+      "output": "diagrams/runtime/03-builtintool-ready.html",
+      "specification_sha256": "0546558ed045818824ac350a4a0901f260b8d005b9fd075bf46132fa6f985cc3",
+      "artifact_sha256": "1c1144830bfcd8d196d88d7d2f836470231efda3fda0158dfa7ea9b6cd7079b7",
+      "artifact_bytes": 703973,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "delivery_receipt": "evidence/runtime/03-builtintool-ready-delivery.json",
+      "browser_receipt": "diagrams/runtime/03-builtintool-ready.visual-check.json",
+      "visual_review_receipt": "evidence/01-04-positioning-review.json",
+      "svg": {
+        "path": "assets/runtime/03-builtintool-ready.svg",
+        "sha256": "f97982c75e456bc5dd87511f70e58e6b071f3a0878e7aac9bc5ba3ede4b266e8",
+        "bytes": 48268,
+        "canonical": true
+      }
+    },
+    {
+      "name": "04-assembly-failure",
+      "diagram_type": "sequence",
+      "source": "diagrams/runtime/04-assembly-failure.json",
+      "output": "diagrams/runtime/04-assembly-failure.html",
+      "specification_sha256": "a56e0dea2f835a89fa2bb8d4285692f1b7676536237e91513f5c8d82ed9de19f",
+      "artifact_sha256": "ee394a3ef2862cd8d195aefcebcfb5d8b1fe3c63d22be2116342bdc415d34281",
+      "artifact_bytes": 705453,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "delivery_receipt": "evidence/runtime/04-assembly-failure-delivery.json",
+      "browser_receipt": "diagrams/runtime/04-assembly-failure.visual-check.json",
+      "visual_review_receipt": "evidence/01-04-positioning-review.json",
+      "svg": {
+        "path": "assets/runtime/04-assembly-failure.svg",
+        "sha256": "286fd1f507eec345b82883130152455d979bf8292e0a4ceb9fc6d87539abd3f0",
+        "bytes": 49825,
+        "canonical": true
+      }
+    },
+    {
+      "name": "04-local-session",
+      "diagram_type": "sequence",
+      "source": "diagrams/runtime/04-local-session.json",
+      "output": "diagrams/runtime/04-local-session.html",
+      "specification_sha256": "e709374779ec89768045cd334fb1966bf460201844c7c1ce19fc7ee98621c71b",
+      "artifact_sha256": "b17de522f221f6c1417cb894d1622cec3730b290d6b0d50c2a7bec3abee155dc",
+      "artifact_bytes": 704914,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "delivery_receipt": "evidence/runtime/04-local-session-delivery.json",
+      "browser_receipt": "diagrams/runtime/04-local-session.visual-check.json",
+      "visual_review_receipt": "evidence/01-04-positioning-review.json",
+      "svg": {
+        "path": "assets/runtime/04-local-session.svg",
+        "sha256": "8edf64da895f26ad0fd47540bd9e9a88e85cd916518d447c930256e40da66c9e",
+        "bytes": 49875,
+        "canonical": true
+      }
+    },
+    {
+      "name": "04-official-new-version",
+      "diagram_type": "sequence",
+      "source": "diagrams/runtime/04-official-new-version.json",
+      "output": "diagrams/runtime/04-official-new-version.html",
+      "specification_sha256": "67c48d45fdb5a424a046f124e59437d19892113a88420845012fc32d06a3937d",
+      "artifact_sha256": "4505c4206f0840cbcdd34e73e28c15a49f8e67af320e74556e31631de7baacd8",
+      "artifact_bytes": 704873,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "delivery_receipt": "evidence/runtime/04-official-new-version-delivery.json",
+      "browser_receipt": "diagrams/runtime/04-official-new-version.visual-check.json",
+      "visual_review_receipt": "evidence/01-04-positioning-review.json",
+      "svg": {
+        "path": "assets/runtime/04-official-new-version.svg",
+        "sha256": "7acb6bffad55d2064b39b61c22d5ad8f7ed99746d8fdff11b81d3218e391c152",
+        "bytes": 49842,
+        "canonical": true
+      }
+    },
+    {
+      "name": "05-updater",
+      "diagram_type": "workflow",
+      "source": "diagrams/05-updater.json",
+      "output": "diagrams/05-updater.html",
+      "specification_sha256": "f961f3e0bba42f02d154ee1bb00c791f7c76f22e7cccde09a5bcf0a266ad044b",
+      "artifact_sha256": "5b252090e6c5d99b4c0db3004b29623325102dfd22c59af845caeccbe5b5f312",
+      "artifact_bytes": 708697,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "delivery_receipt": "evidence/05-updater-delivery.json",
+      "browser_receipt": "diagrams/05-updater.visual-check.json",
+      "visual_review_receipt": "evidence/05-08-positioning-review.json",
+      "svg": {
+        "path": "assets/05-updater.svg",
+        "sha256": "0c67e8a08489f096082edccc223e9c512238c42568dfd628751a955a7671ac3c",
+        "bytes": 52116,
+        "canonical": true
+      }
+    },
+    {
+      "name": "06-sync",
+      "diagram_type": "sequence",
+      "source": "diagrams/06-sync.json",
+      "output": "diagrams/06-sync.html",
+      "specification_sha256": "b719c9f60c741b9f4df17e4fb98bd375658facd6d8d55b5cfa9d8d01302a361f",
+      "artifact_sha256": "b38794b6c3196045da9c12c4a1b3fbd6af8a8d978a96216b5a4dcf1613dbee9f",
+      "artifact_bytes": 704781,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "delivery_receipt": "evidence/06-sync-delivery.json",
+      "browser_receipt": "diagrams/06-sync.visual-check.json",
+      "visual_review_receipt": "evidence/05-08-positioning-review.json",
+      "svg": {
+        "path": "assets/06-sync.svg",
+        "sha256": "617de9a289c0162937bfc39df2f263106927e5c618a3556935b44a0f8cecc336",
+        "bytes": 48854,
+        "canonical": true
+      }
+    },
+    {
+      "name": "07-execution",
+      "diagram_type": "lifecycle",
+      "source": "diagrams/07-execution.json",
+      "output": "diagrams/07-execution.html",
+      "specification_sha256": "f59a27ebed3e440e113946244d203d53c4ce405d515410fcc9708fa4eceeb3eb",
+      "artifact_sha256": "def7c136ad1f81b79cab13ae9f63893260fff686fc9447efc7732a2c6eaeecd0",
+      "artifact_bytes": 710085,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "delivery_receipt": "evidence/07-execution-delivery.json",
+      "browser_receipt": "diagrams/07-execution.visual-check.json",
+      "visual_review_receipt": "evidence/05-08-positioning-review.json",
+      "svg": {
+        "path": "assets/07-execution.svg",
+        "sha256": "9ef538bd364fff9668869e6055716a91a946c225d09f2220b0fd3198e7b10f0d",
+        "bytes": 53188,
+        "canonical": true
+      }
+    },
+    {
+      "name": "05-update-busy",
+      "diagram_type": "sequence",
+      "source": "diagrams/runtime/05-update-busy.json",
+      "output": "diagrams/runtime/05-update-busy.html",
+      "specification_sha256": "04dc102bc06461436648de7c7dc9aab8b3045fe8bef222880dc91722daaa7fd3",
+      "artifact_sha256": "b729649a201770a643932cc74ba246454c453b91b2689cc4d149c49ee366ee89",
+      "artifact_bytes": 702534,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "delivery_receipt": "evidence/runtime/05-update-busy-delivery.json",
+      "browser_receipt": "diagrams/runtime/05-update-busy.visual-check.json",
+      "visual_review_receipt": "evidence/05-08-positioning-review.json",
+      "svg": {
+        "path": "assets/runtime/05-update-busy.svg",
+        "sha256": "01797601c07dfdd00edf06dde3da78af0edc06b589b191214bb2e9b1af3b228a",
+        "bytes": 47525,
+        "canonical": true
+      }
+    },
+    {
+      "name": "05-update-rejected",
+      "diagram_type": "sequence",
+      "source": "diagrams/runtime/05-update-rejected.json",
+      "output": "diagrams/runtime/05-update-rejected.html",
+      "specification_sha256": "b497cda17b21000539c7b26de1b69e256ecf6334153c902b4752dee091e84e67",
+      "artifact_sha256": "c9ae6c86a17faf865c1747f4810297214a0098dfb4be1b433a0ee8abe249c295",
+      "artifact_bytes": 700419,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "delivery_receipt": "evidence/runtime/05-update-rejected-delivery.json",
+      "browser_receipt": "diagrams/runtime/05-update-rejected.visual-check.json",
+      "visual_review_receipt": "evidence/05-08-positioning-review.json",
+      "svg": {
+        "path": "assets/runtime/05-update-rejected.svg",
+        "sha256": "db80a7e975ad93f694cc42ebfeca4c0907a8967486508fbeca52134335973750",
+        "bytes": 45482,
+        "canonical": true
+      }
+    },
+    {
+      "name": "05-update-success",
+      "diagram_type": "sequence",
+      "source": "diagrams/runtime/05-update-success.json",
+      "output": "diagrams/runtime/05-update-success.html",
+      "specification_sha256": "c55fd8c1b820e1b1c789929240d8f6a3bc3dd59e486fb79b54fe35e4439d370e",
+      "artifact_sha256": "20892d05a21848a402fcca6146f39851a042af592cae337f365fd25bf716715d",
+      "artifact_bytes": 705481,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "delivery_receipt": "evidence/runtime/05-update-success-delivery.json",
+      "browser_receipt": "diagrams/runtime/05-update-success.visual-check.json",
+      "visual_review_receipt": "evidence/05-08-positioning-review.json",
+      "svg": {
+        "path": "assets/runtime/05-update-success.svg",
+        "sha256": "dc8e6d51a118da6b2b82b06e5d83c6f04cf0e9a58a5b88784ccf102eaeb6c65c",
+        "bytes": 50434,
+        "canonical": true
+      }
+    },
+    {
+      "name": "06-cache-ready",
+      "diagram_type": "sequence",
+      "source": "diagrams/runtime/06-cache-ready.json",
+      "output": "diagrams/runtime/06-cache-ready.html",
+      "specification_sha256": "b7616c41724e0607ad3ffbb0f996e7bc1c7db3b20ca9731f587c9ae18e28b048",
+      "artifact_sha256": "4f56715ebbe6a72e3e75b4167549316aa1980d15ca4128f02a2bd5d4e77a76bb",
+      "artifact_bytes": 703866,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "delivery_receipt": "evidence/runtime/06-cache-ready-delivery.json",
+      "browser_receipt": "diagrams/runtime/06-cache-ready.visual-check.json",
+      "visual_review_receipt": "evidence/05-08-positioning-review.json",
+      "svg": {
+        "path": "assets/runtime/06-cache-ready.svg",
+        "sha256": "47b74d1dd3df81281470855a6fb3f3054ef75f1d8ebbc6cda7af2acac94c1bd1",
+        "bytes": 48863,
+        "canonical": true
+      }
+    },
+    {
+      "name": "06-download-missing",
+      "diagram_type": "sequence",
+      "source": "diagrams/runtime/06-download-missing.json",
+      "output": "diagrams/runtime/06-download-missing.html",
+      "specification_sha256": "395a05ab896d8f643e9922d1ce47be2bd59dc5afe28ce51976ee22efcb4a122e",
+      "artifact_sha256": "3b4490855bcf82737012606b0b078f093874a751e48086f17b43c0030edb31eb",
+      "artifact_bytes": 704609,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "delivery_receipt": "evidence/runtime/06-download-missing-delivery.json",
+      "browser_receipt": "diagrams/runtime/06-download-missing.visual-check.json",
+      "visual_review_receipt": "evidence/05-08-positioning-review.json",
+      "svg": {
+        "path": "assets/runtime/06-download-missing.svg",
+        "sha256": "8653440ed15cc24d7bf9317302a8892ea1266ad37ffef2714b526934c429d328",
+        "bytes": 49578,
+        "canonical": true
+      }
+    },
+    {
+      "name": "06-sync-failure",
+      "diagram_type": "sequence",
+      "source": "diagrams/runtime/06-sync-failure.json",
+      "output": "diagrams/runtime/06-sync-failure.html",
+      "specification_sha256": "b318afe2e12a5a13231cfccfc5aaeb50feb53d0e8ffd0b13498b6f032610f49c",
+      "artifact_sha256": "d8ce2d066ec6a35b7deec4f9d70a635b282f810c93155a7a6234c180548b49e8",
+      "artifact_bytes": 702415,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "delivery_receipt": "evidence/runtime/06-sync-failure-delivery.json",
+      "browser_receipt": "diagrams/runtime/06-sync-failure.visual-check.json",
+      "visual_review_receipt": "evidence/05-08-positioning-review.json",
+      "svg": {
+        "path": "assets/runtime/06-sync-failure.svg",
+        "sha256": "c32ae7033182c9a7d978913ee81e572e20067aaa66771162ecc3c0a00b10c0b3",
+        "bytes": 47456,
+        "canonical": true
+      }
+    },
+    {
+      "name": "07-busy",
+      "diagram_type": "sequence",
+      "source": "diagrams/runtime/07-busy.json",
+      "output": "diagrams/runtime/07-busy.html",
+      "specification_sha256": "15850ede0dc83a3b4c0ca5298d147bae7f29e8dd1f88e8afaf012e826334fdc5",
+      "artifact_sha256": "55fe04500ffbdd4d0f51aba1731ef6e8b3c0961c50924d98fd02681f8f1f4276",
+      "artifact_bytes": 701015,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "delivery_receipt": "evidence/runtime/07-busy-deliver.json",
+      "browser_receipt": "diagrams/runtime/07-busy.visual-check.json",
+      "visual_review_receipt": "evidence/05-08-positioning-review.json",
+      "svg": {
+        "path": "assets/runtime/07-busy.svg",
+        "sha256": "bb029800c3b9d23b2850f95f866a95719a0b34a3e949a3b924358aa9dd4c8b5a",
+        "bytes": 45380,
+        "canonical": true
+      }
+    },
+    {
+      "name": "07-cancel",
+      "diagram_type": "sequence",
+      "source": "diagrams/runtime/07-cancel.json",
+      "output": "diagrams/runtime/07-cancel.html",
+      "specification_sha256": "72fb8cf03d811191c940867d3fe942e01cedf5d0f7b04cbbbcf792b05f27da66",
+      "artifact_sha256": "e9511e66393fbf678c2ac9d1724661b606fc24f6e5fd9651344703d0bedda159",
+      "artifact_bytes": 703845,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "delivery_receipt": "evidence/runtime/07-cancel-deliver.json",
+      "browser_receipt": "diagrams/runtime/07-cancel.visual-check.json",
+      "visual_review_receipt": "evidence/05-08-positioning-review.json",
+      "svg": {
+        "path": "assets/runtime/07-cancel.svg",
+        "sha256": "c811ee57eb3d3077a957666602b1ab8215eb3e25742b7c66fa7b9adffdd13083",
+        "bytes": 48185,
+        "canonical": true
+      }
+    },
+    {
+      "name": "07-disconnect",
+      "diagram_type": "sequence",
+      "source": "diagrams/runtime/07-disconnect.json",
+      "output": "diagrams/runtime/07-disconnect.html",
+      "specification_sha256": "045f3754f8bb01ca4ad71cd15651da7e66bc41168932684059c0f50f4a9fbce8",
+      "artifact_sha256": "556ed27a27926b9d9a166715c35d19032cda644522db00bcef5b4045cb5cd106",
+      "artifact_bytes": 704491,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "delivery_receipt": "evidence/runtime/07-disconnect-deliver.json",
+      "browser_receipt": "diagrams/runtime/07-disconnect.visual-check.json",
+      "visual_review_receipt": "evidence/05-08-positioning-review.json",
+      "svg": {
+        "path": "assets/runtime/07-disconnect.svg",
+        "sha256": "cc83452bb36aa28776ec879389eeaa6784606cdebc16a9e73953f7405f9f7d92",
+        "bytes": 48791,
+        "canonical": true
+      }
+    },
+    {
+      "name": "07-login",
+      "diagram_type": "sequence",
+      "source": "diagrams/runtime/07-login.json",
+      "output": "diagrams/runtime/07-login.html",
+      "specification_sha256": "d399ee38cc3d5350b08fdb3196b65844c5c8f21e377d79fad1e795957190dbd1",
+      "artifact_sha256": "89d3777281d0e97ad8660fd2f2fa9d7dc492dea8e681c1c368b8f20f7feb0194",
+      "artifact_bytes": 703889,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "delivery_receipt": "evidence/runtime/07-login-deliver.json",
+      "browser_receipt": "diagrams/runtime/07-login.visual-check.json",
+      "visual_review_receipt": "evidence/05-08-positioning-review.json",
+      "svg": {
+        "path": "assets/runtime/07-login.svg",
+        "sha256": "1d783666a70b82d3063613ac0e55ceffa03b7dfe46e8a21e3acde1200572669b",
+        "bytes": 48179,
+        "canonical": true
+      }
+    },
+    {
+      "name": "07-restart-complete",
+      "diagram_type": "sequence",
+      "source": "diagrams/runtime/07-restart-complete.json",
+      "output": "diagrams/runtime/07-restart-complete.html",
+      "specification_sha256": "c0a9aee68a35754427ffce2cecc9c73e75a45e61387c860910f6de3df4d949a5",
+      "artifact_sha256": "7280db0cb76e7005c888650a10256819bb11378d41ec467ae4f17e9b4d517eef",
+      "artifact_bytes": 703967,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "delivery_receipt": "evidence/runtime/07-restart-complete-deliver.json",
+      "browser_receipt": "diagrams/runtime/07-restart-complete.visual-check.json",
+      "visual_review_receipt": "evidence/05-08-positioning-review.json",
+      "svg": {
+        "path": "assets/runtime/07-restart-complete.svg",
+        "sha256": "e71d3adec5b06edcd3be64a69ff4a371fa68484f12086bb70cdaca32a414b701",
+        "bytes": 48312,
+        "canonical": true
+      }
+    },
+    {
+      "name": "07-restart-incomplete",
+      "diagram_type": "sequence",
+      "source": "diagrams/runtime/07-restart-incomplete.json",
+      "output": "diagrams/runtime/07-restart-incomplete.html",
+      "specification_sha256": "f78de7564068edb60455a9efdb5fbf749703fb5e2b54b4ff5f30e7bd4282e5cf",
+      "artifact_sha256": "1d8b1024ae627e7bdd01369633f1d356064ce262c088ad1f3e24ea38a1e8f176",
+      "artifact_bytes": 704051,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "delivery_receipt": "evidence/runtime/07-restart-incomplete-deliver.json",
+      "browser_receipt": "diagrams/runtime/07-restart-incomplete.visual-check.json",
+      "visual_review_receipt": "evidence/05-08-positioning-review.json",
+      "svg": {
+        "path": "assets/runtime/07-restart-incomplete.svg",
+        "sha256": "06adfda1a11562e4543ca0b5a45be79213f3558e5ccb76b6aa35fe915bb241db",
+        "bytes": 48387,
+        "canonical": true
+      }
+    },
+    {
+      "name": "07-timeout",
+      "diagram_type": "sequence",
+      "source": "diagrams/runtime/07-timeout.json",
+      "output": "diagrams/runtime/07-timeout.html",
+      "specification_sha256": "a2e423e73812c0bce7c74f4c1fffeefd81b8aedcae6665f3a89123dd6340204a",
+      "artifact_sha256": "54ea1117d870d50a0f70673a7893dc772ab9cc97394887ab34c50f4e04b09277",
+      "artifact_bytes": 702380,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "delivery_receipt": "evidence/runtime/07-timeout-deliver.json",
+      "browser_receipt": "diagrams/runtime/07-timeout.visual-check.json",
+      "visual_review_receipt": "evidence/05-08-positioning-review.json",
+      "svg": {
+        "path": "assets/runtime/07-timeout.svg",
+        "sha256": "eb36040278e0f366b0f7c7a40d2b0c1bb99e33d629f1ac569bca22ab2a68fc6a",
+        "bytes": 46751,
+        "canonical": true
+      }
+    },
+    {
+      "name": "11-provider",
+      "diagram_type": "architecture",
+      "source": "diagrams/11-provider.json",
+      "output": "diagrams/11-provider.html",
+      "specification_sha256": "e4ef6c19a24b811558605cb4929e56d4645c0b24c4c38e0c268bbffda7a1ba14",
+      "artifact_sha256": "80918591cd544acfe28e7dff566194b98b5df7c821ce5ecb2a5f31137a8b5ed5",
+      "artifact_bytes": 712845,
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "delivery_receipt": "diagrams/11-provider.delivery.json",
+      "browser_receipt": "diagrams/11-provider.visual-check.json",
+      "visual_review_receipt": "evidence/09-11-positioning-review.json",
+      "svg": {
+        "path": "assets/11-provider.svg",
+        "sha256": "4ac9a75e97ec6956d8e578caea6a7a51581344cdae7380147bb0742544d6cd6d",
+        "bytes": 56283,
+        "canonical": true
+      }
+    }
+  ],
+  "usecases": [
+    {
+      "file": "assets/01-skill-usecase.svg",
+      "sha256": "bf7fbb5d6ffb30fbca4b1b2b84f0813acedf6fb55aa70c4f14df885cc8e13e25",
+      "visual_review": "passed"
+    },
+    {
+      "file": "assets/02-mcp-usecase.svg",
+      "sha256": "16118adc364480026c7eafd2fb3f5e2954337a354a7239db005aa82d829af38a",
+      "visual_review": "passed"
+    },
+    {
+      "file": "assets/03-builtintool-usecase.svg",
+      "sha256": "462f907a204d0cc0b9c7c6f26b7985855c8226c7711f21d62b87312fe0d32097",
+      "visual_review": "passed"
+    },
+    {
+      "file": "assets/04-agent-usecase.svg",
+      "sha256": "042c98d5eff7940433218fd7a941a22392e0e95ab2b35162c48aa65ebeb754b1",
+      "visual_review": "passed"
+    },
+    {
+      "file": "assets/05-updater-usecase.svg",
+      "sha256": "660567da6a1c5717b667ebbb2f11000d61659aa13dc190d371db76d9de2f7395",
+      "visual_review": "passed"
+    },
+    {
+      "file": "assets/06-sync-usecase.svg",
+      "sha256": "9aa1cfd2bf15f7bba85daf0446c1d86c7164af745688a082ea2a7818bd1224db",
+      "visual_review": "passed"
+    },
+    {
+      "file": "assets/07-execution-usecase.svg",
+      "sha256": "b7683ed007ad7e2a75ba47bc0930dec58dcf74fa33d993164f2001a923cd4078",
+      "visual_review": "passed"
+    }
+  ],
+  "remaining_issues": []
+}

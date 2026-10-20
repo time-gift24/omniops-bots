@@ -5041,11 +5041,11 @@
 
 
         <!-- Messages -->
-        <g data-edge-from="caller" data-edge-to="client" data-edge-label="发起本轮任务" data-edge-key="0" data-edge-id="m1">
+        <g data-edge-from="caller" data-edge-to="client" data-edge-label="下发本轮任务" data-edge-key="0" data-edge-id="m1">
           <path data-composition-edge-from="caller" data-composition-edge-to="client" data-composition-edge-id="m1" data-composition-points="164,180;554,180" d="M 164 180 L 554 180" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
         <g data-detail="context">
           <rect x="321.8" y="160" width="74.4" height="16" rx="3" class="c-mask"/>
-          <text x="359" y="170" class="t-backend" font-size="9" text-anchor="middle">发起本轮任务</text>
+          <text x="359" y="170" class="t-backend" font-size="9" text-anchor="middle">下发本轮任务</text>
         </g>
         </g>
 
@@ -5065,11 +5065,11 @@
         </g>
         </g>
 
-        <g data-edge-from="client" data-edge-to="caller" data-edge-label="结束本轮，提示更新桌面端" data-edge-key="3" data-edge-id="m4">
+        <g data-edge-from="client" data-edge-to="caller" data-edge-label="回传失败及客户端更新提示" data-edge-key="3" data-edge-id="m4">
           <path data-composition-edge-from="client" data-composition-edge-to="caller" data-composition-edge-id="m4" data-composition-points="554,505;164,505" d="M 554 505 L 164 505" class="a-default" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
         <g data-detail="context">
           <rect x="290.6" y="485" width="136.8" height="16" rx="3" class="c-mask"/>
-          <text x="359" y="495" class="t-muted" font-size="9" text-anchor="middle">结束本轮，提示更新桌面端</text>
+          <text x="359" y="495" class="t-muted" font-size="9" text-anchor="middle">回传失败及客户端更新提示</text>
         </g>
         </g>
 
@@ -5077,19 +5077,19 @@
 
 
         <!-- Participants -->
-        <g id="node-caller" data-node-id="caller" data-node-label="调用方" tabindex="0" role="button" aria-label="聚焦调用方，时序参与者" aria-pressed="false" data-node-kind="external" data-node-context="时序参与者">
-          <title>调用方 · 时序参与者</title>
+        <g id="node-caller" data-node-id="caller" data-node-label="服务端 Agent" tabindex="0" role="button" aria-label="聚焦服务端 Agent，时序参与者" aria-pressed="false" data-node-kind="external" data-node-context="时序参与者">
+          <title>服务端 Agent · 时序参与者</title>
           <rect x="62" y="72" width="190" height="54" rx="6" class="c-mask"/>
           <rect x="62" y="72" width="190" height="54" rx="6" class="c-external" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(68 78) scale(0.6875)">
             <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
             <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
           </g>
-          <text data-node-label="" x="157" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">调用方</text>
+          <text data-node-label="" x="157" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">服务端 Agent</text>
         </g>
 
-        <g id="node-client" data-node-id="client" data-node-label="桌面客户端" tabindex="0" role="button" aria-label="聚焦桌面客户端，时序参与者" aria-pressed="false" data-node-kind="frontend" data-node-context="时序参与者">
-          <title>桌面客户端 · 时序参与者</title>
+        <g id="node-client" data-node-id="client" data-node-label="客户端后台 Agent" tabindex="0" role="button" aria-label="聚焦客户端后台 Agent，时序参与者" aria-pressed="false" data-node-kind="frontend" data-node-context="时序参与者">
+          <title>客户端后台 Agent · 时序参与者</title>
           <rect x="466" y="72" width="190" height="54" rx="6" class="c-mask"/>
           <rect x="466" y="72" width="190" height="54" rx="6" class="c-frontend" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="frontend" class="semantic-sigil s-frontend" transform="translate(472 78) scale(0.6875)">
@@ -5098,7 +5098,7 @@
             <circle cx="4.1" cy="4.8" r=".7" class="sigil-fill"/>
             <circle cx="6.3" cy="4.8" r=".7" class="sigil-fill"/>
           </g>
-          <text data-node-label="" x="561" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">桌面客户端</text>
+          <text data-node-label="" x="561" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">客户端后台 Agent</text>
         </g>
 
         <g id="node-tools" data-node-id="tools" data-node-label="本地内置工具" tabindex="0" role="button" aria-label="聚焦本地内置工具，时序参与者" aria-pressed="false" data-node-kind="backend" data-node-context="时序参与者">
@@ -5320,7 +5320,7 @@
         </div>
         <ul>
           <li>&bull; 检查失败，不开始 Chrome 操作</li>
-          <li>&bull; 记录缺失工具；远端调用回传失败</li>
+          <li>&bull; Console 展示缺失原因及更新要求</li>
         </ul>
       </div>
 

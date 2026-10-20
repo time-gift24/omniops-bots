@@ -6,12 +6,12 @@
   "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/03-builtintool-missing.json",
   "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/03-builtintool-missing.html",
   "specification": {
-    "sha256": "abd655af4d320556d6c3d247c4969f074b5209373fb6f117b42b0a9b06a85b10",
-    "bytes": 1643
+    "sha256": "44e2a23380900603cc5d10ffcb9db21b15c2f626b44e9002363c61da23579a8b",
+    "bytes": 1651
   },
   "artifact": {
-    "sha256": "704c8bd6d80b27b5ee3fac162752cf11f8ef2d88aa1bc0e69954a8ccdbca9f99",
-    "bytes": 701024
+    "sha256": "f2da4290ee2c54e0e3ae69a6b4b9cce6f1095b37bef389bc126526170fb90746",
+    "bytes": 701068
   },
   "validation": {
     "checksPassed": 9,

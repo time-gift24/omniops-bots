@@ -14,12 +14,12 @@
   "participants": [
     {
       "id": "caller",
-      "label": "调用方",
+      "label": "服务端 Agent",
       "type": "external"
     },
     {
       "id": "client",
-      "label": "客户端装配",
+      "label": "客户端后台装配",
       "type": "frontend"
     },
     {
@@ -39,7 +39,7 @@
       "from": "caller",
       "to": "client",
       "y": 170,
-      "label": "请求执行确定的 Agent",
+      "label": "下发指定 Agent 的独立任务",
       "variant": "emphasis"
     },
     {
@@ -103,7 +103,7 @@
       "dot": "slate",
       "title": "后续处理",
       "items": [
-        "已有 Skill 缓存保留；修复连接或凭据后，由调用方重新发起任务。"
+        "保留 Skill 缓存；修复连接或凭据后，由 Console 业务显式重发任务。"
       ]
     }
   ]

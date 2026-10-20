@@ -14,13 +14,13 @@
   "participants": [
     {
       "id": "user",
-      "label": "用户",
+      "label": "Console 用户",
       "type": "external"
     },
     {
       "id": "client",
-      "label": "桌面客户端",
-      "type": "frontend"
+      "label": "后台客户端",
+      "type": "backend"
     },
     {
       "id": "chrome",
@@ -29,7 +29,7 @@
     },
     {
       "id": "server",
-      "label": "服务端",
+      "label": "服务端 Agent",
       "type": "backend"
     }
   ],
@@ -53,17 +53,17 @@
     {
       "id": "m-07-login-2",
       "from": "client",
-      "to": "user",
+      "to": "server",
       "y": 316,
-      "label": "结束本次任务，说明失败原因",
+      "label": "保存并回传登录失败",
       "variant": "emphasis"
     },
     {
       "id": "m-07-login-3",
-      "from": "client",
-      "to": "server",
+      "from": "server",
+      "to": "user",
       "y": 384,
-      "label": "远端任务：保存后回传失败",
+      "label": "Console 提示登录或验证",
       "variant": "default"
     },
     {
@@ -89,7 +89,7 @@
       "title": "原任务已经结束",
       "items": [
         "不暂停等待、不自动恢复原调用",
-        "远端新调用由服务端重新安排"
+        "用户在 Console 重发，服务端 Agent 下发新任务"
       ]
     },
     {

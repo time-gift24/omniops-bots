@@ -6,12 +6,12 @@
   "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-local-session.json",
   "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-local-session.html",
   "specification": {
-    "sha256": "865b8450f5cbedce6ef432f2c0a2be7b30d7ecc42549f88632e6ccbb8b7f317f",
-    "bytes": 2010
+    "sha256": "e709374779ec89768045cd334fb1966bf460201844c7c1ce19fc7ee98621c71b",
+    "bytes": 2049
   },
   "artifact": {
-    "sha256": "dec0a194b3c4ff97883d560c25df93e357bc523273f587b94d29224a597e1976",
-    "bytes": 704777
+    "sha256": "b17de522f221f6c1417cb894d1622cec3730b290d6b0d50c2a7bec3abee155dc",
+    "bytes": 704914
   },
   "validation": {
     "checksPassed": 9,

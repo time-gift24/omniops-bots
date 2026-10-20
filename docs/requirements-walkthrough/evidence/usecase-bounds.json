@@ -17,57 +17,120 @@
   {
     "name": "01-skill-usecase.svg",
     "viewBox": [
-      1000,
-      520
+      0.0,
+      0.0,
+      1000.0,
+      520.0
     ],
-    "overflow": []
+    "overflow": [],
+    "artifact_sha256": "bf7fbb5d6ffb30fbca4b1b2b84f0813acedf6fb55aa70c4f14df885cc8e13e25",
+    "bytes": 3065,
+    "visual_review": "passed",
+    "review_receipt": "evidence/01-04-positioning-review.json",
+    "observations": [
+      "实际查看浏览器渲染；参与角色明确，文字可读且均在 SVG viewBox 内。"
+    ]
   },
   {
     "name": "02-mcp-usecase.svg",
     "viewBox": [
-      1000,
-      520
+      0.0,
+      0.0,
+      1000.0,
+      520.0
     ],
-    "overflow": []
+    "overflow": [],
+    "artifact_sha256": "16118adc364480026c7eafd2fb3f5e2954337a354a7239db005aa82d829af38a",
+    "bytes": 2835,
+    "visual_review": "passed",
+    "review_receipt": "evidence/01-04-positioning-review.json",
+    "observations": [
+      "实际查看浏览器渲染；参与角色明确，文字可读且均在 SVG viewBox 内。"
+    ]
   },
   {
     "name": "03-builtintool-usecase.svg",
     "viewBox": [
-      1000,
-      520
+      0.0,
+      0.0,
+      1000.0,
+      520.0
     ],
-    "overflow": []
+    "overflow": [],
+    "artifact_sha256": "462f907a204d0cc0b9c7c6f26b7985855c8226c7711f21d62b87312fe0d32097",
+    "bytes": 2823,
+    "visual_review": "passed",
+    "review_receipt": "evidence/01-04-positioning-review.json",
+    "observations": [
+      "实际查看浏览器渲染；参与角色明确，文字可读且均在 SVG viewBox 内。"
+    ]
   },
   {
     "name": "04-agent-usecase.svg",
     "viewBox": [
-      1000,
-      520
+      0.0,
+      0.0,
+      1000.0,
+      520.0
     ],
-    "overflow": []
+    "overflow": [],
+    "artifact_sha256": "042c98d5eff7940433218fd7a941a22392e0e95ab2b35162c48aa65ebeb754b1",
+    "bytes": 3330,
+    "visual_review": "passed",
+    "review_receipt": "evidence/01-04-positioning-review.json",
+    "observations": [
+      "实际查看浏览器渲染；参与角色明确，文字可读且均在 SVG viewBox 内。"
+    ]
   },
   {
     "name": "05-updater-usecase.svg",
     "viewBox": [
-      1000,
-      520
+      0.0,
+      0.0,
+      1000.0,
+      520.0
     ],
-    "overflow": []
+    "overflow": [],
+    "artifact_sha256": "660567da6a1c5717b667ebbb2f11000d61659aa13dc190d371db76d9de2f7395",
+    "bytes": 3040,
+    "visual_review": "passed",
+    "review_receipt": "evidence/05-08-positioning-review.json",
+    "observations": [
+      "Inspected real browser screenshot; actor and use-case labels fit, associations remain legible."
+    ]
   },
   {
     "name": "06-sync-usecase.svg",
     "viewBox": [
-      1000,
-      520
+      0.0,
+      0.0,
+      1000.0,
+      520.0
     ],
-    "overflow": []
+    "overflow": [],
+    "artifact_sha256": "9aa1cfd2bf15f7bba85daf0446c1d86c7164af745688a082ea2a7818bd1224db",
+    "bytes": 3242,
+    "visual_review": "passed",
+    "review_receipt": "evidence/05-08-positioning-review.json",
+    "observations": [
+      "Inspected real browser screenshot; actor and use-case labels fit, associations remain legible."
+    ]
   },
   {
     "name": "07-execution-usecase.svg",
     "viewBox": [
-      1000,
-      520
+      0.0,
+      0.0,
+      1000.0,
+      520.0
     ],
-    "overflow": []
+    "overflow": [],
+    "artifact_sha256": "b7683ed007ad7e2a75ba47bc0930dec58dcf74fa33d993164f2001a923cd4078",
+    "bytes": 3096,
+    "visual_review": "passed",
+    "review_receipt": "evidence/05-08-positioning-review.json",
+    "observations": [
+      "Inspected real browser screenshot; actor and use-case labels fit, associations remain legible."
+    ]
   }
 ]

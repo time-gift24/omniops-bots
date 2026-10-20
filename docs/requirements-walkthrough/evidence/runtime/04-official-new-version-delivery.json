@@ -6,12 +6,12 @@
   "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-official-new-version.json",
   "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-official-new-version.html",
   "specification": {
-    "sha256": "70a58e318524d0f7398f2528357ab82e35dcc4ea43f514c77c3050df518c66d4",
-    "bytes": 2039
+    "sha256": "67c48d45fdb5a424a046f124e59437d19892113a88420845012fc32d06a3937d",
+    "bytes": 2054
   },
   "artifact": {
-    "sha256": "1231a1ce5d68d2a20a3a2cd1cba3bc16e6ad422a9710f2fd381767db33287226",
-    "bytes": 704813
+    "sha256": "4505c4206f0840cbcdd34e73e28c15a49f8e67af320e74556e31631de7baacd8",
+    "bytes": 704873
   },
   "validation": {
     "checksPassed": 9,

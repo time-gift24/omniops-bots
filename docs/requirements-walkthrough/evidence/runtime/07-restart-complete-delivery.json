@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/07-restart-complete.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/07-restart-complete.html",
+  "specification": {
+    "sha256": "c0a9aee68a35754427ffce2cecc9c73e75a45e61387c860910f6de3df4d949a5",
+    "bytes": 2216
+  },
+  "artifact": {
+    "sha256": "7280db0cb76e7005c888650a10256819bb11378d41ec467ae4f17e9b4d517eef",
+    "bytes": 703967
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

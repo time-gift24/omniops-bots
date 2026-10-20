@@ -14,8 +14,8 @@
   "participants": [
     {
       "id": "client",
-      "label": "桌面客户端",
-      "type": "frontend"
+      "label": "后台客户端",
+      "type": "backend"
     },
     {
       "id": "chrome",
@@ -29,7 +29,7 @@
     },
     {
       "id": "server",
-      "label": "服务端",
+      "label": "服务端 Agent",
       "type": "backend"
     }
   ],
@@ -104,7 +104,7 @@
       "dot": "cyan",
       "title": "只补传结果",
       "items": [
-        "确认前一直保留结果与快照",
+        "服务端 Agent 确认后，Console 展示结果",
         "不会因重连重新执行 Chrome 操作"
       ]
     }

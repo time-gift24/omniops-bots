@@ -2,7 +2,7 @@
   "schema_version": 2,
   "diagram_type": "workflow",
   "meta": {
-    "title": "桌面更新｜用户决定，空闲安装",
+    "title": "客户端维护更新｜用户决定，空闲安装",
     "locale": "zh-CN",
     "quality_profile": "showcase",
     "legend": {
@@ -45,7 +45,7 @@
       "col": 0,
       "type": "frontend",
       "label": "检查并展示新版",
-      "sublabel": "启动检查 / 手动检查"
+      "sublabel": "后台启动 / 维护入口"
     },
     {
       "id": "choose_download",
@@ -144,7 +144,7 @@
       "dot": "cyan",
       "title": "下载与安装是两次决定",
       "items": [
-        "下载期间可以继续执行任务",
+        "在本机维护入口确认，下载期间任务继续",
         "任务结束、下载完成均不自动安装"
       ]
     },

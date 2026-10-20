@@ -5058,19 +5058,19 @@
         </g>
         </g>
 
-        <g data-edge-from="client" data-edge-to="user" data-edge-label="结束本次任务，说明失败原因" data-edge-key="2" data-edge-id="m-07-login-2">
-          <path data-composition-edge-from="client" data-composition-edge-to="user" data-composition-edge-id="m-07-login-2" data-composition-points="419.3333333333333,316;164,316" d="M 419.3333333333333 316 L 164 316" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <g data-edge-from="client" data-edge-to="server" data-edge-label="保存并回传登录失败" data-edge-key="2" data-edge-id="m-07-login-2">
+          <path data-composition-edge-from="client" data-composition-edge-to="server" data-composition-edge-id="m-07-login-2" data-composition-points="433.3333333333333,316;958,316" d="M 433.3333333333333 316 L 958 316" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
         <g data-detail="context">
-          <rect x="218.0666666666666" y="296" width="147.20000000000002" height="16" rx="3" class="c-mask"/>
-          <text x="291.66666666666663" y="306" class="t-backend" font-size="9" text-anchor="middle">结束本次任务，说明失败原因</text>
+          <rect x="642.8666666666667" y="296" width="105.60000000000001" height="16" rx="3" class="c-mask"/>
+          <text x="695.6666666666666" y="306" class="t-backend" font-size="9" text-anchor="middle">保存并回传登录失败</text>
         </g>
         </g>
 
-        <g data-edge-from="client" data-edge-to="server" data-edge-label="远端任务：保存后回传失败" data-edge-key="3" data-edge-id="m-07-login-3">
-          <path data-composition-edge-from="client" data-composition-edge-to="server" data-composition-edge-id="m-07-login-3" data-composition-points="433.3333333333333,384;958,384" d="M 433.3333333333333 384 L 958 384" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <g data-edge-from="server" data-edge-to="user" data-edge-label="Console 提示登录或验证" data-edge-key="3" data-edge-id="m-07-login-3">
+          <path data-composition-edge-from="server" data-composition-edge-to="user" data-composition-edge-id="m-07-login-3" data-composition-points="958,384;164,384" d="M 958 384 L 164 384" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
         <g data-detail="context">
-          <rect x="627.2666666666667" y="364" width="136.8" height="16" rx="3" class="c-mask"/>
-          <text x="695.6666666666666" y="374" class="t-backend" font-size="9" text-anchor="middle">远端任务：保存后回传失败</text>
+          <rect x="497.8" y="364" width="126.4" height="16" rx="3" class="c-mask"/>
+          <text x="561" y="374" class="t-backend" font-size="9" text-anchor="middle">Console 提示登录或验证</text>
         </g>
         </g>
 
@@ -5094,28 +5094,25 @@
 
 
         <!-- Participants -->
-        <g id="node-user" data-node-id="user" data-node-label="用户" tabindex="0" role="button" aria-label="聚焦用户，时序参与者" aria-pressed="false" data-node-kind="external" data-node-context="时序参与者">
-          <title>用户 · 时序参与者</title>
+        <g id="node-user" data-node-id="user" data-node-label="Console 用户" tabindex="0" role="button" aria-label="聚焦Console 用户，时序参与者" aria-pressed="false" data-node-kind="external" data-node-context="时序参与者">
+          <title>Console 用户 · 时序参与者</title>
           <rect x="62" y="72" width="190" height="54" rx="6" class="c-mask"/>
           <rect x="62" y="72" width="190" height="54" rx="6" class="c-external" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(68 78) scale(0.6875)">
             <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
             <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
           </g>
-          <text data-node-label="" x="157" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">用户</text>
+          <text data-node-label="" x="157" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Console 用户</text>
         </g>
 
-        <g id="node-client" data-node-id="client" data-node-label="桌面客户端" tabindex="0" role="button" aria-label="聚焦桌面客户端，时序参与者" aria-pressed="false" data-node-kind="frontend" data-node-context="时序参与者">
-          <title>桌面客户端 · 时序参与者</title>
+        <g id="node-client" data-node-id="client" data-node-label="后台客户端" tabindex="0" role="button" aria-label="聚焦后台客户端，时序参与者" aria-pressed="false" data-node-kind="backend" data-node-context="时序参与者">
+          <title>后台客户端 · 时序参与者</title>
           <rect x="331.3333333333333" y="72" width="190" height="54" rx="6" class="c-mask"/>
-          <rect x="331.3333333333333" y="72" width="190" height="54" rx="6" class="c-frontend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="frontend" class="semantic-sigil s-frontend" transform="translate(337.3333333333333 78) scale(0.6875)">
-            <rect x="2" y="3" width="12" height="10" rx="2"/>
-            <path d="M2 6.5h12"/>
-            <circle cx="4.1" cy="4.8" r=".7" class="sigil-fill"/>
-            <circle cx="6.3" cy="4.8" r=".7" class="sigil-fill"/>
+          <rect x="331.3333333333333" y="72" width="190" height="54" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(337.3333333333333 78) scale(0.6875)">
+            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" x="426.3333333333333" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">桌面客户端</text>
+          <text data-node-label="" x="426.3333333333333" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">后台客户端</text>
         </g>
 
         <g id="node-chrome" data-node-id="chrome" data-node-label="专用 Chrome" tabindex="0" role="button" aria-label="聚焦专用 Chrome，时序参与者" aria-pressed="false" data-node-kind="external" data-node-context="时序参与者">
@@ -5129,14 +5126,14 @@
           <text data-node-label="" x="695.6666666666666" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">专用 Chrome</text>
         </g>
 
-        <g id="node-server" data-node-id="server" data-node-label="服务端" tabindex="0" role="button" aria-label="聚焦服务端，时序参与者" aria-pressed="false" data-node-kind="backend" data-node-context="时序参与者">
-          <title>服务端 · 时序参与者</title>
+        <g id="node-server" data-node-id="server" data-node-label="服务端 Agent" tabindex="0" role="button" aria-label="聚焦服务端 Agent，时序参与者" aria-pressed="false" data-node-kind="backend" data-node-context="时序参与者">
+          <title>服务端 Agent · 时序参与者</title>
           <rect x="870" y="72" width="190" height="54" rx="6" class="c-mask"/>
           <rect x="870" y="72" width="190" height="54" rx="6" class="c-backend" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(876 78) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" x="965" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">服务端</text>
+          <text data-node-label="" x="965" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">服务端 Agent</text>
         </g>
 
         <!-- Legend -->
@@ -5348,7 +5345,7 @@
         </div>
         <ul>
           <li>&bull; 不暂停等待、不自动恢复原调用</li>
-          <li>&bull; 远端新调用由服务端重新安排</li>
+          <li>&bull; 用户在 Console 重发，服务端 Agent 下发新任务</li>
         </ul>
       </div>
 

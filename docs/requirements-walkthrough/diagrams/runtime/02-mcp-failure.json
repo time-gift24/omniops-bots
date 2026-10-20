@@ -15,12 +15,12 @@
     {
       "id": "caller",
       "type": "external",
-      "label": "调用方"
+      "label": "服务端 Agent"
     },
     {
       "id": "client",
       "type": "frontend",
-      "label": "桌面客户端"
+      "label": "客户端后台 Agent"
     },
     {
       "id": "mcp",
@@ -34,7 +34,7 @@
       "from": "caller",
       "to": "client",
       "y": 180,
-      "label": "发起使用 MCP 的本轮任务",
+      "label": "下发使用 MCP 的本轮任务",
       "variant": "emphasis"
     },
     {
@@ -67,7 +67,7 @@
       "title": "条件：本轮所需 MCP 不可用",
       "items": [
         "本图说明连接失败，不进入工具调用",
-        "客户端展示失败原因并写入执行记录"
+        "回传 Console 失败原因，调试台查看记录"
       ]
     },
     {

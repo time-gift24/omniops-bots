@@ -15,12 +15,12 @@
     {
       "id": "user",
       "type": "external",
-      "label": "用户"
+      "label": "本机用户"
     },
     {
       "id": "client",
       "type": "frontend",
-      "label": "桌面客户端"
+      "label": "客户端维护入口"
     },
     {
       "id": "site",

@@ -11,7 +11,7 @@
           "label": "处理逻辑"
         },
         "frontend": {
-          "label": "用户操作"
+          "label": "配置 / 更新操作"
         },
         "database": {
           "label": "版本 / 记录"
@@ -25,7 +25,7 @@
   "lanes": [
     {
       "id": "run",
-      "label": "每轮执行前"
+      "label": "后台每轮执行前"
     },
     {
       "id": "missing",
@@ -40,7 +40,7 @@
       "col": 0,
       "type": "frontend",
       "label": "读取工具清单",
-      "sublabel": "Agent 声明所需能力"
+      "sublabel": "服务端任务指定装配"
     },
     {
       "id": "check",
@@ -63,8 +63,8 @@
       "lane": "run",
       "col": 3,
       "type": "backend",
-      "label": "开始执行",
-      "sublabel": "当前工具已就绪"
+      "label": "后台执行任务",
+      "sublabel": "结果回到服务端 Console"
     },
     {
       "id": "fail",
@@ -79,8 +79,8 @@
       "lane": "missing",
       "col": 2,
       "type": "frontend",
-      "label": "用户更新桌面端",
-      "sublabel": "之后发起新任务"
+      "label": "用户更新客户端",
+      "sublabel": "之后在 Console 重发"
     }
   ],
   "edges": [

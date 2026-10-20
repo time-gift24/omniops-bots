@@ -6,12 +6,12 @@
   "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-assembly-failure.json",
   "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/04-assembly-failure.html",
   "specification": {
-    "sha256": "d51f9bc047dab0d0f8b07f6bda0d789aa660e4df653c7b40f7bdd8f0493d2222",
-    "bytes": 2425
+    "sha256": "a56e0dea2f835a89fa2bb8d4285692f1b7676536237e91513f5c8d82ed9de19f",
+    "bytes": 2436
   },
   "artifact": {
-    "sha256": "846042b572940dd9701cfff2826e6d116cc44defc32a36cf15b4e869b845392b",
-    "bytes": 705399
+    "sha256": "ee394a3ef2862cd8d195aefcebcfb5d8b1fe3c63d22be2116342bdc415d34281",
+    "bytes": 705453
   },
   "validation": {
     "checksPassed": 9,

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/07-disconnect.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/07-disconnect.html",
+  "specification": {
+    "sha256": "045f3754f8bb01ca4ad71cd15651da7e66bc41168932684059c0f50f4a9fbce8",
+    "bytes": 2379
+  },
+  "artifact": {
+    "sha256": "556ed27a27926b9d9a166715c35d19032cda644522db00bcef5b4045cb5cd106",
+    "bytes": 704491
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

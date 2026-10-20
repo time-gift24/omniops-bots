@@ -1,0 +1,95 @@
+{
+  "scope": [
+    "09-运维与诊断上传.md",
+    "10-服务端API.md",
+    "11-Provider.md"
+  ],
+  "positioning": "Online users operate in the server Console; the server Agent calls the background client Agent as a task; the full local desktop is for operations and debugging.",
+  "chapter_review": {
+    "09": "Thread diagnostic selection and export use the operations diagnostic entry, preserve informed user consent and authorized access, and work independently when the main debugging desktop fails.",
+    "10": "Console owns online actions and status/results; existing API routes, WebSocket payload schema, official-only calls, busy rejection without client queue, and durable result ACK remain unchanged.",
+    "11": "Operations staff preconfigure local Providers; target remote tasks reuse the local default and pin a snapshot. Manual model choice applies to local debugging. Local Provider integration and pending Windows device verification remain distinct from the unimplemented remote task channel."
+  },
+  "checks": {
+    "relative_markdown_links": {
+      "status": "passed",
+      "count": 22
+    },
+    "markdown_whitespace_and_eof": "passed",
+    "service_api_endpoint_tokens_unchanged": {
+      "status": "passed",
+      "count": 25
+    },
+    "websocket_message_schema_rows_unchanged": {
+      "status": "passed",
+      "count": 7
+    },
+    "client_no_queue_and_result_ack_semantics": "passed",
+    "diagram_delivery_hashes": "passed",
+    "svg_xml_parse": "passed"
+  },
+  "diagrams": [
+    {
+      "source": "../diagrams/11-provider.json",
+      "artifact": "../diagrams/11-provider.html",
+      "type": "architecture",
+      "specification": {
+        "sha256": "e4ef6c19a24b811558605cb4929e56d4645c0b24c4c38e0c268bbffda7a1ba14",
+        "bytes": 4670
+      },
+      "delivery_artifact": {
+        "sha256": "80918591cd544acfe28e7dff566194b98b5df7c821ce5ecb2a5f31137a8b5ed5",
+        "bytes": 712845
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "browser_receipt": "../diagrams/11-provider.visual-check.json",
+      "visual_review": "passed",
+      "visual_review_receipt": "11-provider-diagram-review.json",
+      "export_receipt": "11-provider-svg-export.json",
+      "exports": [
+        {
+          "path": "../assets/11-provider.svg",
+          "sha256": "4ac9a75e97ec6956d8e578caea6a7a51581344cdae7380147bb0742544d6cd6d",
+          "bytes": 56283
+        },
+        {
+          "path": "../assets/11-provider.png",
+          "sha256": "bb4597f856732b216d14a6cab11743ee4cf3e3d669457b51eec78b644fc88d85",
+          "bytes": 538020
+        }
+      ]
+    }
+  ],
+  "no_existing_diagrams": [
+    "09",
+    "10"
+  ],
+  "observability": "Documentation and diagram positioning only; no execution-path changes or new telemetry.",
+  "baseline_manifest": "/tmp/omniops-09-11-positioning-baseline/manifest.json",
+  "remaining_issues": [],
+  "modified_documents": [
+    {
+      "path": "09-运维与诊断上传.md",
+      "sha256": "f36da2c7960a93f5a23c60427951dffa3109deb0c8d2aa5d144a1651a7385637",
+      "bytes": 19607
+    },
+    {
+      "path": "10-服务端API.md",
+      "sha256": "89364f5272f671efe797d3cf93221e6e1a965487c957ad7f5b5b91148f213954",
+      "bytes": 25538
+    },
+    {
+      "path": "11-Provider.md",
+      "sha256": "d9f37a18b7ab4dd6eadcadcd7cc33a8d6782a34d487485182444a7e0f4ccc48e",
+      "bytes": 14191
+    }
+  ]
+}

@@ -2,7 +2,7 @@
   "schema_version": 2,
   "diagram_type": "workflow",
   "meta": {
-    "title": "01 · Skill 草稿到正式发布",
+    "title": "01 · Skill 运维调试与发布",
     "locale": "zh-CN",
     "quality_profile": "showcase",
     "legend": {
@@ -11,7 +11,7 @@
           "label": "处理逻辑"
         },
         "frontend": {
-          "label": "用户操作"
+          "label": "运维 / 调试操作"
         },
         "database": {
           "label": "版本 / 记录"
@@ -29,7 +29,7 @@
     },
     {
       "id": "trial",
-      "label": "本地实验 · 可选"
+      "label": "本地调试实验 · 可选"
     }
   ],
   "nodes": [
@@ -39,7 +39,7 @@
       "col": 0,
       "type": "frontend",
       "label": "编辑完整草稿",
-      "sublabel": "客户端保存未同步编辑"
+      "sublabel": "调试工作台保存本地编辑"
     },
     {
       "id": "tags",

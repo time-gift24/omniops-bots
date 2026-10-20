@@ -28,91 +28,345 @@
   {
     "name": "07-busy",
     "file": "assets/runtime/07-busy.svg",
+    "source": "diagrams/runtime/07-busy.html",
+    "source_sha256": "55fe04500ffbdd4d0f51aba1731ef6e8b3c0961c50924d98fd02681f8f1f4276",
     "data-last-export-format": "svg",
-    "data-last-export-bytes": "45587",
+    "data-last-export-bytes": "45400",
     "data-last-export-canonical": "true",
     "format_normalization": {
-      "raw_sha256": "3b2a013629be2f73bcfa8760ecea752d4e4ad8f7d10d18151eccbe3f84875e1f",
-      "checked_in_sha256": "16454e6007ed4ff2f85d8a5dee4f301d950a1d54309f7f7b2d9a03bdd076b2b2",
-      "checked_in_bytes": 45567,
+      "raw_sha256": "f597950eeb067aa00c1fe331e8929c2bb5b6c0ab6e57791d5354061a3a6dfad3",
+      "checked_in_sha256": "bb029800c3b9d23b2850f95f866a95719a0b34a3e949a3b924358aa9dd4c8b5a",
+      "checked_in_bytes": 45380,
       "changes": "trim trailing whitespace and normalize EOF only"
     }
   },
   {
     "name": "07-disconnect",
     "file": "assets/runtime/07-disconnect.svg",
+    "source": "diagrams/runtime/07-disconnect.html",
+    "source_sha256": "556ed27a27926b9d9a166715c35d19032cda644522db00bcef5b4045cb5cd106",
     "data-last-export-format": "svg",
-    "data-last-export-bytes": "48969",
+    "data-last-export-bytes": "48811",
     "data-last-export-canonical": "true",
     "format_normalization": {
-      "raw_sha256": "c1183629a9e4ea276b63be8ae4854ca9e6813cc589f3693c549869846c1458c6",
-      "checked_in_sha256": "8b2c85c7ebcdc8010fbd73cda4092939bb30d89bc773bde354ab8617c4a0f5c2",
-      "checked_in_bytes": 48949,
+      "raw_sha256": "fc7c539efc72e779aabea2ecda21d49e976f93b1beb508b0ae73fb8e6f7cc809",
+      "checked_in_sha256": "cc83452bb36aa28776ec879389eeaa6784606cdebc16a9e73953f7405f9f7d92",
+      "checked_in_bytes": 48791,
       "changes": "trim trailing whitespace and normalize EOF only"
     }
   },
   {
     "name": "07-restart-complete",
     "file": "assets/runtime/07-restart-complete.svg",
+    "source": "diagrams/runtime/07-restart-complete.html",
+    "source_sha256": "7280db0cb76e7005c888650a10256819bb11378d41ec467ae4f17e9b4d517eef",
     "data-last-export-format": "svg",
-    "data-last-export-bytes": "48466",
+    "data-last-export-bytes": "48332",
     "data-last-export-canonical": "true",
     "format_normalization": {
-      "raw_sha256": "38df07f4c758094c0eb577b8a270f282c5f447e87211d7ea6067f74bff74e01e",
-      "checked_in_sha256": "c815e48040e6158b6f650587fe153b4acffe6c9126d2dd60a57ac509983b7d48",
-      "checked_in_bytes": 48446,
+      "raw_sha256": "e1504345ab76dc7acefe4d378361968f2a98e5577117116010ec9c58b478016d",
+      "checked_in_sha256": "e71d3adec5b06edcd3be64a69ff4a371fa68484f12086bb70cdaca32a414b701",
+      "checked_in_bytes": 48312,
       "changes": "trim trailing whitespace and normalize EOF only"
     }
   },
   {
     "name": "07-restart-incomplete",
     "file": "assets/runtime/07-restart-incomplete.svg",
+    "source": "diagrams/runtime/07-restart-incomplete.html",
+    "source_sha256": "1d8b1024ae627e7bdd01369633f1d356064ce262c088ad1f3e24ea38a1e8f176",
     "data-last-export-format": "svg",
-    "data-last-export-bytes": "48541",
+    "data-last-export-bytes": "48407",
     "data-last-export-canonical": "true",
     "format_normalization": {
-      "raw_sha256": "56d92663bd34f964664202f50ac6755b8f5a083edf3669afe6ccbc907db0092a",
-      "checked_in_sha256": "bfb1b6a9b17acb28dd2e9316de2941f2fab85f729d9fd952d0e2a24f67467804",
-      "checked_in_bytes": 48521,
+      "raw_sha256": "d2cbd1cc55dd3137af8ef5ca04cc308eb10c27ec6d320dd1f1a56e2efbd9ca83",
+      "checked_in_sha256": "06adfda1a11562e4543ca0b5a45be79213f3558e5ccb76b6aa35fe915bb241db",
+      "checked_in_bytes": 48387,
       "changes": "trim trailing whitespace and normalize EOF only"
     }
   },
   {
     "name": "07-cancel",
     "file": "assets/runtime/07-cancel.svg",
+    "source": "diagrams/runtime/07-cancel.html",
+    "source_sha256": "e9511e66393fbf678c2ac9d1724661b606fc24f6e5fd9651344703d0bedda159",
     "data-last-export-format": "svg",
-    "data-last-export-bytes": "48387",
+    "data-last-export-bytes": "48205",
     "data-last-export-canonical": "true",
     "format_normalization": {
-      "raw_sha256": "fece1adba64ed33c5e4a023292922a468db74766eeb9e267892ab9975173afe2",
-      "checked_in_sha256": "9a186a45f9dc36b68a64e732c2b13552b003029ae73a722bb17e1dab84352102",
-      "checked_in_bytes": 48367,
+      "raw_sha256": "6cfa16274fb744cb085fdbce4b4d2a0e775bdb10c9bfa374cfeeba7d7a8de76b",
+      "checked_in_sha256": "c811ee57eb3d3077a957666602b1ab8215eb3e25742b7c66fa7b9adffdd13083",
+      "checked_in_bytes": 48185,
       "changes": "trim trailing whitespace and normalize EOF only"
     }
   },
   {
     "name": "07-timeout",
     "file": "assets/runtime/07-timeout.svg",
+    "source": "diagrams/runtime/07-timeout.html",
+    "source_sha256": "54ea1117d870d50a0f70673a7893dc772ab9cc97394887ab34c50f4e04b09277",
     "data-last-export-format": "svg",
-    "data-last-export-bytes": "46929",
+    "data-last-export-bytes": "46771",
     "data-last-export-canonical": "true",
     "format_normalization": {
-      "raw_sha256": "7af5c2b87ef54f55fe3d0f860fd3d08e253a18a76b2609faa38b9b4de85cc206",
-      "checked_in_sha256": "a561c66306833771dd110f07152cd6c52c0093110bbc54222729276b97ec658b",
-      "checked_in_bytes": 46909,
+      "raw_sha256": "3090f2f3cf0d9672382ca46886a542d109d31f9fa0a72c3b65113dff19d271b0",
+      "checked_in_sha256": "eb36040278e0f366b0f7c7a40d2b0c1bb99e33d629f1ac569bca22ab2a68fc6a",
+      "checked_in_bytes": 46751,
       "changes": "trim trailing whitespace and normalize EOF only"
     }
   },
   {
     "name": "07-login",
     "file": "assets/runtime/07-login.svg",
+    "source": "diagrams/runtime/07-login.html",
+    "source_sha256": "89d3777281d0e97ad8660fd2f2fa9d7dc492dea8e681c1c368b8f20f7feb0194",
     "data-last-export-format": "svg",
-    "data-last-export-bytes": "48418",
+    "data-last-export-bytes": "48199",
     "data-last-export-canonical": "true",
     "format_normalization": {
-      "raw_sha256": "4c178a7cc5697cd492c0c5d9a5228e2139cc8ddddd1a5feb90f9e90749338ecc",
-      "checked_in_sha256": "bd69b0cfe369e1f470295580fa1cc93b798b8d9abca243957cd4a89565e81889",
-      "checked_in_bytes": 48398,
+      "raw_sha256": "4ffdccd4fd413cf97f2d6e4a0a3847615002a2d2cb135695a42afd68e77c3c4c",
+      "checked_in_sha256": "1d783666a70b82d3063613ac0e55ceffa03b7dfe46e8a21e3acde1200572669b",
+      "checked_in_bytes": 48179,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
+  },
+  {
+    "name": "01-skill-experiment",
+    "file": "assets/runtime/01-skill-experiment.svg",
+    "source": "diagrams/runtime/01-skill-experiment.html",
+    "source_sha256": "1c997d738eb8f0cf713a3a21b6377d4002207cf7ef3dffc827067642a8a184a3",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "48340",
+    "data-last-export-canonical": "true",
+    "format_normalization": {
+      "raw_sha256": "474189c27d9609d13aa197df08815635992eb001741a3b1715abf3550ad88b40",
+      "checked_in_sha256": "55063ed1c287ad9cc872270bb73090a67e5101e5a1bbaf029bf0b3213a1711a9",
+      "checked_in_bytes": 48320,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
+  },
+  {
+    "name": "01-skill-file-conflict",
+    "file": "assets/runtime/01-skill-file-conflict.svg",
+    "source": "diagrams/runtime/01-skill-file-conflict.html",
+    "source_sha256": "4a89a8eba97f1c650d8848e34f62c6e890c979a6db2c5a81dab96a592a219f9c",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "46992",
+    "data-last-export-canonical": "true",
+    "format_normalization": {
+      "raw_sha256": "865943d5288f47fae749dea94ae77d5e8587b5db322c4180e5f613ae0a0591cf",
+      "checked_in_sha256": "ab747a18749f7c38946a839661571c057c8d6c9a2bdf56729ce309ffc6b077b6",
+      "checked_in_bytes": 46972,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
+  },
+  {
+    "name": "01-skill-file-upload",
+    "file": "assets/runtime/01-skill-file-upload.svg",
+    "source": "diagrams/runtime/01-skill-file-upload.html",
+    "source_sha256": "92bdd50f6dc3e892256c1751803defd2575054e208561acbac3dc90fa6bf9129",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "47041",
+    "data-last-export-canonical": "true",
+    "format_normalization": {
+      "raw_sha256": "cf503eb3425fc95ff3440e51c2e964827a5d9323e743aa77fd1ec54f78eb77a2",
+      "checked_in_sha256": "59a51602e415aa2483f08313a776ab119c029487aa862a98cd1bad1b05999407",
+      "checked_in_bytes": 47021,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
+  },
+  {
+    "name": "02-mcp-call",
+    "file": "assets/runtime/02-mcp-call.svg",
+    "source": "diagrams/runtime/02-mcp-call.html",
+    "source_sha256": "c085ea6b1d189c7d45038458424e8d59a0f805e34efbd8917dfb1ce363ffa3a1",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "46831",
+    "data-last-export-canonical": "true",
+    "format_normalization": {
+      "raw_sha256": "63a0d1ac7a2e45ad370f9b46142e02709d75466aa03259c792604d4512865537",
+      "checked_in_sha256": "fa3ba292d73898a1cf0fee631e9a455d1c03465b2de2a4cedc0e9b9fdb08e163",
+      "checked_in_bytes": 46811,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
+  },
+  {
+    "name": "02-mcp-failure",
+    "file": "assets/runtime/02-mcp-failure.svg",
+    "source": "diagrams/runtime/02-mcp-failure.html",
+    "source_sha256": "e9182f026d87bba2b5044d8baf4702ed35633e12a712221c57a28e50fb54ddc8",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "45591",
+    "data-last-export-canonical": "true",
+    "format_normalization": {
+      "raw_sha256": "20f27420ab9f6b17556d4ec6f15e057169cd7a9f98ab841d62f7fb6626051454",
+      "checked_in_sha256": "5c1bdaf74660a96b5378e1f557b1a1aa91885d7e37b033c148ae37dc016f6e8c",
+      "checked_in_bytes": 45571,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
+  },
+  {
+    "name": "03-builtintool-missing",
+    "file": "assets/runtime/03-builtintool-missing.svg",
+    "source": "diagrams/runtime/03-builtintool-missing.html",
+    "source_sha256": "f2da4290ee2c54e0e3ae69a6b4b9cce6f1095b37bef389bc126526170fb90746",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "45486",
+    "data-last-export-canonical": "true",
+    "format_normalization": {
+      "raw_sha256": "a8f2d5e0df13462fa801076ad8d8a4321cb14b01de6c7fc8f2bce84b39d73b62",
+      "checked_in_sha256": "4b95ad5ac2547ee6d642d43a943390c8fb62e4bd907cc75e0e4c67da7c749a6b",
+      "checked_in_bytes": 45466,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
+  },
+  {
+    "name": "03-builtintool-ready",
+    "file": "assets/runtime/03-builtintool-ready.svg",
+    "source": "diagrams/runtime/03-builtintool-ready.html",
+    "source_sha256": "1c1144830bfcd8d196d88d7d2f836470231efda3fda0158dfa7ea9b6cd7079b7",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "48288",
+    "data-last-export-canonical": "true",
+    "format_normalization": {
+      "raw_sha256": "bb49322d4582970b7afbb9c68698e1072c7173acde0e70eea812dfa18f4b829f",
+      "checked_in_sha256": "f97982c75e456bc5dd87511f70e58e6b071f3a0878e7aac9bc5ba3ede4b266e8",
+      "checked_in_bytes": 48268,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
+  },
+  {
+    "name": "04-assembly-failure",
+    "file": "assets/runtime/04-assembly-failure.svg",
+    "source": "diagrams/runtime/04-assembly-failure.html",
+    "source_sha256": "ee394a3ef2862cd8d195aefcebcfb5d8b1fe3c63d22be2116342bdc415d34281",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "49845",
+    "data-last-export-canonical": "true",
+    "format_normalization": {
+      "raw_sha256": "d1dadcb6908cc90409ad0feb2c0652198b34f2a2843cccb99b1c7bcbf013b8d4",
+      "checked_in_sha256": "286fd1f507eec345b82883130152455d979bf8292e0a4ceb9fc6d87539abd3f0",
+      "checked_in_bytes": 49825,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
+  },
+  {
+    "name": "04-local-session",
+    "file": "assets/runtime/04-local-session.svg",
+    "source": "diagrams/runtime/04-local-session.html",
+    "source_sha256": "b17de522f221f6c1417cb894d1622cec3730b290d6b0d50c2a7bec3abee155dc",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "49895",
+    "data-last-export-canonical": "true",
+    "format_normalization": {
+      "raw_sha256": "780982f24d1235c930992e1f195b428236c82e3bf900408dd4020fc30a5867b9",
+      "checked_in_sha256": "8edf64da895f26ad0fd47540bd9e9a88e85cd916518d447c930256e40da66c9e",
+      "checked_in_bytes": 49875,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
+  },
+  {
+    "name": "04-official-new-version",
+    "file": "assets/runtime/04-official-new-version.svg",
+    "source": "diagrams/runtime/04-official-new-version.html",
+    "source_sha256": "4505c4206f0840cbcdd34e73e28c15a49f8e67af320e74556e31631de7baacd8",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "49862",
+    "data-last-export-canonical": "true",
+    "format_normalization": {
+      "raw_sha256": "bc09860dc0697c3732d6c0dfcb9708dc3617cd7d41597f2427818e5eefdee761",
+      "checked_in_sha256": "7acb6bffad55d2064b39b61c22d5ad8f7ed99746d8fdff11b81d3218e391c152",
+      "checked_in_bytes": 49842,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
+  },
+  {
+    "name": "05-update-busy",
+    "file": "assets/runtime/05-update-busy.svg",
+    "source": "diagrams/runtime/05-update-busy.html",
+    "source_sha256": "b729649a201770a643932cc74ba246454c453b91b2689cc4d149c49ee366ee89",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "47545",
+    "data-last-export-canonical": "true",
+    "format_normalization": {
+      "raw_sha256": "d029e1a4b196449c760c45354054ba43da1779375aa4cb16e29126e4d1fdb949",
+      "checked_in_sha256": "01797601c07dfdd00edf06dde3da78af0edc06b589b191214bb2e9b1af3b228a",
+      "checked_in_bytes": 47525,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
+  },
+  {
+    "name": "05-update-rejected",
+    "file": "assets/runtime/05-update-rejected.svg",
+    "source": "diagrams/runtime/05-update-rejected.html",
+    "source_sha256": "c9ae6c86a17faf865c1747f4810297214a0098dfb4be1b433a0ee8abe249c295",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "45502",
+    "data-last-export-canonical": "true",
+    "format_normalization": {
+      "raw_sha256": "5ac909ea62ca8be97e6e0bc8de86e5da439cad57046a062ac0fad52e06f94fad",
+      "checked_in_sha256": "db80a7e975ad93f694cc42ebfeca4c0907a8967486508fbeca52134335973750",
+      "checked_in_bytes": 45482,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
+  },
+  {
+    "name": "05-update-success",
+    "file": "assets/runtime/05-update-success.svg",
+    "source": "diagrams/runtime/05-update-success.html",
+    "source_sha256": "20892d05a21848a402fcca6146f39851a042af592cae337f365fd25bf716715d",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "50454",
+    "data-last-export-canonical": "true",
+    "format_normalization": {
+      "raw_sha256": "94a0bd4145cd35650d22a4ac096eed57d6bd8c52dce763dbbb319b67c98fe8ac",
+      "checked_in_sha256": "dc8e6d51a118da6b2b82b06e5d83c6f04cf0e9a58a5b88784ccf102eaeb6c65c",
+      "checked_in_bytes": 50434,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
+  },
+  {
+    "name": "06-cache-ready",
+    "file": "assets/runtime/06-cache-ready.svg",
+    "source": "diagrams/runtime/06-cache-ready.html",
+    "source_sha256": "4f56715ebbe6a72e3e75b4167549316aa1980d15ca4128f02a2bd5d4e77a76bb",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "48883",
+    "data-last-export-canonical": "true",
+    "format_normalization": {
+      "raw_sha256": "0260931b0cc6ef614855992342cbe9b65870af8579fa0ec505bf6746557fcf3a",
+      "checked_in_sha256": "47b74d1dd3df81281470855a6fb3f3054ef75f1d8ebbc6cda7af2acac94c1bd1",
+      "checked_in_bytes": 48863,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
+  },
+  {
+    "name": "06-download-missing",
+    "file": "assets/runtime/06-download-missing.svg",
+    "source": "diagrams/runtime/06-download-missing.html",
+    "source_sha256": "3b4490855bcf82737012606b0b078f093874a751e48086f17b43c0030edb31eb",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "49598",
+    "data-last-export-canonical": "true",
+    "format_normalization": {
+      "raw_sha256": "cc10da37ca2762534c1ef7a315424a969e86a9a522db27ea0fbb138f3cd7fa2d",
+      "checked_in_sha256": "8653440ed15cc24d7bf9317302a8892ea1266ad37ffef2714b526934c429d328",
+      "checked_in_bytes": 49578,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
+  },
+  {
+    "name": "06-sync-failure",
+    "file": "assets/runtime/06-sync-failure.svg",
+    "source": "diagrams/runtime/06-sync-failure.html",
+    "source_sha256": "d8ce2d066ec6a35b7deec4f9d70a635b282f810c93155a7a6234c180548b49e8",
+    "data-last-export-format": "svg",
+    "data-last-export-bytes": "47476",
+    "data-last-export-canonical": "true",
+    "format_normalization": {
+      "raw_sha256": "ce0bbadb1ed56e2eab329933efdb3eb869bd5379ceb71f38850da92e66d4a412",
+      "checked_in_sha256": "c32ae7033182c9a7d978913ee81e572e20067aaa66771162ecc3c0a00b10c0b3",
+      "checked_in_bytes": 47456,
       "changes": "trim trailing whitespace and normalize EOF only"
     }
   }

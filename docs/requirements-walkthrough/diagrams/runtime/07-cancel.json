@@ -14,13 +14,13 @@
   "participants": [
     {
       "id": "server",
-      "label": "服务端",
+      "label": "服务端 Agent",
       "type": "backend"
     },
     {
       "id": "client",
-      "label": "客户端执行控制",
-      "type": "frontend"
+      "label": "后台客户端",
+      "type": "backend"
     },
     {
       "id": "agent",
@@ -94,10 +94,10 @@
     },
     {
       "dot": "cyan",
-      "title": "界面只读",
+      "title": "Console 操作，后台取消",
       "items": [
-        "服务端按调用 ID 取消",
-        "客户端展示取消结果，不追加远端指令"
+        "取消请求由服务端 Agent 下发",
+        "Console 展示取消，运维调试会话只读"
       ]
     }
   ]

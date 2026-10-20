@@ -14,13 +14,13 @@
   "participants": [
     {
       "id": "caller",
-      "label": "本地或远端调用",
-      "type": "external"
+      "label": "服务端 Agent",
+      "type": "backend"
     },
     {
       "id": "client",
-      "label": "桌面客户端",
-      "type": "frontend"
+      "label": "后台客户端",
+      "type": "backend"
     },
     {
       "id": "control",
@@ -34,7 +34,7 @@
       "from": "caller",
       "to": "client",
       "y": 180,
-      "label": "提交本轮任务",
+      "label": "下发本轮任务",
       "variant": "emphasis"
     },
     {
@@ -58,7 +58,7 @@
       "from": "client",
       "to": "caller",
       "y": 510,
-      "label": "提示忙或回传忙结果",
+      "label": "回传忙，供 Console 展示",
       "variant": "return"
     }
   ],

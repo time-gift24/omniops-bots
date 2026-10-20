@@ -2,7 +2,7 @@
   "schema_version": 1,
   "diagram_type": "sequence",
   "meta": {
-    "title": "在客户端实验未上传的 Skill 草稿",
+    "title": "在调试工作台实验本地 Skill 草稿",
     "locale": "zh-CN",
     "quality_profile": "showcase",
     "column_fit": "spread",
@@ -15,12 +15,12 @@
     {
       "id": "user",
       "type": "external",
-      "label": "用户"
+      "label": "调试使用者"
     },
     {
       "id": "client",
       "type": "frontend",
-      "label": "桌面客户端"
+      "label": "运维调试工作台"
     },
     {
       "id": "local",
@@ -86,7 +86,7 @@
       "dot": "emerald",
       "title": "条件：草稿可只在本地",
       "items": [
-        "页面选择现有 Agent，临时替换所实验的 Skill",
+        "调试页面选择 Agent，临时替换所实验的 Skill",
         "检查通过且容量可用后在实验页面执行"
       ]
     },

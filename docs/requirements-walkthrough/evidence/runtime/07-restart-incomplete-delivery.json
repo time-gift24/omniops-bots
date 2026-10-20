@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/07-restart-incomplete.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/07-restart-incomplete.html",
+  "specification": {
+    "sha256": "f78de7564068edb60455a9efdb5fbf749703fb5e2b54b4ff5f30e7bd4282e5cf",
+    "bytes": 2257
+  },
+  "artifact": {
+    "sha256": "1d8b1024ae627e7bdd01369633f1d356064ce262c088ad1f3e24ea38a1e8f176",
+    "bytes": 704051
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}
