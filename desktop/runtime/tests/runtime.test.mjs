@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createHash, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { chmod, lstat, mkdtemp, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
+import { chmod, lstat, mkdir, mkdtemp, readFile, readdir, realpath, rename, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -18,6 +18,7 @@ import { chatInput, httpUrl } from '../input.mjs';
 import { browserTargetConfig, selectBrowserTarget } from '../browser/browser-target.mjs';
 import { createBrowserService } from '../browser/browser.mjs';
 import { safeError } from '../errors.mjs';
+import { createScriptWorkspace } from '../browser/script-workspace.mjs';
 
 const call = (id, args = {}) => ({ id, name: 'inspect_browser', args });
 const request = { messages: [{ role: 'user', text: '检查浏览器' }] };
@@ -102,7 +103,7 @@ async function fixture(t, toolCalls = [], options = {}) {
     Object.assign(settings, overrides);
     resources = createResources({ homeDir, runsDir });
     if (options.persistent) checkpoints = await openSqliteCheckpointer(join(homeDir, 'checkpoints.sqlite'));
-    runtime = await createDesktopRuntime({ browser, workspace, resources, runsDir, checkpointer: checkpoints?.checkpointer ?? new MemorySaver(), ...settings,
+    runtime = await createDesktopRuntime({ browser, workspace, workspaceFactory: options.workspaceFactory, resources, runsDir, checkpointer: checkpoints?.checkpointer ?? new MemorySaver(), ...settings,
       modelFactory: name => { models.push(name); return new Model({ toolCalls: options.callsForRun?.(models.length) ?? toolCalls }); },
       emit: event => {
         events.push(event);
@@ -149,6 +150,50 @@ test('manual operations serialize separately and never reserve Agent threads or 
   assert.throws(() => f.runtime.dispatch('operations_browser_status'), error => error.kind === 'unavailable');
   await shuttingDown;
   assert.throws(() => f.runtime.dispatch('operations_browser_status'), error => error.kind === 'unavailable');
+});
+
+test('workspace-free runs write real scripts in their thread temp directory and explicit workspaces remain effective', async t => {
+  const name = 'thread-script.mjs', code = 'export default async () => ({ ok: true });';
+  const prepared = [];
+  const f = await fixture(t, [[{ id: 'write-source', name: 'write_playwright_script', args: { name, code } }], []], {
+    workspaceFactory: async session => {
+      prepared.push(session);
+      return createScriptWorkspace({ dataDir: session.workingDirectory, ensureBrowser: async () => {}, signalEvent: () => {}, redact: String });
+    },
+  });
+  f.start('temporary', { threadId: 'temp-thread' });
+  const first = await f.settled('temporary');
+  assert.equal(first.status, 'completed');
+  assert.equal(first.snapshot.workingDirectory, join(await realpath(f.homeDir), '.omniops-bots', 'tmp', 'temp-thread'));
+  assert.equal(await readFile(join(first.snapshot.workingDirectory, 'automation/scripts', name), 'utf8'), code);
+  assert.notEqual(first.snapshot.workingDirectory, first.snapshot.directory, 'immutable assembly remains separate');
+  const project = join(f.homeDir, 'project');
+  await mkdir(project);
+  f.start('explicit', { threadId: 'workspace-thread', workspacePath: project });
+  const explicit = await f.settled('explicit');
+  assert.equal(explicit.status, 'completed');
+  assert.equal(explicit.snapshot.workingDirectory, await realpath(project));
+  assert.equal(explicit.snapshot.workspacePath, await realpath(project));
+  assert.equal(await readFile(join(project, 'automation/scripts', name), 'utf8'), code);
+  await f.reopen();
+  f.start('resumed', { threadId: 'temp-thread' });
+  assert.equal((await f.settled('resumed')).status, 'completed');
+  assert.equal(prepared.at(-1).workingDirectory, first.snapshot.workingDirectory);
+  f.start('resumed-workspace', { threadId: 'workspace-thread' });
+  assert.equal((await f.settled('resumed-workspace')).status, 'completed');
+  assert.equal(prepared.at(-1).workingDirectory, explicit.snapshot.workingDirectory);
+  const restoredFiles = await f.resources.handle('workspace_files', { scope: { sessionId: 'workspace-thread' } });
+  assert.ok(restoredFiles.some(file => file.path === `automation/scripts/${name}`));
+  assert.deepEqual((await f.resources.handle('workspace_file', { scope: { sessionId: 'workspace-thread' }, path: `automation/scripts/${name}` })).lines, [code]);
+  const count = prepared.length;
+  f.start('changed-directory', { threadId: 'temp-thread', workspacePath: project });
+  const rejected = await f.settled('changed-directory');
+  assert.equal(rejected.status, 'failed');
+  assert.match(rejected.error.message, /工作目录发生变化/u);
+  assert.equal(prepared.length, count, 'changed scopes never reach tool preparation');
+  await rename(project, `${project}-moved`);
+  await symlink(`${project}-moved`, project);
+  await assert.rejects(f.resources.handle('workspace_files', { scope: { sessionId: 'workspace-thread' } }), /工作区路径发生变化/u);
 });
 
 test('tools execute without approval, busy owns the slot and completion is durable before its event', async t => {

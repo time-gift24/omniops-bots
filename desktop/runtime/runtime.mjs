@@ -49,7 +49,7 @@ export async function createDesktopRuntime({ browser, operationsBrowser = create
       run.done.resolve();
     }
   }
-  function start({ runId, threadId, request, agentId, experimentSkillId } = {}) {
+  function start({ runId, threadId, request, workspacePath, agentId, experimentSkillId } = {}) {
     if (closing) throw new RuntimeError('unavailable', '应用正在关闭。');
     identifier(runId, 'runId'); identifier(threadId, 'threadId');
     if (threadId === '__manual__') throw invalid('会话编号为浏览器保留编号。');
@@ -61,7 +61,7 @@ export async function createDesktopRuntime({ browser, operationsBrowser = create
     const input = chatInput(request, modelName);
     if (agentId !== undefined) identifier(agentId, 'agentId');
     if (experimentSkillId !== undefined) identifier(experimentSkillId, 'experimentSkillId');
-    const run = { id: runId, threadId, agentId, experimentSkillId, input, request, inputCount: request.messages.length,
+    const run = { id: runId, threadId, workspacePath, agentId, experimentSkillId, input, request, inputCount: request.messages.length,
       controller: new AbortController(), done: Promise.withResolvers(), task: { runId, threadId, title: input.title, phase: 'preparing' } };
     const boundBrowser = browser.forThread(threadId);
     run.chat = createChatRun({ run, execution, history, browser: boundBrowser, workspace, workspaceFactory, modelFactory, resources,

@@ -34,10 +34,22 @@ test('file management persists bytes across restart and existing Agent source re
   const { agents, resources: catalog } = await resources.handle('agents_load');
   assert.ok(catalog.skills.some(item => item.id === skill.id));
   await resources.handle('agent_save', { id: agents[0].id, configuration: { ...agents[0].configuration, skillIds: [skill.id] } });
-  await resources.handle('skill_library_write', { id: skill.id, path: 'SKILL.md', data: data('---\nname: Chrome 运维\n---\nUpdated instruction'), replace: true });
+  await resources.handle('skill_library_write', { id: skill.id, path: 'SKILL.md', data: data('---\nname: Chrome 运维\ndescription: 检查服务\n---\nUpdated instruction'), replace: true });
   assert.match(await resources.handle('agent_instructions', { id: agents[0].id }), /Updated instruction/u);
   assert.match((await resources.handle('skills_list'))[0].files[0].content, /Updated instruction/u);
   assert.ok((await readFile(path.join(directory, 'skills', skill.id, 'SKILL.md'), 'utf8')).includes('Updated instruction'));
+}));
+
+test('create commits the edited initial text and rejects invalid bytes without a new package', async () => fixture(async (directory, library) => {
+  const content = '---\nname: 初始正文\ndescription: 草稿\n---\n\n# 用户编辑\n精确保存。\n';
+  const skill = await library.handle('skill_library_create', { name: '初始正文', content });
+  assert.equal(await readFile(path.join(directory, 'skills', skill.id, 'SKILL.md'), 'utf8'), content);
+  await assert.rejects(library.handle('skill_library_create', { name: '过大正文', content: '文'.repeat(Math.floor(20 * 1024 * 1024 / 3) + 1) }), { kind: 'resource-limit' });
+  await assert.rejects(library.handle('skill_library_create', { name: '错误正文', content: {} }), { kind: 'invalid-request' });
+  assert.deepEqual((await library.handle('skill_library_list')).map(value => value.id), [skill.id]);
+  assert.deepEqual(await readdir(path.join(directory, 'skills', 'local')), [skill.id.split('/')[1]]);
+  const empty = await library.handle('skill_library_create', { name: '空正文', content: '' });
+  assert.equal(await readFile(path.join(directory, 'skills', empty.id, 'SKILL.md'), 'utf8'), '');
 }));
 
 test('conflicts, traversal, symbolic links and failed writes preserve prior files', async () => fixture(async (directory, library) => {
@@ -90,4 +102,19 @@ test('copy preserves an incomplete draft and stale upload directories are not re
   assert.deepEqual((await library.handle('skill_library_get', { id: original.id })).entries, []);
   await library.handle('skill_library_delete', { id: copy.id });
   assert.ok(!(await readdir(path.join(directory, 'skills', '.metadata'))).includes(`${copy.id.split('/')[1]}.json`));
+}));
+
+
+test('saving Skill frontmatter updates durable metadata and invalid edits preserve the saved version', async () => fixture(async (directory, library) => {
+  const { id } = await library.handle('skill_library_create', { name: 'Old name', description: 'Old description' });
+  const content = "---\nname: '新名称'\ndescription: >-\n  新说明\ncustom: true\n---\n\n# 保留原文\n";
+  const saved = await library.handle('skill_library_write', { id, path: 'SKILL.md', data: data(content), replace: true });
+  assert.equal(saved.name, '新名称');
+  assert.equal(saved.description, '新说明');
+  const reopened = createSkillLibrary({ root: path.join(directory, 'skills') });
+  assert.equal((await reopened.handle('skill_library_list'))[0].name, '新名称');
+  assert.equal((await reopened.handle('skill_library_get', { id })).description, '新说明');
+  for (const invalid of ['---\nname: missing-description\n---\n', '---\nname: a\nname: b\ndescription: text\n---\n']) await assert.rejects(library.handle('skill_library_write', { id, path: 'SKILL.md', data: data(invalid), replace: true }), { kind: 'invalid-request' });
+  assert.equal((await library.handle('skill_library_read', { id, path: 'SKILL.md' })).data, data(content));
+  assert.equal((await library.handle('skill_library_get', { id })).name, '新名称');
 }));

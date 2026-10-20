@@ -73,11 +73,14 @@ export function createChatRun({ run, execution, history, browser, workspace, wor
       scope.defer(async () => signal.removeEventListener('abort', stopping));
       signal.throwIfAborted();
       const previous = await history.read(run.threadId);
-      const session = await resources.prepareSession({ sessionId: run.threadId, agentId: run.agentId, experimentSkillId: run.experimentSkillId });
+      const session = await resources.prepareSession({ sessionId: run.threadId, workspacePath: run.workspacePath, agentId: run.agentId, experimentSkillId: run.experimentSkillId });
       signal.throwIfAborted();
       const fixed = ['sessionId', 'assemblyContentId', 'agent', 'skills', 'mcpServers', 'experimentSkillId'];
       if (previous && !isDeepStrictEqual(fixed.map(key => clean(session)[key]), fixed.map(key => previous.snapshot[key]))) {
         throw invalid('历史会话的固定快照缺失或不一致，请新建会话；本轮未执行任何工具。');
+      }
+      if (previous?.snapshot.workingDirectory && previous.snapshot.workingDirectory !== session.workingDirectory) {
+        throw invalid('会话工作目录发生变化，请新建会话；本轮未执行任何工具。');
       }
       const onTool = event => {
         if (event.type === 'start' && ['inspect_browser', 'run_playwright_script'].includes(event.name)) browserRequested();
@@ -90,7 +93,7 @@ export function createChatRun({ run, execution, history, browser, workspace, wor
       if (previous && JSON.stringify(previous.snapshot.mcpTools) !== JSON.stringify(mcp.manifests)) {
         throw invalid('MCP 工具定义已变化，请新建会话使用新的装配。');
       }
-      snapshot = previous ? { ...previous.snapshot, directory: session.directory } : clean({ ...session, model: run.input.model, modelParameters, desktopVersion,
+      snapshot = previous ? { ...previous.snapshot, directory: session.directory, workingDirectory: session.workingDirectory } : clean({ ...session, model: run.input.model, modelParameters, desktopVersion,
         tools: [...session.agent.configuration.toolIds, ...mcp.tools.map(tool => tool.name)], mcpTools: mcp.manifests });
       const currentWorkspace = workspaceFactory ? await workspaceFactory(session, browser) : workspace;
       scope.defer(async () => { if (signal.aborted) await browser.stop?.(); });

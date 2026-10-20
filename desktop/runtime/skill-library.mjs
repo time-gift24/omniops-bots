@@ -3,6 +3,7 @@ import { mkdir, readdir, lstat, open, realpath, rename, rm, rmdir, link } from '
 import { randomUUID } from 'node:crypto';
 import { homedir } from 'node:os';
 import path from 'node:path';
+import { parseDocument } from 'yaml';
 import { invalid, RuntimeError } from './errors.mjs';
 
 const MAX_FILE = 20 * 1024 * 1024;
@@ -36,6 +37,18 @@ function title(value) {
 function description(value = '') {
   if (typeof value !== 'string' || value.length > 4096) throw invalid('Skill 描述最多 4096 字符。');
   return value;
+}
+function skillMetadata(source) {
+  const header = source.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/u)?.[1];
+  let value;
+  try {
+    const document = parseDocument(header ?? '');
+    if (document.errors.length) throw invalid('Skill 元信息无效。');
+    value = document.toJS({ maxAliasCount: 0 });
+  }
+  catch { throw invalid('SKILL.md 的 YAML 元信息格式无效，请检查后重试。'); }
+  if (!value || typeof value !== 'object' || Array.isArray(value) || typeof value.description !== 'string' || !value.description.trim() || /[\u0000-\u001f\u007f]/u.test(value.description)) throw invalid('请在 SKILL.md 的 frontmatter 中填写 name 和 description。');
+  return { name: title(value.name), description: description(value.description).trim() };
 }
 function mime(file) { return TYPES[path.extname(file).slice(1).toLowerCase()] || (TEXT.test(file) ? 'text/plain' : 'application/octet-stream'); }
 function notFound() { return new RuntimeError('file-unavailable', 'Skill 或文件已移除，请刷新列表。'); }
@@ -139,14 +152,14 @@ export function createSkillLibrary({ root = defaultSkillRoot() } = {}) {
     let name = location.relative.at(-1), summary = '';
     if (main) {
       const contents = (await regularBytes(path.join(location.directory, 'SKILL.md'))).toString('utf8');
-      const frontmatter = contents.match(/^---\r?\n([\s\S]*?)\r?\n---/u)?.[1] ?? '';
-      const field = key => {
-        const value = frontmatter.match(new RegExp(`^${key}:\\s*(.+)$`, 'mu'))?.[1]?.trim();
-        if (value?.startsWith('"')) { try { return JSON.parse(value); } catch { /* Plain scalar below. */ } }
-        return value?.replace(/^['"]|['"]$/gu, '');
-      };
-      name = field('name') || name;
-      summary = field('description') || '';
+      try {
+        const frontmatter = contents.match(/^---\r?\n([\s\S]*?)\r?\n---/u)?.[1] ?? '';
+        const document = parseDocument(frontmatter);
+        if (document.errors.length) throw invalid('Skill 元信息无效。');
+        const fields = document.toJS({ maxAliasCount: 0 });
+        if (typeof fields?.name === 'string' && fields.name.trim()) name = fields.name.trim();
+        if (typeof fields?.description === 'string') summary = fields.description.trim();
+      } catch { /* Incomplete legacy drafts retain their stored display metadata. */ }
     }
     if (location.origin === 'local') {
       const metadata = await resolve(['.metadata', location.relative[1] + '.json'], { createParents: true });
@@ -187,12 +200,16 @@ export function createSkillLibrary({ root = defaultSkillRoot() } = {}) {
   }
   async function create(params) {
     const name = title(params.name), summary = description(params.description);
+    const content = params.content ?? `---\nname: ${JSON.stringify(name)}\ndescription: ${JSON.stringify(summary)}\n---\n\n# ${name}\n\n`;
+    if (typeof content !== 'string') throw invalid('Skill 初始正文必须为文本。');
+    const bytes = Buffer.from(content);
+    if (bytes.length > MAX_FILE) throw new RuntimeError('resource-limit', '单个 Skill 文件不能超过 20 MiB。');
     const id = `local/${randomUUID()}`;
     const parsed = parseId(id);
     const directory = await resolve(parsed.relative, { createParents: true });
     await mkdir(directory, { mode: 0o700 });
     try {
-      await atomicWrite(path.join(directory, 'SKILL.md'), Buffer.from(`---\nname: ${JSON.stringify(name)}\ndescription: ${JSON.stringify(summary)}\n---\n\n# ${name}\n\n`), false);
+      await atomicWrite(path.join(directory, 'SKILL.md'), bytes, false);
       const metadata = await resolve(['.metadata', parsed.relative[1] + '.json'], { createParents: true });
       await atomicWrite(metadata, Buffer.from(JSON.stringify({ name, description: summary })), false);
       return await get(id);
@@ -250,7 +267,18 @@ export function createSkillLibrary({ root = defaultSkillRoot() } = {}) {
       if (info && params.replace !== true) throw new RuntimeError('conflict', '同名文件已存在，请确认替换或更改名称。');
       const current = await entriesAt(location.directory);
       if (current.reduce((size, entry) => size + entry.size, 0) - (info?.size ?? 0) + bytes.length > MAX_PACKAGE || !info && current.length >= MAX_ENTRIES) throw new RuntimeError('resource-limit', 'Skill 最多 1000 项，总计 100 MiB。');
-      await atomicWrite(file, bytes, params.replace === true);
+      const metadata = params.path === 'SKILL.md' && /^---(?:\r?\n|$)/u.test(bytes.toString('utf8')) ? skillMetadata(bytes.toString('utf8')) : null;
+      if (metadata) {
+        const metadataFile = await resolve(['.metadata', location.relative[1] + '.json'], { createParents: true });
+        const previous = (await infoAt(metadataFile)) ? await regularBytes(metadataFile) : null;
+        await atomicWrite(metadataFile, Buffer.from(JSON.stringify(metadata)), true);
+        try { await atomicWrite(file, bytes, params.replace === true); }
+        catch (error) {
+          if (previous) await atomicWrite(metadataFile, previous, true);
+          else await rm(metadataFile, { force: true });
+          throw error;
+        }
+      } else await atomicWrite(file, bytes, params.replace === true);
       return get(params.id);
     }
     if (method === 'skill_library_mkdir') {

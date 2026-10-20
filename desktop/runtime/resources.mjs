@@ -1,5 +1,5 @@
 import { constants } from 'node:fs';
-import { access, lstat, mkdtemp, open, readdir, realpath, rm, stat, writeFile } from 'node:fs/promises';
+import { access, lstat, mkdir, mkdtemp, open, readdir, realpath, rm, stat, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { execFile } from 'node:child_process';
 import { homedir, tmpdir } from 'node:os';
@@ -8,18 +8,27 @@ import { promisify } from 'node:util';
 import { RuntimeError, invalid } from './errors.mjs';
 import { createSkillLibrary, defaultSkillRoot } from './skill-library.mjs';
 import { createAssemblyStore } from './assembly.ts';
+import { identifier } from './input.mjs';
+import { createChatHistory } from './chat/history.mjs';
 
 const exec = promisify(execFile);
+// Repository-local variables exported by Git hooks must not redirect another workspace's Git commands.
+const GIT_LOCAL_ENV = 'GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_CONFIG GIT_CONFIG_PARAMETERS GIT_CONFIG_COUNT GIT_OBJECT_DIRECTORY GIT_DIR GIT_WORK_TREE GIT_IMPLICIT_WORK_TREE GIT_GRAFT_FILE GIT_INDEX_FILE GIT_NO_REPLACE_OBJECTS GIT_REPLACE_REF_BASE GIT_PREFIX GIT_SHALLOW_FILE GIT_COMMON_DIR'.split(' ');
+function gitEnvironment() {
+  const env = { ...process.env };
+  for (const name of GIT_LOCAL_ENV) delete env[name];
+  return env;
+}
 const MAX_FILE = 2 * 1024 * 1024;
 const MAX_TOTAL = 32 * 1024 * 1024;
 const MAX_FILES = 5000;
 const IGNORED = new Set(['.git', '.svn', 'node_modules', 'target', 'dist', 'build', '.scratch', '.next', '.venv', '__pycache__']);
 export const BUILTIN_TOOLS = [
-  { id: 'inspect_browser', name: '查看网页', description: '读取内置浏览器当前页面。' },
+  { id: 'inspect_browser', name: '查看网页', description: '读取专用 Chrome 当前页面。' },
   { id: 'list_playwright_scripts', name: '列出脚本', description: '查看当前自动化脚本。' },
   { id: 'read_playwright_script', name: '读取脚本', description: '读取自动化脚本源码。' },
-  { id: 'write_playwright_script', name: '编写脚本', description: '准备在内置浏览器中运行的脚本。' },
-  { id: 'run_playwright_script', name: '执行脚本', description: '运行确定源码的脚本操作内置浏览器。' },
+  { id: 'write_playwright_script', name: '编写脚本', description: '准备在专用 Chrome 中运行的脚本。' },
+  { id: 'run_playwright_script', name: '执行脚本', description: '运行确定源码的脚本操作专用 Chrome。' },
 ];
 const METHODS = new Set(['agents_load', 'agent_create', 'agent_save', 'agent_instructions', 'skills_list', 'workspace_directories', 'workspace_resolve', 'workspace_bind', 'workspace_files', 'workspace_file', 'workspace_changes']);
 
@@ -67,7 +76,7 @@ async function filesIn(root) {
   let tracked;
   try {
     // Git already understands nested ignore files and generated desktop payloads.
-    tracked = (await exec('git', ['-C', root, '-c', 'core.fsmonitor=false', 'ls-files', '--cached', '--others', '--exclude-standard', '-z'], { timeout: 10000, maxBuffer: 4 * 1024 * 1024 })).stdout.split('\0').filter(Boolean);
+    tracked = (await exec('git', ['-C', root, '-c', 'core.fsmonitor=false', 'ls-files', '--cached', '--others', '--exclude-standard', '-z'], { timeout: 10000, maxBuffer: 4 * 1024 * 1024, env: gitEnvironment() })).stdout.split('\0').filter(Boolean);
   } catch { /* Non-Git workspaces use the ordinary directory walk below. */ }
   if (tracked) {
     for (const relative of [...new Set(tracked)].sort()) {
@@ -122,7 +131,7 @@ async function changedLines(before, after) {
     const newFile = path.join(directory, 'after');
     await Promise.all([writeFile(oldFile, before), writeFile(newFile, after)]);
     let output;
-    try { output = (await exec('git', ['diff', '--no-index', '--numstat', '--no-renames', '--no-ext-diff', '--no-textconv', '--', oldFile, newFile], { timeout: 10000, maxBuffer: 1024 * 1024, env: { ...process.env, GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: process.platform === 'win32' ? 'NUL' : '/dev/null', GIT_EXTERNAL_DIFF: '' } })).stdout; }
+    try { output = (await exec('git', ['diff', '--no-index', '--numstat', '--no-renames', '--no-ext-diff', '--no-textconv', '--', oldFile, newFile], { timeout: 10000, maxBuffer: 1024 * 1024, env: { ...gitEnvironment(), GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: process.platform === 'win32' ? 'NUL' : '/dev/null', GIT_EXTERNAL_DIFF: '' } })).stdout; }
     catch (error) {
       if (error.code !== 1 || typeof error.stdout !== 'string') throw new RuntimeError('diff-unavailable', '无法统计文件变更，请确认已安装 Git。');
       output = error.stdout;
@@ -132,11 +141,12 @@ async function changedLines(before, after) {
   } finally { await rm(directory, { recursive: true, force: true }); }
 }
 
-export function createResources({ homeDir = homedir(), skillsDir = defaultSkillRoot(homeDir), agentsDir = path.join(homeDir, '.omnimind-ops', 'agents'), runsDir = path.join(homeDir, '.omnimind-ops', 'runs'), mcpCatalog } = {}) {
+export function createResources({ homeDir = homedir(), skillsDir = defaultSkillRoot(homeDir), agentsDir = path.join(homeDir, '.omnimind-ops', 'agents'), runsDir = path.join(homeDir, '.omnimind-ops', 'runs'), temporaryDir = path.join(homeDir, '.omniops-bots', 'tmp'), mcpCatalog } = {}) {
   const skillLibrary = createSkillLibrary({ root: skillsDir });
   const assembly = createAssemblyStore({ agentsDir, runsDir, skillLibrary, tools: BUILTIN_TOOLS, mcpCatalog });
   const roots = new Set();
   const sessions = new Map();
+  let history;
   let baselineBytes = 0;
   let baselineQueue = Promise.resolve();
   const loadSkills = () => skillLibrary.sourceSkills();
@@ -164,16 +174,58 @@ export function createResources({ homeDir = homedir(), skillsDir = defaultSkillR
     roots.add(canonical);
     return { path: canonical, name: path.basename(canonical) || canonical };
   }
+  async function temporaryDirectory(sessionId) {
+    const id = identifier(sessionId, '会话');
+    if (!id.isWellFormed()) throw invalid('会话编号无效。');
+    // Keep UUIDs readable; encode path separators and platform-reserved names as one directory component.
+    let name = encodeURIComponent(id).replace(/[.!'()*]/gu, character => `%${character.charCodeAt(0).toString(16).toUpperCase()}`);
+    if (/^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])$/iu.test(name)) name = `%${name.charCodeAt(0).toString(16).toUpperCase()}${name.slice(1)}`;
+    if (name.length > 255) name = `%00-${hash(Buffer.from(id))}`;
+    try {
+      await mkdir(temporaryDir, { recursive: true, mode: 0o700 });
+      if ((await lstat(temporaryDir)).isSymbolicLink()) throw invalid('临时目录不能是符号链接。');
+      const root = await realpath(temporaryDir), target = path.join(root, name);
+      await mkdir(target, { recursive: true, mode: 0o700 });
+      if ((await lstat(target)).isSymbolicLink() || await realpath(target) !== target) throw invalid('会话临时目录不能是符号链接。');
+      return target;
+    } catch (error) {
+      if (error instanceof RuntimeError) throw error;
+      throw new RuntimeError('directory-unavailable', '会话临时目录无法创建或读取，请检查本地目录权限。');
+    }
+  }
+  async function sessionDirectory(sessionId, workspacePath, { preparedDirectory, selectedOnly = false } = {}) {
+    identifier(sessionId, '会话');
+    const explicit = workspacePath !== undefined;
+    history ??= createChatHistory(runsDir);
+    const previous = (await (await history).read(sessionId))?.snapshot;
+    // Before separate working directories, automation wrote into the immutable assembly's directory.
+    // Keep that root after history gains workingDirectory on its first resumed run as well.
+    if (previous && (previous.workingDirectory === undefined || previous.workingDirectory === previous.directory)) {
+      const runs = await lstat(runsDir);
+      if (!runs.isDirectory() || runs.isSymbolicLink()) throw invalid('会话目录不能是符号链接。');
+      const directory = path.join(await realpath(runsDir), hash(sessionId));
+      if (previous.sessionId !== sessionId || previous.directory !== directory || preparedDirectory !== undefined && preparedDirectory !== directory) throw invalid('历史会话目录无效。');
+      const info = await lstat(directory);
+      if (!info.isDirectory() || info.isSymbolicLink() || await realpath(directory) !== directory) throw invalid('会话目录不能是符号链接。');
+      return { workingDirectory: directory };
+    }
+    workspacePath ??= previous?.workspacePath;
+    if (workspacePath === undefined) return { workingDirectory: await temporaryDirectory(sessionId) };
+    if (selectedOnly && (!roots.has(workspacePath) || await realpath(workspacePath) !== workspacePath)) throw invalid('请先选择有效的工作区目录。');
+    const directory = (await resolveDirectory(workspacePath)).path;
+    if (!explicit && directory !== workspacePath) throw invalid('会话工作区路径发生变化。');
+    return { workingDirectory: directory, workspacePath: directory };
+  }
   async function scopeRoot(scope) {
     if (!scope || typeof scope !== 'object') throw invalid('工作区上下文缺失。');
+    if (scope.workspaceId === undefined && scope.workspacePath === undefined) return (await sessionDirectory(scope.sessionId)).workingDirectory;
     string(scope.workspaceId, '工作区', 256); string(scope.sessionId, '会话', 256);
     const root = string(scope.workspacePath, '工作区路径');
-    if (!roots.has(root) || await realpath(root) !== root) throw invalid('请先选择有效的工作区目录。');
-    return root;
+    return (await sessionDirectory(scope.sessionId, root, { selectedOnly: true })).workingDirectory;
   }
   async function bind(scope) {
     const root = await scopeRoot(scope);
-    const key = JSON.stringify([scope.workspaceId, scope.sessionId]);
+    const key = JSON.stringify([scope.workspaceId ?? null, scope.sessionId]);
     let session = sessions.get(key);
     if (session && session.root !== root) throw invalid('会话工作区路径发生变化。');
     if (!session) {
@@ -230,5 +282,11 @@ export function createResources({ homeDir = homedir(), skillsDir = defaultSkillR
       default: throw invalid('未知的资源操作。');
     }
   }
-  return { hasMethod: method => METHODS.has(method) || skillLibrary.hasMethod(method), handle, getAgent, prepareSession: assembly.prepareSession };
+  return {
+    hasMethod: method => METHODS.has(method) || skillLibrary.hasMethod(method), handle, getAgent,
+    async prepareSession(options) {
+      const session = await assembly.prepareSession(options);
+      return { ...session, ...await sessionDirectory(options.sessionId, options.workspacePath, { preparedDirectory: session.directory }) };
+    },
+  };
 }

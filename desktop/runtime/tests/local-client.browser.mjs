@@ -166,7 +166,9 @@ test('client JSONL isolates manual CDP operations from Agent Chrome, runs pinned
       assert.equal(terminal.data.type, 'completed', JSON.stringify({ terminal, fixtureErrors: model.errors, messages: model.requests.at(-1)?.messages.slice(-2) }));
       return rpc('run_get', { runId });
     }
-    const first = await run('one', 'stable-session');
+    const scope = { sessionId: 'stable-session' };
+    await rpc('workspace_bind', { scope });
+    const first = await run('one', scope.sessionId);
     let context = await chromeContext();
     assert.deepEqual(await inputValues(context), ['version-one']);
     assert.equal(await manualPage.getByRole('searchbox').inputValue(), 'manual-only');
@@ -177,6 +179,10 @@ test('client JSONL isolates manual CDP operations from Agent Chrome, runs pinned
     assert.ok(first.result.assistant.parts.some(part => part.type === 'tool-call' && part.call.name === 'mcp_local_lookup'));
     assert.equal(first.snapshot.skills.length, 1);
     assert.deepEqual(first.snapshot.tools.toSorted(), [...configuration.toolIds, 'mcp_local_lookup'].toSorted());
+    assert.equal(first.snapshot.workingDirectory, join(directory, 'local/tmp/stable-session'));
+    assert.match(await readFile(join(first.snapshot.workingDirectory, 'automation/scripts/fill.mjs'), 'utf8'), /version-one/u);
+    assert.ok((await rpc('workspace_files', { scope })).some(file => file.path === 'automation/scripts/fill.mjs'));
+    assert.ok((await rpc('workspace_changes', { scope })).fileCount > 0);
     await writeReference('version-two');
     await rpc('agent_save', { id: agent.id, configuration: { ...configuration, instructions: 'Updated prompt for new sessions.' } });
     await runtime.close();

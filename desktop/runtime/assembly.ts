@@ -13,6 +13,7 @@ export type AgentEntry = {
   id: string; source: 'local' | 'official'; contentId: string;
   releaseTag?: string; configuration: AgentConfiguration;
 };
+type StoredAgent = AgentEntry & { unpublished?: true };
 export type McpConfiguration = { id: string; name: string; description: string; url: string; credentialEnv?: string };
 export type SkillSnapshot = { id: string; name: string; contentId: string; releaseTag?: string; mountPath: string };
 export type SessionAssembly = {
@@ -46,19 +47,24 @@ const record = (value: unknown): Record<string, unknown> => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw invalid('装配数据格式无效。');
   return value as Record<string, unknown>;
 };
-function text(value: unknown, label: string, max = 256): string {
-  if (typeof value !== 'string' || !value.trim() || value.length > max || /[\u0000-\u001f\u007f]/u.test(value)) throw invalid(`${label}无效。`);
+function storedText(value: unknown, label: string, max = 256): string {
+  if (typeof value !== 'string' || value.length > max || /[\u0000-\u001f\u007f]/u.test(value)) throw invalid(`${label}无效。`);
   return value;
+}
+function text(value: unknown, label: string, max = 256): string {
+  const result = storedText(value, label, max);
+  if (!result.trim()) throw invalid(`${label}无效。`);
+  return result;
 }
 function agentId(value: unknown): string {
   const id = text(value, 'Agent ID');
   if (!ID.test(id) || /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])$/iu.test(id)) throw invalid('Agent ID 无效。');
   return id;
 }
-function configuration(value: unknown): AgentConfiguration {
+function configuration(value: unknown, draft = false): AgentConfiguration {
   const raw = record(value);
-  const name = text(raw.name, 'Agent 名称');
-  if (typeof raw.description !== 'string' || raw.description.length > 4096 || typeof raw.instructions !== 'string' || !raw.instructions.trim() || raw.instructions.length > 65536 || raw.instructions.includes('\0')) throw invalid('Agent 描述或指令无效。');
+  const name = draft ? storedText(raw.name, 'Agent 名称') : text(raw.name, 'Agent 名称');
+  if (typeof raw.description !== 'string' || raw.description.length > 4096 || typeof raw.instructions !== 'string' || (!draft && !raw.instructions.trim()) || raw.instructions.length > 65536 || raw.instructions.includes('\0')) throw invalid('Agent 描述或指令无效。');
   const ids = (key: string): string[] => {
     const list = raw[key];
     if (!Array.isArray(list) || list.length > 256 || new Set(list).size !== list.length) throw invalid('Agent 资源清单无效。');
@@ -175,10 +181,14 @@ export function createAssemblyStore({ agentsDir, runsDir, skillLibrary, tools, m
     instructions: '你是桌面浏览器助手。使用专用 Chrome 核实页面信息，按用户要求操作，并如实说明结果。',
     mcpServerIds: [], toolIds: tools.map(tool => tool.id), skillIds: [],
   };
+  const draftConfiguration: AgentConfiguration = {
+    name: '', description: '', instructions: '',
+    mcpServerIds: [], toolIds: tools.map(tool => tool.id), skillIds: [],
+  };
   function entry(id: string, config: AgentConfiguration): AgentEntry {
     return { id, source: 'local', contentId: hash(canonical(config)), configuration: structuredClone(config) };
   }
-  async function readAgent(id: string): Promise<AgentEntry> {
+  async function readAgent(id: string): Promise<StoredAgent> {
     const root = await directory(agentsDir), file = path.join(root, `${agentId(id)}.json`);
     let value: unknown;
     try { value = await readJson(file); }
@@ -189,11 +199,12 @@ export function createAssemblyStore({ agentsDir, runsDir, skillLibrary, tools, m
       await writeJson(file, initial);
       return initial;
     }
-    const raw = record(value), config = configuration(raw.configuration);
+    const raw = record(value), config = configuration(raw.configuration, raw.source === 'local');
     if (raw.id !== id || !['local', 'official'].includes(String(raw.source)) || raw.contentId !== hash(canonical(config))) throw invalid('Agent 内容摘要或身份无效，请检查配置文件。');
+    if (raw.unpublished !== undefined && (raw.unpublished !== true || raw.source !== 'local')) throw invalid('Agent 发布状态无效。');
     const releaseTag = raw.releaseTag === undefined ? undefined : text(raw.releaseTag, 'Agent 发布标签');
     if (releaseTag && !/^v\.\d+\.\d+\.\d+$/u.test(releaseTag)) throw invalid('Agent 发布标签无效。');
-    return { id, source: raw.source as 'local' | 'official', contentId: raw.contentId as string, configuration: config, ...(releaseTag ? { releaseTag } : {}) };
+    return { id, source: raw.source as 'local' | 'official', contentId: raw.contentId as string, configuration: config, ...(releaseTag ? { releaseTag } : {}), ...(raw.unpublished ? { unpublished: true } : {}) };
   }
   async function validateReferences(config: AgentConfiguration): Promise<void> {
     for (const id of config.skillIds) await skillLibrary.handle('skill_library_get', { id });
@@ -239,8 +250,8 @@ export function createAssemblyStore({ agentsDir, runsDir, skillLibrary, tools, m
       try { await lstat(target); throw invalid('会话快照不完整，请新建会话。'); }
       catch (missing) { if ((missing as NodeJS.ErrnoException).code !== 'ENOENT') throw missing; }
     }
-    const selected = await readAgent(options.agentId ?? 'browser-assistant');
-    const config = structuredClone(selected.configuration);
+    const { unpublished: _unpublished, ...selected } = await readAgent(options.agentId ?? 'browser-assistant');
+    const config = configuration(selected.configuration);
     const missing = config.toolIds.filter(id => !tools.some(tool => tool.id === id));
     if (missing.length) throw new RuntimeError('missing-tools', `当前桌面端缺少内置工具：${missing.join('、')}。请更新桌面端后重新发起任务。`);
     const captured: SkillPackage[] = [];
@@ -333,13 +344,18 @@ export function createAssemblyStore({ agentsDir, runsDir, skillLibrary, tools, m
     }
   }
   return {
-    get: (id: string) => run(() => readAgent(id)),
+    get: (id: string) => run(async () => {
+      const { unpublished: _unpublished, ...agent } = await readAgent(id);
+      return agent;
+    }),
     list: () => run(async () => {
       await readAgent('browser-assistant');
       const result: AgentEntry[] = [];
+      let count = 0;
       for (const file of (await readdir(await directory(agentsDir))).sort()) if (file.endsWith('.json') && ID.test(file.slice(0, -5))) {
-        if (result.length >= 256) throw new RuntimeError('resource-limit', 'Agent 数量超过 256。');
-        result.push(await readAgent(file.slice(0, -5)));
+        if (count++ >= 256) throw new RuntimeError('resource-limit', 'Agent 数量超过 256。');
+        const { unpublished, ...agent } = await readAgent(file.slice(0, -5));
+        if (!unpublished) result.push(agent);
       }
       return result;
     }),
@@ -351,10 +367,10 @@ export function createAssemblyStore({ agentsDir, runsDir, skillLibrary, tools, m
       await writeJson(path.join(await directory(agentsDir), `${id}.json`), entry(id, config));
     }),
     create: (options: { configuration?: unknown; copyFrom?: string } = {}) => run(async () => {
-      const config = options.configuration === undefined ? (options.copyFrom ? (await readAgent(options.copyFrom)).configuration : defaultConfiguration) : configuration(options.configuration);
+      const config = options.configuration === undefined ? (options.copyFrom ? (await readAgent(options.copyFrom)).configuration : draftConfiguration) : configuration(options.configuration);
       await validateReferences(config);
       const created = entry(`local-${randomUUID()}`, config);
-      await writeJson(path.join(await directory(agentsDir), `${created.id}.json`), created);
+      await writeJson(path.join(await directory(agentsDir), `${created.id}.json`), { ...created, unpublished: true });
       return created;
     }),
     prepareSession: (options: PrepareOptions) => run(() => prepare(options)),

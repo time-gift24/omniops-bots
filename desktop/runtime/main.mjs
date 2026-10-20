@@ -31,14 +31,15 @@ const operationsBrowser = createOperationsBrowser({
 const localRoot = process.env.OMNIOPS_BOTS_LOCAL_ROOT || join(homedir(), '.omnimind-ops');
 const runsDir = join(localRoot, 'runs');
 const mcpCatalog = createMcpCatalog({ directory: join(localRoot, 'config') });
-const resources = createResources({ skillsDir: join(localRoot, 'skills'), agentsDir: join(localRoot, 'agents'), runsDir, mcpCatalog });
+const resources = createResources({ skillsDir: join(localRoot, 'skills'), agentsDir: join(localRoot, 'agents'), runsDir,
+  ...(process.env.OMNIOPS_BOTS_LOCAL_ROOT ? { temporaryDir: join(localRoot, 'tmp') } : {}), mcpCatalog });
 const checkpoints = await openSqliteCheckpointer(join(localRoot, 'checkpoints.sqlite'));
 const runtime = await createDesktopRuntime({
   browser, operationsBrowser, resources, runsDir, modelName, emit: send, redact, checkpointer: checkpoints.checkpointer,
   timeoutMs: process.env.OMNIOPS_BOTS_RUN_TIMEOUT_MS ? Number(process.env.OMNIOPS_BOTS_RUN_TIMEOUT_MS) : 300_000,
   maxConcurrentRuns: process.env.OMNIOPS_BOTS_MAX_CONCURRENT_RUNS ? Number(process.env.OMNIOPS_BOTS_MAX_CONCURRENT_RUNS) : 4,
   settingsFile: join(dataDir, 'settings.json'),
-  workspaceFactory: (session, boundBrowser) => createScriptWorkspace({ dataDir: session.directory, ensureBrowser: boundBrowser.ensure, signalEvent: send, redact }),
+  workspaceFactory: (session, boundBrowser) => createScriptWorkspace({ dataDir: session.workingDirectory, ensureBrowser: boundBrowser.ensure, signalEvent: send, redact }),
   modelFactory(model) {
     if (!key || !modelName) throw new RuntimeError('unavailable', '请配置本地模型后重启。');
     const baseURL = process.env.OPENAI_BASE_URL ? httpUrl(process.env.OPENAI_BASE_URL) : undefined;

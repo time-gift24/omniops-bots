@@ -177,3 +177,34 @@ test('invalid Skill metadata, duplicate names, symlinks and incomplete snapshots
   assert.equal(snapshots.some(file => file.startsWith('.pending-')), false);
   await assert.rejects(resources.prepareSession({ sessionId: 'secret-model', modelParameters: { apiKey: 'secret' } }), /不允许保存/u);
 }));
+
+test('new Agents and copies remain unpublished across restart until a successful explicit save', async () => fixture(async ({ resources, settings }) => {
+  const { agents: existing } = await resources.handle('agents_load');
+  const draft = await resources.handle('agent_create', {});
+  const copy = await resources.handle('agent_create', { copyFrom: existing[0].id });
+  assert.equal(draft.source, 'local');
+  assert.equal(draft.configuration.name, '');
+  assert.equal(draft.configuration.instructions, '');
+  assert.equal('unpublished' in draft, false);
+  assert.equal('unpublished' in copy, false);
+  const reopened = createResources(settings);
+  const listed = async source => (await source.handle('agents_load')).agents.map(agent => agent.id);
+  assert.deepEqual(await listed(reopened), existing.map(agent => agent.id));
+  assert.equal((await reopened.getAgent(draft.id)).name, '');
+  assert.deepEqual(await reopened.getAgent(copy.id), copy.configuration);
+  await assert.rejects(reopened.prepareSession({ sessionId: 'empty-draft', agentId: draft.id }), /Agent 名称/u);
+  await assert.rejects(reopened.handle('agent_save', { id: draft.id, configuration: { ...draft.configuration, name: 'Draft Agent' } }), /指令无效/u);
+  await assert.rejects(reopened.handle('agent_save', { id: copy.id, configuration: { ...copy.configuration, mcpServerIds: ['missing-mcp'] } }), /不存在的 MCP/u);
+  assert.deepEqual(await listed(createResources(settings)), existing.map(agent => agent.id));
+  await reopened.handle('agent_save', { id: draft.id, configuration: { ...draft.configuration, name: 'Draft Agent', instructions: 'Do the work.' } });
+  const saved = createResources(settings);
+  assert.equal((await saved.getAgent(draft.id)).name, 'Draft Agent');
+  assert.deepEqual((await listed(saved)).toSorted(), [...existing.map(agent => agent.id), draft.id].toSorted());
+  const snapshot = await saved.prepareSession({ sessionId: 'saved-draft', agentId: draft.id });
+  assert.equal(snapshot.agent.configuration.name, 'Draft Agent');
+  assert.equal('unpublished' in snapshot.agent, false);
+  await saved.handle('agent_save', { id: copy.id, configuration: copy.configuration });
+  const published = (await createResources(settings).handle('agents_load')).agents;
+  assert.deepEqual(published.map(agent => agent.id).toSorted(), [...existing.map(agent => agent.id), draft.id, copy.id].toSorted());
+  assert.equal(published.some(agent => 'unpublished' in agent), false);
+}));
