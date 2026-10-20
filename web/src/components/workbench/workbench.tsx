@@ -139,10 +139,11 @@ function TabButton({
         id={`${namespace}-tab-${tab.id}`}
         aria-controls={`${namespace}-panel-${tab.id}`}
         className={cn(
-          "h-8 max-w-36 gap-1.5 py-0 pl-3 text-xs focus-visible:ring-2 focus-visible:ring-ring",
+          "h-8 max-w-36 py-0 pl-3 text-xs focus-visible:ring-2 focus-visible:ring-ring",
           onClose ? "pr-7" : "pr-3"
         )}
         indicatorClassName="bg-accent"
+        activeLabelClassName="text-accent-foreground"
         icon={<HugeiconsIcon icon={viewIcon(tab.view)} size={13} aria-hidden="true" />}
       >
         <span className="min-w-0 truncate">{viewTitle(tab.view)}</span>
@@ -154,7 +155,7 @@ function TabButton({
           aria-label={`关闭标签页 ${viewTitle(tab.view)}`}
           onClick={onClose}
           className={cn(
-            "absolute top-1/2 right-1 size-5 -translate-y-1/2 text-muted-foreground transition-opacity group-focus-within/tab:opacity-100 group-hover/tab:opacity-100 focus-visible:opacity-100 motion-reduce:transition-none",
+            "absolute top-1/2 right-1 z-20 size-5 -translate-y-1/2 text-muted-foreground transition-opacity group-focus-within/tab:opacity-100 group-hover/tab:opacity-100 focus-visible:opacity-100 motion-reduce:transition-none",
             active ? "opacity-100" : "opacity-0"
           )}
         >

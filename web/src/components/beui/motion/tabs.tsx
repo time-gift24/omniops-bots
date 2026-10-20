@@ -409,6 +409,7 @@ export function TabsTrigger({
   children,
   className,
   indicatorClassName,
+  activeLabelClassName,
   onClick,
   ...props
 }: {
@@ -416,6 +417,8 @@ export function TabsTrigger({
   /** An icon before the label, such as a Lucide icon element. */
   icon?: ReactNode;
   indicatorClassName?: string;
+  /** Foreground paired with a custom indicator background. */
+  activeLabelClassName?: string;
 } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, "value">) {
   const { value: current, setValue, layoutId, variant, icons, track, placed } = useTabs();
   const active = current === value;
@@ -518,7 +521,10 @@ export function TabsTrigger({
           data-tabs-label=""
           aria-hidden="true"
           inert
-          className="pointer-events-none absolute inset-0 inline-flex items-center justify-center text-primary-foreground [gap:inherit] [padding:inherit]"
+          className={cn(
+            "pointer-events-none absolute inset-0 inline-flex items-center justify-center text-primary-foreground [gap:inherit] [padding:inherit]",
+            activeLabelClassName,
+          )}
           style={{ clipPath: initialClip }}
         >
           {content}

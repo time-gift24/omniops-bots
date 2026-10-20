@@ -427,6 +427,32 @@
     write(firstInput, "尚未发送的调试草稿")
     const firstStore = dependencies.threads.get("agent-test:regression-0")
     click(button("新建标签页"))
+    const selectedTab = fixture.querySelector('[aria-label="工作台标签页"] [role="tab"][aria-selected="true"]')
+    const activeLabel = selectedTab.querySelector("[data-tabs-label]")
+    const colorProbe = document.createElement("span")
+    colorProbe.style.cssText = "position:fixed;visibility:hidden;color:var(--accent-foreground)"
+    document.body.append(colorProbe)
+    const originalClasses = document.documentElement.className
+    const originalPalette = document.documentElement.getAttribute("data-palette")
+    try {
+      for (const palette of ["official", "claude"]) for (const dark of [false, true]) {
+        document.documentElement.dataset.palette = palette
+        document.documentElement.classList.toggle("dark", dark)
+        assert(getComputedStyle(activeLabel).color === getComputedStyle(colorProbe).color,
+          "Workbench selected label must use its accent foreground in both palettes and themes")
+      }
+    } finally {
+      document.documentElement.className = originalClasses
+      if (originalPalette === null) document.documentElement.removeAttribute("data-palette")
+      else document.documentElement.setAttribute("data-palette", originalPalette)
+      colorProbe.remove()
+    }
+    const closeTab = selectedTab.parentElement.parentElement.querySelector('[aria-label^="关闭标签页"]')
+    await until(() => {
+      const box = closeTab.getBoundingClientRect()
+      return closeTab.contains(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2))
+    }, "Workbench tab close control must receive pointer input above its tab trigger")
+    checks.push("Workbench tab foreground matches its indicator across themes; close controls remain clickable")
     dependencies.threads.evictIdle()
     assert(
       dependencies.threads.get("agent-test:regression-0") === firstStore,

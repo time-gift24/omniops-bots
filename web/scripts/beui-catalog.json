@@ -2085,7 +2085,7 @@
       "path": "components/motion/tabs.tsx",
       "originalMirrorSha256": null,
       "sourceSha256": "64aba56107460ae6220e89da30f5f5785805bbad168f4317648e14367137cf85",
-      "installedSha256": "52f7efc3b7bdec08a3ec04da9e5cd3e8ca23e9cba47ad3023a53d19017f54d96",
+      "installedSha256": "a4687c9a355dd35fe93689d8ca2bd2b214f8a9a85d7d62825613dfc8fc81453d",
       "source": {
         "kind": "project-beui-foundation",
         "path": "src/components/motion/tabs.tsx",
@@ -2106,6 +2106,10 @@
             "lib": "@/lib/beui/"
           },
           "count": 2
+        },
+        {
+          "kind": "indicator-label-foreground",
+          "description": "Allow callers to pair a custom indicator background with its label foreground; retain the default primary pair and clipped animation."
         }
       ],
       "installedPath": "src/components/beui/motion/tabs.tsx"
