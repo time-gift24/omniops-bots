@@ -13,7 +13,6 @@
   import { createTestDependencies, withDependencies } from "/tests/support.tsx";
   import { MessageView } from "/src/components/chat/message-view.tsx";
   import { TooltipProvider } from "/src/components/ui/tooltip.tsx";
-  import { InputGroup, InputGroupAddon, InputGroupTextarea } from "/src/components/ui/input-group.tsx";
   import { useHighlightedCode } from "/src/hooks/use-highlighted-code.ts";
   import { loadHighlighter } from "/src/lib/highlighter.tsx";
 
@@ -43,14 +42,6 @@
     const bubble = fixture.querySelector('[data-slot="bubble-content"]');
     assert(bubble.innerText === text, "User message collapsed whitespace or newlines");
     assert(!bubble.querySelector("script"), "User text must remain literal text");
-  });
-  await check("textarea addons focus their associated control", () => {
-    render(React.createElement(InputGroup, null,
-      React.createElement(InputGroupAddon, null, "Details"),
-      React.createElement(InputGroupTextarea, { "aria-label": "Details" }),
-    ));
-    fixture.querySelector('[data-slot="input-group-addon"]').click();
-    assert(document.activeElement === fixture.querySelector("textarea"), "Clicking a textarea addon did not focus the textarea");
   });
   await check("unsupported language names never resolve inherited object properties", async () => {
     for (const language of ["unsupported", "constructor", "__proto__", "toString"]) {

@@ -84,7 +84,7 @@ export function useAgentComposer(): AgentComposerState {
   const context = useContext(Context);
   if (!context)
     throw new Error(
-      "Composer parts must be inside AgentChatCreative, AgentChatInput, AgentChatCredits, or AgentChatPill.",
+      "Composer parts must be inside AgentComposerProvider.",
     );
   return context;
 }

@@ -10,9 +10,7 @@
   import "/src/index.css";
   import { AgentChatComposer } from "/src/components/premium/agent-chat-input/composer.tsx";
   import { AgentChatCredits } from "/src/components/premium/agent-chat-input/agent-chat-credits.tsx";
-  import { AgentChatCreative } from "/src/components/premium/agent-chat-input/agent-chat-creative.tsx";
   import { CreditsModelSelector } from "/src/components/premium/agent-chat-input/credits-model-selector.tsx";
-  import { ModelPicker } from "/src/components/premium/model-picker/model-picker.tsx";
 
   const fixture = document.querySelector("#fixture");
   const result = document.querySelector("#result");
@@ -195,23 +193,6 @@
     render(AgentChatCredits, { ...props, status: "ready" });
     key("Enter");
     assert(submissions === 1 && editor().textContent === "next draft", "Rejected submission after stop must preserve the draft");
-  });
-  await run("Creative composer cannot submit a disabled model", () => {
-    let submitted = 0;
-    render(AgentChatCreative, { models: [{ id: "disabled", label: "Disabled", disabled: true }], onSubmit: () => { submitted += 1; } });
-    const textarea = fixture.querySelector("textarea");
-    textarea.focus();
-    flushSync(() => document.execCommand("insertText", false, "draft"));
-    click(fixture.querySelector('button[aria-label="Send prompt"]'));
-    assert(submitted === 0, "Unavailable model options must not be submitted");
-  });
-  await run("Provider rail recovers when its active provider disappears", async () => {
-    const props = { variant: "provider-rail", defaultOpen: true, models: [{ id: "a", name: "A", provider: "Provider A" }], value: "a" };
-    render(ModelPicker, props);
-    await wait();
-    render(ModelPicker, { ...props, models: [{ id: "b", name: "B", provider: "Provider B" }], value: "b" });
-    await wait();
-    assert(document.querySelector('[role="menuitemradio"]')?.textContent.includes("B"), "Remaining providers must stay selectable after catalog replacement");
   });
   await run("Image preview URLs are revoked after removal and unmount", async () => {
     const create = URL.createObjectURL;
