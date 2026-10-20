@@ -132,7 +132,7 @@ export type SkillDocumentProps = {
   onRestore?: () => void
   onChange: (value: string) => void
   onSelectFile: (path: string) => void
-  onAddFile?: (path: string, content: Blob) => Promise<void>
+  onAddFile?: (path: string, content: Blob, replace?: boolean) => Promise<void>
   onError: (message: string) => void
 }
 
@@ -161,6 +161,7 @@ export function SkillDocument({
 }: SkillDocumentProps) {
   const [mode, setMode] = useState<MarkdownEditorMode>("source")
   const [navOpen, setNavOpen] = useState(false)
+  const addedFileFocus = useRef<string | null>(null)
   const [newFilePath, setNewFilePath] = useState<string | null>(null)
   const [pendingUpload, setPendingUpload] = useState<{
     path: string
@@ -333,11 +334,12 @@ export function SkillDocument({
   const folder = path.includes("/")
     ? path.slice(0, path.lastIndexOf("/") + 1)
     : ""
-  async function addFile(filePath: string, content: Blob) {
+  async function addFile(filePath: string, content: Blob, replace = false) {
     if (busy || !onAddFile) return
     try {
-      await onAddFile(filePath, content)
+      await onAddFile(filePath, content, replace)
       if (mounted.current) {
+        if (navOpen) addedFileFocus.current = filePath
         setNewFilePath(null)
         setPendingUpload(null)
         setNavOpen(false)
@@ -370,7 +372,8 @@ export function SkillDocument({
             if (!file) return
             const target = folder + file.name
             setPendingUpload({ path: target, file })
-            void addFile(target, file)
+            if (!files.some((entry) => entry.path === target))
+              void addFile(target, file)
           }}
         />
         <Button
@@ -454,10 +457,16 @@ export function SkillDocument({
               variant="outline"
               size="sm"
               onClick={() =>
-                void addFile(pendingUpload.path, pendingUpload.file)
+                void addFile(
+                  pendingUpload.path,
+                  pendingUpload.file,
+                  files.some((entry) => entry.path === pendingUpload.path)
+                )
               }
             >
-              重试上传
+              {files.some((entry) => entry.path === pendingUpload.path)
+                ? "确认替换同名文件"
+                : "重试上传"}
             </Button>
           </div>
         </div>
@@ -582,6 +591,21 @@ export function SkillDocument({
       <DocsMobileNav
         open={navOpen}
         onOpenChange={setNavOpen}
+        onExitComplete={() => {
+          const target = addedFileFocus.current
+          addedFileFocus.current = null
+          // Headless UI restores the previous focus when its closing trap unmounts.
+          requestAnimationFrame(() => {
+            const editor =
+              scrollRef.current?.querySelector<HTMLTextAreaElement>("textarea")
+            if (
+              active &&
+              target &&
+              editor?.getAttribute("aria-label") === `编辑 ${target}`
+            )
+              editor.focus()
+          })
+        }}
         title="技能文件"
         closeLabel="关闭文件导航"
         nav={

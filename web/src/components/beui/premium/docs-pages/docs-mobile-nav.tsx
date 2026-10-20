@@ -14,6 +14,7 @@ import { cn } from "@/lib/beui/utils";
 export type DocsMobileNavProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onExitComplete?: () => void;
   title: string;
   closeLabel: string;
   closeIcon?: ReactNode;
@@ -24,6 +25,7 @@ export type DocsMobileNavProps = {
 export function DocsMobileNav({
   open,
   onOpenChange,
+  onExitComplete,
   title,
   closeLabel,
   closeIcon,
@@ -35,6 +37,7 @@ export function DocsMobileNav({
     <AnimatedModal
       open={open}
       onOpenChange={onOpenChange}
+      onExitComplete={onExitComplete}
       backdropClassName="bg-foreground/15 backdrop-blur-sm"
       viewportClassName="overscroll-contain inset-3 sm:inset-6"
       panelClassName={cn("max-w-sm rounded-3xl", panelClassName)}

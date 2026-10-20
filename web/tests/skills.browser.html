@@ -129,8 +129,8 @@
         "Skill body actions must fit their container")
       for (const control of controls.slice(index + 1)) {
         const right = control.getBoundingClientRect()
-        assert(left.bottom <= right.top + 1 && Math.abs((left.left + left.right) / 2 - (right.left + right.right) / 2) <= 1,
-          "Skill actions must form one vertical column without overlap")
+        assert(left.right <= right.left + 1 && Math.abs((left.top + left.bottom) / 2 - (right.top + right.bottom) / 2) <= 1,
+          "Skill actions must form one horizontal row without overlap")
       }
     }
   }

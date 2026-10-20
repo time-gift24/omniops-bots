@@ -71,3 +71,6 @@ desktop.ini
 /crates/omniops-bots-desktop/resources/
 /crates/omniops-bots-desktop/gen/
 **/model.env
+
+# Generated UI review captures
+/.impeccable/

@@ -10737,7 +10737,7 @@
       "path": "components/premium/docs-pages/docs-mobile-nav.tsx",
       "originalMirrorSha256": "e253e700006c545fa155357adc2dc769abc324703a0b9fbbd9fdb1ebdd6bdeb8",
       "sourceSha256": "e253e700006c545fa155357adc2dc769abc324703a0b9fbbd9fdb1ebdd6bdeb8",
-      "installedSha256": "b3766e89967544cc358c10c4896765167f2210e5dd1e09943116bb39c26cac0e",
+      "installedSha256": "d0c5e65f39bc4f42767798b2a95465fe158502d56b93764bcd690dc8d71b2814",
       "source": {
         "kind": "mirror",
         "path": "components/premium/docs-pages/docs-mobile-nav.tsx"
@@ -10760,7 +10760,7 @@
         },
         {
           "kind": "shared-product-compatibility",
-          "details": "Allow a rendered navigation slot, close glyph, panel classes and transparent forwarding of AnimatedModal panelMotion so the product retains its original layout, shadow and animation; preserve the original DocsNav API and default presentation."
+          "details": "Allow a rendered navigation slot, close glyph, panel classes and transparent forwarding of AnimatedModal panelMotion and onExitComplete so the product can focus newly created editors after navigation closes and retains its original layout, shadow and animation; preserve the original DocsNav API and default presentation."
         }
       ],
       "installedPath": "src/components/beui/premium/docs-pages/docs-mobile-nav.tsx"

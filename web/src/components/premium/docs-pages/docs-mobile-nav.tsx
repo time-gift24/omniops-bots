@@ -10,6 +10,7 @@ import { dialogPanelMotion } from "@/components/motion/animated-modal"
 export type DocsMobileNavProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
+  onExitComplete?: () => void
   title: string
   closeLabel: string
   /** The file navigation rendered below the header content. */
@@ -20,6 +21,7 @@ export type DocsMobileNavProps = {
 export function DocsMobileNav({
   open,
   onOpenChange,
+  onExitComplete,
   title,
   closeLabel,
   nav,
@@ -29,9 +31,12 @@ export function DocsMobileNav({
     <BeuiDocsMobileNav
       open={open}
       onOpenChange={onOpenChange}
+      onExitComplete={onExitComplete}
       title={title}
       closeLabel={closeLabel}
-      closeIcon={<HugeiconsIcon icon={Cancel01Icon} size={16} aria-hidden="true" />}
+      closeIcon={
+        <HugeiconsIcon icon={Cancel01Icon} size={16} aria-hidden="true" />
+      }
       panelClassName="chat-modal-panel relative rounded-xl"
       panelMotion={dialogPanelMotion}
       nav={

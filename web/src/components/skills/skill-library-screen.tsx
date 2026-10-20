@@ -62,6 +62,102 @@ function SkillSourceLabel({ skill }: { skill: ManagedSkill }) {
   )
 }
 
+function PackageEntries({
+  skill,
+  busy,
+  onApply,
+}: {
+  skill: ManagedSkill
+  busy: boolean
+  onApply: (action: string, path: string, destination: string) => Promise<void>
+}) {
+  const [action, setAction] = useState("mkdir")
+  const [path, setPath] = useState("")
+  const [destination, setDestination] = useState("")
+  const needsTarget = action === "rename" || action === "remove"
+  return (
+    <details className="shrink-0 border-b border-border px-5 py-2 text-xs">
+      <summary className="cursor-pointer">管理文件与目录</summary>
+      <form
+        className="flex flex-wrap items-end gap-3 py-3"
+        aria-label="管理 Skill 文件与目录"
+        onSubmit={(event) => {
+          event.preventDefault()
+          void onApply(action, path, destination.trim())
+            .then(() => setDestination(""))
+            .catch(() => {
+              // The owner displays the error and keeps this form available for retry.
+            })
+        }}
+      >
+        <label>
+          操作{" "}
+          <select
+            aria-label="文件操作"
+            value={action}
+            disabled={busy}
+            onChange={(event) => setAction(event.target.value)}
+          >
+            <option value="mkdir">创建目录</option>
+            <option value="file">创建文件</option>
+            <option value="rename">重命名</option>
+            <option value="remove">删除</option>
+          </select>
+        </label>
+        {needsTarget ? (
+          <label>
+            目标{" "}
+            <select
+              aria-label="操作目标"
+              value={path}
+              disabled={busy}
+              required
+              onChange={(event) => setPath(event.target.value)}
+            >
+              <option value="">选择文件或目录</option>
+              {skill.entries.map((entry) => (
+                <option key={entry.path} value={entry.path}>
+                  {entry.path}
+                  {entry.kind === "folder" ? "/" : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+        {action !== "remove" ? (
+          <Input
+            aria-label="目标路径"
+            label={action === "mkdir" ? "目录路径" : "新路径"}
+            value={destination}
+            onChange={setDestination}
+            required
+            disabled={busy}
+          />
+        ) : (
+          <p>删除文件或目录及其全部内容，不能撤销。</p>
+        )}
+        <Button
+          size="sm"
+          type="submit"
+          variant={action === "remove" ? "destructive" : "outline"}
+          disabled={
+            busy ||
+            (needsTarget && !skill.entries.some((entry) => entry.path === path))
+          }
+        >
+          {action === "mkdir"
+            ? "创建目录"
+            : action === "file"
+              ? "创建文件"
+              : action === "rename"
+                ? "确认重命名"
+                : "确认删除条目"}
+        </Button>
+      </form>
+    </details>
+  )
+}
+
 function FilePreview({
   library,
   skill,
@@ -76,6 +172,7 @@ function FilePreview({
   active,
   actions,
   initialEditing = false,
+  locked = false,
   onAddFile,
 }: {
   library: SkillLibrary
@@ -91,7 +188,8 @@ function FilePreview({
   active: boolean
   actions: ReactNode
   initialEditing?: boolean
-  onAddFile?: (path: string, content: Blob) => Promise<void>
+  locked?: boolean
+  onAddFile?: (path: string, content: Blob, replace?: boolean) => Promise<void>
 }) {
   const [readResult, setLoaded] = useState<{
     entry: SkillEntry
@@ -211,7 +309,9 @@ function FilePreview({
         loading={!ready && !readFailure}
         busy={busy}
         dirty={dirty}
-        readOnly={skill.readOnly || !isText || (!ready && !!readFailure)}
+        readOnly={
+          locked || skill.readOnly || !isText || (!ready && !!readFailure)
+        }
         editing={editing}
         saveLabel="保存文件"
         onEdit={() => setEditingPath(entry.path)}
@@ -229,8 +329,8 @@ function FilePreview({
         }}
         onAddFile={
           onAddFile
-            ? async (path, content) => {
-                await onAddFile(path, content)
+            ? async (path, content, replace) => {
+                await onAddFile(path, content, replace)
                 if (
                   mounted.current &&
                   currentActive.current &&
@@ -309,6 +409,7 @@ export function SkillLibraryScreen({
   const [error, setError] = useState("")
   const [notice, setNotice] = useState("")
   const [busy, setBusy] = useState(false)
+  const [entriesLocked, setEntriesLocked] = useState(false)
   const operation = useRef(false)
   const mounted = useRef(false)
   const scope = useRef(skillId)
@@ -522,6 +623,18 @@ export function SkillLibraryScreen({
       const result = await work()
       update(result)
     }, success)
+  }
+  async function mutateEntries(
+    work: () => Promise<ManagedSkill>,
+    success: string
+  ) {
+    if (operation.current) throw new Error("正在保存，请稍后再试。")
+    setEntriesLocked(true)
+    try {
+      await mutate(work, success)
+    } finally {
+      if (mounted.current) setEntriesLocked(false)
+    }
   }
   async function experiment() {
     if (!skill || skill.readOnly || !onExperiment || !library) return
@@ -865,7 +978,65 @@ export function SkillLibraryScreen({
           ) : null}
         </div>
       ) : skill ? (
-        <div className="min-h-0 flex-1 overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          {library && !skill.readOnly ? (
+            <PackageEntries
+              key={`entries:${skill.id}`}
+              skill={skill}
+              busy={busy}
+              onApply={async (action, path, destination) => {
+                const affected = (key: string) =>
+                  key === editKey(skill.id, path) ||
+                  key.startsWith(`${editKey(skill.id, path)}/`)
+                await mutateEntries(async () => {
+                  if (
+                    (action === "rename" || action === "remove") &&
+                    Object.entries(currentEdits.current).some(
+                      ([key, edit]) =>
+                        affected(key) && edit.value !== edit.saved
+                    )
+                  )
+                    throw new Error(
+                      "目标包含未保存编辑，请先保存或撤销后重试。"
+                    )
+                  const result =
+                    action === "mkdir"
+                      ? await library.createDirectory(skill.id, destination)
+                      : action === "file"
+                        ? await library.writeFile(
+                            skill.id,
+                            destination,
+                            new Blob([""])
+                          )
+                        : action === "rename"
+                          ? await library.rename(skill.id, path, destination)
+                          : await library.remove(skill.id, path)
+                  if (mounted.current && action === "file")
+                    setSelected((current) => ({
+                      ...current,
+                      [skill.id]: destination,
+                    }))
+                  if (
+                    mounted.current &&
+                    (action === "rename" || action === "remove")
+                  ) {
+                    setEdits((current) =>
+                      Object.fromEntries(
+                        Object.entries(current).filter(
+                          ([key]) => !affected(key)
+                        )
+                      )
+                    )
+                    setSelected((current) => ({
+                      ...current,
+                      [skill.id]: action === "rename" ? destination : null,
+                    }))
+                  }
+                  return result
+                }, "文件目录已更新")
+              }}
+            />
+          ) : null}
           {entry && library ? (
             <FilePreview
               key={skill.id}
@@ -878,15 +1049,38 @@ export function SkillLibraryScreen({
                 edits[pathKey].value !== edits[pathKey].saved
               }
               busy={busy}
+              locked={entriesLocked}
               active={active}
               actions={detailActions}
               onAddFile={
                 skill.readOnly
                   ? undefined
-                  : (path, content) =>
-                      mutate(
-                        () => library.writeFile(skill.id, path, content),
-                        "文件已添加"
+                  : (path, content, replace) =>
+                      mutateEntries(
+                        async () => {
+                          const key = editKey(skill.id, path)
+                          const edit = currentEdits.current[key]
+                          if (replace && edit && edit.value !== edit.saved)
+                            throw new Error(
+                              "目标包含未保存编辑，请先保存或撤销后重试。"
+                            )
+                          const result = await library.writeFile(
+                            skill.id,
+                            path,
+                            content,
+                            { replace }
+                          )
+                          if (mounted.current)
+                            setEdits((current) =>
+                              Object.fromEntries(
+                                Object.entries(current).filter(
+                                  ([entryKey]) => entryKey !== key
+                                )
+                              )
+                            )
+                          return result
+                        },
+                        replace ? "文件已替换" : "文件已添加"
                       )
               }
               files={skill.entries
