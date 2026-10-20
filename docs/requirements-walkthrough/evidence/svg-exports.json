@@ -3,10 +3,14 @@
     "name": "00-overview",
     "file": "assets/00-overview.svg",
     "data-last-export-format": "svg",
-    "data-last-export-bytes": "50154",
+    "data-last-export-bytes": "50279",
     "data-last-export-canonical": "true",
-    "checked_in_bytes": 50134,
-    "post_export_normalization": "移除行尾空格并增加文件末尾换行；原导出字节数保留，详见 format-normalization.json"
+    "format_normalization": {
+      "raw_sha256": "dbbef91afc1d50f09d2966b4539efc15e48e5fb2fa58d90f14c6b45d29d75942",
+      "checked_in_sha256": "fe4cd0cbcdd2e267ee59b405948ace7f39c099a1ec1bed084b39baad20e91908",
+      "checked_in_bytes": 50259,
+      "changes": "trim trailing whitespace and normalize EOF only"
+    }
   },
   {
     "name": "01-skill",

@@ -6,12 +6,12 @@
   "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/00-remote.json",
   "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/runtime/00-remote.html",
   "specification": {
-    "sha256": "3d271c1cbe32cbc7869f0cef0f8bead77187324ca4774c9a3a8ce53b4eb314ef",
-    "bytes": 2359
+    "sha256": "ac3955217c0804a6981efadc34004d4a4bc9b13d50a4372364b12665b2af5c84",
+    "bytes": 2457
   },
   "artifact": {
-    "sha256": "cfc6f345a65c7314f00b88ac2dfa4979f6cbdc65c00a6cadb935bdc129b55f4b",
-    "bytes": 704795
+    "sha256": "ec50a03d932956ea330597221c389d933332e4ce7e0f9ff0d60c29edc86d2cd6",
+    "bytes": 705319
   },
   "validation": {
     "checksPassed": 9,

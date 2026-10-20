@@ -9,25 +9,29 @@
 @media print{.rail,.sidebar,.header,.section-links,.mobile-nav,article footer{display:none}.main,.reading{margin:0;padding:0}body{background:white;color:black}article,article[hidden]{display:block;break-before:page;padding:20px}article:first-of-type{break-before:auto}h2,h3,figure{break-inside:avoid}}
 article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);border-radius:var(--radius);font-size:13px;line-height:1.6}article pre code{padding:0;background:transparent;font-size:inherit}
 </style><link rel="stylesheet" href="comments.css"></head><body><a class="skip" href="#content">跳到正文</a><div class="rail" aria-label="文档工具"><a class="icon-control" href="#00-overview" aria-label="客户端总体设计" title="客户端总体设计"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6a2 2 0 0 1 2 2v14a3 3 0 0 0-3-2H4zM20 4h-6a2 2 0 0 0-2 2v14a3 3 0 0 1 3-2h5z"/></svg></a><a class="icon-control" href="#08-frontend" aria-label="前端现状与缺口" title="前端现状与缺口"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg></a><button type="button" class="icon-control theme-toggle" aria-label="切换为深色"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.7A8.4 8.4 0 0 1 8.3 4 8.5 8.5 0 1 0 20 15.7Z"/></svg></button></div><aside class="sidebar"><p class="wordmark">omniops-bots<small>客户端需求串讲</small></p><nav class="chapter-nav" aria-label="串讲章节"><a href="#00-overview"><span class="num">00</span><span>客户端总体设计</span></a><a href="#01-skill"><span class="num">01</span><span>SKILL</span></a><a href="#02-mcp"><span class="num">02</span><span>MCP</span></a><a href="#03-builtintool"><span class="num">03</span><span>builtinTool</span></a><a href="#04-agent"><span class="num">04</span><span>Agent</span></a><a href="#05-updater"><span class="num">05</span><span>桌面端更新</span></a><a href="#06-sync"><span class="num">06</span><span>同步与装配</span></a><a href="#07-execution"><span class="num">07</span><span>任务执行与恢复</span></a><a href="#08-frontend"><span class="num">08</span><span>前端现状与缺口</span></a><a href="#09-operations"><span class="num">09</span><span>运维与诊断上传</span></a><a href="#10-server-api"><span class="num">10</span><span>服务端 API</span></a><a href="#11-provider"><span class="num">11</span><span>Provider</span></a></nav><div class="sidebar-foot">11 章需求与接口设计 · 1 章完成情况<br>桌面运行实拍 · 资源页演示图<br><a href="README.md">Markdown 目录</a><br><a href="https://github.com/time-gift24/omniops-bots/issues/3" target="_blank" rel="noopener">已确认规格</a></div></aside><main class="main" id="content" tabindex="-1"><header class="header"><nav class="breadcrumbs" aria-label="面包屑"><a href="#00-overview">客户端设计</a><span aria-hidden="true">/</span><span id="current-title" aria-current="page"></span></nav><div class="actions"><a class="text-control source-control" id="source" href="00-总体架构.md">Markdown</a><a class="text-control" id="diagram" href="diagrams/00-overview.html" target="_blank" rel="noopener">打开运行模型<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-8 8M10 20H4v-6M4 20l8-8"/></svg></a><div class="pagination"><button type="button" id="prev" class="icon-control" aria-label="上一章"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button><span class="progress" id="progress"></span><button type="button" id="next" class="icon-control" aria-label="下一章"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button></div></div></header><div class="mobile-nav"><label for="chapter-select">章节</label><select id="chapter-select"><option value="00-overview">00 客户端总体设计</option><option value="01-skill">01 SKILL</option><option value="02-mcp">02 MCP</option><option value="03-builtintool">03 builtinTool</option><option value="04-agent">04 Agent</option><option value="05-updater">05 桌面端更新</option><option value="06-sync">06 同步与装配</option><option value="07-execution">07 任务执行与恢复</option><option value="08-frontend">08 前端现状与缺口</option><option value="09-operations">09 运维与诊断上传</option><option value="10-server-api">10 服务端 API</option><option value="11-provider">11 Provider</option></select><button type="button" class="icon-control theme-toggle" aria-label="切换为深色"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.7A8.4 8.4 0 0 1 8.3 4 8.5 8.5 0 1 0 20 15.7Z"/></svg></button></div><div class="reading"><nav class="section-links" id="sections" aria-label="本章目录"></nav><article id="00-overview" data-file="00-总体架构.md" hidden><h1>00 客户端总体设计</h1>
-<p><strong>我们要构建一个让运维人员快速迭代物料、验证效果并执行任务的桌面客户端。</strong> 运维人员在客户端修改 Skill、补充文件、调整 Agent 提示词与装配，选一个 Agent 就能在本地实验；看到结果后继续修改，自己确认可用，再上传并发布确定版本，让团队使用这次改进。</p>
-<p><strong>日常工作主线是：发现问题 → 在客户端编辑 → 本地实验与修正 → 运维本人确认 → 上传发布版本 → 新会话使用并反馈。</strong> 客户端承载这段完整工作过程；服务端配合保存草稿修订和正式版本、校验运维身份并分发物料。未上传的编辑也能实验，上传保存草稿与正式发布是两个动作，发布提交即表示运维本人已经确认。</p>
-<p>用户也可直接选择 Agent 执行运维任务，由本地 Node.js／LangGraph 经 <strong>Playwright 操作应用管理的外部 Google Chrome</strong> 完成。工作台另保留独立的内嵌 CEF 运维浏览器，供人工手动操作。</p>
+<p><strong>客户端是运行在用户本机的后台 Agent 执行端，由服务端 Agent 以任务的形式调用。线上用户的主体操作在服务端 Console 完成。</strong> 用户在 Console 发起业务请求、查看任务状态和结果；服务端 Agent 负责业务编排，将需要本机能力的任务交给客户端 Agent，客户端在本机执行并回传结果，供服务端 Agent 继续处理并在 Console 呈现。</p>
+<p><strong>线上日常使用主线是：用户操作 Console → 服务端 Agent 编排并下发任务 → 客户端 Agent 后台执行 → 结果回传服务端 → Console 展示。</strong> 客户端通常作为后台进程运行，线上用户只看到连接状态等基础信息，不展示会话、资源编辑、执行过程和浏览器工作台组成的调试桌面；任务执行不以打开该调试桌面为前提。</p>
+<p><strong>运维调试与物料迭代是另一条工作主线：发现问题 → 在调试桌面编辑 → 本地实验与修正 → 运维本人确认 → 上传发布版本 → 新任务使用并反馈。</strong> 运维人员在调试桌面修改 Skill、补充文件、调整 Agent 提示词与装配，直接选择 Agent 本地试跑并检查过程，自己确认可用后上传发布。未上传的编辑也能实验，上传保存草稿与正式发布是两个动作，发布提交即表示运维本人已经确认。</p>
+<p>两种使用方式复用本地 Node.js／LangGraph 执行能力，经 <strong>Playwright 操作应用管理的外部 Google Chrome</strong> 完成任务。调试工作台另保留独立的内嵌 CEF 运维浏览器，供运维人员手动操作。</p>
 <p><strong>我们的核心资产是受版本控制、可持续演进的 Agent 提示词与 Skill。</strong> 提示词沉淀任务目标、操作边界和结果要求，Skill 完整文件包沉淀可复用的运维方法、操作步骤和参考资料。团队按周将实际任务中的反馈转化为改进，经本地编辑、按需实验后发布新的确定版本，逐步提高 Agent 的任务完成能力。</p>
-<p>客户端支持用户主动发起会话，也能连接已有内部服务，接收远端 Agent 调用并回传结果。本设计围绕客户端的界面、资源管理、运行与恢复展开；各章最后列出服务端需要配合提供的能力。</p>
+<p>本设计分别说明线上后台执行与运维调试、资源管理、运行恢复；后续章节中的资源页面、本地会话和工作台描述均属于运维调试视图，不能据此把完整调试桌面作为线上用户界面。服务端 Console 和服务端 Agent 是外部接入方，各章最后列出客户端需要其配合提供的能力。上述线上流程是目标使用方式，服务端远端任务接入及面向线上用户的界面收敛仍待完成，不能以当前调试桌面已实现来代替。</p>
 <h2 id="00-overview-US">US</h2>
 <h3>界面设计</h3>
-<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/00-workspace.jpg" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/00-workspace.jpg" alt="历史桌面包实拍：旧 Agent CEF 模式"></a><figcaption>历史 macOS 桌面包实拍（旧 Agent CEF 模式，不代表当前双浏览器分工）：Playwright 已在右侧内置 CEF 页面填入 <code>abcd</code>，未提交搜索。使用本地测试模型与测试页面；工具调用和浏览器操作真实执行。</figcaption></figure>
-<p>客户端由左侧导航、中央内容区和右侧工作台组成。导航组织会话、Agent 与 Skill；中央区域承载编辑和对话；工作台展示浏览器与执行过程。账号区域展示用户身份与运维权限，连接状态区分已连接、重连中和离线。</p>
+<figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/00-workspace.jpg" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/00-workspace.jpg" alt="历史运维调试桌面实拍：旧 Agent CEF 模式"></a><figcaption>历史 macOS 调试桌面实拍，仅用于说明运维调试视图，不是线上用户界面。截图为旧 Agent CEF 模式，不代表当前双浏览器分工：Playwright 已在右侧内置 CEF 页面填入 <code>abcd</code>，未提交搜索。使用本地测试模型与测试页面；工具调用和浏览器操作真实执行。</figcaption></figure>
+<p>线上客户端只提供连接状态等基础信息，连接状态区分已连接、重连中和离线；用户日常在服务端 Console 操作，无需进入本地调试界面。运维调试桌面由左侧导航、中央内容区和右侧工作台组成：导航组织会话、Agent 与 Skill，中央区域承载编辑和对话，工作台展示浏览器与执行过程，账号区域展示用户身份与运维权限。</p>
 <ol>
-<li>作为运维人员，我希望发现任务中的不足后，直接在客户端修改 Skill 文件或 Agent 提示词，选 Agent 试跑、查看结果并继续调整；自己确认后上传发布，让团队使用确定版本。</li>
-<li>作为普通用户，我希望同步并使用官方能力，也能自由编辑自己的本地资源。</li>
-<li>作为用户，我希望客户端能接收服务端任务，由 Playwright 在外部 Chrome 完成操作，在独立 Chrome 窗口查看页面，在工作台检查执行过程与结果。</li>
-<li>作为用户，我希望知道运行了什么、结果是什么，并在断线后仍能交付已有结果。</li>
-<li>作为用户，我希望客户端出问题后能上传指定 thread 的诊断材料，并取得服务端确认接收的编号。</li>
+<li>作为线上用户，我希望在服务端 Console 发起业务请求、查看任务状态和结果，由服务端 Agent 调用本机 Agent 完成所需操作。</li>
+<li>作为线上用户，我希望客户端平时作为后台进程运行，仅在需要时查看连接状态等基础信息，无需操作调试桌面。</li>
+<li>作为服务端 Agent，我希望以任务形式调用客户端的官方 Agent，取得状态与最终结果，并在客户端断线后仍能收到已有结果。</li>
+<li>作为运维人员，我希望发现任务中的不足后，在调试桌面修改 Skill 文件或 Agent 提示词，选 Agent 试跑、查看过程与结果并继续调整；自己确认后上传发布，让后续线上任务使用确定版本。</li>
+<li>作为运维人员，我希望能在调试时查看独立 Chrome 窗口与本地执行记录，并按需上传指定 thread 的诊断材料，取得服务端确认接收的编号。</li>
 </ol>
-<figure class="usecase"><a class="screenshot-link" href="./assets/00-overview-usecase.svg" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/00-overview-usecase.svg" alt="总体用例图：运维人员、普通用户与服务端编排方"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure>
+<figure class="usecase"><a class="screenshot-link" href="./assets/00-overview-usecase.svg" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/00-overview-usecase.svg" alt="总体用例图：线上用户、运维人员与服务端 Agent"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure>
 <h2 id="00-overview-简要设计">简要设计</h2>
-<p>客户端把资源管理和任务执行放在同一个工作空间中：用户编辑、实验和选择 Agent，客户端准备所需物料，在专用 Chrome 中执行，并保存可查看、可补传的结果。Tauri 承担桌面包装，本次不引入其他 Rust 业务模块作为前置条件。</p>
+<p>客户端的后台执行能力与运维调试视图复用同一套 runtime：线上任务由服务端 Agent 下发，客户端准备所需物料，在专用 Chrome 中执行，并保存可补传的结果；运维人员通过调试桌面编辑、实验和检查过程。线上基础状态界面与调试桌面分别服务于这两种使用场景。Tauri 承担桌面包装，本次不引入其他 Rust 业务模块作为前置条件。</p>
+<h3>线上用户的一次任务</h3>
+<p>用户在服务端 Console 提出巡检请求，服务端 Agent 编排业务步骤，并以独立任务调用客户端官方 Agent，传入调用 ID、指定版本和任务上下文。客户端在后台核对物料、固定快照并执行本机操作，将状态、最终结果和运行快照回传；服务端确认接收后，由服务端 Agent 继续后续业务，Console 向用户展示任务状态和结果。普通任务交付不持续上传逐条模型输出，本地过程记录供运维调试和诊断使用。</p>
+<p>客户端不要求用户打开调试桌面或在本地选择 Agent、输入任务。需要人工登录或验证时，按执行章节处理并显式发起新任务，不自动续跑；具体业务操作与结果查看仍在 Console 完成。</p>
 <h3>运维人员的一次物料改进</h3>
 <p>例如，运维人员发现一次巡检遗漏了新的页面检查项，就在客户端打开对应 Skill 的官方草稿工作副本，补充操作步骤和参考文件，再勾选现有 Agent 作为模板实验。实验直接使用当前完整内容，在外部 Chrome 中执行；运维人员对照过程与结果继续修改，原 Agent 和已发布 Skill 保持不变。</p>
 <table>
@@ -74,8 +78,13 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 </thead>
 <tbody><tr>
-<td>资源管理</td>
-<td>快速修改 Skill 文件与 Agent 提示词、装配，反复本地实验，运维确认后上传发布</td>
+<td>线上基础状态</td>
+<td>后台保持任务连接，仅向线上用户展示连接状态等基础信息</td>
+<td>提供连接鉴权与状态确认，Console 承载业务操作及任务结果</td>
+</tr>
+<tr>
+<td>运维资源管理</td>
+<td>在调试桌面修改 Skill 文件与 Agent 提示词、装配，反复本地实验，运维确认后上传发布</td>
 <td>校验身份权限，保存完整草稿修订与不可变发布版本，分发已确认物料</td>
 </tr>
 <tr>
@@ -95,13 +104,13 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 <tr>
 <td>任务执行</td>
-<td>接收手动输入或远端调用，经 builtinTool 和 Playwright 在外部 Chrome 中执行</td>
-<td>通过 WebSocket 发送调用、上下文与取消请求</td>
+<td>线上接收服务端 Agent 的任务调用；运维可在调试桌面手动试跑，均经 builtinTool 和 Playwright 在外部 Chrome 中执行</td>
+<td>服务端 Agent 通过 WebSocket 发送任务调用、上下文与取消请求</td>
 </tr>
 <tr>
 <td>结果交付</td>
-<td>展示过程，本地保存状态、结果与快照，断线后补传</td>
-<td>接收状态、最终结果与快照，确认收到</td>
+<td>本地保存状态、结果与快照，断线后补传；逐条过程仅供运维调试查看</td>
+<td>接收状态、最终结果与快照并确认，服务端 Agent 继续编排，Console 展示任务状态与结果</td>
 </tr>
 <tr>
 <td>桌面更新</td>
@@ -114,10 +123,11 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <td>校验并持久保存诊断包，返回回执，提供只读排查入口</td>
 </tr>
 </tbody></table>
-<p>客户端保留未同步编辑、已下载历史版本、会话快照与执行记录。本地资源可自由编辑；官方已发布资源同步后只读，服务端只调用官方 Agent。</p>
+<p>客户端保留未同步编辑、已下载历史版本、会话快照与执行记录。运维调试时可自由编辑本地资源；官方已发布资源同步后只读，服务端只调用官方 Agent。线上任务按调用指定版本自动准备物料，不要求线上用户进入资源管理页。</p>
 <p>Provider 配置是客户端运行条件：允许自定义 base URL，手动维护上游模型名；新会话可使用全局默认 Provider 与模型或在开始前改选，开始后固定，不可用时明确报错，不自动切换。当前桌面仍由 Node runtime 从环境变量／<code>model.env</code> 读取单模型；多 Provider 管理、连接测试与系统凭据存储属于待实现设计，详见 <a href="#11-provider">11 · Provider</a>。</p>
 <h3>Agent 外部 Chrome 与手动运维 CEF</h3>
-<p><strong>执行链路：用户任务 → Tauri adapter／IPC → Node.js LangGraph Agent → builtinTool → Playwright／本地 CDP → 外部 Chrome 的固定页面。</strong> 服务端调用属于待接入能力。Agent 的页面在独立 Chrome 窗口中显示；工作台的 Chrome 标签展示状态并提供「显示 Chrome」。</p>
+<p><strong>线上目标链路：用户操作服务端 Console → 服务端 Agent → WebSocket 任务调用 → 客户端 Node.js／LangGraph Agent → builtinTool → Playwright／本地 CDP → 外部 Chrome 的固定页面；执行结果按任务回传服务端 Agent，再由 Console 呈现。</strong> 服务端调用属于待接入能力，不经过用户手动操作调试桌面。</p>
+<p><strong>当前运维本地调试链路：调试桌面输入任务 → Tauri adapter／IPC → Node.js／LangGraph Agent → 同一套本机工具与 Chrome 执行能力。</strong> Agent 的页面在独立 Chrome 窗口中显示；调试工作台的 Chrome 标签展示状态并提供「显示 Chrome」。后台运行描述的是客户端的日常使用方式，不要求 Google Chrome 采用无界面模式。</p>
 <table>
 <thead>
 <tr>
@@ -126,12 +136,16 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 </thead>
 <tbody><tr>
-<td>Tauri 业务界面</td>
-<td>管理 Agent、Skill、会话与执行记录，通过 adapter 调用 Node 后端</td>
+<td>服务端 Console 与 Agent（外部系统）</td>
+<td>Console 承载线上用户操作；服务端 Agent 编排业务，以任务调用客户端 Agent 并消费结果</td>
+</tr>
+<tr>
+<td>Tauri 界面</td>
+<td>线上展示连接等基础状态；运维调试桌面管理 Agent、Skill、会话与执行记录，通过 adapter 调用 Node 后端</td>
 </tr>
 <tr>
 <td>本地 Node.js／LangGraph runtime</td>
-<td>装配固定快照、调用模型与工具，管理并发运行、停止、超时及 Chrome 生命周期</td>
+<td>在后台执行服务端任务或运维调试任务，装配固定快照、调用模型与工具，管理并发运行、停止、超时及 Chrome 生命周期</td>
 </tr>
 <tr>
 <td>Playwright</td>
@@ -214,41 +228,42 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <p><a href="./diagrams/00-overview.html">打开结构关系图</a></p>
 </details><h2 id="00-overview-客户端">客户端</h2>
 <ul>
-<li>展示登录身份、运维权限和连接状态，复用已有 Token 连接服务端；WebSocket 断线后退避重连。</li>
-<li>提供 Skill 文件编辑与上传、Agent 提示词及装配调整、选 Agent 实验的连贯入口；未上传内容也能反复实验，官方已发布配置只读。</li>
+<li>面向线上用户展示连接状态等基础信息，日常作为后台进程运行；复用已有 Token 连接服务端，WebSocket 断线后退避重连。任务接收、执行与交付不依赖打开调试桌面。</li>
+<li>运维调试桌面展示身份与权限，提供 Skill 文件编辑与上传、Agent 提示词及装配调整、选 Agent 实验的连贯入口；未上传内容也能反复实验，官方已发布配置只读。</li>
 <li>围绕提示词和 Skill 的每周改进保存草稿、实验记录及发布引用，展示本次 Agent 实际装配；发布过程不增加审批。</li>
 <li>新会话同步清单，按需下载缺失物料；调用前核对版本，失败不拿旧版代替。</li>
 <li>运行前固定装配快照，检查所需内置工具；Playwright 按会话绑定外部 Chrome 的指定页面，不同会话可并发；同会话已有运行、其页面正在手动导航或并发容量已满时返回忙。</li>
-<li>在「设置 → 偏好设置」修改「并发任务上限」，默认 4，支持 1～64 的整数；保存到本机后立即用于新任务受理，无需重启，下调不取消当前任务，详见<a href="#07-execution">任务执行与恢复</a>。</li>
-<li>展示过程、保存结果并补传；正常任务交付只向服务端发送状态、最终结果和运行快照。</li>
-<li>用户需要排查时，另行选择一个 thread，通过 HTTPS 上传脱敏后的 SQLite checkpoint、过程与关联材料。服务端确认接收后展示诊断编号，具体见<a href="#09-operations">运维与诊断上传</a>。</li>
+<li>运维在调试桌面的「设置 → 偏好设置」修改「并发任务上限」，默认 4，支持 1～64 的整数；保存到本机后立即用于新任务受理，无需重启，下调不取消当前任务，详见<a href="#07-execution">任务执行与恢复</a>。</li>
+<li>后台保存结果并补传，正常任务交付只向服务端发送状态、最终结果和运行快照；线上用户在 Console 查看任务状态和结果，逐条过程保留在本地供运维调试查看。</li>
+<li>需要排查时另行按指定 thread，通过 HTTPS 上传脱敏后的 SQLite checkpoint、过程与关联材料。服务端确认接收后展示诊断编号，具体见<a href="#09-operations">运维与诊断上传</a>。</li>
 </ul>
 <h2 id="00-overview-详细设计">详细设计</h2>
 <p>以下运行模型按消息发生顺序描述客户端行为；各图是独立场景。准备失败、忙或执行中断的路径分别见同步与执行章节。</p>
-<h3>场景一：运维快速迭代，确认后上传发布</h3>
+<h3>场景一：线上客户端后台接收服务端 Agent 任务</h3>
+<p>前提：线上用户已在服务端 Console 发起业务请求，服务端 Agent 编排到需要本机能力的步骤，以任务形式调用客户端官方 Agent。客户端已连接，指定版本准备成功且并发容量可用；新会话绑定独立页面，不要求用户打开调试桌面。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/00-remote.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/00-remote.svg" alt="服务端 Agent 任务调用、客户端后台执行与结果确认"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
+<p><a href="./diagrams/runtime/00-remote.html">打开顺序图：服务端 Agent 任务与结果确认</a></p>
+<p>结果：客户端在后台为每次调用新建独立、只读会话，逐条过程保留在本地供运维调试查看；线上用户在 Console 查看任务状态和结果。结果与快照先落本地，再向服务端回传，确认前保留，服务端 Agent 消费结果后继续编排。断线继续执行，重连只补传；重启后未完成任务报告“执行中断、结果未知”。本场景是线上日常使用主线，远端接入仍待实现。</p>
+<h3>场景二：运维快速迭代，确认后上传发布</h3>
 <p>前提：运维从实际任务反馈中发现一项 Skill 改进需求，在客户端编辑工作副本。图中展示选择 Agent 做本地实验、本人确认后手填标签并上传发布的过程；实验结果不满足预期时，继续在本地修改并发起新实验，直到运维决定发布。实验按需进行，不是发布审批门槛。</p>
 <figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/00-weekly-evolution.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/00-weekly-evolution.svg" alt="运维物料迭代：客户端编辑与实验、本人确认、上传发布与新版使用"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
 <p><a href="./diagrams/runtime/00-weekly-evolution.html">打开顺序图：运维迭代与确认发布</a></p>
 <p>图中的“按需保存完整草稿修订”只保存编辑进度，不发布、不联动 Agent；这一步也可以在本地实验之后进行。正式发布前固定本次完整修订，服务端以该修订生成版本，之后继续编辑不会改变已提交内容。只改提示词时发布新的 Agent 并复用原 Skill；Skill 改动则与受影响 Agent 一起发布，所有新标签由运维手填。</p>
 <p>结果：一次本地改进成为团队可复用、可追溯的正式资产，新会话使用所选新版，旧会话保持原快照。周内反复迭代，按周发布已确认内容，执行反馈继续推动下一次改进。图示为目标业务流程；当前草稿实验与本地完整会话快照已实现，官方发布同步仍待接入，完成情况见第 08 章。</p>
-<h3>场景二：用户主动发起会话</h3>
-<p>前提：用户选择官方 Agent，准备检查成功，本会话没有活动轮次且并发容量可用。本地 Agent 使用本地装配；引用官方 Skill 时仍需补齐对应版本。</p>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/00-manual.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/00-manual.svg" alt="用户主动发起会话"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
-<p><a href="./diagrams/runtime/00-manual.html">打开顺序图：用户主动发起会话</a></p>
-<p>结果：客户端保存并展示本轮结果，等待用户继续输入时释放运行容量；同一会话保留页面并继续使用开始时的快照，其他会话可以并发执行。</p>
-<h3>场景三：客户端接收远端调用</h3>
-<p>前提：客户端收到对官方 Agent 的调用，指定版本准备成功且并发容量可用；新会话绑定独立页面。</p>
-<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/00-remote.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/00-remote.svg" alt="远端独立任务与结果确认"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
-<p><a href="./diagrams/runtime/00-remote.html">打开顺序图：远端独立任务与结果确认</a></p>
-<p>结果：每次调用新建独立、只读会话，逐条过程在客户端展示。结果与快照先落本地，再向服务端回传，确认前保留。断线继续执行，重连只补传；重启后未完成任务报告“执行中断、结果未知”。</p>
+<h3>场景三：运维在调试桌面主动发起会话</h3>
+<p>前提：运维人员在调试桌面选择官方 Agent，准备检查成功，本会话没有活动轮次且并发容量可用。本地 Agent 使用本地装配；引用官方 Skill 时仍需补齐对应版本。这是本地调试入口，线上用户的业务请求从服务端 Console 进入。</p>
+<figure class="diagram"><a class="screenshot-link" href="diagrams/runtime/00-manual.html" target="_blank" rel="noopener" aria-label="打开可缩放顺序图"><img src="./assets/runtime/00-manual.svg" alt="运维在调试桌面主动发起会话"></a><figcaption>运行模型（顺序图）· 点击缩放查看</figcaption></figure>
+<p><a href="./diagrams/runtime/00-manual.html">打开顺序图：运维本地调试会话</a></p>
+<p>结果：调试桌面保存并展示本轮结果，等待运维继续输入时释放运行容量；同一会话保留页面并继续使用开始时的快照，其他会话可以并发执行。</p>
 <p>验收从客户端操作或远端调用进入，覆盖“编辑发布 → 同步装配 → 调用执行 → 结果恢复”的完整结果。<a href="https://github.com/time-gift24/omniops-bots/issues/3">规格依据：Issue #3</a>。</p>
 <h2 id="00-overview-服务端配合">服务端配合</h2>
 <p>为支持上述客户端能力，已有内部服务需要提供：</p>
 <ul>
 <li><strong>身份与权限</strong>：复用已有账号与 Token，返回用户身份与运维权限，并校验官方资源写入；普通用户不能写入官方资源。</li>
+<li><strong>线上业务入口</strong>：Console 承载用户业务请求、任务状态与结果查看；服务端 Agent 决定何时调用客户端能力并消费结果，客户端只向线上用户提供基础状态信息。</li>
 <li><strong>草稿、发布与同步</strong>：接收运维在客户端确认后提交的完整内容；按需保存草稿修订，正式发布时保存不可变版本并提供 HTTPS 清单与文件包。Skill 正式发布联动受影响 Agent，所有标签由运维人员手填，提交即确认，不增加审核。</li>
 <li><strong>资产持续演进</strong>：保留每周发布涉及的提示词、Skill 和 Agent 装配关系，让客户端能够查看新旧版本及本次改进；不为周发布新增定时自动发版、MCP 发布或独立提示词版本系统。</li>
-<li><strong>调用与结果确认</strong>：LangGraph 将客户端 Agent 作为工具调用，通过 WebSocket 传入上下文、按调用 ID 取消，接收状态、结果、快照并确认；客户端返回忙时由服务端安排后续调用。</li>
+<li><strong>调用与结果确认</strong>：服务端 Agent 在其 LangGraph 编排中将客户端 Agent 作为工具，以任务形式通过 WebSocket 传入指定版本与上下文、按调用 ID 取消，接收状态、结果、快照并确认；客户端返回忙时由服务端安排后续调用。</li>
 <li><strong>桌面更新来源</strong>：提供更新清单和已签名整包下载，供客户端检查、下载与校验。</li>
 <li><strong>诊断接收</strong>：接收用户指定 thread 的诊断包，校验并持久保存后返回回执，支持运维按编号只读查看；不会因此恢复或重新执行任务。</li>
 </ul>

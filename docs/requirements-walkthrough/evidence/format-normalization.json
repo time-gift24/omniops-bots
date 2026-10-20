@@ -3,10 +3,10 @@
   "changes": [
     {
       "path": "assets/00-overview.svg",
-      "before_sha256": "f9e905589991cf7f6779d30a04ac71bddc902e7df0ad992a4ae076eb0565abbc",
-      "after_sha256": "4bf006639951add607c77e59211c445255d37cf1f442c5ea5b9a8cc0cdbad05e",
-      "before_bytes": 50154,
-      "after_bytes": 50134
+      "before_sha256": "dbbef91afc1d50f09d2966b4539efc15e48e5fb2fa58d90f14c6b45d29d75942",
+      "after_sha256": "fe4cd0cbcdd2e267ee59b405948ace7f39c099a1ec1bed084b39baad20e91908",
+      "before_bytes": 50279,
+      "after_bytes": 50259
     },
     {
       "path": "assets/01-skill.svg",

@@ -3,12 +3,12 @@
     "name": "00-manual",
     "file": "assets/runtime/00-manual.svg",
     "data-last-export-format": "svg",
-    "data-last-export-bytes": "48323",
+    "data-last-export-bytes": "48368",
     "data-last-export-canonical": "true",
     "format_normalization": {
-      "raw_sha256": "62a0631d9a44bd16aee694423f856e3da2a1c0362972dd417f46bb49a71753ed",
-      "checked_in_sha256": "fe46277467a4c75bb899857780f4773bca036b168b9c36722230ed5d62d5f2ba",
-      "checked_in_bytes": 48303,
+      "raw_sha256": "abedc9f9f18a81cb12a1fd4394554da59dc48528009f163238d1df9adc8778f2",
+      "checked_in_sha256": "7bb51b7c53ce63d5f84de479ab403e38a72418a76f100f445aaa6c600b8a2d6c",
+      "checked_in_bytes": 48348,
       "changes": "trim trailing whitespace and normalize EOF only"
     }
   },
@@ -16,12 +16,12 @@
     "name": "00-remote",
     "file": "assets/runtime/00-remote.svg",
     "data-last-export-format": "svg",
-    "data-last-export-bytes": "49150",
+    "data-last-export-bytes": "49561",
     "data-last-export-canonical": "true",
     "format_normalization": {
-      "raw_sha256": "2924f7d36d465b9019b2fd3ed01b310427b2ca5bded37617dfed6e21090d0c4f",
-      "checked_in_sha256": "451ef373a37ddcb9a0fe9f75dcc1057bb43911fbf6751870d6979659532c7078",
-      "checked_in_bytes": 49130,
+      "raw_sha256": "8c410256ce2366d7519d28c334adc005dd615766f9f280677c1133145a61c13f",
+      "checked_in_sha256": "501b100f8c23a4096d51d4e591cf9690172dae44d9bdb77c0edd368fbb8cd38b",
+      "checked_in_bytes": 49541,
       "changes": "trim trailing whitespace and normalize EOF only"
     }
   },

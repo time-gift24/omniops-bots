@@ -1,0 +1,18 @@
+{
+  "diagram_type": "architecture",
+  "output": "diagrams/00-overview.html",
+  "specification_sha256": "41e187319da0798320e1b2eb35432d47536014762bcf2fd9e8045a6d927de523",
+  "artifact_sha256": "8553c4559f0d5f4daf6762fed05d1061be0885bca00a4a1e088b211d2090ef62",
+  "validation": "9/9 showcase, 0 errors, 0 warnings",
+  "browser_evidence": "passed",
+  "visual_review": "passed",
+  "correction_rounds": 0,
+  "reviewed_screenshots": [
+    "diagrams/00-overview.visual-check.2048x1320.light.png",
+    "diagrams/00-overview.visual-check.2048x1320.dark.png"
+  ],
+  "observations": [
+    "已读取浅深主题实际截图；Console 入口、服务端 Agent 任务调用、客户端后台执行均清晰，无重叠或裁切。",
+    "图与必要说明占据完整桌面，4 个尺寸的包含性由当前 browser 回执单独证明。"
+  ]
+}

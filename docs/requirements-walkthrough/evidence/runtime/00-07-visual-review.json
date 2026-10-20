@@ -4,40 +4,38 @@
     {
       "diagram_type": "sequence",
       "output": "diagrams/runtime/00-manual.html",
-      "artifact_sha256": "0c24e4a6f2342e189ff826a3b11b73bf18cf6ec3a960c547585f3b2be1a11e01",
+      "artifact_sha256": "589f505df918e52a8d45a11657ad922cffd903b3ba80ceb8edf4b5549614fce1",
       "validation": "9/9 showcase, 0 errors, 0 warnings",
       "browser_evidence": "passed",
       "visual_review": "passed",
       "correction_rounds": 0,
       "reviewed_screenshots": [
-        "diagrams/runtime/00-manual.visual-check.1440x900.light.png",
-        "diagrams/runtime/00-manual.visual-check.1440x900.dark.png",
         "diagrams/runtime/00-manual.visual-check.2048x1320.light.png",
         "diagrams/runtime/00-manual.visual-check.2048x1320.dark.png"
       ],
       "observations": [
-        "已读取真实浏览器截图或其联系表，浅深主题下参与者、消息次序、条件与结果可辨认，无遮挡或裁切。",
-        "顺序图和必要说明占据合理画布，4 个桌面视口包含性另由浏览器回执证明。"
-      ]
+        "已读取浅深主题实际截图；角色、任务调用与结果确认清晰，无重叠或裁切。",
+        "图与说明在大桌面中保持完整比例；4 个桌面尺寸的包含性由当前 browser 回执单独证明。"
+      ],
+      "specification_sha256": "19d5921b4e7f4beae29b9769461746ee170031e95da030826963ea8ae01cbebd"
     },
     {
       "diagram_type": "sequence",
       "output": "diagrams/runtime/00-remote.html",
-      "artifact_sha256": "cfc6f345a65c7314f00b88ac2dfa4979f6cbdc65c00a6cadb935bdc129b55f4b",
+      "artifact_sha256": "ec50a03d932956ea330597221c389d933332e4ce7e0f9ff0d60c29edc86d2cd6",
       "validation": "9/9 showcase, 0 errors, 0 warnings",
       "browser_evidence": "passed",
       "visual_review": "passed",
-      "correction_rounds": 0,
+      "correction_rounds": 2,
       "reviewed_screenshots": [
-        "diagrams/runtime/00-remote.visual-check.1440x900.light.png",
-        "diagrams/runtime/00-remote.visual-check.1440x900.dark.png",
         "diagrams/runtime/00-remote.visual-check.2048x1320.light.png",
         "diagrams/runtime/00-remote.visual-check.2048x1320.dark.png"
       ],
       "observations": [
-        "已读取真实浏览器截图或其联系表，浅深主题下参与者、消息次序、条件与结果可辨认，无遮挡或裁切。",
-        "顺序图和必要说明占据合理画布，4 个桌面视口包含性另由浏览器回执证明。"
-      ]
+        "已读取浅深主题实际截图；角色、任务调用与结果确认清晰，无重叠或裁切。",
+        "图与说明在大桌面中保持完整比例；4 个桌面尺寸的包含性由当前 browser 回执单独证明。"
+      ],
+      "specification_sha256": "ac3955217c0804a6981efadc34004d4a4bc9b13d50a4372364b12665b2af5c84"
     },
     {
       "diagram_type": "sequence",

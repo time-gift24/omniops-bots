@@ -2,25 +2,27 @@
   "schema_version": 1,
   "diagram_type": "sequence",
   "meta": {
-    "title": "客户端接收远端独立任务",
+    "title": "服务端 Agent 以任务调用客户端 Agent",
     "locale": "zh-CN",
     "quality_profile": "showcase",
     "column_fit": "spread",
     "viewBox": [
-      1100,
+      1080,
       640
     ]
   },
   "participants": [
     {
       "id": "server",
-      "label": "服务端",
-      "type": "backend"
+      "label": "服务端 Agent",
+      "type": "backend",
+      "sublabel": "任务编排"
     },
     {
       "id": "client",
-      "label": "桌面客户端",
-      "type": "frontend"
+      "label": "客户端 Agent",
+      "type": "frontend",
+      "sublabel": "后台执行"
     },
     {
       "id": "chrome",
@@ -39,7 +41,7 @@
       "from": "server",
       "to": "client",
       "y": 180,
-      "label": "WS：调用 ID、版本、上下文",
+      "label": "WS 任务调用：ID、版本、上下文",
       "variant": "emphasis"
     },
     {
@@ -94,17 +96,17 @@
   "cards": [
     {
       "dot": "emerald",
-      "title": "客户端独立执行",
+      "title": "日常后台执行",
       "items": [
-        "调用前核对版本、补齐物料并检查工具",
-        "远端会话只读，逐条过程在客户端展示"
+        "线上客户端只展示连接等基础状态",
+        "逐条过程仅在运维调试桌面查看"
       ]
     },
     {
       "dot": "cyan",
-      "title": "交付有确认",
+      "title": "Console 查看任务结果",
       "items": [
-        "结果持久化后再回传",
+        "结果持久化后回传服务端",
         "确认前保留记录，重连或重启后补传"
       ]
     }

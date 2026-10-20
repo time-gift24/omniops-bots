@@ -5,7 +5,14 @@
       1000,
       520
     ],
-    "overflow": []
+    "overflow": [],
+    "artifact_sha256": "bf523a7b4c100c755b5c0aca9346cdfcb8a2ea45b4a6505a22a6ac2f836fcf92",
+    "bytes": 3338,
+    "visual_review": "passed",
+    "reviewed_screenshot": "evidence/00-overview-usecase-review.png",
+    "observations": [
+      "已读取实际截图；Console 任务入口、客户端基础状态和服务端 Agent 调用角色均清晰，无重叠或裁切。"
+    ]
   },
   {
     "name": "01-skill-usecase.svg",

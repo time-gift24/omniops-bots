@@ -2,7 +2,7 @@
   "schema_version": 1,
   "diagram_type": "sequence",
   "meta": {
-    "title": "用户在客户端发起会话",
+    "title": "运维人员在调试桌面发起会话",
     "locale": "zh-CN",
     "quality_profile": "showcase",
     "column_fit": "spread",
@@ -15,12 +15,12 @@
     {
       "id": "user",
       "type": "external",
-      "label": "用户"
+      "label": "运维人员"
     },
     {
       "id": "client",
       "type": "frontend",
-      "label": "桌面客户端"
+      "label": "运维调试桌面"
     },
     {
       "id": "chrome",
@@ -85,7 +85,7 @@
   "cards": [
     {
       "dot": "emerald",
-      "title": "本地开始、客户端执行",
+      "title": "运维本地调试",
       "items": [
         "检查通过、本会话空闲且并发容量可用时执行",
         "等待输入释放容量，会话页面继续保留"
@@ -96,7 +96,7 @@
       "title": "同一会话固定装配",
       "items": [
         "后续轮次沿用开始时的快照",
-        "服务端提供物料，手动会话可继续输入"
+        "服务端提供物料，运维可继续输入"
       ]
     }
   ]

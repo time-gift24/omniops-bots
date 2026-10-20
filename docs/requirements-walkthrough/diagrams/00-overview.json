@@ -14,8 +14,8 @@
     {
       "id": "orchestrator",
       "type": "backend",
-      "label": "LangGraph 服务",
-      "sublabel": "上下文 · 调用 · 取消",
+      "label": "服务端 Agent",
+      "sublabel": "Console 入口 · 任务编排",
       "pos": [
         40,
         70
@@ -29,7 +29,7 @@
       "id": "executor",
       "type": "frontend",
       "label": "客户端 Agent",
-      "sublabel": "LangGraph · Playwright",
+      "sublabel": "后台 · LangGraph · Playwright",
       "pos": [
         450,
         70
@@ -100,7 +100,7 @@
     {
       "from": "orchestrator",
       "to": "executor",
-      "label": "WebSocket 双向",
+      "label": "WebSocket 任务调用",
       "variant": "emphasis"
     },
     {
@@ -130,23 +130,23 @@
       "dot": "cyan",
       "title": "服务端负责",
       "items": [
-        "流程编排与权限判定",
-        "官方草稿、版本与发布"
+        "Console 发起与查看任务",
+        "Agent 编排与任务调用"
       ]
     },
     {
       "dot": "emerald",
       "title": "客户端负责",
       "items": [
-        "专用 profile 保留登录态",
-        "结果确认前持久化保留"
+        "后台运行，仅展示基础连接状态",
+        "调试桌面仅供运维使用"
       ]
     },
     {
       "dot": "amber",
       "title": "MVP 边界",
       "items": [
-        "一次只执行一轮任务",
+        "同一会话同时只执行一轮",
         "断线补传，不重跑任务"
       ]
     }
