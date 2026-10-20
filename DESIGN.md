@@ -1,7 +1,7 @@
 ---
 version: alpha
 name: omniops-bots Pine
-description: 企业级 agent 运行底座的设计系统。亮色为主、暗色一等公民；克制策略：带绿倾向的中性面 + 单一深青绿签名色；中文 MiSans + 西文 Geist Variable 自托管。
+description: 企业级 agent 桌面工作台的设计系统。亮色为主、暗色一等公民；克制策略：带绿倾向的中性面 + 单一深青绿签名色；中文 MiSans + 西文 Geist Variable 自托管。
 colors:
   pine-50: "oklch(0.965 0.012 168)"
   pine-100: "oklch(0.925 0.028 168)"
@@ -130,9 +130,9 @@ components:
 
 ## Overview
 
-omniops-bots 是企业级 agent 运行底座，主用户是中国企业的业务构建者。界面的情绪目标是：打开时感到**笃定**（基础设施的分量）、使用中感到**通透**（信息无黑盒、永远可以下钻）、细节上感到**手工艺的**（动效、字体、材质都被照顾过）。
+omniops-bots 是企业级 agent 桌面工作台，主用户是中国企业的业务构建者。Node.js 承载本地业务后端，Tauri 承载原生桌面能力，`web/` 提供共享前端和开发预览。界面的情绪目标是：打开时感到**笃定**（基础设施的分量）、使用中感到**通透**（信息无黑盒、永远可以下钻）、细节上感到**手工艺的**（动效、字体、材质都被照顾过）。
 
-色彩策略是克制（Restrained）：主体是带极轻微绿倾向的中性面，唯一的签名色是深青绿（Pine），占用 ≤10% 视觉面积。亮色主题为主，暗色是一等公民而非反色补丁。磨砂质感只出现在有浮层语义的地方。运维端复用全部令牌，但信息密度更高、动效更收敛。
+色彩策略是克制（Restrained）：主体是带极轻微绿倾向的中性面，唯一的签名色是深青绿（Pine），占用 ≤10% 视觉面积。亮色主题为主，暗色是一等公民而非反色补丁。磨砂质感只出现在有浮层语义的地方。运行记录等数据视图复用全部令牌，但信息密度更高、动效更收敛。
 
 ## Colors
 
@@ -146,13 +146,13 @@ omniops-bots 是企业级 agent 运行底座，主用户是中国企业的业务
 中西文混排是第一优先级：**西文和数字用 Geist Variable，中文用自托管 MiSans**，浏览器按字形自动分配；系统回退 PingFang SC / 微软雅黑只是兜底，不是设计目标。等宽字体（Geist Mono / JetBrains Mono）只出现在技术下钻层：日志、ID、参数、代码。
 
 - **Display / Headline：** Semibold（600），负字距收紧到 -0.01 ~ -0.02em，不超过 -0.02em；`text-wrap: balance`。
-- **Body：** 14px / 1.7 为默认正文（中文长文阅读舒适区），16px 给客户端主要阅读区，13px 给运维端密度场景。
+- **Body：** 14px / 1.7 为默认正文（中文长文阅读舒适区），16px 给客户端主要阅读区，13px 给运行记录等高密度场景。
 - **Label：** 500 字重，不做全大写 + 宽字距的 eyebrow 样式——中文没有大写，这个 trope 在中文界面里是纯粹的 AI 味。
 - 同屏不超过三个字重。
 
 ## Layout
 
-4px 基础网格，常用步进 8 / 16 / 24 / 32。客户端内容区宽松（卡片内 padding 24px，区块间距 48–64px），运维端收紧（16 / 24–32）。正文行宽上限 65–75ch（中文约 35–45 字/行）。响应式网格用 `repeat(auto-fit, minmax(280px, 1fr))`，不为每个断点手写媒体查询。z-index 语义分层：dropdown → sticky → modal-backdrop → modal → toast → tooltip，禁止任意值。
+4px 基础网格，常用步进 8 / 16 / 24 / 32。客户端内容区宽松（卡片内 padding 24px，区块间距 48–64px），运行记录等数据视图收紧（16 / 24–32）。正文行宽上限 65–75ch（中文约 35–45 字/行）。响应式网格用 `repeat(auto-fit, minmax(280px, 1fr))`，不为每个断点手写媒体查询。z-index 语义分层：dropdown → sticky → modal-backdrop → modal → toast → tooltip，禁止任意值。
 
 ### Sidebar 与 Header 导航
 
@@ -172,7 +172,7 @@ omniops-bots 是企业级 agent 运行底座，主用户是中国企业的业务
 
 ## Motion
 
-分层纪律：**空间结构的变化用弹簧**（侧边栏开合、面板切换、拖拽——沿用 `lib/ease.ts` 的 SPRING_PANEL / SPRING_LAYOUT / SPRING_PRESS），**状态反馈用 150–250ms 的 `EASE_OUT`**（hover、激活、淡入）。不用 bounce、elastic。所有动画必须有 `prefers-reduced-motion` 降级（瞬时或交叉淡入）。入场动画只增强已可见的默认态，不把内容可见性门控在动画 class 上。运维端整体降一档：能用快速缓动的不用弹簧。
+分层纪律：**空间结构的变化用弹簧**（侧边栏开合、面板切换、拖拽——沿用 `lib/ease.ts` 的 SPRING_PANEL / SPRING_LAYOUT / SPRING_PRESS），**状态反馈用 150–250ms 的 `EASE_OUT`**（hover、激活、淡入）。不用 bounce、elastic。所有动画必须有 `prefers-reduced-motion` 降级（瞬时或交叉淡入）。入场动画只增强已可见的默认态，不把内容可见性门控在动画 class 上。运行记录等数据视图整体降一档：能用快速缓动的不用弹簧。
 
 ## Components
 

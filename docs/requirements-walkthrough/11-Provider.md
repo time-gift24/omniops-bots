@@ -2,7 +2,7 @@
 
 > 串讲重点：用户在客户端维护多个 OpenAI 兼容接入，每个 Provider 配置多个模型；新会话选择确定的模型，凭据留在本机，配置不可用就明确报错。
 
-**本章是已确认的需求设计，Provider 管理页面、操作系统凭据存储和多模型选择仍待实现。** 当前桌面端从 `model.env`／环境变量读取单个模型，通过 Node `ChatOpenAI` 调用；已有 Rust Provider 库尚未接入这条桌面运行链路。
+**本章是已确认的需求设计，Provider 管理页面、操作系统凭据存储和多模型选择仍待实现。** 当前桌面端由 Node.js runtime 从 `model.env`／环境变量读取单个模型，通过 `@langchain/openai` 的 `ChatOpenAI` 调用。
 
 ## US
 
@@ -114,9 +114,9 @@ Provider 管理与连接测试首版不新增专门的日志、span 或指标：
 
 ### 当前实现与接入缺口
 
-当前 [桌面入口](../../desktop/runtime/main.mjs) 在启动时读取 `model.env`／环境变量，通过 `ChatOpenAI` 使用单个模型；[模型来源接口](../../web/src/models/source.ts) 仅提供模型列表。现有选择界面不代表已具备可持久保存的多 Provider 管理。
+当前 [Node.js 桌面 runtime 入口](../../desktop/runtime/main.mjs) 在启动时读取 `model.env`／环境变量，通过 `@langchain/openai` 的 `ChatOpenAI` 使用单个模型；[模型来源接口](../../web/src/models/source.ts) 仅提供模型列表。现有选择界面不代表已具备可持久保存的多 Provider 管理。
 
-[Rust Provider 库](../../crates/omniops-bots-provider/src/lib.rs) 已有独立的配置与调用能力，由 CLI 使用，尚未接入当前 Node 桌面运行链路；不计作客户端管理功能已完成。待接入项包括 Provider／模型配置持久化、系统凭据存储、无鉴权调用、全局默认与会话固定选择，以及上述管理和测试界面。完成情况见 [08 · 前端现状与缺口](./08-前端现状与缺口.md)。
+待接入项包括 Provider／模型配置持久化、系统凭据存储、无鉴权调用、全局默认与会话固定选择，以及上述管理和测试界面。完成情况见 [08 · 前端现状与缺口](./08-前端现状与缺口.md)。
 
 ## 服务端配合
 

@@ -1,159 +1,89 @@
 # AGENTS.md
 
-本规范适用于整个 Rust workspace。
+本规范适用于整个仓库；`web/` 另须遵守其目录内的 `AGENTS.md`。
 
 ## 关键文档写入权限
 
 - 未经用户明确允许，禁止创建、修改、覆盖或删除 `CONTEXT.md`、`AGENTS.md` 等项目规范、上下文和架构决策类关键文档；仅可读取。一般任务授权、技能流程或自动维护要求不视为对这些文档的写入授权。
 
+## 产品范围与职责
+
+- 本仓专注桌面客户端。**Node.js 是 desktop 的主后端**，负责 Agent 装配、模型与 MCP 调用、图执行、浏览器自动化及本地数据管理。
+- `web/` 是 React + TypeScript 前端，由 Tauri 加载；普通浏览器入口用于演示与测试，复用同一套页面和业务 interface。
+- `desktop/runtime/` 是随包交付的私有 Node.js runtime。`main.mjs` 组装依赖并处理 IPC；`runtime.mjs` 负责桌面任务；`execution/` 负责 LangGraph 执行生命周期与证据；`chat/` 负责聊天适配与历史；`browser/` 负责 Chrome／Playwright；资源与配置由各自模块管理。
+- `crates/omniops-bots-desktop` 承担 Tauri 原生壳、Node 子进程与 IPC、系统能力、内嵌 CEF 及进程生命周期；`omniops-bots-desktop-helper` 是 macOS CEF helper。业务后端能力放在 Node.js，不在 Rust 中再实现一套。
+- `omniops-bots-collector` 已接入原生壳，管理该进程的可观测输出；它不是 Node.js 业务后端或独立服务。
+- 服务端是外部接入方。`docs/requirements-walkthrough/` 中的发布、同步、远端任务和诊断 API 是客户端所需契约，完成情况以文档中的明确标记为准，不代表本仓负责服务端实现。
+- 旧 Rust harness、Scheduler、LLM Provider 库与 PostgreSQL 后端计划已取消。不得据此恢复 core／HTTP／CLI／数据库 crate 或预建空层；本地持久化沿用现有文件与 SQLite checkpoint。
+
 ## 技术栈与依赖
 
-- 使用 Rust 2024；工具链以 `rust-toolchain.toml` 为准，格式以 `rustfmt.toml` 为准。
-- 共享依赖的版本统一声明在根 `Cargo.toml` 的 `[workspace.dependencies]`，使用方通过 `workspace = true` 引入。
-- 依赖按实际用途引入，遵守 `deny.toml` 的版本、来源和许可证约束。
+- Node.js 使用 `26.11.1`，与 `Makefile`、runtime engines 和打包脚本保持一致；JavaScript／TypeScript 使用 ESM。runtime 的 TypeScript 必须能由随包 Node 直接加载，遵守其 `tsconfig.json`。
+- 前端依赖由 `web/package.json` 管理，后端依赖由 `desktop/runtime/package.json` 管理，各自提交 `package-lock.json`，安装用 `npm ci`。先用 Node 标准库和已有依赖，不为假设需求新增框架。
+- 图编排与模型接入复用现有 LangGraph.js、Deep Agents、LangChain 和 MCP SDK；不自建通用调度器、协议库或依赖注入容器。
+- 原生部分使用 Rust 2024，工具链与格式以 `rust-toolchain.toml`、`rustfmt.toml` 为准。共享依赖版本统一声明在根 `Cargo.toml` 的 `[workspace.dependencies]`，使用方通过 `workspace = true` 引入，遵守 `deny.toml`。
+- 凭据不得提交仓库。当前单模型入口读取环境变量／未跟踪的 `model.env`；后续 Provider 管理遵循第 11 章的系统凭据库方案，普通配置只存凭据引用。不得提交本地数据、生成的原生资源或 `.npmrc`。
 
-| 库／工具 | 用途 |
-| --- | --- |
-| `thiserror` | 模块错误及每个 crate 统一对外的 `Error` |
-| `axum` | HTTP 路由、请求提取、状态注入和响应转换 |
-| `clap` | CLI 参数、子命令、帮助及版本信息 |
-| `bon` | 按需生成 builder |
-| `tracing` | 业务结构化日志和 span，统一使用标准埋点 API |
-| `opentelemetry` | 业务指标的标准 Metrics API |
-| `tracing-subscriber`、`tracing-appender` | Collector 内组合输出 Layer，以及有界、允许丢弃的后台 stderr 写入 |
-| `opentelemetry_sdk`、`opentelemetry-otlp`、`tracing-opentelemetry`、`opentelemetry-appender-tracing` | Collector 内的 SDK、三信号 OTLP 导出及 tracing 桥接 |
-| `omniops-bots-collector` | 进程内可观测库，封装后端配置和初始化／关闭；按已确认的 OpenSpec 设计引入 |
-| `sqlx` | PostgreSQL 访问、手写 SQL 的编译期校验 |
-| SQLx CLI | 创建和执行迁移、生成与检查离线查询缓存 |
-| 本地 `sqlx-db-tester` | SQLx 0.9 的开发／测试数据库生命周期工具，仅通过 `dev-dependencies` 使用 |
+## 模块与接口
 
-## 业务对象与 trait
+- 优先复用已有模块，只为真实的外部边界与变化点定义 interface。入口组装具体依赖，内部辅助函数不机械包装成类、trait 或 adapter。
+- 前端只经自有 interface 与 adapter 访问资源、持久化和宿主能力；共享页面不直接调用 Tauri、Node、网络或存储。平台接入在启动入口选择，桌面启动失败不得偷偷切回演示数据。
+- Node 模块接收实际需要的依赖，复用 `createDesktopRuntime`、`createExecution` 和已有资源工厂；内部模块不暴露原始 IPC 报文给业务页面。
+- 新增或调整模块接口时说明公开导出、完整调用签名、输入／输出、构造校验、错误分类，以及异步调用的取消、清理与生命周期；提供仅经公开入口完成调用的示例，不为展示契约提前写实现或扩大公开范围。
+- 原生库 crate 自有可失败 API 使用 `Result<T, crate::Error>`，在根导出基于 `thiserror` 的统一 `Error`；必要类型与构造／读取入口对调用方可达。实现外部 trait 时遵守其错误契约；不为传递错误来源引入业务不需要的依赖。
 
-- 采用面向对象与 trait 结合的形式：业务对象用 `struct + impl` 封装状态和行为，以组合复用能力。
-- 存储、外部服务等边界用 trait；普通数据结构和内部辅助逻辑不强制定义 trait。
-- 默认泛型静态分派，通过构造函数注入实现；确有运行时切换需求时再用 `dyn Trait`。
-- 异步方法优先使用原生 `async fn`，有实际需要再引入 `async-trait`。
-- 公共异步 trait 的声明使用 `fn ... -> impl Future<Output = ...>`，避免 `async_fn_in_trait` 警告；跨线程调用明确增加 `+ Send` 约束，实现仍优先写原生 `async fn`。
-- 不把带原生异步方法的 trait 直接当作可动态分派的 trait；采用 `dyn Trait` 时检查兼容性。
+## 校验、错误与执行生命周期
 
-## core 的职责与持续审视
-
-- `omniops-bots-core` 是全项目公共依赖，承载可共享的业务对象、业务逻辑和边界 trait。
-- core 不依赖 `axum`、`clap` 或 `sqlx`，公共接口不暴露 HTTP、CLI 或数据库实现类型。
-- HTTP、CLI、PostgreSQL 实现依赖 core，由入口组装具体依赖。
-- 按实际功能增加 crate，先复用现有模块，不预建空层或空 crate。
-- 每次涉及 core 或跨 crate 复用的改动，都重新审视职责、公共 API、依赖和实际复用价值。
-- 保持 core 简洁：具体接入实现和仅服务于单一入口的辅助逻辑留在使用方；不把 core 作为杂项工具箱。
-- 优先复用已有业务能力，不为假设的未来复用增加抽象；公共 API 和依赖只保留必要部分。
-
-## crate 对外接口设计
-
-- 新增或调整库 crate 的设计时，必须明确列出 crate 根公开导出的 API、完整调用签名、输入／输出类型、构造与校验入口，以及本 crate 使用 `thiserror` 定义的统一对外 `Error`；不能只描述职责、内部实现或其他 crate 的接口与错误。
-- 对外接口涉及的类型和必要构造／读取入口必须对调用方可达，并给出仅通过公开 API 完成实际调用的示范；内部模块、协议报文和辅助类型按需保持私有，不为展示接口而扩大公开范围。
-- 明确每个可失败入口返回哪个 crate 的 `Error`，列出错误分类、来源保留和跨边界转换规则；实现外部 trait 时遵守该 trait 的错误契约，不以无上下文的双向转换替代边界处理。
-- 设计阶段给出接口与错误契约即可，不为展示契约提前编写实现；文档写入仍须遵守关键文档权限规则。
-
-## 构造与 builder
-
-- 多参数、可选参数或容易混淆的构造入口使用 `bon`；简单对象保留 `new()` 或结构体字面量。
-- 业务校验放在构造函数中，需要失败时返回 `Result`；builder 必须经过该校验。
-- 有业务不变量的对象不开放可绕过校验的构造或修改入口。
-
-## 错误处理
-
-- 内部错误按模块和边界划分，用 `thiserror` 定义，保留错误分类和来源。
-- 每个 crate 定义自己的统一对外 `Error`；库 crate 在根公开导出，二进制 crate 在入口统一汇总。
-- `vendor/` 中的第三方代码保留上游 API 和错误约定，例外及本地修改记录在该目录的来源说明中。
-- crate 自有的对外可失败 API 使用 `Result<T, crate::Error>`，内部错误在出口转换；实现其他 crate／依赖的 trait 时遵守其错误契约。
-- 预期失败通过 `Result` 和 `?` 传播，不用 panic 处理用户输入或外部系统失败。
-- HTTP 层将错误转换为响应，CLI 层负责错误展示和退出码；业务核心不返回 HTTP 状态码。
-- 数据库和外部服务实现在边界转换错误，不让 core 为保存错误来源而依赖具体框架或数据库库。
+- IPC、模型配置、文件路径、URL、上传内容和第三方响应都是输入边界。复用 `input.mjs` 与现有校验，检查类型、大小、受控选项及路径归属；不把用户路径或模型输入直接拼进 shell 命令。
+- 预期失败通过异常／Promise 拒绝或 Rust `Result` 传播，不用 panic、静默吞错或伪造成功处理用户输入和外部失败。保存失败保留编辑，持久化更新不能留下半包或破坏已有数据。
+- Node 边界复用 `RuntimeError`、`ExecutionError` 与 `safeError`；内部保留来源，IPC 只输出安全分类与摘要，不发送依赖的原始错误或来源链。Rust 原生壳使用自己的错误转换。
+- `threadId`、`runId`、`graphThreadId` 分别表示业务会话、一次执行与图身份；checkpoint 不能替代聊天历史。沿用现有并发准入、同会话互斥、唯一终态、取消传播和资源清理，不因切页面停止任务。
+- 失败、取消、超时和进程重启后不自动重跑图或模型请求；新一轮显式发送创建新的 Run 和 graphThreadId。取消只表示本地停止消费／执行，不承诺上游计算已撤销。
+- Node 子进程 stdout 专供 IPC，禁止混入日志。进程关闭先停止任务、释放浏览器与存储，再结束子进程；不让遥测失败改变业务结果、stdout 或退出码。
 
 ## 日志、链路与监控
 
-- 功能设计时必须向用户确认要增加哪些关键日志、span 和监控指标：分别解决什么问题，在哪些开始／完成／失败／取消边界记录，使用什么级别、字段、标签、单位及统计口径。复用本次会话已确认的决定，不重复询问；确实不需要新增时，在设计中明确理由，不机械地为每个函数加埋点。
-- 日志与 span 使用 `tracing`，指标直接使用 `opentelemetry` Metrics API。不要自建日志宏或指标门面，也不要通过解析日志统计业务指标。
-- SDK、exporter、后端配置和输出生命周期集中在进程内 `omniops-bots-collector`。core 只依赖标准埋点 API，不依赖 Collector、SDK 或具体监控平台；业务接口不暴露这些实现类型。初版通过 OTLP/HTTP Protobuf 导出日志、链路和指标，独立 Collector 服务是否部署另行决定。
-- 由程序入口显式初始化一次，一个 Subscriber 组合多个 Layer；库和业务方法不得隐式初始化或覆盖宿主配置。未初始化且宿主未另行配置时为空操作；初始化后没有显式遥测端点时只启用本地 stderr，不采用隐式 localhost 端点。先初始化再创建复用指标句柄，不承诺热启用或补发历史数据。
-- 埋点是轻量同步调用；网络发送和 stderr 写入均在后台完成。队列和指标属性组合容量必须有界，队列满允许丢弃，不等待容量，不以同步 stderr 或无限重试兜底，不为每条记录创建任务。
-- 遥测配置、导出和关闭失败不得改变业务结果、业务错误、stdout 或退出码，不得触发模型请求重试。远程配置无效时明确诊断并降级到本地；诊断本身也须安全、限频、后台输出，避免导出器故障日志递归进入同一远程管线。
-- 业务结束后统一关闭，所有 exporter 和本地 writer 共用调用方指定的总时间预算；超时允许丢弃，返回后的 Drop 或线程等待不得再次拖延退出。忘记关闭只做非阻塞 best effort，不承诺送达。
-- Generation 在实际开始执行时计数，观测覆盖整个返回流的消费期；成功、失败、取消只结算一次。明确首段文本与总耗时边界；取消只表示本地停止消费。累计 Usage 按最新已知值结算，不重复相加，未知不补零；日志过滤和链路采样不能影响指标。
-- 埋点显式选择安全字段；本地与远程均禁止记录凭据、原始请求头、提示词、回复正文、原始协议／配置文本或完整错误来源链。保留 API 错误 source 不代表允许将其 Debug 或整条来源链写入日志。
-- 指标只用受控且有容量上限的维度；请求 ID、trace ID、响应 ID、完整 URL、用户内容和任意错误文本不得作指标标签。关联 ID 仅用于日志和链路，限制长度并编码控制字符。测试须覆盖无初始化、遥测故障和输出背压下业务行为不变。
-
-## PostgreSQL 与手写 SQL
-
-- 数据库使用 PostgreSQL；SQL 手动编写，不引入 ORM 或为未要求的数据库增加兼容层。
-- 值使用绑定参数；动态表名、列名和排序方向只能来自受控选项，不直接拼接用户输入。
-- 固定查询使用 `query!`、`query_as!`、`query_file!` 或 `query_file_as!` 等 SQLx 宏做编译期校验。
-- 确有动态 SQL 需求时，使用 SQLx 的运行时查询或 `QueryBuilder`，绑定参数并验证实际查询行为。
-- 查询实现、SQLx 行映射及派生放在 PostgreSQL 接入层，转换为 core 业务对象；core 仅通过存储 trait 使用它。
-
-## 数据库迁移与离线缓存
-
-- 迁移放在 workspace 根 `migrations/`，通过 SQLx CLI 创建和执行，手写迁移 SQL。
-- 默认前向迁移，不强制配套 `down.sql`；已应用的迁移不修改，修正通过新增迁移完成。
-- 应用启动不自动修改数据库结构；迁移由 CLI 显式执行。
-- 开始实现数据库功能后，从 workspace 根使用开发／测试 PostgreSQL 的 `DATABASE_URL` 执行以下流程；连接凭据放在环境变量或未跟踪的 `.env` 中。
-
-```sh
-sqlx migrate add <description>
-# 编辑生成的迁移 SQL。
-sqlx migrate run
-cargo sqlx prepare --workspace -- --all-targets --all-features --locked
-```
-
-- 提交根 `.sqlx/` 查询缓存；查询或表结构变更后，先应用迁移，再重新生成缓存。
-- `.sqlx/` 只保存 SQL 宏离线编译所需的元数据，不保存查询结果、不模拟数据库，也不替代运行时测试。
-- SQLx CLI 与项目 SQLx 使用兼容版本。
-- 日常构建和离线检查显式设置 `SQLX_OFFLINE=true`。
-- `SQLX_OFFLINE=true` 只控制宏的编译期数据库访问，不阻止测试运行时连接 PostgreSQL。
-- 存在 SQLx 查询后，涉及查询或迁移变更时，连接已应用迁移的 PostgreSQL 验证实际行为，并检查缓存：
-
-```sh
-cargo sqlx prepare --check --workspace -- --all-targets --all-features --locked
-```
-
-- 离线编译只检查代码与缓存；上述数据库检查用于验证缓存与实际 schema 的一致性，不加入离线 hook。
+- 功能设计时必须向用户确认新增哪些关键日志、span 和指标：解决的问题，开始／完成／失败／取消边界，级别、字段、标签、单位与统计口径。复用本次会话已确认的决定；无需新增时明确理由。纯文档清理或职责对齐不改变执行路径，无需新增埋点。
+- Rust 原生壳沿用 `tracing` 与标准 OpenTelemetry Metrics API；SDK、exporter、后台 stderr 和初始化／关闭集中在 Collector，由进程入口显式初始化一次。Node 业务复用现有安全事件和错误边界，不把 Rust Collector 当作 Node 全链路已接入的证据，也不为对齐文档新建遥测门面。
+- 未初始化且宿主未另行配置时为空操作。原生壳初始化后无显式端点只用本地后台 stderr，不隐式连接 localhost；初始化先于复用指标句柄，不承诺热启用或补发。
+- 网络与 stderr 输出在后台完成；队列和指标属性组合必须有界，满时允许丢弃，不等待容量、不逐条创建任务、不用同步 stderr 或无限重试兜底。无效远程配置安全诊断并降级本地；诊断限频且不递归进入同一远程管线。
+- 遥测故障不改变业务结果或错误、不触发模型重试。所有 exporter 和 writer 共享调用方指定的总关闭预算，超时允许丢弃；Drop 和线程等待不得再次拖延退出，忘记关闭仅为非阻塞 best effort。
+- 本地与远程均禁止记录凭据、原始请求头、提示词、回复正文、原始协议／配置文本或完整错误来源链。日志显式选择安全字段；保留错误来源不代表可以直接输出 Debug。
+- 指标只用受控且有容量上限的维度。请求／trace／响应 ID、完整 URL、用户内容和任意错误文本不得作标签；日志与链路的关联 ID 限长并编码控制字符。计数与耗时须明确实际开始和结算边界，成功／失败／取消只结算一次；累计 usage 用最新已知值，不重复相加，未知不补零。过滤与采样不得影响指标。
+- 修改观测路径时验证未初始化、遥测故障与输出背压下业务行为不变。
 
 ## 验证
 
-遵循现有 `.pre-commit-config.yaml`。Rust 代码变更运行：
+遵循 `.pre-commit-config.yaml`。只修改文档时检查内容一致性、引用、空白和文件结尾；按改动范围执行以下检查，不把本地浏览器测试算作 Node 单测。
+
+Node 后端：
+
+```sh
+npm --prefix desktop/runtime run typecheck
+npm --prefix desktop/runtime test
+```
+
+前端（另见 `web/AGENTS.md`）：
+
+```sh
+npm --prefix web run typecheck
+npm --prefix web run lint
+npm --prefix web test
+npm --prefix web run build
+```
+
+- 影响浏览器、IPC 或桌面交互时执行对应浏览器／原生回归；runtime 的浏览器目标为 `npm --prefix desktop/runtime run test:browser`，前端浏览器用例位于 `web/tests/*.browser.html`。模型调用使用本地 fixture，不依赖真实密钥或付费服务。
+- 打包脚本变更执行 `node --test desktop/scripts/*.test.mjs`；macOS 开发启动脚本变更另执行 `python3 -m unittest discover -s desktop/scripts -p 'test_*.py'`。交付包按目标平台验证，入口为 `make dev`、`make package-macos` 和 `make package-windows`。
+- 非平凡逻辑保留最小有效行为测试，通过现有边界注入小型 fake，验证失败、取消与清理；不新增通用 mock 框架，不绑定私有字段或复制实现。
+
+Rust 原生代码变更：
 
 ```sh
 cargo fmt --all -- --check
-SQLX_OFFLINE=true cargo check --workspace --all-targets --all-features --locked
-SQLX_OFFLINE=true cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
+cargo check --workspace --all-targets --all-features --locked
+cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
+cargo test --workspace --lib --bins --all-features --locked
 ```
 
-- UT 与 PostgreSQL 集成测试分开组织和执行，不把全量 `cargo test --all-targets` 当作无数据库的 UT 命令。
-- UT 放在源码的 `#[cfg(test)]` 模块，通过边界 trait 注入简单的 fake 实现，验证业务行为，不连接数据库或外部服务；数据库测试不得混入库或二进制的 UT 目标。
-- 非平凡逻辑保留最小有效 UT，优先手写小型 fake，不为测试新增通用 mock 框架。
-
-无数据库的 UT：
-
-```sh
-SQLX_OFFLINE=true cargo test --workspace --lib --bins --all-features --locked
-```
-
-- SQL、事务提交／回滚及迁移单独在真实 PostgreSQL 上做集成测试，放在对应数据库实现 crate 的 `tests/postgres.rs` 目标中。
-- 集成测试使用专用测试 PostgreSQL，并为测试隔离数据库或状态；配置缺失或数据库不可用时明确失败，不静默跳过。
-- 数据库集成测试使用 `vendor/sqlx-db-tester` 的本地适配版本，只在实际需要的 crate 的 `dev-dependencies` 中通过 `sqlx-db-tester.workspace = true` 引入，不加入 core 的运行时依赖。
-- 测试初始化可在隔离数据库上通过 SQLx 执行同一套手写迁移 SQL；迁移测试还应验证从旧 schema 升级及已有数据，而不只验证空库初始化。
-- 迁移路径从 crate 的 `CARGO_MANIFEST_DIR` 解析到 workspace 根 `migrations/`，不依赖启动命令的工作目录。
-
-数据库实现 crate 和测试目标创建后，先设置 `DATABASE_URL` 指向专用测试 PostgreSQL，再单独运行集成测试；将 `<postgres-crate>` 替换为实际 crate 名称：
-
-```sh
-SQLX_OFFLINE=true cargo test -p <postgres-crate> --test postgres --all-features --locked
-```
-
-- 依赖变更运行 `cargo deny check --disable-fetch`。
-- 不通过全局关闭警告绕过检查；仅文档改动检查内容、空白和文件结尾即可。
-
-## Vendored 依赖
-
-- `vendor/sqlx-db-tester` 的本地版本为 `0.7.1-omniops-bots.1`，基于上游 0.7.1 适配 SQLx 0.9，仅支持 PostgreSQL，作为 workspace member 使用根 `Cargo.lock`。
-- 保留上游许可证和来源版本；本地变更及运行测试的方法见 `vendor/sqlx-db-tester/UPSTREAM.md`。
-- 修改优先保持上游 PostgreSQL 接口；只为实际开发／测试需求适配，不将测试辅助工具引入产品运行路径。
+- Collector 变更另运行 `cargo test -p omniops-bots-collector --doc --locked` 和 `cargo test -p omniops-bots-collector --test runtime --locked`。Rust 依赖变更运行 `cargo deny check --disable-fetch`。
+- 不通过全局关闭警告、绕过 ESLint 边界或静默跳过失败来通过检查。只修改任务需要的文件，保留已有未提交改动。

@@ -1,6 +1,6 @@
 # omniops-bots-collector
 
-进程内日志、链路和指标运行库。业务使用 `tracing` 和 `opentelemetry` Metrics API；后端、后台 writer 和退出收尾由本库管理，无需部署独立 Collector 服务。
+Rust 原生壳使用的进程内日志、链路和指标运行库，已在 Tauri 入口初始化与关闭。原生埋点使用 `tracing` 和 `opentelemetry` Metrics API；遥测后端、后台 writer 和退出收尾由本库管理，无需部署独立 Collector 服务。桌面业务主后端位于 `desktop/runtime/` 的 Node.js 进程，本库不自动采集该进程的模型、图或工具执行。
 
 ```rust
 use omniops_bots_collector::{Collector, Error};

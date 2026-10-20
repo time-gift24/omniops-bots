@@ -4,8 +4,44 @@
 repos:
   - repo: local
     hooks:
+      # Desktop's primary backend is the bundled Node.js runtime.
+      - id: runtime-typecheck
+        name: desktop runtime typecheck
+        entry: npm --prefix desktop/runtime run typecheck
+        language: system
+        files: '^desktop/runtime/.*\.(mjs|ts|json)$'
+        pass_filenames: false
+
+      - id: runtime-test
+        name: desktop runtime tests
+        entry: npm --prefix desktop/runtime test
+        language: system
+        files: '^desktop/runtime/.*\.(mjs|ts|json)$'
+        pass_filenames: false
+
+      - id: web-typecheck
+        name: web typecheck
+        entry: npm --prefix web run typecheck
+        language: system
+        files: '^web/.*\.(mjs|[jt]sx?|json)$'
+        pass_filenames: false
+
+      - id: web-lint
+        name: web lint
+        entry: npm --prefix web run lint
+        language: system
+        files: '^web/.*\.(mjs|[jt]sx?|json)$'
+        pass_filenames: false
+
+      - id: web-test
+        name: web tests
+        entry: npm --prefix web test
+        language: system
+        files: '^web/.*\.(mjs|[jt]sx?|json)$'
+        pass_filenames: false
+
       # ------------------------------------------------------------------
-      # Rust: formatting must stay STABLE — check-only mode, pinned via
+      # Native Tauri/CEF host and Collector: check-only formatting, pinned via
       # rust-toolchain.toml (1.92.0) + rustfmt.toml. Never auto-fix here,
       # so re-running hooks cannot introduce unrelated diff churn.
       # ------------------------------------------------------------------

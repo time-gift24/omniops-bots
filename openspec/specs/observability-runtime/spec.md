@@ -4,6 +4,8 @@
 
 为应用提供随进程生命周期管理的可观测运行能力，以标准协议输出日志、链路和指标，并将监控后端、网络故障及输出背压与业务执行隔离，使调用方可以独立选择是否初始化和接入哪种监控平台。
 
+本规范当前对应 Rust 原生壳使用的 `omniops-bots-collector`，由 Tauri 入口管理其生命周期。桌面业务主后端是独立的 Node.js runtime；本规范不表示 Node.js 的模型、图执行或工具调用已经接入该 Rust Collector，也不要求为此恢复旧 Rust 后端 harness。
+
 ## Requirements
 
 ### Requirement: Explicit process lifecycle
