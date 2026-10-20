@@ -20,6 +20,7 @@ import {
 import { useAppDependencies } from "@/app/dependencies"
 import { Button } from "@/components/motion/button"
 import { Input } from "@/components/motion/input"
+import { Select } from "@/components/premium/select/select"
 import { useSaveShortcut } from "@/hooks/use-save-shortcut"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Bug01Icon } from "@hugeicons-pro/core-stroke-rounded"
@@ -90,29 +91,35 @@ function PackageEntries({
             })
         }}
       >
-        <label>
-          操作{" "}
-          <select
-            aria-label="文件操作"
+        <div className="flex min-w-0 flex-1 basis-40 flex-col gap-1.5">
+          <span className="font-medium">操作</span>
+          <Select
+            label="文件操作"
             value={action}
             disabled={busy}
-            onChange={(event) => setAction(event.target.value)}
-          >
-            <option value="mkdir">创建目录</option>
-            <option value="file">创建文件</option>
-            <option value="rename">重命名</option>
-            <option value="remove">删除</option>
-          </select>
-        </label>
+            onValueChange={setAction}
+            options={[
+              { id: "mkdir", label: "创建目录" },
+              { id: "file", label: "创建文件" },
+              { id: "rename", label: "重命名" },
+              { id: "remove", label: "删除" },
+            ]}
+            portal
+            className="w-full"
+            buttonClassName="w-full min-w-0 pointer-coarse:h-11"
+          />
+        </div>
         {needsTarget ? (
-          <label>
-            目标{" "}
+          <label className="flex min-w-0 flex-1 basis-48 flex-col gap-1.5">
+            <span className="font-medium">目标</span>
+            {/* Native required validation must still block submitting an empty target. */}
             <select
               aria-label="操作目标"
               value={path}
               disabled={busy}
               required
               onChange={(event) => setPath(event.target.value)}
+              className="h-10 w-full min-w-0 rounded-full border border-border bg-background px-3 text-sm font-medium text-foreground outline-none transition-colors hover:border-border-strong focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 pointer-coarse:h-11 motion-reduce:transition-none"
             >
               <option value="">选择文件或目录</option>
               {skill.entries.map((entry) => (
@@ -132,6 +139,11 @@ function PackageEntries({
             onChange={setDestination}
             required
             disabled={busy}
+            className="min-w-0 flex-1 basis-48"
+            classNames={{
+              label: "px-0 text-xs font-medium",
+              field: "h-10 pointer-coarse:h-11",
+            }}
           />
         ) : (
           <p>删除文件或目录及其全部内容，不能撤销。</p>

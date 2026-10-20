@@ -1,5 +1,6 @@
 <!doctype html>
 <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Skill library interaction regression</title>
 <!-- Run npm run dev, then open /tests/skill-library.browser.html. No backend required. -->
 <div id="fixture" style="height: 900px; max-height: 95dvh"></div>
@@ -276,6 +277,29 @@
     checks.push("Delayed file creation preserves newer file selections within the same Skill")
 
     const manager = () => fixture.querySelector('form[aria-label="管理 Skill 文件与目录"]')
+    const operation = () => manager().querySelector('button[aria-label="文件操作"]')
+    const key = value => flushSync(() => document.activeElement.dispatchEvent(new KeyboardEvent("keydown", { key: value, bubbles: true, cancelable: true })))
+    let managementSubmits = 0
+    manager().addEventListener("submit", () => managementSubmits++)
+    const chooseAction = async value => {
+      const labels = ["创建目录", "创建文件", "重命名", "删除"]
+      const index = ["mkdir", "file", "rename", "remove"].indexOf(value)
+      const submits = managementSubmits
+      operation().focus()
+      key("ArrowDown")
+      const listbox = () => document.querySelector('[role="listbox"]')
+      const activeLabel = () => document.getElementById(listbox()?.getAttribute("aria-activedescendant"))?.textContent
+      await until(() => document.activeElement === listbox(), "The beUI action Select must open with ArrowDown")
+      key("Home")
+      await until(() => activeLabel() === labels[0], "The action Select must support Home")
+      for (let next = 1; next <= index; next++) {
+        key("ArrowDown")
+        await until(() => activeLabel() === labels[next], "The action Select must navigate with ArrowDown")
+      }
+      key("Enter")
+      await until(() => !listbox() && operation().textContent.trim() === labels[index] && document.activeElement === operation(), "Enter must select the action and restore trigger focus")
+      assert(managementSubmits === submits, "Selecting an action with Enter must not submit the management form")
+    }
     const selectOption = (label, value) => flushSync(() => {
       const input = manager().querySelector(`select[aria-label="${label}"]`)
       input.value = value
@@ -283,19 +307,35 @@
     })
     click(fixture.querySelector("details > summary"))
     changeInput(manager().querySelector('input[aria-label="目标路径"]'), "references")
+    const entrySave = deferred()
+    saveGate = entrySave; saveStarted = false
     click(button("创建目录", manager()))
+    await until(() => saveStarted, "Directory creation must reach persistence")
+    assert(operation().disabled && manager().querySelector('input[aria-label="目标路径"]').disabled && button("创建目录", manager()).disabled, "Busy management must disable its beUI Select, path input and submit action")
+    entrySave.resolve()
     await until(() => !button("创建目录", manager()).disabled && manager().querySelector('input').value === "", "Creating an empty directory must finish")
     assert((await baseLibrary.get("local-b")).entries.some(entry => entry.path === "references" && entry.kind === "folder"), "Empty directories must persist")
-    selectOption("文件操作", "rename")
-    selectOption("操作目标", "references")
+    await chooseAction("rename")
+    const target = () => manager().querySelector('select[aria-label="操作目标"]')
     changeInput(manager().querySelector('input[aria-label="目标路径"]'), "renamed")
+    assert(target().required && target().validity.valueMissing && !target().checkValidity() && button("确认重命名", manager()).disabled, "An empty native target must retain required validation and disable the action")
+    const beforeInvalid = managementSubmits
+    manager().requestSubmit()
+    assert(managementSubmits === beforeInvalid, "Native form validation must block submission without a target")
+    selectOption("操作目标", "references")
     click(button("确认重命名", manager()))
     await until(() => [...manager().querySelectorAll("option")].some(option => option.value === "renamed"), "Renaming must update the entry list")
-    selectOption("文件操作", "remove")
+    assert(target().value === "" && target().validity.valueMissing && button("确认重命名", manager()).disabled, "A renamed target must not leave an enabled stale selection")
+    changeInput(manager().querySelector('input[aria-label="目标路径"]'), "renamed-again")
+    const beforeStale = managementSubmits
+    manager().requestSubmit()
+    assert(managementSubmits === beforeStale, "A stale target must remain blocked by native form validation")
+    await chooseAction("remove")
     selectOption("操作目标", "renamed")
     click(button("确认删除条目", manager()))
     await until(() => ![...manager().querySelectorAll("option")].some(option => option.value === "renamed"), "Deleting a directory must refresh the entry list")
-    selectOption("文件操作", "file")
+    assert(target().value === "" && target().validity.valueMissing && button("确认删除条目", manager()).disabled, "A removed target must not remain actionable")
+    await chooseAction("file")
     changeInput(manager().querySelector('input[aria-label="目标路径"]'), "empty.txt")
     click(button("创建文件", manager()))
     await until(() => fixture.querySelector('.skill-file-preview')?.getAttribute("aria-label") === "empty.txt 文件内容", "Entry management must create files even when no file was selected")
@@ -312,12 +352,13 @@
     click(button("确认替换同名文件", document))
     await until(() => textarea()?.value === "替换后的正文", "Confirmed replacement must reload saved bytes")
     write("未保存的替换草稿")
-    selectOption("文件操作", "remove")
+    await chooseAction("remove")
     selectOption("操作目标", "beta.txt")
     click(button("确认删除条目", manager()))
     await until(() => fixture.querySelector('[role="alert"]')?.textContent.includes("未保存"), "Deleting a dirty file must be blocked")
     assert(textarea()?.value === "未保存的替换草稿" && await editedText("local-b", "beta.txt") === "替换后的正文", "Blocked deletion must preserve both draft and durable bytes")
     checks.push("Package entry management restores mkdir/rename/remove; replacements require confirmation and dirty files remain protected")
+    checks.push("beUI action Select supports keyboard choice without submission; busy, native required validation and stale targets stay guarded")
 
     choose("official")
     await until(() => loadedText().includes("这是固定的官方内容。"), "Official Skill must open directly in reading mode")

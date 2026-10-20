@@ -609,7 +609,11 @@
 
       click(button("打开工作台"));
       await until(() => button("收起工作台") && !button("打开工作台"), "Workbench did not open");
-      await checkPath("技能", DEMO_SKILLS[1].name);
+      if (mobile) {
+        const covered = fixture.querySelector('nav[aria-label="面包屑"]');
+        assert(covered.closest("[inert]") && label(covered.querySelector('[aria-current="page"]')) === DEMO_SKILLS[1].name,
+          "Mobile workbench must preserve the selected Skill while hiding its covered breadcrumb from keyboard navigation");
+      } else await checkPath("技能", DEMO_SKILLS[1].name);
       click(button("收起工作台"));
       await until(() => button("打开工作台"), "Workbench did not close");
       await checkPath("技能", DEMO_SKILLS[1].name);

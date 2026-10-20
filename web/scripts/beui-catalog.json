@@ -1353,7 +1353,7 @@
       "path": "components/motion/animated-sidebar.tsx",
       "originalMirrorSha256": "a1d0053a301ccc955c36d785c2667e89e18ed0b3fe055e89590761fffce46f1a",
       "sourceSha256": "a1d0053a301ccc955c36d785c2667e89e18ed0b3fe055e89590761fffce46f1a",
-      "installedSha256": "30a649490b5e3d058077caccf9814a85f42061337e40c0f62d5876a1e5939518",
+      "installedSha256": "d04c5ca62fad43abbc0b1533e7f5b7deef93cb1740e03e09374dabc516a98c80",
       "source": {
         "kind": "mirror",
         "path": "components/motion/animated-sidebar.tsx"
@@ -1381,6 +1381,10 @@
         {
           "kind": "sidebar-state-classes",
           "description": "Allow product menu/submenu focus and active styling without changing selector specificity or caller className priority; template defaults remain unchanged."
+        },
+        {
+          "kind": "shared-mobile-breakpoint",
+          "description": "Export the existing mobile query hook so product overlays and sidebar visibility use the same breakpoint."
         }
       ],
       "installedPath": "src/components/beui/motion/animated-sidebar.tsx"

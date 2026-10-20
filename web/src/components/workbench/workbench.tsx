@@ -441,10 +441,11 @@ export function WorkbenchPanel({
     <motion.aside
       id={id}
       aria-label="工作台"
+      tabIndex={-1}
       initial={false}
       animate={{ width: open ? width : 0 }}
       transition={reduce || dragging ? { duration: 0 } : SPRING_PANEL}
-      className="h-full shrink-0 overflow-hidden max-md:fixed max-md:inset-y-0 max-md:right-0 max-md:z-40 max-md:max-w-[calc(100vw-4rem)]"
+      className="h-full shrink-0 overflow-hidden outline-none max-md:fixed max-md:inset-y-0 max-md:right-0 max-md:z-40 max-md:max-w-[calc(100vw-4rem)]"
     >
       <div
         inert={!open}

@@ -133,7 +133,7 @@ function getServerMobileSnapshot() {
   return false;
 }
 
-function useIsMobile() {
+export function useIsMobile() {
   return useSyncExternalStore(
     subscribeToMobileQuery,
     getMobileSnapshot,

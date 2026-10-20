@@ -38,6 +38,7 @@ import {
   type SidebarRailSection,
 } from "@/components/premium/sidebar-blocks/sidebar-rail"
 import { Button } from "@/components/motion/button"
+import { useIsMobile } from "@/components/motion/animated-sidebar"
 import { Select } from "@/components/premium/select/select"
 import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import {
@@ -269,6 +270,8 @@ function WorkspaceApp({
   const [openedSkillId, setOpenedSkillId] = useState<string | null>(null)
   const [skillsVisited, setSkillsVisited] = useState(false)
   const [workbenchOpen, setWorkbenchOpen] = useState(true)
+  const mobileWindow = useIsMobile()
+  const workbenchOverlay = mobileWindow && workbenchOpen
   const [navigationExpanded, setNavigationExpanded] = useState(true)
   const [compactWindow, setCompactWindow] = useState(
     () =>
@@ -328,12 +331,19 @@ function WorkspaceApp({
     return () => window.removeEventListener("keydown", onKeyDown)
   }, [])
   const wasWorkbenchOpen = useRef(workbenchOpen)
-  useEffect(() => {
-    // 面板从打开变为关闭时，焦点还给悬浮开关。
-    if (wasWorkbenchOpen.current && !workbenchOpen)
+  useLayoutEffect(() => {
+    const panel = document.getElementById(workbenchId)
+    const active = document.activeElement
+    if (workbenchOverlay && !panel?.contains(active))
+      panel?.focus({ preventScroll: true })
+    else if (
+      wasWorkbenchOpen.current &&
+      !workbenchOpen &&
+      (active === document.body || panel?.contains(active))
+    )
       workbenchToggleRef.current?.focus({ preventScroll: true })
     wasWorkbenchOpen.current = workbenchOpen
-  }, [workbenchOpen])
+  }, [workbenchId, workbenchOpen, workbenchOverlay])
   const activeSession = state.sessions.find(
     (session) => session.id === state.activeSessionId
   )
@@ -812,13 +822,14 @@ function WorkspaceApp({
   return (
     <>
       <a
-        href={`#${contentId}`}
+        href={`#${workbenchOverlay ? workbenchId : contentId}`}
         className="fixed top-3 left-3 z-100 -translate-y-24 rounded-md border border-border bg-background px-4 py-2 text-sm focus:translate-y-0 focus:outline-2 focus:outline-ring"
       >
-        跳到主要内容
+        {workbenchOverlay ? "跳到工作台" : "跳到主要内容"}
       </a>
       <SidebarRail
         workspaceName="omniops-bots"
+        workspaceInert={workbenchOverlay}
         expanded={navigationExpanded && (!compactWindow || !workbenchOpen)}
         onExpandedChange={(expanded) => {
           setNavigationExpanded(expanded)

@@ -70,6 +70,24 @@ Running…</pre>
       root.render(withTestTheme(React.createElement(App), dependencies))
     )
     await until(() => composer(), "App did not load")
+    const content = fixture.querySelector("main")
+    const header = fixture.querySelector("[data-slot='sidebar-rail-workspace-header']")
+    if (innerWidth < 768) {
+      assert(content.closest("[inert]") && header.closest("[inert]"), "The mobile workbench must hide covered content and header from keyboard input")
+      const attachment = button("添加附件")
+      attachment.focus()
+      assert(workbench().contains(document.activeElement), "Covered chat controls must not steal focus from the mobile workbench")
+      assert(fixture.querySelector('a[href^="#"]').hash === `#${workbench().id}`, "Skip navigation must target the visible workbench")
+      click("收起工作台")
+      await until(() => !content.closest("[inert]"), "Closing the workbench must restore chat interaction")
+      const input = fixture.querySelector('[aria-label="消息输入"]')
+      input.focus()
+      assert(document.activeElement === input, "Chat must regain keyboard access after the overlay closes")
+      click("打开工作台")
+      assert(workbench().contains(document.activeElement), "Reopening the overlay must move focus into the workbench")
+    } else {
+      assert(!content.closest("[inert]") && !header.closest("[inert]"), "A side-by-side workbench must keep chat and header interactive")
+    }
     flushSync(() => thread.send("打开浏览器核对发布计划"))
     await until(
       () => approval() && fixture.querySelector('[aria-label="浏览器页面"]'),

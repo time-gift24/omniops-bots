@@ -1,5 +1,6 @@
 <!doctype html>
 <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Workspace interaction regression</title>
 <!-- Run npm run dev, then open /tests/workspace.browser.html. Both viewport sizes run automatically. -->
 <div id="fixture"></div>
@@ -47,6 +48,7 @@
     input.dispatchEvent(new Event("input", { bubbles: true }));
   });
   const write = text => flushSync(() => {
+    assert(editor() && !editor().closest("[inert]"), "Message input must be reachable before editing");
     editor().focus();
     editor().textContent = text;
     editor().dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: text }));
@@ -145,6 +147,12 @@
         withTestTheme(React.createElement(App), dependencies))));
       await until(() => Boolean(editor()) && Boolean(labeled("工作区")) && Boolean(drawer()) === mobile, "StrictMode App did not mount at the requested viewport");
       assert(created.length === 1 && !dialog(), "Mounting must create one usable conversation without requiring a workspace");
+      if (mobile) {
+        const closeWorkbench = labeled("收起工作台");
+        assert(closeWorkbench?.getClientRects().length && !closeWorkbench.closest("[inert]"), "The mobile workbench must expose its close action");
+        click(closeWorkbench);
+        await until(() => editor() && !editor().closest("[inert]"), "Closing the mobile workbench must restore the conversation before editing");
+      }
       const temporary = dependencies.threads.get(created[0]);
       write("temporary conversation draft");
       await selectModel("Sonnet 5");
@@ -323,7 +331,7 @@
     result.textContent = `PASS ${viewport ?? "all viewports"}: ${passed.join("; ")}`;
     result.dataset.passed = "true";
   } catch (error) {
-    result.textContent = `FAIL ${viewport ?? "all viewports"}: ${error.message}`;
+    result.textContent = `FAIL ${viewport ?? "all viewports"}: ${error.stack ?? error.message}`;
     result.dataset.passed = "false";
     throw error;
   } finally {

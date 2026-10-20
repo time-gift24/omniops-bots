@@ -190,6 +190,8 @@ export type SidebarRailProps = {
   workspaceHeader?: ReactNode
   /** Shared header spacing, including room for floating controls on every page. */
   workspaceHeaderClassName?: string
+  /** Hides header/content interactions beneath a mobile end-panel overlay. */
+  workspaceInert?: boolean
   /** Full-height column rendered after the header+content column, e.g. the workbench panel. */
   endPanel?: ReactNode
   /** Absolutely positioned overlay on the header+content column, e.g. a floating toggle over the header. Positioning classes are the caller's responsibility. */
@@ -220,24 +222,27 @@ function SidebarNavGroup({
       <div className="flex items-center gap-1 pr-1">
         {collapsible ? (
           <h3 className="m-0 flex min-w-0 flex-1 items-center">
-            <button
+            <Button
               type="button"
+              variant="plain"
+              whileHover={undefined}
+              whileTap={undefined}
               aria-expanded={open}
               aria-controls={contentId}
               onClick={() => setOpen((value) => !value)}
-              className="flex min-h-8 min-w-0 flex-1 items-center gap-1.5 rounded-full px-3 text-left text-xs font-medium text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:min-h-11"
+              className="flex min-h-8 min-w-0 flex-1 items-center justify-start gap-1.5 rounded-full px-3 text-left text-xs font-medium text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 pointer-coarse:min-h-11"
             >
               <HugeiconsIcon
                 icon={ArrowDown01Icon}
                 size={14}
                 aria-hidden="true"
                 className={cn(
-                  "shrink-0 transition-transform duration-150 motion-reduce:transition-none",
+                  "size-3.5 shrink-0 transition-transform duration-150 motion-reduce:transition-none",
                   !open && "-rotate-90"
                 )}
               />
               <span className="truncate">{group.label}</span>
-            </button>
+            </Button>
           </h3>
         ) : (
           <AnimatedSidebarGroupLabel className="mb-0 flex min-w-0 flex-1 items-center px-3 text-xs font-medium text-muted-foreground">
@@ -345,6 +350,7 @@ function SidebarRailShell({
   railActions,
   workspaceHeader,
   workspaceHeaderClassName,
+  workspaceInert,
   endPanel,
   headerOverlay,
   contentClassName,
@@ -706,7 +712,7 @@ function SidebarRailShell({
         />
       </MorphicCommandPalette>
 
-      <div className="relative flex min-w-0 flex-1 flex-col">
+      <div inert={workspaceInert} className="relative flex min-w-0 flex-1 flex-col">
         <header className="flex min-h-12 shrink-0 items-center gap-3 px-3 sm:px-4">
           <MorphicTooltip
             content={expanded ? "收起导航" : "展开导航"}
