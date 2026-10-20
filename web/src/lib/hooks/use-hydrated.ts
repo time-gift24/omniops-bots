@@ -1,3 +1,3 @@
 "use client";
 
-export * from "@beui-template/lib/hooks/use-hydrated";
+export * from "@/lib/beui/hooks/use-hydrated";

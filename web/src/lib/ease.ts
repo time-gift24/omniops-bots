@@ -1,4 +1,4 @@
-export * from "@beui-template/lib/ease";
+export * from "@/lib/beui/ease";
 
 /** CDS motionModalDialog 原值。 */
 export const SPRING_MODAL = {

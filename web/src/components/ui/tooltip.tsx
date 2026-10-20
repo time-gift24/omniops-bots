@@ -4,7 +4,7 @@ import {
   TooltipContent as BeuiTooltipContent,
   TooltipProvider as BeuiTooltipProvider,
   TooltipTrigger,
-} from "@beui-template/components/motion/tooltip"
+} from "@/components/beui/motion/tooltip"
 
 function TooltipProvider({
   delayDuration = 0,

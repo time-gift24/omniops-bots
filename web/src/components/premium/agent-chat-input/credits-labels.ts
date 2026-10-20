@@ -1,1 +1,1 @@
-export * from "@beui-template/components/premium/agent-chat-input/credits-labels";
+export * from "@/components/beui/premium/agent-chat-input/credits-labels";

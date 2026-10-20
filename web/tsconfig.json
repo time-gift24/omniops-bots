@@ -7,8 +7,7 @@
   ],
   "compilerOptions": {
     "paths": {
-      "@/*": ["./src/*"],
-      "@beui-template/*": ["./vendor/beui-templates/*"]
+      "@/*": ["./src/*"]
     }
   }
 }

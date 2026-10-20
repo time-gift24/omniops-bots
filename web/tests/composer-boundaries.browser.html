@@ -10,6 +10,7 @@
   import "/src/index.css";
   import { AgentChatComposer } from "/src/components/premium/agent-chat-input/composer.tsx";
   import { AgentChatCredits } from "/src/components/premium/agent-chat-input/agent-chat-credits.tsx";
+  import { AgentChatCredits as BeuiAgentChatCredits } from "/src/components/beui/premium/agent-chat-input/agent-chat-credits.tsx";
   import { CreditsModelSelector } from "/src/components/premium/agent-chat-input/credits-model-selector.tsx";
 
   const fixture = document.querySelector("#fixture");
@@ -44,6 +45,28 @@
   };
   const skill = { id: "browser", label: "Browser" };
 
+  await run("Template defaults still allow an attachment-only draft", () => {
+    const attachment = { id: "file", name: "note.txt", type: "text/plain" };
+    const submitted = [];
+    render(BeuiAgentChatCredits, {
+      skills: [],
+      attachments: [attachment],
+      onSubmit: (text, attachments) => submitted.push({ text, attachments }),
+    });
+    click(fixture.querySelector('button[aria-label="Send message"]'));
+    assert(submitted.length === 1 && submitted[0].text === "" && submitted[0].attachments[0] === attachment, "Template attachment-only behavior must remain available");
+  });
+  await run("Shared Credits preserves a rejected draft before clearing", () => {
+    let submitted = 0;
+    render(BeuiAgentChatCredits, {
+      skills: [],
+      defaultValue: "keep this draft",
+      clearOnSubmit: true,
+      onSubmit: () => { submitted += 1; return false; },
+    });
+    click(fixture.querySelector('button[aria-label="Send message"]'));
+    assert(submitted === 1 && editor().textContent === "keep this draft", "Rejected shared submissions must not clear the native draft");
+  });
   await run("Skill tokens require complete word boundaries", () => {
     const ref = React.createRef();
     render(AgentChatComposer, { ref, skills: [skill], defaultValue: "https://example.com/Browserland /Browserland" });

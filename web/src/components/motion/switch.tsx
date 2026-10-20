@@ -1,3 +1,3 @@
 "use client";
 
-export * from "@beui-template/components/motion/switch";
+export * from "@/components/beui/motion/switch";

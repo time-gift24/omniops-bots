@@ -1,24 +1,14 @@
-import { readdir } from "node:fs/promises"
-import { dirname, relative, resolve } from "node:path"
+import { readFile } from "node:fs/promises"
+import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { build } from "vite"
 
 const web = resolve(dirname(fileURLToPath(import.meta.url)), "..")
-const vendor = resolve(web, "vendor/beui-templates")
-const input = {}
-
-async function collect(directory) {
-  for (const entry of await readdir(directory, { withFileTypes: true })) {
-    const path = resolve(directory, entry.name)
-    if (entry.isDirectory()) await collect(path)
-    else if (/\.(?:ts|tsx)$/.test(entry.name)) {
-      input[relative(vendor, path).replace(/\.(?:ts|tsx)$/, "")] = path
-    }
-  }
-}
-
-await collect(vendor)
-if (!Object.keys(input).length) throw new Error("beUI template catalog is empty")
+const manifest = JSON.parse(await readFile(resolve(web, "scripts/beui-catalog.json"), "utf8"))
+const input = Object.fromEntries(manifest.files
+  .filter(entry => /\.(?:ts|tsx)$/.test(entry.path))
+  .map(entry => [entry.path.replace(/\.(?:ts|tsx)$/, ""), resolve(web, entry.installedPath)]))
+if (Object.keys(input).length !== 819) throw new Error("beUI catalog must contain all 819 source modules")
 await build({
   root: web,
   configFile: resolve(web, "vite.config.ts"),

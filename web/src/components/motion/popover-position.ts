@@ -1,3 +1,3 @@
 "use client";
 
-export * from "@beui-template/components/motion/popover-position";
+export * from "@/components/beui/motion/popover-position";

@@ -1,3 +1,3 @@
 "use client";
 
-export * from "@beui-template/components/motion/button";
+export * from "@/components/beui/motion/button";

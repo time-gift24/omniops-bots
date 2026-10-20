@@ -13,10 +13,10 @@
   import { createRoot } from "react-dom/client";
   import { flushSync } from "react-dom";
   import "/src/index.css";
-  import { NumberTicker } from "/vendor/beui-templates/components/motion/number-ticker.tsx";
-  import { MorphPopover, MorphPopoverTrigger, MorphPopoverContent } from "/vendor/beui-templates/components/motion/popover-morph.tsx";
-  import { Button } from "/vendor/beui-templates/components/motion/button.tsx";
-  import { IconMarquee } from "/vendor/beui-templates/components/premium/animated-illustrations/icon-marquee.tsx";
+  import { NumberTicker } from "/src/components/beui/motion/number-ticker.tsx";
+  import { MorphPopover, MorphPopoverTrigger, MorphPopoverContent } from "/src/components/beui/motion/popover-morph.tsx";
+  import { Button } from "/src/components/beui/motion/button.tsx";
+  import { IconMarquee } from "/src/components/beui/premium/animated-illustrations/icon-marquee.tsx";
 
   const h = React.createElement;
   const tickerRoot = createRoot(document.querySelector("#ticker"));

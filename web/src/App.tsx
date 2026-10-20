@@ -41,7 +41,7 @@ import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import {
   MorphicCommandPalette,
   MorphicCommandPaletteContent,
-} from "@beui-template/components/premium/morphic-command-palette/morphic-command-palette"
+} from "@/components/beui/premium/morphic-command-palette/morphic-command-palette"
 import {
   WorkbenchPanel,
   type WorkbenchHandle,

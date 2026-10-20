@@ -1,3 +1,3 @@
 "use client";
 
-export * from "@beui-template/components/premium/agent-chat-input/use-attachment-preview-urls";
+export * from "@/components/beui/premium/agent-chat-input/use-attachment-preview-urls";

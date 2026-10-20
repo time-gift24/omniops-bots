@@ -44,7 +44,7 @@ import { SharedLayoutBg } from "@/components/motion/shared-layout-bg"
 import {
   MorphicCommandPalette,
   MorphicCommandPaletteContent,
-} from "@beui-template/components/premium/morphic-command-palette/morphic-command-palette"
+} from "@/components/beui/premium/morphic-command-palette/morphic-command-palette"
 import {
   MorphicTooltip,
   MorphicTooltipProvider,

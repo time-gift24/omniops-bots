@@ -4,10 +4,8 @@
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.beui.tsbuildinfo",
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "resolveJsonModule": true,
-    "paths": {
-      "@beui-template/*": ["./vendor/beui-templates/*"]
-    }
+    "resolveJsonModule": true
   },
-  "include": ["vendor/beui-templates/**/*.ts", "vendor/beui-templates/**/*.tsx"]
+  "include": ["src/components/beui/**/*.ts", "src/components/beui/**/*.tsx", "src/lib/beui/**/*.ts", "src/lib/beui/**/*.tsx"],
+  "exclude": []
 }

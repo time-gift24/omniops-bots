@@ -1,7 +1,7 @@
 import * as React from "react"
 import { cn } from "cn"
 
-import { BouncyAccordion } from "@beui-template/components/motion/bouncy-accordion"
+import { BouncyAccordion } from "@/components/beui/motion/bouncy-accordion"
 import { EASE_OUT } from "@/lib/ease"
 
 function Trace({ className, ...props }: React.ComponentProps<"div">) {

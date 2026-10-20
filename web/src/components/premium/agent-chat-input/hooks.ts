@@ -1,1 +1,1 @@
-export * from "@beui-template/components/premium/agent-chat-input/hooks";
+export * from "@/components/beui/premium/agent-chat-input/hooks";
