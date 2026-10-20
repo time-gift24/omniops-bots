@@ -10,6 +10,7 @@ import {
 } from "@/app/dependencies"
 import { createDemoAdapters } from "@/adapters/demo"
 import { Button } from "@/components/motion/button"
+import { ToastProvider } from "@/components/ui/toast"
 import { loadInitialThemePreferences } from "@/preferences/theme"
 import type { WorkbenchScope } from "@/workbench/backend"
 
@@ -95,7 +96,9 @@ async function start() {
             preferences={dependencies.preferences}
             initialPreferences={initialPreferences}
           >
-            <App />
+            <ToastProvider>
+              <App />
+            </ToastProvider>
           </ThemeProvider>
         </AppDependenciesProvider>
       </StrictMode>

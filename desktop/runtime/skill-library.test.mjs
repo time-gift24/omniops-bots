@@ -118,3 +118,41 @@ test('saving Skill frontmatter updates durable metadata and invalid edits preser
   assert.equal((await library.handle('skill_library_read', { id, path: 'SKILL.md' })).data, data(content));
   assert.equal((await library.handle('skill_library_get', { id })).name, '新名称');
 }));
+
+
+test('create publishes the full draft package once and rejects invalid entries before writing', async () => fixture(async (directory, library) => {
+  const entries = [
+    { path: 'reference/notes.md', kind: 'file', content: '完整草稿\n' },
+    { path: 'reference/empty', kind: 'folder' },
+    { path: 'scripts', kind: 'folder' },
+  ];
+  const created = await library.handle('skill_library_create', { name: '完整草稿', content: '入口', entries });
+  const reopened = createSkillLibrary({ root: path.join(directory, 'skills') });
+  assert.equal((await reopened.handle('skill_library_read', { id: created.id, path: 'reference/notes.md' })).data, data('完整草稿\n'));
+  assert.deepEqual(created.entries.map(entry => [entry.path, entry.kind]).sort(), [['SKILL.md', 'file'], ['reference', 'folder'], ['reference/notes.md', 'file'], ['reference/empty', 'folder'], ['scripts', 'folder']].sort());
+  for (const invalid of [
+    [{ path: 'skill.md', kind: 'file', content: '重复入口' }],
+    [{ path: 'docs', kind: 'folder' }, { path: 'DOCS', kind: 'folder' }],
+    [{ path: 'docs', kind: 'file', content: '文件' }, { path: 'docs/a.md', kind: 'file', content: '嵌套' }],
+    [{ path: 'Docs/a.md', kind: 'file', content: '文件' }, { path: 'docs/b.md', kind: 'file', content: '大小写冲突' }],
+    [{ path: '../outside', kind: 'folder' }],
+    [{ path: 'docs', kind: 'folder', content: '意外内容' }],
+    [{ path: 'docs/a.md', kind: 'file', content: {} }],
+    [{ path: 'docs', kind: 'other' }],
+    null,
+  ]) await assert.rejects(library.handle('skill_library_create', { name: '非法草稿', entries: invalid }));
+  await assert.rejects(library.handle('skill_library_create', { name: '文件超限', entries: [{ path: 'large.md', kind: 'file', content: 'x'.repeat(20 * 1024 * 1024 + 1) }] }), { kind: 'resource-limit' });
+  await assert.rejects(library.handle('skill_library_create', { name: '目录超限', entries: Array.from({ length: 1000 }, (_, index) => ({ path: `folder-${index}`, kind: 'folder' })) }), { kind: 'resource-limit' });
+  assert.deepEqual((await reopened.handle('skill_library_list')).map(skill => skill.id), [created.id]);
+  assert.deepEqual(await readdir(path.join(directory, 'skills', 'local')), [created.id.split('/')[1]]);
+}));
+
+test('a failed package creation cleans hidden staging files and preserves other metadata', async () => fixture(async (directory, library) => {
+  const root = path.join(directory, 'skills');
+  await mkdir(path.join(root, 'local'), { recursive: true });
+  await writeFile(path.join(root, '.metadata'), 'existing metadata blocker');
+  await assert.rejects(library.handle('skill_library_create', { name: '保存失败', entries: [{ path: 'reference/notes.md', kind: 'file', content: '草稿' }, { path: 'empty', kind: 'folder' }] }));
+  assert.deepEqual(await readdir(path.join(root, 'local')), []);
+  assert.deepEqual(await library.handle('skill_library_list'), []);
+  assert.equal(await readFile(path.join(root, '.metadata'), 'utf8'), 'existing metadata blocker');
+}));

@@ -127,8 +127,7 @@
   transition: color 200ms ease;
 }
 
-.branched-menu__section[data-open] .branched-menu__head,
-.branched-menu__head[data-active] {
+.branched-menu__section[data-open] .branched-menu__head:not([data-active]) {
   color: var(--bm-ink);
 }
 
@@ -138,18 +137,8 @@
   }
 }
 
-/* 激活叶子头：整底松绿 tint pill，与 SidebarRail 选中行同款。 */
 .branched-menu__head[data-active] {
-  margin: 2px -8px;
-  padding: 6px 10px;
-  border-radius: 9999px;
-  background: var(--accent);
-  color: var(--accent-foreground);
-  font-weight: 500;
-}
-
-.branched-menu__row[data-disclosure] > .branched-menu__head[data-active] {
-  margin-right: 0;
+  color: var(--bm-accent);
 }
 
 .branched-menu__fold {
@@ -222,10 +211,7 @@
 }
 
 .branched-menu__item[data-active] {
-  border-radius: 9999px;
-  background: var(--accent);
-  color: var(--accent-foreground);
-  font-weight: 500;
+  color: var(--bm-accent);
 }
 
 /* Keyboard focus stays visible even though the design removes outlines. */

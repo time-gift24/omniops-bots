@@ -21,7 +21,11 @@ test('desktop Skill adapter preserves binary bytes, readable metadata and confli
   const library = await createTauriSkillLibrary(request);
   assert.equal(library.storage.kind, 'desktop');
   assert.equal(library.storage.root, await realpath(path.join(root, '.omnimind-ops', 'skills')));
-  const skill = await library.create({ name: 'Library test' });
+  const skill = await library.create({ name: 'Library test', entries: [{ path: 'draft/notes.md', kind: 'file', content: '完整草稿' }, { path: 'empty', kind: 'folder' }] });
+  assert.equal(await (await library.readFile(skill.id, 'draft/notes.md')).text(), '完整草稿');
+  assert.ok(skill.entries.some(entry => entry.path === 'empty' && entry.kind === 'folder'));
+  await library.remove(skill.id, 'draft');
+  await library.remove(skill.id, 'empty');
   const updatedContent = '---\nname: "从 Markdown 改名"\ndescription: "同步到桌面目录"\n---\n\n# 精确保存\n';
   const updated = await library.writeFile(skill.id, 'SKILL.md', new Blob([updatedContent]), { replace: true });
   assert.equal(updated.name, '从 Markdown 改名');

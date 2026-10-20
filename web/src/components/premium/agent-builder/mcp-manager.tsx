@@ -2,6 +2,7 @@ import { useRef, useState } from "react"
 import type { AgentSource, McpConfiguration, McpServer } from "@/agents/source"
 import { Button } from "@/components/motion/button"
 import { Input } from "@/components/motion/input"
+import { useToast } from "@/components/ui/toast"
 
 const empty = (): McpConfiguration => ({
   id: "",
@@ -22,21 +23,30 @@ export function McpManager({
   const [form, setForm] = useState<McpConfiguration>(empty)
   const [editing, setEditing] = useState(false)
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState("")
-  const [notice, setNotice] = useState("")
+  const toast = useToast()
   const lock = useRef(false)
+  const clearNotices = () => {
+    toast.dismissKey("mcp-error")
+    toast.dismissKey("mcp-notice")
+  }
   async function perform(operation: () => Promise<string>) {
     if (lock.current) return
     lock.current = true
     setBusy(true)
-    setError("")
-    setNotice("")
+    clearNotices()
     try {
-      setNotice(await operation())
+      toast.notify({
+        key: "mcp-notice",
+        title: await operation(),
+        tone: "success",
+      })
     } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "MCP 操作失败，请重试。"
-      )
+      toast.notify({
+        key: "mcp-error",
+        title:
+          cause instanceof Error ? cause.message : "MCP 操作失败，请重试。",
+        tone: "error",
+      })
     } finally {
       lock.current = false
       setBusy(false)
@@ -75,7 +85,7 @@ export function McpManager({
                     credentialEnv: server.credentialEnv ?? "",
                   })
                   setEditing(true)
-                  setNotice("")
+                  clearNotices()
                 }}
               >
                 配置
@@ -204,19 +214,6 @@ export function McpManager({
           </div>
         </form>
       )}
-      {error ? (
-        <p role="alert" className="mt-3 text-xs text-destructive">
-          {error}
-        </p>
-      ) : null}
-      {notice ? (
-        <p
-          role="status"
-          className="mt-3 text-xs leading-5 text-muted-foreground"
-        >
-          {notice}
-        </p>
-      ) : null}
     </details>
   )
 }

@@ -61,6 +61,11 @@ export interface SkillLibrary {
     name: string
     description?: string
     content?: string
+    /** Extra draft entries; SKILL.md comes from content. The whole package commits once. */
+    entries?: readonly (
+      | { path: string; kind: "file"; content: string }
+      | { path: string; kind: "folder" }
+    )[]
   }): Promise<ManagedSkill>
   copyToLocal(id: string, name?: string): Promise<ManagedSkill>
   readFile(id: string, path: string): Promise<Blob>
@@ -380,6 +385,14 @@ export function createSkillLibrary({
             "path-invalid",
             "Skill 描述最多 4096 字符。"
           )
+        if (
+          (input.content !== undefined && typeof input.content !== "string") ||
+          (input.entries !== undefined && !Array.isArray(input.entries))
+        )
+          throw new SkillLibraryError(
+            "path-invalid",
+            "Skill 初始文件内容无效。"
+          )
         const content = new Blob(
           [
             input.content ??
@@ -403,6 +416,33 @@ export function createSkillLibrary({
               content,
             },
           ],
+        }
+        for (const entry of input.entries ?? []) {
+          if (
+            !entry ||
+            typeof entry.path !== "string" ||
+            (entry.kind !== "file" && entry.kind !== "folder") ||
+            (entry.kind === "file" && typeof entry.content !== "string") ||
+            (entry.kind === "folder" && "content" in entry)
+          )
+            throw new SkillLibraryError(
+              "path-invalid",
+              "Skill 初始文件内容无效。"
+            )
+          const content =
+            entry.kind === "file"
+              ? new Blob([entry.content], {
+                  type: skillFileMimeType(entry.path),
+                })
+              : undefined
+          skill.entries.push({
+            path: entry.path,
+            kind: entry.kind,
+            size: content?.size ?? 0,
+            mimeType: content?.type ?? "",
+            modifiedAt: timestamp,
+            ...(content ? { content } : {}),
+          })
         }
         if ((await load()).has(skill.id)) throw conflict()
         validateStoredSkill(skill)

@@ -8,6 +8,7 @@ import {
 import { createDemoAdapters } from "../src/adapters/demo"
 import { createDemoModelSource } from "../src/adapters/demo/resources"
 import { ThemeProvider } from "../src/components/theme-provider"
+import { ToastProvider } from "../src/components/ui/toast"
 import { fileKey } from "../src/skills/drafts"
 import type { Theme, Palette } from "../src/preferences/theme"
 
@@ -45,7 +46,10 @@ export function createTestDependencies(overrides: Partial<FrontendAdapters> = {}
 }
 
 export function withDependencies(children: ReactNode, dependencies: AppDependencies) {
-  return createElement(AppDependenciesProvider, { value: dependencies, children })
+  return createElement(AppDependenciesProvider, {
+    value: dependencies,
+    children: createElement(ToastProvider, null, children),
+  })
 }
 
 export function withTestTheme(children: ReactNode, dependencies: AppDependencies) {

@@ -202,20 +202,55 @@ export function createSkillLibrary({ root = defaultSkillRoot() } = {}) {
     const name = title(params.name), summary = description(params.description);
     const content = params.content ?? `---\nname: ${JSON.stringify(name)}\ndescription: ${JSON.stringify(summary)}\n---\n\n# ${name}\n\n`;
     if (typeof content !== 'string') throw invalid('Skill 初始正文必须为文本。');
-    const bytes = Buffer.from(content);
-    if (bytes.length > MAX_FILE) throw new RuntimeError('resource-limit', '单个 Skill 文件不能超过 20 MiB。');
+    if (params.entries !== undefined && !Array.isArray(params.entries)) throw invalid('Skill 初始文件内容无效。');
+    const entries = [{ path: 'SKILL.md', kind: 'file', content }];
+    const paths = new Map([['skill.md', entries[0]]]);
+    for (const entry of params.entries ?? []) {
+      if (!entry || typeof entry !== 'object' || (entry.kind !== 'file' && entry.kind !== 'folder') || entry.kind === 'file' && typeof entry.content !== 'string' || entry.kind === 'folder' && 'content' in entry) throw invalid('Skill 初始文件内容无效。');
+      relativePath(entry.path);
+      const key = entry.path.toLowerCase();
+      if (paths.has(key)) throw new RuntimeError('conflict', '同名文件或目录已经存在。');
+      const value = { path: entry.path, kind: entry.kind, ...(entry.kind === 'file' ? { content: entry.content } : {}) };
+      entries.push(value);
+      paths.set(key, value);
+    }
+    for (const entry of [...entries]) {
+      const segments = relativePath(entry.path);
+      for (let index = 1; index < segments.length; index++) {
+        const parent = segments.slice(0, index).join('/');
+        const existing = paths.get(parent.toLowerCase());
+        if (existing && (existing.kind !== 'folder' || existing.path !== parent)) throw new RuntimeError('conflict', '上级目录名称与已有文件或目录冲突。');
+        if (!existing) {
+          const folder = { path: parent, kind: 'folder' };
+          entries.push(folder);
+          paths.set(parent.toLowerCase(), folder);
+        }
+      }
+    }
+    if (entries.length > MAX_ENTRIES || entries.some(entry => entry.kind === 'file' && Buffer.byteLength(entry.content) > MAX_FILE) || entries.reduce((size, entry) => size + (entry.kind === 'file' ? Buffer.byteLength(entry.content) : 0), 0) > MAX_PACKAGE) throw new RuntimeError('resource-limit', 'Skill 最多 1000 项，单文件 20 MiB、总计 100 MiB。');
     const id = `local/${randomUUID()}`;
     const parsed = parseId(id);
     const directory = await resolve(parsed.relative, { createParents: true });
-    await mkdir(directory, { mode: 0o700 });
+    const pendingName = `.pending-${randomUUID()}`;
+    const pending = await resolve(['local', pendingName]);
+    await mkdir(pending, { mode: 0o700 });
+    let metadata, metadataCreated = false, published = false;
     try {
-      await atomicWrite(path.join(directory, 'SKILL.md'), bytes, false);
-      const metadata = await resolve(['.metadata', parsed.relative[1] + '.json'], { createParents: true });
+      for (const entry of entries) {
+        const file = await resolve(['local', pendingName, ...relativePath(entry.path)], { createParents: true });
+        if (entry.kind === 'folder') await mkdir(file, { recursive: true, mode: 0o700 });
+        else await atomicWrite(file, Buffer.from(entry.content), false);
+      }
+      metadata = await resolve(['.metadata', parsed.relative[1] + '.json'], { createParents: true });
       await atomicWrite(metadata, Buffer.from(JSON.stringify({ name, description: summary })), false);
+      metadataCreated = true;
+      await rename(pending, directory);
+      published = true;
       return await get(id);
     } catch (error) {
-      await rm(directory, { recursive: true, force: true });
-      await rm(path.join(await ensureRoot(), '.metadata', parsed.relative[1] + '.json'), { force: true });
+      await rm(pending, { recursive: true, force: true });
+      if (published) await rm(directory, { recursive: true, force: true });
+      if (metadataCreated) await rm(metadata, { force: true });
       throw error;
     }
   }

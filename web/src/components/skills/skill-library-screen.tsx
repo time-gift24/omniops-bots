@@ -15,12 +15,11 @@ import {
   LockKeyhole,
   Search,
   Trash2,
-  X,
 } from "lucide-react"
 import { useAppDependencies } from "@/app/dependencies"
 import { Button } from "@/components/motion/button"
 import { Input } from "@/components/motion/input"
-import { Select } from "@/components/premium/select/select"
+import { useToast } from "@/components/ui/toast"
 import { useSaveShortcut } from "@/hooks/use-save-shortcut"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Bug01Icon } from "@hugeicons-pro/core-stroke-rounded"
@@ -30,6 +29,7 @@ import type { Skill } from "@/skills/source"
 import { EMPTY_SKILL_CONTENT, readSkillMetadata } from "@/skills/content"
 import {
   skillFileMimeType,
+  validateSkillPath,
   type ManagedSkill,
   type SkillEntry,
   type SkillLibrary,
@@ -38,6 +38,18 @@ import { cn } from "@/lib/utils"
 import "./skill-library.css"
 
 type Edit = { value: string; saved: string }
+const DRAFT_ID = "\u0000new-skill"
+const draftEntry = (
+  path: string,
+  kind: "file" | "folder" = "file"
+): SkillEntry => ({
+  path,
+  kind,
+  size: 0,
+  mimeType: kind === "file" ? skillFileMimeType(path) : "",
+  modifiedAt: null,
+})
+const EMPTY_ENTRY: SkillEntry = { ...draftEntry(""), mimeType: "text/plain" }
 const editKey = (id: string, path: string) => `${id}\u0000${path}`
 const errorMessage = (error: unknown) =>
   error instanceof Error ? error.message : "操作失败，请保留当前内容后重试。"
@@ -63,115 +75,8 @@ function SkillSourceLabel({ skill }: { skill: ManagedSkill }) {
   )
 }
 
-function PackageEntries({
-  skill,
-  busy,
-  onApply,
-}: {
-  skill: ManagedSkill
-  busy: boolean
-  onApply: (action: string, path: string, destination: string) => Promise<void>
-}) {
-  const [action, setAction] = useState("mkdir")
-  const [path, setPath] = useState("")
-  const [destination, setDestination] = useState("")
-  const needsTarget = action === "rename" || action === "remove"
-  return (
-    <details className="shrink-0 border-b border-border px-5 py-2 text-xs">
-      <summary className="cursor-pointer">管理文件与目录</summary>
-      <form
-        className="flex flex-wrap items-end gap-3 py-3"
-        aria-label="管理 Skill 文件与目录"
-        onSubmit={(event) => {
-          event.preventDefault()
-          void onApply(action, path, destination.trim())
-            .then(() => setDestination(""))
-            .catch(() => {
-              // The owner displays the error and keeps this form available for retry.
-            })
-        }}
-      >
-        <div className="flex min-w-0 flex-1 basis-40 flex-col gap-1.5">
-          <span className="font-medium">操作</span>
-          <Select
-            label="文件操作"
-            value={action}
-            disabled={busy}
-            onValueChange={setAction}
-            options={[
-              { id: "mkdir", label: "创建目录" },
-              { id: "file", label: "创建文件" },
-              { id: "rename", label: "重命名" },
-              { id: "remove", label: "删除" },
-            ]}
-            portal
-            className="w-full"
-            buttonClassName="w-full min-w-0 pointer-coarse:h-11"
-          />
-        </div>
-        {needsTarget ? (
-          <label className="flex min-w-0 flex-1 basis-48 flex-col gap-1.5">
-            <span className="font-medium">目标</span>
-            {/* Native required validation must still block submitting an empty target. */}
-            <select
-              aria-label="操作目标"
-              value={path}
-              disabled={busy}
-              required
-              onChange={(event) => setPath(event.target.value)}
-              className="h-10 w-full min-w-0 rounded-full border border-border bg-background px-3 text-sm font-medium text-foreground outline-none transition-colors hover:border-border-strong focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 pointer-coarse:h-11 motion-reduce:transition-none"
-            >
-              <option value="">选择文件或目录</option>
-              {skill.entries.map((entry) => (
-                <option key={entry.path} value={entry.path}>
-                  {entry.path}
-                  {entry.kind === "folder" ? "/" : ""}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : null}
-        {action !== "remove" ? (
-          <Input
-            aria-label="目标路径"
-            label={action === "mkdir" ? "目录路径" : "新路径"}
-            value={destination}
-            onChange={setDestination}
-            required
-            disabled={busy}
-            className="min-w-0 flex-1 basis-48"
-            classNames={{
-              label: "px-0 text-xs font-medium",
-              field: "h-10 pointer-coarse:h-11",
-            }}
-          />
-        ) : (
-          <p>删除文件或目录及其全部内容，不能撤销。</p>
-        )}
-        <Button
-          size="sm"
-          type="submit"
-          variant={action === "remove" ? "destructive" : "outline"}
-          disabled={
-            busy ||
-            (needsTarget && !skill.entries.some((entry) => entry.path === path))
-          }
-        >
-          {action === "mkdir"
-            ? "创建目录"
-            : action === "file"
-              ? "创建文件"
-              : action === "rename"
-                ? "确认重命名"
-                : "确认删除条目"}
-        </Button>
-      </form>
-    </details>
-  )
-}
-
 function FilePreview({
-  library,
+  readFile,
   skill,
   entry,
   edit,
@@ -186,8 +91,13 @@ function FilePreview({
   initialEditing = false,
   locked = false,
   onAddFile,
+  onAddDirectory,
+  onRenameEntry,
+  onDeleteEntry,
+  creating = false,
+  onDiscard,
 }: {
-  library: SkillLibrary
+  readFile: SkillLibrary["readFile"]
   skill: ManagedSkill
   entry: SkillEntry
   edit: Edit | undefined
@@ -202,6 +112,11 @@ function FilePreview({
   initialEditing?: boolean
   locked?: boolean
   onAddFile?: (path: string, content: Blob, replace?: boolean) => Promise<void>
+  onAddDirectory?: (path: string) => Promise<void>
+  onRenameEntry?: (path: string, newPath: string) => Promise<void>
+  onDeleteEntry?: (path: string) => Promise<void>
+  creating?: boolean
+  onDiscard?: () => void
 }) {
   const [readResult, setLoaded] = useState<{
     entry: SkillEntry
@@ -219,15 +134,15 @@ function FilePreview({
   const [editingPath, setEditingPath] = useState<string | null>(
     initialEditing ? entry.path : null
   )
-  const editing = editingPath === entry.path
+  const editing = creating || editingPath === entry.path
   const isText = textFile(entry)
   const loadCallback = useRef(onLoaded)
   const currentSource = useRef("")
-  const currentPath = useRef(entry.path)
+  const currentEntry = useRef(entry)
   const mounted = useRef(false)
   const currentActive = useRef(active)
   const source = edit?.value ?? loaded?.text ?? ""
-  const ready = !!loaded || (isText && edit !== undefined)
+  const ready = !entry.path || !!loaded || (isText && edit !== undefined)
   const retryRead = () => {
     setReadError(null)
     setReadAttempt((value) => value + 1)
@@ -235,9 +150,9 @@ function FilePreview({
   useLayoutEffect(() => {
     loadCallback.current = onLoaded
     currentSource.current = source
-    currentPath.current = entry.path
+    currentEntry.current = entry
     currentActive.current = active
-  }, [onLoaded, source, entry.path, active])
+  }, [onLoaded, source, entry, active])
   useEffect(() => {
     mounted.current = true
     return () => {
@@ -245,13 +160,13 @@ function FilePreview({
     }
   }, [])
   useEffect(() => {
+    if (!entry.path) return
     let live = true
     let url: string | undefined
-    void library
-      .readFile(skill.id, entry.path)
+    void readFile(skill.id, entry.path)
       .then(async (blob) => {
         const text = isText ? await blob.text() : undefined
-        if (!live) return
+        if (!live || currentEntry.current !== entry) return
         url = URL.createObjectURL(blob)
         setLoaded({ entry, text, url })
         setReadError(null)
@@ -269,11 +184,11 @@ function FilePreview({
       live = false
       if (url) URL.revokeObjectURL(url)
     }
-  }, [library, skill.id, entry, isText, readAttempt])
+  }, [readFile, skill.id, entry, isText, readAttempt])
   const dirty = !!edit && edit.value !== edit.saved
   async function save() {
     if (busy || !ready || !editing || skill.readOnly) return
-    if (!dirty) {
+    if (!dirty && !creating) {
       setEditingPath(null)
       return
     }
@@ -281,7 +196,7 @@ function FilePreview({
       await onSave(source)
       if (
         mounted.current &&
-        currentPath.current === entry.path &&
+        currentEntry.current.path === entry.path &&
         currentSource.current === source
       )
         setEditingPath(null)
@@ -314,6 +229,7 @@ function FilePreview({
       ) : null}
       <SkillDocument
         files={files}
+        entries={skill.entries}
         path={entry.path}
         source={source}
         active={active}
@@ -325,17 +241,21 @@ function FilePreview({
           locked || skill.readOnly || !isText || (!ready && !!readFailure)
         }
         editing={editing}
-        saveLabel="保存文件"
+        saveLabel={creating ? "保存 Skill" : "保存文件"}
         onEdit={() => setEditingPath(entry.path)}
         onSave={() => void save()}
         onUndo={() => {
+          if (onDiscard) {
+            onDiscard()
+            return
+          }
           onEdit(edit?.saved ?? loaded?.text ?? "")
           setEditingPath(null)
           setError("")
         }}
         onChange={onEdit}
         onSelectFile={(path) => {
-          setEditingPath(null)
+          setEditingPath(creating ? path : null)
           setError("")
           onOpenFile(path)
         }}
@@ -346,11 +266,40 @@ function FilePreview({
                 if (
                   mounted.current &&
                   currentActive.current &&
-                  currentPath.current === entry.path
+                  currentEntry.current.path === entry.path
                 ) {
                   setEditingPath(path)
                   onOpenFile(path)
                 }
+              }
+            : undefined
+        }
+        onAddDirectory={onAddDirectory}
+        onRenameEntry={
+          onRenameEntry
+            ? async (path, newPath) => {
+                await onRenameEntry(path, newPath)
+                if (mounted.current)
+                  setEditingPath((current) =>
+                    current &&
+                    (current === path || current.startsWith(`${path}/`))
+                      ? newPath + current.slice(path.length)
+                      : current
+                  )
+              }
+            : undefined
+        }
+        onDeleteEntry={
+          onDeleteEntry
+            ? async (path) => {
+                await onDeleteEntry(path)
+                if (mounted.current)
+                  setEditingPath((current) =>
+                    current &&
+                    (current === path || current.startsWith(`${path}/`))
+                      ? null
+                      : current
+                  )
               }
             : undefined
         }
@@ -418,8 +367,29 @@ export function SkillLibraryScreen({
   const [loaded, setLoaded] = useState(false)
   const [loadFailed, setLoadFailed] = useState(false)
   const [loadAttempt, setLoadAttempt] = useState(0)
-  const [error, setError] = useState("")
-  const [notice, setNotice] = useState("")
+  const toast = useToast()
+  const showError = useCallback(
+    (message: string) => {
+      toast.dismissKey("skill-library-notice")
+      toast.notify({
+        key: "skill-library-error",
+        title: message,
+        tone: "error",
+      })
+    },
+    [toast]
+  )
+  const showNotice = useCallback(
+    (message: string) => {
+      toast.dismissKey("skill-library-error")
+      toast.notify({
+        key: "skill-library-notice",
+        title: message,
+        tone: "success",
+      })
+    },
+    [toast]
+  )
   const [busy, setBusy] = useState(false)
   const [entriesLocked, setEntriesLocked] = useState(false)
   const operation = useRef(false)
@@ -430,23 +400,28 @@ export function SkillLibraryScreen({
   const callback = useRef(onCatalogChange)
   const [query, setQuery] = useState("")
   const [filter, setFilter] = useState<"all" | "local" | "official">("all")
-  const [newContent, setNewContent] = useState(EMPTY_SKILL_CONTENT)
-  const draftContent = useRef(newContent)
-  useLayoutEffect(() => {
-    draftContent.current = newContent
-  }, [newContent])
+  const [draftEntries, setDraftEntries] = useState<readonly SkillEntry[]>(
+    () => [draftEntry("SKILL.md")]
+  )
   const searchInput = useRef<HTMLInputElement>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [selected, setSelected] = useState<Record<string, string | null>>({})
-  const [edits, setEdits] = useState<Record<string, Edit>>({})
+  const [edits, setEdits] = useState<Record<string, Edit>>(() => ({
+    [editKey(DRAFT_ID, "SKILL.md")]: {
+      value: EMPTY_SKILL_CONTENT,
+      saved: EMPTY_SKILL_CONTENT,
+    },
+  }))
   const currentEdits = useRef(edits)
+  const currentSelected = useRef(selected)
   useLayoutEffect(() => {
     scope.current = skillId
     currentActive.current = active
     currentCreating.current = creating
     callback.current = onCatalogChange
     currentEdits.current = edits
-  }, [skillId, active, creating, onCatalogChange, edits])
+    currentSelected.current = selected
+  }, [skillId, active, creating, onCatalogChange, edits, selected])
   useEffect(() => {
     mounted.current = true
     let live = true
@@ -481,7 +456,7 @@ export function SkillLibraryScreen({
       })
       .catch((cause: unknown) => {
         if (live) {
-          setError(errorMessage(cause))
+          showError(errorMessage(cause))
           setLoadFailed(true)
           setLoaded(true)
         }
@@ -490,10 +465,12 @@ export function SkillLibraryScreen({
       live = false
       mounted.current = false
     }
-  }, [library, source, loadAttempt])
+  }, [library, source, loadAttempt, showError])
   const unsaved =
     Object.values(edits).some((edit) => edit.value !== edit.saved) ||
-    newContent !== EMPTY_SKILL_CONTENT
+    draftEntries.length !== 1 ||
+    draftEntries[0]?.path !== "SKILL.md" ||
+    draftEntries[0]?.kind !== "file"
   useEffect(() => {
     if (!unsaved) return
     const warn = (event: BeforeUnloadEvent) => {
@@ -503,7 +480,29 @@ export function SkillLibraryScreen({
     window.addEventListener("beforeunload", warn)
     return () => window.removeEventListener("beforeunload", warn)
   }, [unsaved])
-  const skill = catalog.find((item) => item.id === skillId)
+  const skill: ManagedSkill | undefined = creating
+    ? {
+        id: DRAFT_ID,
+        name: "新建 Skill",
+        description: "",
+        origin: "local",
+        readOnly: false,
+        modifiedAt: null,
+        entries: draftEntries,
+      }
+    : catalog.find((item) => item.id === skillId)
+  const readFile = useCallback<SkillLibrary["readFile"]>(
+    async (id, path) => {
+      if (id === DRAFT_ID) {
+        const edit = currentEdits.current[editKey(id, path)]
+        if (!edit) throw new Error("文件不存在，请从文件导航选择文件。")
+        return new Blob([edit.saved], { type: skillFileMimeType(path) })
+      }
+      if (!library) throw new Error("当前接入的 Skill 仅供阅读。")
+      return library.readFile(id, path)
+    },
+    [library]
+  )
   const selectedPath =
     skill &&
     (skill.entries.find(
@@ -530,17 +529,17 @@ export function SkillLibraryScreen({
     if (operation.current) throw new Error("正在保存，请稍后再试。")
     operation.current = true
     setBusy(true)
-    setError("")
-    setNotice("")
+    toast.dismissKey("skill-library-error")
+    toast.dismissKey("skill-library-notice")
     const target = scope.current
     try {
       const result = await work()
       if (mounted.current && scope.current === target && success)
-        setNotice(success)
+        showNotice(success)
       return result
     } catch (cause) {
       if (mounted.current && scope.current === target)
-        setError(errorMessage(cause))
+        showError(errorMessage(cause))
       throw cause
     } finally {
       operation.current = false
@@ -548,31 +547,62 @@ export function SkillLibraryScreen({
     }
   }
   async function create() {
-    if (operation.current) return
-    if (!library) return
-    const content = newContent
-    if (new Blob([content]).size > 256 * 1024) {
-      setError("SKILL.md 不能超过 256 KiB，请精简内容后保存。")
-      return
-    }
+    if (operation.current || !library) return
+    const snapshot = currentEdits.current
     try {
+      const main = snapshot[editKey(DRAFT_ID, "SKILL.md")]
+      if (
+        !main ||
+        !draftEntries.some(
+          (entry) => entry.path === "SKILL.md" && entry.kind === "file"
+        )
+      )
+        throw new Error("请先添加 SKILL.md 入口文件，再保存 Skill。")
+      const content = main.value
+      if (new Blob([content]).size > 256 * 1024)
+        throw new Error("SKILL.md 不能超过 256 KiB，请精简内容后保存。")
       const metadata = readSkillMetadata(content)
       await run(async () => {
-        const created = await library.create({
-          ...metadata,
-          content,
-        })
+        const entries = draftEntries
+          .filter((entry) => entry.path !== "SKILL.md")
+          .map((entry) =>
+            entry.kind === "folder"
+              ? { path: entry.path, kind: "folder" as const }
+              : {
+                  path: entry.path,
+                  kind: "file" as const,
+                  content: snapshot[editKey(DRAFT_ID, entry.path)].value,
+                }
+          )
+        const created = await library.create({ ...metadata, content, entries })
         update(created)
         if (mounted.current) {
-          const value = draftContent.current
-          setNewContent(EMPTY_SKILL_CONTENT)
-          setEdits((current) => ({
+          setEdits((current) => {
+            const next = Object.fromEntries(
+              Object.entries(current).filter(
+                ([key]) => !key.startsWith(`${DRAFT_ID}\u0000`)
+              )
+            )
+            for (const entry of draftEntries) {
+              if (entry.kind !== "file") continue
+              const key = editKey(DRAFT_ID, entry.path)
+              next[editKey(created.id, entry.path)] = {
+                value: current[key]?.value ?? snapshot[key].value,
+                saved: snapshot[key].value,
+              }
+            }
+            next[editKey(DRAFT_ID, "SKILL.md")] = {
+              value: EMPTY_SKILL_CONTENT,
+              saved: EMPTY_SKILL_CONTENT,
+            }
+            return next
+          })
+          setSelected((current) => ({
             ...current,
-            [editKey(created.id, "SKILL.md")]: {
-              value,
-              saved: content,
-            },
+            [created.id]: currentSelected.current[DRAFT_ID] ?? "SKILL.md",
+            [DRAFT_ID]: null,
           }))
+          setDraftEntries([draftEntry("SKILL.md")])
           if (
             scope.current === null &&
             currentActive.current &&
@@ -583,7 +613,8 @@ export function SkillLibraryScreen({
       })
     } catch (cause) {
       if (mounted.current && currentCreating.current && scope.current === null)
-        setError(errorMessage(cause))
+        showError(errorMessage(cause))
+      throw cause
     }
   }
   async function copy(item: ManagedSkill) {
@@ -648,18 +679,127 @@ export function SkillLibraryScreen({
       if (mounted.current) setEntriesLocked(false)
     }
   }
+  async function changeEntry(
+    action: "rename" | "remove",
+    path: string,
+    newPath = ""
+  ) {
+    if (!skill || !library || skill.readOnly)
+      throw new Error("当前 Skill 仅供阅读。")
+    if (operation.current) throw new Error("正在保存，请稍后再试。")
+    const contains = (candidate: string) =>
+      candidate === path || candidate.startsWith(`${path}/`)
+    const renamedPath = (candidate: string) =>
+      newPath + candidate.slice(path.length)
+    const id = skill.id
+    setEntriesLocked(true)
+    try {
+      await run(
+        async () => {
+          validateSkillPath(path)
+          if (!skill.entries.some((entry) => entry.path === path))
+            throw new Error("文件或目录已不存在。")
+          if (
+            action === "remove" &&
+            !creating &&
+            Object.entries(currentEdits.current).some(
+              ([key, edit]) =>
+                key.startsWith(`${id}\u0000`) &&
+                contains(key.slice(id.length + 1)) &&
+                edit.value !== edit.saved
+            )
+          )
+            throw new Error("目标包含未保存编辑，请先保存或撤销后重试。")
+          let next: ManagedSkill
+          if (creating) {
+            const remaining = skill.entries.filter(
+              (entry) => !contains(entry.path)
+            )
+            if (action === "rename") {
+              validateSkillPath(newPath)
+              if (path === newPath) return
+              if (newPath.toLowerCase().startsWith(`${path.toLowerCase()}/`))
+                throw new Error("不能把目录移动到其自身内部。")
+              if (path.toLowerCase() === newPath.toLowerCase())
+                throw new Error("名称仅大小写不同，请使用其他名称。")
+              const occupied = new Set(
+                remaining.map((entry) => entry.path.toLowerCase())
+              )
+              const moved = skill.entries
+                .filter((entry) => contains(entry.path))
+                .map((entry) => ({
+                  ...entry,
+                  path: renamedPath(entry.path),
+                  mimeType:
+                    entry.kind === "file"
+                      ? skillFileMimeType(renamedPath(entry.path))
+                      : "",
+                }))
+              for (const entry of moved) validateSkillPath(entry.path)
+              if (moved.some((entry) => occupied.has(entry.path.toLowerCase())))
+                throw new Error("同名文件或目录已存在，请使用其他名称。")
+              const parent = newPath.slice(
+                0,
+                Math.max(0, newPath.lastIndexOf("/"))
+              )
+              if (
+                parent &&
+                !remaining.some(
+                  (entry) => entry.path === parent && entry.kind === "folder"
+                )
+              )
+                throw new Error("上级目录不存在，请重新选择。")
+              next = { ...skill, entries: [...remaining, ...moved] }
+            } else next = { ...skill, entries: remaining }
+          } else
+            next =
+              action === "rename"
+                ? await library.rename(id, path, newPath)
+                : await library.remove(id, path)
+          if (!mounted.current) return
+          if (creating) setDraftEntries(next.entries)
+          else update(next)
+          setEdits((current) =>
+            Object.fromEntries(
+              Object.entries(current).flatMap(([key, edit]) => {
+                if (
+                  !key.startsWith(`${id}\u0000`) ||
+                  !contains(key.slice(id.length + 1))
+                )
+                  return [[key, edit]]
+                return action === "rename"
+                  ? [[editKey(id, renamedPath(key.slice(id.length + 1))), edit]]
+                  : []
+              })
+            )
+          )
+          setSelected((current) => {
+            const selected = current[id] ?? selectedPath
+            if (!selected || !contains(selected)) return current
+            return {
+              ...current,
+              [id]: action === "rename" ? renamedPath(selected) : null,
+            }
+          })
+        },
+        action === "rename" ? "已重命名" : "已删除"
+      )
+    } finally {
+      if (mounted.current) setEntriesLocked(false)
+    }
+  }
   async function experiment() {
     if (!skill || skill.readOnly || !onExperiment || !library) return
     const main = skill.entries.find(
       (item) => item.kind === "file" && item.path === "SKILL.md"
     )
     if (!main) {
-      setError("请先新建或上传 SKILL.md，再开始实验。")
+      showError("请先新建或上传 SKILL.md，再开始实验。")
       return
     }
     const mainEdit = currentEdits.current[editKey(skill.id, "SKILL.md")]
     if ((mainEdit ? new Blob([mainEdit.value]).size : main.size) > 256 * 1024) {
-      setError(
+      showError(
         "SKILL.md 不能超过 256 KiB，请精简入口并将参考资料拆分为独立文件。"
       )
       setSelected((current) => ({ ...current, [skill.id]: "SKILL.md" }))
@@ -695,7 +835,7 @@ export function SkillLibraryScreen({
               edit.value !== (snapshot[key]?.value ?? edit.saved)
           )
         ) {
-          setError("保存期间还有新的修改，请再次点击实验以使用最新内容。")
+          showError("保存期间还有新的修改，请再次点击实验以使用最新内容。")
           return
         }
         onExperiment(id)
@@ -704,13 +844,6 @@ export function SkillLibraryScreen({
       /* run preserves drafts and displays the failure. */
     }
   }
-  useSaveShortcut({
-    active: active && creating,
-    enabled: creating,
-    onSave: () => {
-      if (!operation.current) void create()
-    },
-  })
   const pathKey = skill && entry ? editKey(skill.id, entry.path) : ""
   const visible = catalog.filter(
     (item) =>
@@ -721,7 +854,7 @@ export function SkillLibraryScreen({
   )
   const detailActions = skill ? (
     <>
-      {onExperiment && !skill.readOnly ? (
+      {onExperiment && !creating && !skill.readOnly ? (
         <Button
           variant="ghost"
           size="icon"
@@ -763,40 +896,6 @@ export function SkillLibraryScreen({
           当前接入的 Skill 仅供阅读。
         </p>
       ) : null}
-      {error ? (
-        <div
-          role="alert"
-          className="flex items-start justify-between gap-4 border-b border-border bg-destructive/5 px-5 py-3 text-sm text-destructive"
-        >
-          <span>{error}</span>
-          <Button
-            variant="ghost"
-            size="icon-xs"
-            aria-label="关闭错误提示"
-            onClick={() => setError("")}
-            className="shrink-0 text-inherit hover:text-inherit"
-          >
-            <X className="size-4" />
-          </Button>
-        </div>
-      ) : null}
-      {notice ? (
-        <div
-          role="status"
-          className="flex items-center justify-between gap-3 border-b border-border px-5 py-2 text-xs text-primary"
-        >
-          <span>{notice}</span>
-          <Button
-            variant="ghost"
-            size="icon-xs"
-            aria-label="关闭操作提示"
-            onClick={() => setNotice("")}
-            className="shrink-0 text-inherit hover:text-inherit"
-          >
-            <X className="size-3.5" />
-          </Button>
-        </div>
-      ) : null}
       {!loaded ? (
         <div
           className="space-y-6 p-8"
@@ -817,37 +916,14 @@ export function SkillLibraryScreen({
             onClick={() => {
               setLoaded(false)
               setLoadFailed(false)
-              setError("")
+              toast.dismissKey("skill-library-error")
               setLoadAttempt((value) => value + 1)
             }}
           >
             重新读取 Skill
           </Button>
         </div>
-      ) : creating ? (
-        <div className="flex min-h-0 flex-1 flex-col" data-slot="skill-draft">
-          <SkillDocument
-            files={[{ path: "SKILL.md" }]}
-            path="SKILL.md"
-            source={newContent}
-            active={active}
-            editing
-            busy={busy}
-            dirty={newContent !== EMPTY_SKILL_CONTENT}
-            saveLabel="保存 Skill"
-            onEdit={() => {}}
-            onSave={() => void create()}
-            onUndo={() => {
-              setNewContent(EMPTY_SKILL_CONTENT)
-              setError("")
-              onOpenSkill(null)
-            }}
-            onChange={setNewContent}
-            onSelectFile={() => {}}
-            onError={setError}
-          />
-        </div>
-      ) : !skillId ? (
+      ) : !skillId && !creating ? (
         <div className="min-h-0 flex-1 overflow-auto px-5 py-6 md:px-8">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <div className="flex gap-1" role="group" aria-label="Skill 来源">
@@ -991,74 +1067,42 @@ export function SkillLibraryScreen({
         </div>
       ) : skill ? (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          {library && !skill.readOnly ? (
-            <PackageEntries
-              key={`entries:${skill.id}`}
-              skill={skill}
-              busy={busy}
-              onApply={async (action, path, destination) => {
-                const affected = (key: string) =>
-                  key === editKey(skill.id, path) ||
-                  key.startsWith(`${editKey(skill.id, path)}/`)
-                await mutateEntries(async () => {
-                  if (
-                    (action === "rename" || action === "remove") &&
-                    Object.entries(currentEdits.current).some(
-                      ([key, edit]) =>
-                        affected(key) && edit.value !== edit.saved
-                    )
-                  )
-                    throw new Error(
-                      "目标包含未保存编辑，请先保存或撤销后重试。"
-                    )
-                  const result =
-                    action === "mkdir"
-                      ? await library.createDirectory(skill.id, destination)
-                      : action === "file"
-                        ? await library.writeFile(
-                            skill.id,
-                            destination,
-                            new Blob([""])
-                          )
-                        : action === "rename"
-                          ? await library.rename(skill.id, path, destination)
-                          : await library.remove(skill.id, path)
-                  if (mounted.current && action === "file")
-                    setSelected((current) => ({
-                      ...current,
-                      [skill.id]: destination,
-                    }))
-                  if (
-                    mounted.current &&
-                    (action === "rename" || action === "remove")
-                  ) {
-                    setEdits((current) =>
-                      Object.fromEntries(
-                        Object.entries(current).filter(
-                          ([key]) => !affected(key)
-                        )
-                      )
-                    )
-                    setSelected((current) => ({
-                      ...current,
-                      [skill.id]: action === "rename" ? destination : null,
-                    }))
-                  }
-                  return result
-                }, "文件目录已更新")
-              }}
-            />
-          ) : null}
-          {entry && library ? (
+          {library ? (
             <FilePreview
               key={skill.id}
-              library={library}
+              readFile={readFile}
               skill={skill}
-              entry={entry}
+              entry={entry ?? EMPTY_ENTRY}
               edit={edits[pathKey]}
+              creating={creating}
+              onDiscard={
+                creating
+                  ? () => {
+                      setDraftEntries([draftEntry("SKILL.md")])
+                      setSelected((current) => ({
+                        ...current,
+                        [DRAFT_ID]: null,
+                      }))
+                      setEdits((current) => ({
+                        ...Object.fromEntries(
+                          Object.entries(current).filter(
+                            ([key]) => !key.startsWith(`${DRAFT_ID}\u0000`)
+                          )
+                        ),
+                        [editKey(DRAFT_ID, "SKILL.md")]: {
+                          value: EMPTY_SKILL_CONTENT,
+                          saved: EMPTY_SKILL_CONTENT,
+                        },
+                      }))
+                      toast.dismissKey("skill-library-error")
+                      onOpenSkill(null)
+                    }
+                  : undefined
+              }
               initialEditing={
-                !!edits[pathKey] &&
-                edits[pathKey].value !== edits[pathKey].saved
+                creating ||
+                (!!edits[pathKey] &&
+                  edits[pathKey].value !== edits[pathKey].saved)
               }
               busy={busy}
               locked={entriesLocked}
@@ -1067,33 +1111,58 @@ export function SkillLibraryScreen({
               onAddFile={
                 skill.readOnly
                   ? undefined
-                  : (path, content, replace) =>
-                      mutateEntries(
-                        async () => {
-                          const key = editKey(skill.id, path)
-                          const edit = currentEdits.current[key]
-                          if (replace && edit && edit.value !== edit.saved)
-                            throw new Error(
-                              "目标包含未保存编辑，请先保存或撤销后重试。"
-                            )
-                          const result = await library.writeFile(
-                            skill.id,
-                            path,
-                            content,
-                            { replace }
-                          )
-                          if (mounted.current)
-                            setEdits((current) =>
-                              Object.fromEntries(
-                                Object.entries(current).filter(
-                                  ([entryKey]) => entryKey !== key
-                                )
-                              )
-                            )
-                          return result
-                        },
-                        replace ? "文件已替换" : "文件已添加"
+                  : async (path, content, replace) => {
+                      if (creating) {
+                        await run(async () => {
+                          const value = await content.text()
+                          setDraftEntries((current) => [
+                            ...current,
+                            draftEntry(path),
+                          ])
+                          setEdits((current) => ({
+                            ...current,
+                            [editKey(DRAFT_ID, path)]: { value, saved: value },
+                          }))
+                        })
+                        return
+                      }
+                      await mutateEntries(
+                        () =>
+                          library.writeFile(skill.id, path, content, {
+                            replace,
+                          }),
+                        "文件已添加"
                       )
+                    }
+              }
+              onAddDirectory={
+                skill.readOnly
+                  ? undefined
+                  : async (path) => {
+                      if (creating) {
+                        await run(async () => {
+                          setDraftEntries((current) => [
+                            ...current,
+                            draftEntry(path, "folder"),
+                          ])
+                        })
+                        return
+                      }
+                      await mutateEntries(
+                        () => library.createDirectory(skill.id, path),
+                        "目录已创建"
+                      )
+                    }
+              }
+              onRenameEntry={
+                skill.readOnly
+                  ? undefined
+                  : (path, newPath) => changeEntry("rename", path, newPath)
+              }
+              onDeleteEntry={
+                skill.readOnly
+                  ? undefined
+                  : (path) => changeEntry("remove", path)
               }
               files={skill.entries
                 .filter((item) => item.kind === "file")
@@ -1124,6 +1193,11 @@ export function SkillLibraryScreen({
                 }))
               }
               onSave={async (value) => {
+                if (creating) {
+                  await create()
+                  return
+                }
+                if (!entry) return
                 await mutate(
                   () =>
                     library.writeFile(

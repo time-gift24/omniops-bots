@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { useAppDependencies } from "@/app/dependencies"
-import { Button } from "@/components/motion/button"
+import { useToast } from "@/components/ui/toast"
 import { useSaveShortcut } from "@/hooks/use-save-shortcut"
 import type { Skill } from "@/skills/source"
 import { fileKey } from "@/skills/drafts"
@@ -23,7 +23,13 @@ export function SkillScreen({
     skills: readonly Skill[]
   } | null>(null)
   const loading = loaded?.cache !== skillDrafts || loaded?.skills !== skills
-  const [error, setError] = useState("")
+  const toast = useToast()
+  const showError = (message: string) =>
+    toast.notify({
+      key: "skill-screen-error",
+      title: message,
+      tone: "error",
+    })
   const [message, setMessage] = useState("")
   const [busy, setBusy] = useState(false)
   const operation = useRef(false)
@@ -55,16 +61,19 @@ export function SkillScreen({
         },
         () => {
           if (!live) return
-          setError(
-            "无法读取本地草稿。请检查存储权限；新编辑的内容会暂留在页面中。"
-          )
+          toast.notify({
+            key: "skill-screen-error",
+            title:
+              "无法读取本地草稿。请检查存储权限；新编辑的内容会暂留在页面中。",
+            tone: "error",
+          })
           setLoaded({ cache: skillDrafts, skills })
         }
       )
     return () => {
       live = false
     }
-  }, [skillDrafts, skills])
+  }, [skillDrafts, skills, toast])
   const source = contents[key] ?? file?.content ?? ""
   const currentSource = useRef(source)
   useLayoutEffect(() => {
@@ -92,7 +101,7 @@ export function SkillScreen({
       if (!mounted.current) return
       setSaved((current) => ({ ...current, [key]: source }))
       if (selectedKey.current === key) {
-        setError("")
+        toast.dismissKey("skill-screen-error")
         if (currentSource.current === source) {
           setMessage("草稿已保存")
           setEditing(false)
@@ -100,7 +109,7 @@ export function SkillScreen({
       }
     } catch {
       if (mounted.current && selectedKey.current === key)
-        setError(
+        showError(
           "草稿保存失败，编辑内容仍在页面中。请检查存储权限或可用空间，再重试保存。"
         )
     } finally {
@@ -157,12 +166,12 @@ export function SkillScreen({
         return next
       })
       if (selectedKey.current === key) {
-        setError("")
+        toast.dismissKey("skill-screen-error")
         setMessage("已恢复原始内容")
       }
     } catch {
       if (mounted.current && selectedKey.current === key)
-        setError("未能移除本地草稿，内容保持原样。请检查存储权限后重试。")
+        showError("未能移除本地草稿，内容保持原样。请检查存储权限后重试。")
     } finally {
       operation.current = false
       if (mounted.current) setBusy(false)
@@ -171,22 +180,6 @@ export function SkillScreen({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {error ? (
-        <div
-          role="alert"
-          className="flex shrink-0 items-start justify-between gap-3 border-b border-destructive/20 bg-destructive/5 px-6 py-3 text-sm text-destructive"
-        >
-          <p>{error}</p>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="shrink-0 rounded-full"
-            onClick={() => setError("")}
-          >
-            关闭
-          </Button>
-        </div>
-      ) : null}
       <div className="min-h-0 flex-1">
         <SkillDocument
           key={skill?.id}
@@ -218,7 +211,7 @@ export function SkillScreen({
               [key]: saved[key] ?? original,
             }))
             setEditing(false)
-            setError("")
+            toast.dismissKey("skill-screen-error")
             setMessage("")
           }}
           onRestore={
@@ -231,7 +224,7 @@ export function SkillScreen({
             setMessage("")
           }}
           onSelectFile={selectFile}
-          onError={setError}
+          onError={showError}
         />
       </div>
     </div>

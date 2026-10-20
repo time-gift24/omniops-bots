@@ -302,7 +302,7 @@
     write(field("名称"), "")
     click(button("保存", editor()))
     assert(
-      editor().querySelector('[role="alert"]'),
+      fixture.querySelector('[role="alert"]'),
       "Empty name must be rejected before saving"
     )
     assert(saved.length === 0, "Invalid name must not reach onSave")
@@ -311,7 +311,7 @@
     write(field("系统提示词"), "  ")
     click(button("保存", editor()))
     assert(
-      editor().querySelector('[role="alert"]'),
+      fixture.querySelector('[role="alert"]'),
       "Blank instructions must be rejected"
     )
     assert(saved.length === 0, "Invalid instructions must not reach onSave")
@@ -397,7 +397,7 @@
     click(button("保存", actions()))
     await until(() => saved.length === 2, "The failing save must reach its callback")
     finishSave()
-    await until(() => editor().querySelector('[role="alert"]')?.textContent.includes("保存失败"),
+    await until(() => fixture.querySelector('[role="alert"]')?.textContent.includes("保存失败"),
       "Failed saving must expose a recoverable error")
     assert(field("系统提示词").value === retryInstructions && field("名称").value === "失败重试助手" && !field("名称").readOnly,
       "Failed saving must preserve all editable input")

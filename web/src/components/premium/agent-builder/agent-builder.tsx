@@ -30,6 +30,7 @@ import {
 } from "@/components/premium/docs-pages/docs-data"
 import { useScrollspy } from "@/components/premium/docs-pages/use-scrollspy"
 import { Breadcrumbs } from "@/components/ui/breadcrumbs"
+import { useToast } from "@/components/ui/toast"
 import { Button } from "@/components/motion/button"
 import { DocumentActions } from "@/components/markdown/document-actions"
 import { useSaveShortcut } from "@/hooks/use-save-shortcut"
@@ -89,7 +90,7 @@ export function AgentBuilder({
   const [configuration, setConfiguration] = useState(initialDraft)
   const [saved, setSaved] = useState(initialConfiguration)
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState("")
+  const toast = useToast()
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [editing, setEditing] = useState(
     !readOnly &&
@@ -106,7 +107,21 @@ export function AgentBuilder({
   const currentConfiguration = useRef(configuration)
   const rootRef = useRef<HTMLDivElement>(null)
   const mounted = useRef(false)
-  const [message, setMessage] = useState("")
+  const showError = (message: string) => {
+    toast.notify({
+      key: "agent-builder-error",
+      title: message,
+      tone: "error",
+    })
+  }
+  const showNotice = (message: string) => {
+    toast.dismissKey("agent-builder-error")
+    toast.notify({
+      key: "agent-builder-notice",
+      title: message,
+      tone: "success",
+    })
+  }
   useLayoutEffect(() => {
     currentConfiguration.current = configuration
   }, [configuration])
@@ -161,8 +176,8 @@ export function AgentBuilder({
   function change(next: AgentConfiguration) {
     setConfiguration(next)
     onDraftChange?.(next)
-    setError("")
-    setMessage("")
+    toast.dismissKey("agent-builder-error")
+    toast.dismissKey("agent-builder-notice")
   }
 
   async function save() {
@@ -172,7 +187,7 @@ export function AgentBuilder({
       return
     }
     if (!configuration.name.trim() || !configuration.instructions.trim()) {
-      setError("请先填写名称和系统提示词，再保存。")
+      showError("请先填写名称和系统提示词，再保存。")
       if (!configuration.name.trim()) setSettingsOpen(true)
       else
         rootRef.current
@@ -191,7 +206,8 @@ export function AgentBuilder({
     }
     lock.current = true
     setSaving(true)
-    setError("")
+    toast.dismissKey("agent-builder-error")
+    toast.dismissKey("agent-builder-notice")
     const snapshot = structuredClone(configuration)
     try {
       await onSave(snapshot)
@@ -202,11 +218,11 @@ export function AgentBuilder({
         JSON.stringify(snapshot)
       ) {
         setEditing(false)
-        setMessage("Agent 已保存")
-      } else setMessage("已保存提交时的版本，新的修改尚未保存")
+        showNotice("Agent 已保存")
+      } else showNotice("已保存提交时的版本，新的修改尚未保存")
     } catch (cause) {
       if (mounted.current)
-        setError(
+        showError(
           cause instanceof Error
             ? `保存失败：${cause.message}`
             : "保存失败，请重试。"
@@ -281,17 +297,6 @@ export function AgentBuilder({
             {toolbar}
           </div>
         ))}
-      <span role="status" className="sr-only">
-        {message}
-      </span>
-      {error ? (
-        <p
-          className="shrink-0 border-b border-border px-4 py-2 text-xs text-destructive"
-          role="alert"
-        >
-          {error}
-        </p>
-      ) : null}
       <div className="doc-action-surface m-2 flex min-h-0 flex-1 flex-col gap-2 sm:m-3">
         {active ? (
           <DocumentActions

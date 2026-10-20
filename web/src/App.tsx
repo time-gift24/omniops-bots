@@ -51,6 +51,7 @@ import {
 } from "@/components/workbench/workbench"
 import { WorkspacePanel } from "@/components/workspace/workspace-panel"
 import { WorkspacePicker } from "@/components/workspace/workspace-picker"
+import { useToast } from "@/components/ui/toast"
 import { EASE_OUT } from "@/lib/ease"
 import { ThemePicker } from "@/components/theme-picker"
 import { RunHistory } from "@/components/runs/run-history"
@@ -138,6 +139,7 @@ function skillResource(
 
 export function App() {
   const dependencies = useAppDependencies()
+  const toast = useToast()
   const [attempt, setAttempt] = useState(0)
   const [modelRevision, setModelRevision] = useState(0)
   useEffect(
@@ -166,6 +168,18 @@ export function App() {
     () => dependencies.models.list(),
     dependencies.models
   )
+  useEffect(() => {
+    if (models.status !== "error") return
+    const id = toast.notify({
+      key: "models-error",
+      title: "模型目录读取失败",
+      description: "可重试或在设置中检查 Provider。",
+      tone: "error",
+      actionLabel: "重试模型目录",
+      onAction: () => setModelRevision((value) => value + 1),
+    })
+    return () => toast.dismiss(id)
+  }, [models.status, toast])
   if (agents.status === "error" || skills.status === "error") {
     return (
       <div
@@ -190,29 +204,12 @@ export function App() {
     )
   }
   return (
-    <>
-      <WorkspaceApp
-        initialAgents={agents.data.agents}
-        resources={agents.data.resources}
-        skills={skills.data}
-        models={models.status === "ready" ? models.data : []}
-      />
-      {models.status === "error" ? (
-        <div
-          role="alert"
-          className="fixed right-5 bottom-5 z-50 flex max-w-sm items-center gap-3 rounded-lg border border-border bg-background p-3 text-sm shadow-lg"
-        >
-          <span>模型目录读取失败，可重试或在设置中检查 Provider。</span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setModelRevision((value) => value + 1)}
-          >
-            重试模型目录
-          </Button>
-        </div>
-      ) : null}
-    </>
+    <WorkspaceApp
+      initialAgents={agents.data.agents}
+      resources={agents.data.resources}
+      skills={skills.data}
+      models={models.status === "ready" ? models.data : []}
+    />
   )
 }
 
@@ -241,6 +238,17 @@ function WorkspaceApp({
     desktop.getState,
     desktop.getState
   )
+  const toast = useToast()
+  useEffect(() => {
+    if (!desktopState.closeBlocked) return
+    const id = toast.notify({
+      key: "close-blocked",
+      title: "任务正在执行",
+      description: "等待任务结束或先停止任务后退出。",
+      duration: 6000,
+    })
+    return () => toast.dismiss(id)
+  }, [desktopState.closeBlocked, toast])
   const state = useSyncExternalStore(
     store.subscribe,
     store.getState,
@@ -252,7 +260,6 @@ function WorkspaceApp({
   const [resources, setResources] = useState(initialResources)
   const [agentBusy, setAgentBusy] = useState(false)
   const agentOperation = useRef(false)
-  const [actionError, setActionError] = useState("")
   const [localSessions, setLocalSessions] = useState<
     { threadId: string; title: string }[]
   >([])
@@ -379,14 +386,17 @@ function WorkspaceApp({
       .selectBrowserThread?.(browserThreadId)
       .catch((error: unknown) => {
         if (current)
-          setActionError(
-            error instanceof Error ? error.message : "浏览器页面切换失败。"
-          )
+          toast.notify({
+            key: "app-action-error",
+            title:
+              error instanceof Error ? error.message : "浏览器页面切换失败。",
+            tone: "error",
+          })
       })
     return () => {
       current = false
     }
-  }, [desktop, browserThreadId])
+  }, [desktop, browserThreadId, toast])
   const activeSkill = skillCatalog.find((skill) => skill.id === openedSkillId)
   const activeSectionId =
     view.kind === "session"
@@ -674,7 +684,7 @@ function WorkspaceApp({
     if (!agentSource.create || agentOperation.current) return
     agentOperation.current = true
     setAgentBusy(true)
-    setActionError("")
+    toast.dismissKey("app-action-error")
     const origin = currentView.current
     try {
       const agent = await agentSource.create(
@@ -691,9 +701,14 @@ function WorkspaceApp({
       if (currentView.current === origin) openAgent(agent.id)
     } catch (cause) {
       if (mounted.current)
-        setActionError(
-          cause instanceof Error ? cause.message : "创建 Agent 失败，请重试。"
-        )
+        toast.notify({
+          key: "app-action-error",
+          title:
+            cause instanceof Error
+              ? cause.message
+              : "创建 Agent 失败，请重试。",
+          tone: "error",
+        })
     } finally {
       agentOperation.current = false
       if (mounted.current) setAgentBusy(false)
@@ -1017,22 +1032,6 @@ function WorkspaceApp({
         onItemSelect={selectItem}
       >
         <div className="flex h-full min-h-0 flex-col">
-          {desktopState.closeBlocked ? (
-            <p
-              role="alert"
-              className="border-b border-border px-5 py-3 text-sm"
-            >
-              任务正在执行，请等待结束或先停止任务后退出。
-            </p>
-          ) : null}
-          {actionError ? (
-            <p
-              role="alert"
-              className="border-b border-border px-5 py-3 text-sm text-destructive"
-            >
-              {actionError}
-            </p>
-          ) : null}
           <main
             id={contentId}
             ref={contentRef}
@@ -1228,7 +1227,9 @@ function WorkspaceApp({
                           await agentSource.save(agent.id, configuration)
                           agentVersion.current++
                           unsavedAgentIdsRef.current =
-                            unsavedAgentIdsRef.current.filter((id) => id !== agent.id)
+                            unsavedAgentIdsRef.current.filter(
+                              (id) => id !== agent.id
+                            )
                           setUnsavedAgentIds(unsavedAgentIdsRef.current)
                           setAgents((current) =>
                             current.map((item) =>
@@ -1339,7 +1340,9 @@ function WorkspaceApp({
         showCloseButton
       >
         <div className="flex flex-col gap-2 pr-8 text-center sm:text-left">
-          <AnimatedModalTitle className="text-lg leading-none font-medium">选择实验 Agent</AnimatedModalTitle>
+          <AnimatedModalTitle className="text-lg leading-none font-medium">
+            选择实验 Agent
+          </AnimatedModalTitle>
           <AnimatedModalDescription className="text-sm text-muted-foreground">
             在全新会话中使用此 Skill 的完整当前版本，已有会话的快照保持固定。
           </AnimatedModalDescription>
@@ -1368,9 +1371,7 @@ function WorkspaceApp({
         <Button
           disabled={!experimentAgentId}
           onClick={() => {
-            const agent = agents.find(
-              (entry) => entry.id === experimentAgentId
-            )
+            const agent = agents.find((entry) => entry.id === experimentAgentId)
             if (agent && experimentSkillId) {
               startAgentSession(agent, experimentSkillId)
               setExperimentSkillId(null)
@@ -1390,7 +1391,15 @@ function WorkspaceApp({
           label: skill.name,
           group: "我的技能",
           keywords: [skill.description],
-          icon: <HugeiconsIcon icon={PackageIcon} aria-hidden="true" size={16} strokeWidth={1.7} className="text-muted-foreground" />,
+          icon: (
+            <HugeiconsIcon
+              icon={PackageIcon}
+              aria-hidden="true"
+              size={16}
+              strokeWidth={1.7}
+              className="text-muted-foreground"
+            />
+          ),
           onSelect: () => {
             setOpenedSkillId(skill.id)
             setView({ kind: "skill" })

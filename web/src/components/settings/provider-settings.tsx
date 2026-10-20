@@ -3,6 +3,7 @@ import { useAppDependencies } from "@/app/dependencies"
 import { Button } from "@/components/motion/button"
 import { Input } from "@/components/motion/input"
 import { Select } from "@/components/premium/select/select"
+import { useToast } from "@/components/ui/toast"
 import { useBackendData } from "@/components/workbench/use-backend-data"
 import {
   validateProviderInput,
@@ -93,12 +94,11 @@ function ProviderManager({
   initial: ProviderCatalog
 }) {
   const { host } = useAppDependencies()
+  const toast = useToast()
   const id = useId()
   const [catalog, setCatalog] = useState(initial)
   const [draft, setDraft] = useState<Draft | null>(null)
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState("")
-  const [notice, setNotice] = useState("")
   const [testModel, setTestModel] = useState("")
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState<{
@@ -108,6 +108,14 @@ function ProviderManager({
   const operation = useRef(false)
   const live = useRef(false)
   const test = useRef<AbortController | null>(null)
+  const showError = (message: string) => {
+    toast.dismissKey("provider-notice")
+    toast.notify({ key: "provider-error", title: message, tone: "error" })
+  }
+  const showNotice = (message: string) => {
+    toast.dismissKey("provider-error")
+    toast.notify({ key: "provider-notice", title: message, tone: "success" })
+  }
   useEffect(() => {
     live.current = true
     return () => {
@@ -130,14 +138,14 @@ function ProviderManager({
     stopTest()
     setDraft(draftFor(entry))
     setTestModel("")
-    setError("")
-    setNotice("")
+    toast.dismissKey("provider-error")
+    toast.dismissKey("provider-notice")
   }
   function update(patch: Partial<Draft>) {
     stopTest()
     setDraft((value) => value && { ...value, ...patch })
-    setError("")
-    setNotice("")
+    toast.dismissKey("provider-error")
+    toast.dismissKey("provider-notice")
   }
   async function write(
     action: () => Promise<ProviderCatalog>,
@@ -146,8 +154,8 @@ function ProviderManager({
     if (operation.current) return
     operation.current = true
     setBusy(true)
-    setError("")
-    setNotice("")
+    toast.dismissKey("provider-error")
+    toast.dismissKey("provider-notice")
     stopTest()
     try {
       const next = await action()
@@ -155,7 +163,7 @@ function ProviderManager({
       setCatalog(next)
       success(next)
     } catch (cause) {
-      if (live.current) setError(failure(cause, "Provider 操作失败，请重试。"))
+      if (live.current) showError(failure(cause, "Provider 操作失败，请重试。"))
     } finally {
       operation.current = false
       if (live.current) setBusy(false)
@@ -224,16 +232,6 @@ function ProviderManager({
           ))}
         </ul>
       )}
-      {error ? (
-        <p role="alert" className="text-sm text-destructive">
-          {error}
-        </p>
-      ) : null}
-      {notice ? (
-        <p role="status" className="text-sm text-muted-foreground">
-          {notice}
-        </p>
-      ) : null}
       {draft ? (
         <form
           className="space-y-5"
@@ -265,7 +263,7 @@ function ProviderManager({
               )
                 throw new Error("Provider 名称已存在。")
             } catch (cause) {
-              setError(failure(cause, "配置无效。"))
+              showError(failure(cause, "配置无效。"))
               return
             }
             void write(
@@ -276,7 +274,7 @@ function ProviderManager({
                 )
                 setDraft(entry ? draftFor(entry) : null)
                 setTestModel("")
-                setNotice("Provider 已保存。")
+                showNotice("Provider 已保存。")
               }
             )
           }}
@@ -426,12 +424,12 @@ function ProviderManager({
                           () => source.remove(saved.name),
                           () => {
                             setDraft(null)
-                            setNotice("Provider 已删除。")
+                            showNotice("Provider 已删除。")
                           }
                         )
                       },
                       () => {
-                        if (live.current) setError("无法确认删除，请重试。")
+                        if (live.current) showError("无法确认删除，请重试。")
                       }
                     )
                 }}
@@ -446,7 +444,8 @@ function ProviderManager({
               onClick={() => {
                 stopTest()
                 setDraft(null)
-                setError("")
+                toast.dismissKey("provider-error")
+                toast.dismissKey("provider-notice")
               }}
             >
               关闭编辑
@@ -500,7 +499,7 @@ function ProviderManager({
                           provider: saved.name,
                           model: testModel,
                         }),
-                      () => setNotice("全局默认模型已更新。")
+                      () => showNotice("全局默认模型已更新。")
                     )
                   }
                 >

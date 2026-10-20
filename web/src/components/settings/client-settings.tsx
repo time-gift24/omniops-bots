@@ -7,6 +7,7 @@ import { paletteOptions, themeOptions } from "@/components/theme-picker"
 import { useTheme } from "@/components/theme-provider"
 import { Button } from "@/components/motion/button"
 import { Input } from "@/components/motion/input"
+import { useToast } from "@/components/ui/toast"
 import { useBackendData } from "@/components/workbench/use-backend-data"
 import type { SettingsSection } from "./settings-navigation"
 import { ProviderSettings } from "./provider-settings"
@@ -201,13 +202,16 @@ function SettingsForm({
   initialSettings: DesktopSettings
 }) {
   const id = useId()
+  const toast = useToast()
   const [saved, setSaved] = useState(initialSettings.maxConcurrentRuns)
   const [draft, setDraft] = useState(String(saved))
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState("")
-  const [success, setSuccess] = useState(false)
   const operation = useRef(false)
   const mounted = useRef(false)
+  const clearNotices = () => {
+    toast.dismissKey("client-settings-error")
+    toast.dismissKey("client-settings-notice")
+  }
   useEffect(() => {
     mounted.current = true
     return () => {
@@ -232,8 +236,7 @@ function SettingsForm({
           return
         operation.current = true
         setSaving(true)
-        setError("")
-        setSuccess(false)
+        clearNotices()
         void desktop
           .saveSettings({ maxConcurrentRuns: value })
           .then(
@@ -241,15 +244,22 @@ function SettingsForm({
               if (!mounted.current) return
               setSaved(settings.maxConcurrentRuns)
               setDraft(String(settings.maxConcurrentRuns))
-              setSuccess(true)
+              toast.notify({
+                key: "client-settings-notice",
+                title: "设置已保存。",
+                tone: "success",
+              })
             },
             (cause: unknown) => {
               if (mounted.current)
-                setError(
-                  cause instanceof Error
-                    ? cause.message
-                    : "客户端设置保存失败，原设置仍生效，请重试。"
-                )
+                toast.notify({
+                  key: "client-settings-error",
+                  title:
+                    cause instanceof Error
+                      ? cause.message
+                      : "客户端设置保存失败，原设置仍生效，请重试。",
+                  tone: "error",
+                })
             }
           )
           .finally(() => {
@@ -285,8 +295,7 @@ function SettingsForm({
               classNames={{ field: "h-10 bg-background", input: "text-sm tabular-nums" }}
               onChange={(value) => {
                 setDraft(value)
-                setError("")
-                setSuccess(false)
+                clearNotices()
               }}
             />
             <span className="text-sm text-muted-foreground" aria-hidden="true">
@@ -322,25 +331,14 @@ function SettingsForm({
           网页演示：此项设置刷新后恢复默认。
         </p>
       ) : null}
-      {error ? (
-        <p role="alert" className="text-sm text-destructive">
-          {error}
-        </p>
-      ) : null}
       <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border pt-5">
-        {success ? (
-          <p role="status" className="mr-auto text-sm text-muted-foreground">
-            设置已保存。
-          </p>
-        ) : null}
         <Button
           type="button"
           variant="ghost"
           disabled={!changed || saving}
           onClick={() => {
             setDraft(String(saved))
-            setError("")
-            setSuccess(false)
+            clearNotices()
           }}
         >
           撤销

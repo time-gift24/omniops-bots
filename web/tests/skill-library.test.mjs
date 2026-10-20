@@ -399,3 +399,40 @@ test("保存 Skill 入口原子更新元信息，失败保留旧名称、说明�
   await assert.rejects(library.writeFile("seed", "SKILL.md", new Blob(['---\nname: missing-description\n---\n']), { replace: true }), { code: "path-invalid" })
   assert.equal((await library.get("seed")).description, "Markdown 说明")
 })
+
+
+test("创建将草稿文件和空目录原子提交，非法条目与失败不留下半包", async (t) => {
+  const { library, create, persistence, documents, setFailure } = await setup(t)
+  const entries = [
+    { path: "reference/notes.md", kind: "file", content: "完整草稿\n" },
+    { path: "reference/empty", kind: "folder" },
+    { path: "scripts", kind: "folder" },
+  ]
+  let saves = 0
+  const save = persistence.save
+  persistence.save = async (skill) => {
+    saves++
+    assert.equal(skill.entries.length, 5, "提交时必须已经包含全部文件和目录")
+    await save(skill)
+  }
+  const created = await library.create({ name: "完整草稿", content: "入口", entries })
+  assert.equal(saves, 1)
+  assert.equal(await (await create().readFile(created.id, "reference/notes.md")).text(), "完整草稿\n")
+  assert.ok((await create().get(created.id)).entries.some(entry => entry.path === "reference/empty" && entry.kind === "folder"))
+  for (const invalid of [
+    [{ path: "skill.md", kind: "file", content: "重复入口" }],
+    [{ path: "docs", kind: "folder" }, { path: "DOCS", kind: "folder" }],
+    [{ path: "docs", kind: "file", content: "文件" }, { path: "docs/a.md", kind: "file", content: "嵌套" }],
+    [{ path: "Docs/a.md", kind: "file", content: "文件" }, { path: "docs/b.md", kind: "file", content: "大小写冲突" }],
+    [{ path: "../outside", kind: "folder" }],
+    [{ path: "docs", kind: "folder", content: "意外内容" }],
+    [{ path: "docs/a.md", kind: "file", content: {} }],
+    [{ path: "docs", kind: "other" }],
+    null,
+  ]) await assert.rejects(library.create({ name: "非法草稿", entries: invalid }))
+  assert.equal(saves, 1, "所有条目校验均须先于持久化")
+  setFailure(true)
+  await assert.rejects(library.create({ name: "存储失败", content: "入口", entries }), { code: "storage" })
+  assert.equal(documents.size, 1)
+  assert.deepEqual((await create().list()).filter(skill => skill.id.startsWith("created-")).map(skill => skill.id), [created.id])
+})

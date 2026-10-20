@@ -14,13 +14,14 @@ import {
 import { motion, useReducedMotion } from "motion/react"
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
 import { ArrowRight01Icon } from "@hugeicons-pro/core-stroke-rounded"
-import { Button } from "@/components/motion/button"
 import { SPRING_GLIDE } from "@/lib/ease"
 import "./branched-menu.css"
 
 export type BranchedMenuChild = {
   value: string
   label: string
+  /** Non-selectable rows toggle their descendants instead of navigating. */
+  selectable?: boolean
   /** Additional heading levels below the first branch row. */
   depth?: number
   icon?: IconSvgElement | ReactNode
@@ -30,6 +31,7 @@ export type BranchedMenuChild = {
 export type BranchedMenuItem = {
   label: string
   value?: string
+  selectable?: boolean
   icon?: IconSvgElement | ReactNode
   badge?: ReactNode
   children?: readonly BranchedMenuChild[]
@@ -45,6 +47,10 @@ export type BranchedMenuProps = {
   selectableParents?: boolean
   onSelect?: (value: string, item: BranchedMenuItem | BranchedMenuChild) => void
   onToggle?: (index: number, open: boolean) => void
+  /** Optional sibling controls, outside the row's navigation button. */
+  renderActions?: (value: string) => ReactNode
+  /** Replaces the row button while a consumer edits its name. */
+  renderEditor?: (value: string) => ReactNode
   ariaLabel?: string
   color?: string
   accentColor?: string
@@ -89,11 +95,8 @@ function MenuToggle({
 }) {
   const action = `${open ? "收起" : "展开"}${label}`
   return (
-    <Button
+    <button
       type="button"
-      variant="plain"
-      whileHover={undefined}
-      whileTap={undefined}
       className="branched-menu__toggle"
       aria-label={action}
       title={action}
@@ -108,7 +111,7 @@ function MenuToggle({
         className="size-3"
         aria-hidden="true"
       />
-    </Button>
+    </button>
   )
 }
 
@@ -120,6 +123,8 @@ export function BranchedMenu({
   selectableParents = false,
   onSelect,
   onToggle,
+  renderActions,
+  renderEditor,
   ariaLabel,
   color = "#f5f5f5",
   accentColor = "#f5f5f5",
@@ -305,40 +310,42 @@ export function BranchedMenu({
           >
             <div
               className="branched-menu__row"
+              data-menu-value={leafValue}
               data-disclosure={kids && selectableParents ? "" : undefined}
               ref={(element) => {
                 heads.current[index] = element
               }}
             >
-              <Button
-                type="button"
-                variant="plain"
-                whileHover={undefined}
-                whileTap={undefined}
-                className="branched-menu__head justify-start"
-                title={item.label}
-                aria-expanded={kids && !selectableParents ? isOpen : undefined}
-                aria-controls={
-                  kids && !selectableParents ? `${id}-${index}` : undefined
-                }
-                aria-current={leafActive ? "true" : undefined}
-                data-active={leafActive || activeAncestor ? "" : undefined}
-                onClick={() =>
-                  kids && !selectableParents
-                    ? toggle(key, isOpen, index)
-                    : select(leafValue, item)
-                }
-              >
-                {item.icon ? (
-                  <span className="branched-menu__icon" aria-hidden="true">
-                    {renderIcon(item.icon)}
-                  </span>
-                ) : null}
-                <span className="branched-menu__label">{item.label}</span>
-                {item.badge ? (
-                  <span className="branched-menu__badge">{item.badge}</span>
-                ) : null}
-              </Button>
+              {renderEditor?.(leafValue) ?? (
+                <button
+                  type="button"
+                  className="branched-menu__head justify-start"
+                  title={item.label}
+                  aria-expanded={
+                    kids && !selectableParents ? isOpen : undefined
+                  }
+                  aria-controls={
+                    kids && !selectableParents ? `${id}-${index}` : undefined
+                  }
+                  aria-current={leafActive ? "true" : undefined}
+                  data-active={leafActive || activeAncestor ? "" : undefined}
+                  onClick={() =>
+                    kids && (!selectableParents || item.selectable === false)
+                      ? toggle(key, isOpen, index)
+                      : item.selectable !== false && select(leafValue, item)
+                  }
+                >
+                  {item.icon ? (
+                    <span className="branched-menu__icon" aria-hidden="true">
+                      {renderIcon(item.icon)}
+                    </span>
+                  ) : null}
+                  <span className="branched-menu__label">{item.label}</span>
+                  {item.badge ? (
+                    <span className="branched-menu__badge">{item.badge}</span>
+                  ) : null}
+                </button>
+              )}
               {kids && selectableParents ? (
                 <MenuToggle
                   label={item.label}
@@ -347,6 +354,7 @@ export function BranchedMenu({
                   onClick={() => toggle(key, isOpen, index)}
                 />
               ) : null}
+              {renderActions?.(leafValue)}
             </div>
             {kids ? (
               <div className="branched-menu__body">
@@ -412,49 +420,53 @@ export function BranchedMenu({
                         <div
                           key={key}
                           className="branched-menu__row"
+                          data-menu-value={kid.value}
                           data-disclosure={hasChildren ? "" : undefined}
                         >
-                          <Button
-                            type="button"
-                            variant="plain"
-                            whileHover={undefined}
-                            whileTap={undefined}
-                            className="branched-menu__item justify-start"
-                            title={kid.label}
-                            style={
-                              kid.depth
-                                ? {
-                                    paddingInlineStart:
-                                      indent + kid.depth * DEPTH_STEP,
-                                  }
-                                : undefined
-                            }
-                            aria-current={
-                              kid.value === active ? "true" : undefined
-                            }
-                            data-active={
-                              kid.value === visibleActive ? "" : undefined
-                            }
-                            tabIndex={isOpen ? 0 : -1}
-                            onClick={() => select(kid.value, kid)}
-                          >
-                            {kid.icon ? (
-                              <span
-                                className="branched-menu__icon"
-                                aria-hidden="true"
-                              >
-                                {renderIcon(kid.icon)}
+                          {renderEditor?.(kid.value) ?? (
+                            <button
+                              type="button"
+                              className="branched-menu__item justify-start"
+                              title={kid.label}
+                              style={
+                                kid.depth
+                                  ? {
+                                      paddingInlineStart:
+                                        indent + kid.depth * DEPTH_STEP,
+                                    }
+                                  : undefined
+                              }
+                              aria-current={
+                                kid.value === active ? "true" : undefined
+                              }
+                              data-active={
+                                kid.value === visibleActive ? "" : undefined
+                              }
+                              tabIndex={isOpen ? 0 : -1}
+                              onClick={() =>
+                                kid.selectable === false
+                                  ? hasChildren && toggle(key, childOpen)
+                                  : select(kid.value, kid)
+                              }
+                            >
+                              {kid.icon ? (
+                                <span
+                                  className="branched-menu__icon"
+                                  aria-hidden="true"
+                                >
+                                  {renderIcon(kid.icon)}
+                                </span>
+                              ) : null}
+                              <span className="branched-menu__label">
+                                {kid.label}
                               </span>
-                            ) : null}
-                            <span className="branched-menu__label">
-                              {kid.label}
-                            </span>
-                            {kid.badge ? (
-                              <span className="branched-menu__badge">
-                                {kid.badge}
-                              </span>
-                            ) : null}
-                          </Button>
+                              {kid.badge ? (
+                                <span className="branched-menu__badge">
+                                  {kid.badge}
+                                </span>
+                              ) : null}
+                            </button>
+                          )}
                           {hasChildren ? (
                             <MenuToggle
                               label={kid.label}
@@ -463,6 +475,7 @@ export function BranchedMenu({
                               onClick={() => toggle(key, childOpen)}
                             />
                           ) : null}
+                          {renderActions?.(kid.value)}
                         </div>
                       )
                     )}

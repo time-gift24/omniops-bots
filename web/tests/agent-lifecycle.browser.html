@@ -326,7 +326,7 @@
     allowRefresh = true
     const beforeRefresh = loadCalls
     click(button("测试连接", manager))
-    await until(() => loadCalls === beforeRefresh + 1 && manager.textContent.includes("连接成功"), "MCP testing must refresh the published Agent directory")
+    await until(() => loadCalls === beforeRefresh + 1 && fixture.textContent.includes("连接成功"), "MCP testing must refresh the published Agent directory")
     assert(editor()?.value === "MCP 刷新后的草稿" && !editor().disabled, "MCP refresh must retain the open unpublished Agent and its editable draft")
     await openNavigation()
     assert(!sidebarRow("新建 Agent 3"), "MCP refresh must not publish the retained Agent draft")
@@ -342,7 +342,7 @@
     click(button("保存"))
     await until(() => button("编辑") && records.get("created-3").configuration.instructions === "MCP 刷新后的草稿", "The retained draft must save while an older refresh is pending")
     staleRefresh.resolve()
-    await until(() => manager.textContent.includes("连接成功") && !button("测试连接", manager).disabled, "The delayed directory refresh must finish")
+    await until(() => fixture.textContent.includes("连接成功") && !button("测试连接", manager).disabled, "The delayed directory refresh must finish")
     assert(button("编辑") && !editor(), "An older refresh must not remove the saved Agent or restore its draft mode")
     await openNavigation()
     const publishedRows = [...document.querySelectorAll('[data-slot="sidebar-menu-item"] button')].filter(element => visible(element) && label(element) === "新建 Agent 3")
