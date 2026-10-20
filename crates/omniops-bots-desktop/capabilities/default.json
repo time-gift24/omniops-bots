@@ -3,5 +3,11 @@
   "identifier": "main-capability",
   "description": "omniops-bots UI; process, directory, clipboard and browser operations are host commands.",
   "windows": ["main"],
-  "permissions": ["core:default"]
+  "permissions": [
+    "core:default",
+    "core:window:allow-start-dragging",
+    "core:window:allow-minimize",
+    "core:window:allow-toggle-maximize",
+    "core:window:allow-close"
+  ]
 }

@@ -212,6 +212,49 @@
   z-index: 100;
 }
 
+.desktop-titlebar[data-platform="macos"] {
+  padding-left: 84px;
+}
+
+/* Mobile navigation is portaled to body; keep it below the 48px chrome and border. */
+body:has(.desktop-titlebar) [data-mobile="true"] {
+  top: 49px;
+  height: calc(100dvh - 49px);
+}
+
+.desktop-titlebar-content:empty::before {
+  content: "omniops-bots";
+  display: flex;
+  height: 48px;
+  align-items: center;
+  padding-inline: 16px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.window-control {
+  display: grid;
+  width: 46px;
+  height: 48px;
+  place-items: center;
+  color: var(--foreground);
+  cursor: default;
+}
+
+.window-control:hover {
+  background: var(--muted);
+}
+
+.window-control:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+
+.window-control-close:hover {
+  color: white;
+  background: #c42b1c;
+}
+
 /* 减轻深色背景下白字的视觉膨胀；仅调整命名字重工具类，保留正文与局部字重。 */
 @layer base {
   .dark .font-medium {

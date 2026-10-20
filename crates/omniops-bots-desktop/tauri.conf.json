@@ -9,7 +9,7 @@
     "frontendDist": "../../web/dist"
   },
   "app": {
-    "windows": [{ "label": "main", "title": "omniops-bots", "width": 1280, "height": 860, "minWidth": 390, "minHeight": 600 }],
+    "windows": [{ "label": "main", "title": "omniops-bots", "width": 1280, "height": 860, "minWidth": 390, "minHeight": 600, "titleBarStyle": "Overlay", "hiddenTitle": true, "trafficLightPosition": { "x": 14, "y": 26 } }],
     "security": { "csp": "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src ipc: http://ipc.localhost" }
   },
   "bundle": {

@@ -1,5 +1,7 @@
 "use client"
 
+import { createPortal } from "react-dom"
+import { useTitlebarTarget } from "@/components/window-frame"
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
 import {
   ArrowDown01Icon,
@@ -313,6 +315,7 @@ export function SidebarRail({
   className,
   ...props
 }: SidebarRailProps) {
+  const titlebarTarget = useTitlebarTarget()
   const [internalExpanded, setInternalExpanded] = useState(defaultExpanded)
   const [focused, setFocused] = useState(false)
   const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_DEFAULT_WIDTH)
@@ -336,7 +339,7 @@ export function SidebarRail({
   }
 
   return (
-    <div className={cn("h-dvh w-full", className)}>
+    <div className={cn(titlebarTarget ? "h-full w-full" : "h-dvh w-full", className)}>
       <MorphicTooltipProvider>
         <AnimatedSidebarProvider
           open={expanded || focused}
@@ -398,6 +401,7 @@ function SidebarRailShell({
   sidebarWidth: number
   setSidebarWidth: Dispatch<SetStateAction<number>>
 }) {
+  const titlebarTarget = useTitlebarTarget()
   const context = useAnimatedSidebar()
   const { triggerRef } = context
   const reduce = useReducedMotion()
@@ -633,6 +637,70 @@ function SidebarRailShell({
     </AnimatedSidebarHeader>
   )
 
+  const headerNode = (
+    <header inert={workspaceInert} className="relative flex min-h-12 shrink-0 items-center gap-3 px-3 sm:px-4">
+      <MorphicTooltip
+        content={expanded ? "收起导航" : "展开导航"}
+        side="bottom"
+        disabled={context.isMobile}
+      >
+        <Button
+          ref={toggleRef}
+          variant="ghost"
+          size="icon"
+          aria-label={
+            expanded && !context.isMobile ? "收起导航" : "展开导航"
+          }
+          aria-controls={context.isMobile ? undefined : panelId}
+          aria-expanded={context.isMobile ? context.openMobile : expanded}
+          onClick={(event) => {
+            if (context.isMobile) {
+              triggerRef.current = event.currentTarget
+              context.setOpenMobile(!context.openMobile)
+            } else toggleExpanded()
+          }}
+          className={iconButtonClass}
+        >
+          <HugeiconsIcon
+            icon={PanelLeftIcon}
+            aria-hidden="true"
+            size={16}
+          />
+        </Button>
+      </MorphicTooltip>
+      <div
+        data-slot="sidebar-rail-workspace-header"
+        className={cn(
+          "flex min-w-0 flex-1 items-center gap-3",
+          workspaceHeaderClassName
+        )}
+      >
+        {workspaceHeader === undefined ? (
+          <Breadcrumbs
+            items={[
+              {
+                label: section?.label ?? "工作区",
+                onSelect:
+                  onParentSelect && section
+                    ? () => onParentSelect(section)
+                    : undefined,
+              },
+              {
+                label:
+                  itemId === "new-page"
+                    ? "未命名页面"
+                    : (selectedItem?.label ?? "工作区"),
+              },
+            ]}
+          />
+        ) : (
+          workspaceHeader
+        )}
+      </div>
+      {titlebarTarget ? headerOverlay : null}
+    </header>
+  )
+
   return (
     <>
       <motion.div
@@ -859,66 +927,7 @@ function SidebarRailShell({
       </MorphicCommandPalette>
 
       <div inert={workspaceInert} className="relative flex min-w-0 flex-1 flex-col">
-        <header className="flex min-h-12 shrink-0 items-center gap-3 px-3 sm:px-4">
-          <MorphicTooltip
-            content={expanded ? "收起导航" : "展开导航"}
-            side="bottom"
-            disabled={context.isMobile}
-          >
-            <Button
-              ref={toggleRef}
-              variant="ghost"
-              size="icon"
-              aria-label={
-                expanded && !context.isMobile ? "收起导航" : "展开导航"
-              }
-              aria-controls={context.isMobile ? undefined : panelId}
-              aria-expanded={context.isMobile ? context.openMobile : expanded}
-              onClick={(event) => {
-                if (context.isMobile) {
-                  triggerRef.current = event.currentTarget
-                  context.setOpenMobile(!context.openMobile)
-                } else toggleExpanded()
-              }}
-              className={iconButtonClass}
-            >
-              <HugeiconsIcon
-                icon={PanelLeftIcon}
-                aria-hidden="true"
-                size={16}
-              />
-            </Button>
-          </MorphicTooltip>
-          <div
-            data-slot="sidebar-rail-workspace-header"
-            className={cn(
-              "flex min-w-0 flex-1 items-center gap-3",
-              workspaceHeaderClassName
-            )}
-          >
-            {workspaceHeader === undefined ? (
-              <Breadcrumbs
-                items={[
-                  {
-                    label: section?.label ?? "工作区",
-                    onSelect:
-                      onParentSelect && section
-                        ? () => onParentSelect(section)
-                        : undefined,
-                  },
-                  {
-                    label:
-                      itemId === "new-page"
-                        ? "未命名页面"
-                        : (selectedItem?.label ?? "工作区"),
-                  },
-                ]}
-              />
-            ) : (
-              workspaceHeader
-            )}
-          </div>
-        </header>
+        {titlebarTarget ? createPortal(headerNode, titlebarTarget) : headerNode}
         <div
           className={cn(
             "min-h-0 flex-1 overflow-auto p-4 pt-6 sm:p-8 sm:pt-8",
@@ -927,7 +936,7 @@ function SidebarRailShell({
         >
           {children}
         </div>
-        {headerOverlay}
+        {titlebarTarget ? null : headerOverlay}
       </div>
 
       {endPanel}

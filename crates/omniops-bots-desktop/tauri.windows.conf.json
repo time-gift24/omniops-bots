@@ -1,6 +1,9 @@
 {
   "version": "0.1.0",
   "mainBinaryName": "omniops-bots-desktop",
+  "app": {
+    "windows": [{ "label": "main", "title": "omniops-bots", "width": 1280, "height": 860, "minWidth": 390, "minHeight": 600, "decorations": false }]
+  },
   "bundle": {
     "targets": [
       "nsis"

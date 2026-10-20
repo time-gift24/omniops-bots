@@ -1,4 +1,4 @@
-import { StrictMode } from "react"
+import { StrictMode, type ReactNode } from "react"
 import { createRoot } from "react-dom/client"
 
 import "./index.css"
@@ -13,6 +13,8 @@ import { Button } from "@/components/motion/button"
 import { ToastProvider } from "@/components/ui/toast"
 import { loadInitialThemePreferences } from "@/preferences/theme"
 import type { WorkbenchScope } from "@/workbench/backend"
+import type { DesktopWindow } from "@/platform/window"
+import { WindowFrame } from "@/components/window-frame"
 
 const container = document.getElementById("root")!
 const isDesktop = "__TAURI_INTERNALS__" in window
@@ -20,14 +22,21 @@ container.dataset.host = isDesktop ? "desktop" : "browser"
 const root = createRoot(container)
 let disposed = false
 let cleanup = () => {}
+let desktopWindow: DesktopWindow | undefined
+
+function render(content: ReactNode) {
+  root.render(<WindowFrame window={desktopWindow}>{content}</WindowFrame>)
+}
 
 async function start() {
-  root.render(
-    <p role="status" className="p-6 text-sm text-muted-foreground">
-      正在加载工作区…
-    </p>
-  )
   try {
+    if (isDesktop && !desktopWindow)
+      desktopWindow = (await import("@/adapters/tauri/window")).createTauriWindow()
+    render(
+      <p role="status" className="p-6 text-sm text-muted-foreground">
+        正在加载工作区…
+      </p>
+    )
     const tauri = isDesktop
       ? await (await import("@/adapters/tauri")).createTauriAdapters()
       : undefined
@@ -89,7 +98,7 @@ async function start() {
       cleanup()
       return
     }
-    root.render(
+    render(
       <StrictMode>
         <AppDependenciesProvider value={dependencies}>
           <ThemeProvider
@@ -106,7 +115,7 @@ async function start() {
   } catch {
     cleanup()
     if (!disposed)
-      root.render(
+      render(
         <div
           role="alert"
           className="grid h-full place-content-center gap-3 px-6 text-center"

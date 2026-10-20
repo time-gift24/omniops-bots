@@ -5,11 +5,12 @@
 <div id="root"></div>
 <pre id="result" style="position:fixed;bottom:0;left:0;z-index:100;background:Canvas;color:CanvasText;font-size:11px">Running…</pre>
 <script type="module">
-  import { mockIPC } from "@tauri-apps/api/mocks"
+  import { mockIPC, mockWindows } from "@tauri-apps/api/mocks"
   import { emit } from "@tauri-apps/api/event"
   let starts = 0
   const calls = []
   let state = { simulated: false, task: null, browserRequest: 0, browser: { url: "", title: "", status: "empty", canGoBack: false, canGoForward: false } }
+  mockWindows("main")
   mockIPC(async (command, args) => {
     calls.push([command, args])
     if (command !== "runtime_request") throw new Error(`Unexpected command ${command}`)
@@ -41,9 +42,13 @@
     await import("/src/main.tsx")
     await until(() => button("重试启动"), "Failed startup must expose retry")
     assert(document.body.textContent.includes("桌面服务启动失败"), "Startup failure cannot leave a blank page")
+    assert(document.querySelector('[data-slot="desktop-titlebar"]'), "Startup failure must retain the desktop titlebar")
     assert(!document.querySelector('[data-slot="chat-composer-anchor"]'), "Failure must not fall back to the demo app")
     button("重试启动").click()
     await until(() => document.querySelector('[data-slot="chat-composer-anchor"]'), "Retry must initialize chat without requiring a workspace")
+    const titlebar = document.querySelector('[data-slot="desktop-titlebar"]')
+    await until(() => titlebar.querySelector("header"), "Retry must move the shared Header into the desktop titlebar")
+    assert(document.querySelectorAll("header").length === 1 && !titlebar.nextElementSibling.querySelector("header"), "Desktop content must not duplicate the shared Header")
     assert(!calls.some(([, args]) => args?.method === "browser_select" && args.params.focus), "Normal startup must not open or focus Chrome")
     assert(!button("选择工作区") && !button("选择工作区（可选）"), "The composer must not show a workspace selection entry")
     button("添加工作区").click()
@@ -61,7 +66,7 @@
     button("显示 Chrome").click()
     await until(() => calls.some(([, args]) => args?.method === "browser_select" && args.params.focus === true), "Show Chrome must explicitly focus the selected runtime page")
     assert(!calls.some(([command]) => command === "browser_set_bounds"), "External Chrome must not receive native surface commands")
-    document.querySelector("#result").textContent = "PASS: native startup failure/retry, no demo fallback, missing-model explanation, directory/baseline, manual browser without model"
+    document.querySelector("#result").textContent = "PASS: native titlebar survives startup failure/retry, single shared Header, no demo fallback, missing-model explanation, directory/baseline, manual browser without model"
   } catch (error) {
     document.querySelector("#result").textContent = `FAIL: ${error.stack}`
     throw error
