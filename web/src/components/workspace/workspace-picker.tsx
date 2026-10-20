@@ -5,7 +5,6 @@ import { Button } from "@/components/motion/button"
 import { Input } from "@/components/motion/input"
 import {
   AnimatedModal,
-  AnimatedModalDescription,
   AnimatedModalTitle,
 } from "@/components/motion/animated-modal"
 import type { Workspace } from "@/workspace/store"
@@ -118,9 +117,6 @@ export function WorkspacePicker({
     >
       <div className="flex flex-col gap-2 pr-8 text-left">
         <AnimatedModalTitle className="text-lg leading-none font-medium">{addOnly ? "添加工作区" : "选择工作区"}</AnimatedModalTitle>
-        <AnimatedModalDescription className="text-sm text-muted-foreground">
-          选择一个目录，集中管理这项工作的会话。
-        </AnimatedModalDescription>
       </div>
       {!addOnly && workspaces.length > 0 ? (
         <div className="grid gap-1" aria-label="已有工作区">

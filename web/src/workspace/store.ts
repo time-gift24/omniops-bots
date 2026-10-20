@@ -6,7 +6,7 @@ export type Workspace = { id: string; name: string; path: string }
 
 export type WorkspaceSession = {
   id: string
-  workspaceId: string
+  workspaceId: string | null
   title: string
   blank: boolean
   status: ThreadViewState["status"]
@@ -56,8 +56,8 @@ export function createWorkspaceStore(registry: ThreadStoreRegistry) {
     listeners.add(listener)
     return () => listeners.delete(listener)
   }
-  const expanded = (workspaceId: string) =>
-    state.expandedWorkspaceIds.includes(workspaceId)
+  const expanded = (workspaceId: string | null) =>
+    workspaceId === null || state.expandedWorkspaceIds.includes(workspaceId)
       ? state.expandedWorkspaceIds
       : [...state.expandedWorkspaceIds, workspaceId]
 
@@ -100,13 +100,9 @@ export function createWorkspaceStore(registry: ThreadStoreRegistry) {
   }
 
   const startSession = (workspaceId?: string): string | null => {
-    const current = state.sessions.find(
-      (session) => session.id === state.activeSessionId
-    )
-    const target =
-      workspaceId ?? current?.workspaceId ?? state.recentWorkspaceId
+    const target = workspaceId ?? null
     if (
-      !target ||
+      target !== null &&
       !state.workspaces.some((workspace) => workspace.id === target)
     )
       return null

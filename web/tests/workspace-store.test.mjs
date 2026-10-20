@@ -27,7 +27,6 @@ test("adapter 的规范目录按路径去重，保留 Windows 与虚拟路径；
   const { store } = await setup(t);
   assert.deepEqual(store.getState().workspaces, []);
   assert.deepEqual(store.getState().sessions, []);
-  assert.equal(store.startSession(), null);
   const directory = { path: "/Users/me/Projects/omniops-bots", name: "项目名称由 adapter 提供" };
   const workspace = store.addWorkspace(directory);
   assert.equal(workspace.path, directory.path);
@@ -68,19 +67,46 @@ test("demo 目录 adapter 返回显示名称与规范路径，拒绝取消和不
   ));
 });
 
-test("新会话按指定、当前、最近工作区选择，同组空会话同步复用并展开", async (t) => {
+test("无工作区即可新建会话，只有有效发送才成为非空会话", async (t) => {
+  const { store, registry } = await setup(t);
+  const id = store.startSession();
+  assert.ok(id);
+  assert.equal(store.getState().activeSessionId, id);
+  assert.equal(store.getState().sessions[0].workspaceId, null);
+  assert.equal(store.getState().sessions[0].blank, true);
+  assert.deepEqual(store.getState().workspaces, []);
+  assert.deepEqual(store.getState().expandedWorkspaceIds, []);
+  for (let click = 0; click < 12; click += 1) assert.equal(store.startSession(), id);
+  const thread = registry.get(id);
+  assert.equal(thread.send("   "), false);
+  assert.equal(store.getState().sessions[0].blank, true);
+  assert.equal(thread.send("临时任务"), true);
+  assert.equal(store.getState().sessions[0].blank, false);
+  assert.equal(store.getState().sessions[0].title, "临时任务");
+  const nextId = store.startSession();
+  assert.notEqual(nextId, id);
+  assert.equal(store.getState().sessions.filter((session) => session.workspaceId === null).length, 2);
+  assert.equal(store.startSession(), nextId);
+  await flush();
+});
+
+test("只有显式指定才绑定工作区，同组空会话复用，选择无工作区会话不展开目录", async (t) => {
   const { store, registry } = await setup(t);
   const first = store.addWorkspace({ path: "/projects/first", name: "first" });
   const second = store.addWorkspace({ path: "/projects/second", name: "second" });
-  const recentId = store.startSession();
-  assert.equal(store.getState().sessions[0].workspaceId, second.id);
-  assert.equal(store.startSession(), recentId);
-  assert.equal(store.startSession(second.id), recentId);
-  assert.equal(store.getState().sessions.length, 1);
+  const unboundId = store.startSession();
+  assert.equal(store.getState().sessions[0].workspaceId, null, "不继承最近添加的工作区");
+  assert.equal(store.startSession(), unboundId);
+  assert.deepEqual(store.getState().expandedWorkspaceIds, []);
+
+  const secondId = store.startSession(second.id);
+  assert.notEqual(secondId, unboundId);
+  assert.equal(store.startSession(second.id), secondId);
+  assert.equal(store.getState().sessions.find((session) => session.id === secondId).workspaceId, second.id);
 
   const firstId = store.startSession(first.id);
   store.addWorkspace({ path: "/projects/latest", name: "latest" });
-  assert.equal(store.startSession(), firstId, "当前会话优先于最近添加工作区");
+  assert.equal(store.startSession(), unboundId, "不继承当前会话或最近添加的工作区");
   store.toggleWorkspace(first.id);
   assert.ok(!store.getState().expandedWorkspaceIds.includes(first.id));
   store.selectSession(firstId);
@@ -89,14 +115,18 @@ test("新会话按指定、当前、最近工作区选择，同组空会话同�
   assert.equal(store.getState().recentWorkspaceId, first.id);
 
   registry.get(firstId).send("开始第一轮");
-  const nextId = store.startSession();
+  const nextId = store.startSession(first.id);
   assert.notEqual(nextId, firstId);
-  for (let click = 0; click < 12; click += 1) assert.equal(store.startSession(), nextId);
+  for (let click = 0; click < 12; click += 1) assert.equal(store.startSession(first.id), nextId);
   assert.equal(store.getState().sessions.filter((session) => session.workspaceId === first.id).length, 2);
-  store.selectSession(recentId);
-  assert.equal(store.startSession(), recentId);
+  const expandedBefore = store.getState().expandedWorkspaceIds;
+  store.selectSession(unboundId);
+  assert.equal(store.getState().activeSessionId, unboundId);
+  assert.equal(store.getState().expandedWorkspaceIds, expandedBefore);
+  assert.equal(store.getState().recentWorkspaceId, null);
+  assert.equal(store.startSession(), unboundId);
   const before = store.getState();
-  assert.equal(store.startSession("missing"), null);
+  for (const id of ["missing", ""]) assert.equal(store.startSession(id), null);
   store.selectSession("missing");
   store.toggleWorkspace("missing");
   assert.equal(store.getState(), before);

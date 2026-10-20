@@ -19,57 +19,41 @@
   const checks = []
   const packages = new Map()
   const originals = [
-    { id: "local-a", name: "巡检技能", description: "本地文件管理", files: [{ path: "SKILL.md", content: "# 巡检技能\n\n运行前检查。" }] },
+    { id: "local-a", name: "巡检技能", description: "本地技能", files: [{ path: "SKILL.md", content: "# 巡检技能\n\n运行前检查。" }, { path: "note.txt", content: "原始参考文本" }] },
     { id: "local-b", name: "排障技能", description: "另一个包", files: [{ path: "beta.txt", content: "第二个 Skill 的独立内容" }] },
-    { id: "official", name: "官方运维", description: "已发布的只读包", origin: "official", version: "v.1.0.0", files: [{ path: "SKILL.md", content: "# 官方运维\n\n这是固定的官方内容。" }] },
+    { id: "official", name: "官方运维", description: "已发布的只读包", origin: "official", version: "v1.0.0", files: [{ path: "SKILL.md", content: "# 官方运维\n\n这是固定的官方内容。" }] },
   ]
   const source = { async list() { return structuredClone(originals) } }
   const drafts = { async load() { return {} }, async save() {}, async remove() {} }
-  let failWrites = false
-  let failLists = true
-  let failReads = false
+  let failWrites = false, failLists = true, failReads = false
+  let saveGate = null, saveStarted = false, nextReadGate = null, readStarted = false, nextId = 0
   const experiments = []
-  let saveGate = null
-  let saveStarted = false
-  let nextReadGate = null
-  let readStarted = false
-  let nextId = 0
-  const persistence = {
-    async load() { return structuredClone([...packages.values()]) },
-    async save(skill) {
-      if (failWrites) throw new Error("本地存储暂不可写")
-      if (saveGate) {
-        const gate = saveGate
-        saveGate = null
-        saveStarted = true
-        await gate.promise
-      }
-      packages.set(skill.id, structuredClone(skill))
+  const baseLibrary = createSkillLibrary({
+    source, legacyDrafts: drafts, storage: { kind: "browser", root: "UI regression fixture" }, createId: () => `copy-${++nextId}`,
+    persistence: {
+      async load() { return structuredClone([...packages.values()]) },
+      async save(skill) {
+        if (failWrites) throw new Error("本地存储暂不可写")
+        if (saveGate) { const gate = saveGate; saveGate = null; saveStarted = true; await gate.promise }
+        packages.set(skill.id, structuredClone(skill))
+      },
+      async remove(id) { if (failWrites) throw new Error("本地存储暂不可写"); packages.delete(id) },
     },
-    async remove(id) { packages.delete(id) },
-  }
-  const baseLibrary = createSkillLibrary({ source, legacyDrafts: drafts, persistence, storage: { kind: "browser", root: "UI regression fixture" }, createId: () => `copy-${++nextId}` })
+  })
   const library = {
     ...baseLibrary,
-    async list() {
-      if (failLists) throw new Error("技能目录暂不可读")
-      return baseLibrary.list()
-    },
+    async list() { if (failLists) throw new Error("技能目录暂不可读"); return baseLibrary.list() },
     async readFile(id, path) {
       if (failReads) throw new Error("文件暂不可读")
       const gate = nextReadGate?.id === id && nextReadGate.path === path ? nextReadGate : null
       if (gate) nextReadGate = null
       const blob = await baseLibrary.readFile(id, path)
-      if (gate) {
-        readStarted = true
-        await gate.promise
-      }
+      if (gate) { readStarted = true; await gate.promise }
       return blob
     },
   }
   const dependencies = createTestDependencies({ skillLibrary: library, skills: source, skillDrafts: drafts })
-  let chooseSkill
-  let currentId = null
+  let chooseSkill, currentId = null
   function Harness() {
     const [skillId, setSkillId] = useState(null)
     chooseSkill = setSkillId
@@ -77,18 +61,14 @@
     return React.createElement(SkillLibraryScreen, { skillId, onOpenSkill: setSkillId, onExperiment: id => experiments.push(id) })
   }
   const assert = (condition, message) => { if (!condition) throw new Error(message) }
-  const wait = (ms = 20) => new Promise(resolve => setTimeout(resolve, ms))
-  const until = async (condition, message, timeout = 6000) => {
-    const deadline = performance.now() + timeout
-    while (!condition() && performance.now() < deadline) await wait()
+  const until = async (condition, message) => {
+    const deadline = performance.now() + 6000
+    while (!condition() && performance.now() < deadline) await new Promise(resolve => setTimeout(resolve, 20))
     assert(condition(), message)
   }
   const visible = element => element && element.getClientRects().length > 0 && !element.closest('[inert], [hidden], [aria-hidden="true"]')
   const button = (name, scope = fixture) => [...scope.querySelectorAll("button")].find(element => visible(element) && (element.getAttribute("aria-label") ?? element.textContent).trim() === name)
-  const click = element => {
-    assert(visible(element) && !element.disabled, "Expected enabled visible control")
-    flushSync(() => { element.focus(); element.click() })
-  }
+  const click = element => { assert(visible(element) && !element.disabled, "Expected enabled visible control"); flushSync(() => { element.focus(); element.click() }) }
   const textarea = () => [...fixture.querySelectorAll('textarea[aria-label^="编辑 "]')].find(visible)
   const write = value => flushSync(() => {
     const input = textarea()
@@ -96,288 +76,230 @@
     Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value").set.call(input, value)
     input.dispatchEvent(new Event("input", { bubbles: true }))
   })
-  const fill = (input, value) => flushSync(() => {
-    assert(input && !input.disabled, "Expected editable form field")
+  const choose = id => flushSync(() => chooseSkill(id))
+  const deferred = () => { let resolve; const promise = new Promise(done => { resolve = done }); return { promise, resolve } }
+  const loadedText = () => fixture.querySelector(".skill-file-preview")?.textContent ?? ""
+  const documentView = () => fixture.querySelector('[data-slot="skill-screen"]')
+  const fileNav = () => documentView()?.querySelector('nav[aria-label="技能文件"]')
+  const visibleFileNav = () => [...document.querySelectorAll('nav[aria-label="技能文件"]')].find(visible)
+  const fileActions = () => [...document.querySelectorAll('[data-slot="skill-file-actions"]')].find(visible)
+  const filePathInput = () => [...document.querySelectorAll('input[aria-label="新文件路径"]')].find(visible)
+  const changeInput = (input, value) => flushSync(() => {
+    assert(input && !input.disabled, "Expected an enabled filename input")
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set.call(input, value)
     input.dispatchEvent(new Event("input", { bubbles: true }))
   })
-  const menu = async (trigger, name) => {
-    assert(visible(trigger) && !trigger.disabled, "Expected enabled menu trigger")
-    flushSync(() => {
-      trigger.focus()
-      trigger.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }))
-    })
-    const item = () => [...document.querySelectorAll('[role="menuitem"]')].find(element => visible(element) && element.textContent.trim() === name)
-    await until(item, `Missing menu item: ${name}`)
-    click(item())
+  async function showFileNavigation() {
+    if (!visibleFileNav()) click(button("浏览技能文件"))
+    await until(visibleFileNav, "File navigation must be available in the sidebar or mobile drawer")
   }
-  const actionName = () => [...fixture.querySelectorAll('form input')].find(visible)
-  const choose = id => flushSync(() => chooseSkill(id))
-  const upload = files => flushSync(() => {
-    const input = fixture.querySelector('input[aria-label="选择上传文件"]')
-    assert(input && !input.disabled, "Expected enabled file upload input")
-    const transfer = new DataTransfer()
-    for (const file of files) transfer.items.add(file)
-    input.files = transfer.files
-    input.dispatchEvent(new Event("change", { bubbles: true }))
-  })
-  const deferred = () => {
-    let resolve
-    const promise = new Promise(done => { resolve = done })
-    return { promise, resolve }
+  async function closeFileNavigation() {
+    const close = button("关闭文件导航", document)
+    if (close) click(close)
+    await until(() => !button("关闭文件导航", document), "The mobile file drawer must close")
   }
-  const loadedText = () => fixture.querySelector(".skill-file-preview")?.textContent ?? ""
-  const documentView = () => fixture.querySelector('[data-slot="skill-screen"]')
-  const fileManager = () => fixture.querySelector('[data-slot="file-manager"]')
+  async function openFile(name) {
+    await showFileNavigation()
+    const label = [...visibleFileNav().querySelectorAll(".branched-menu__label")].find(element => visible(element) && element.textContent.trim() === name)
+    click(label?.closest("button"))
+    await until(() => !button("关闭文件导航", document), "Selecting a file must close the mobile drawer")
+  }
+  async function beginFile(path) {
+    await showFileNavigation()
+    assert(fileActions(), "Writable Skills must expose file actions")
+    click(button("新建文件", fileActions()))
+    await until(filePathInput, "New file must expose a filename input")
+    changeInput(filePathInput(), path)
+  }
   const editedText = async (id, path) => (await baseLibrary.readFile(id, path)).text()
+  const directReading = () => assert(!fixture.querySelector('[data-slot="file-manager"]') && !button("列表查看") && !button("阅读视图") && !button("下载文件"), "Skill details must open directly without a file-manager step or download control")
+  const row = name => [...fixture.querySelectorAll(".skill-catalog-row > button")].find(element => element.textContent.includes(name))
   try {
     flushSync(() => root.render(withTestTheme(React.createElement(Harness), dependencies)))
     await until(() => button("重新读取 Skill"), "Catalog failure must expose a retry action")
-    assert(!fixture.textContent.includes("从第一个 Skill 开始"), "A failed catalog read must not look like an empty library")
+    assert(!fixture.textContent.includes("暂无 Skill"), "A failed catalog read must not look like an empty library")
     failLists = false
     click(button("重新读取 Skill"))
-    await until(() => fixture.querySelector("h1")?.textContent === "Skill" && [...fixture.querySelectorAll("button")].some(element => element.textContent.includes("巡检技能")), "Catalog retry must recover the list")
+    await until(() => row("巡检技能"), "Catalog retry must recover the list")
+    assert(row("官方运维").closest(".skill-catalog-row").textContent.includes("v1.0.0"), "The catalog must show a published Skill version")
     failReads = true
-    click([...fixture.querySelectorAll("button")].find(element => element.textContent.includes("巡检技能") && !element.getAttribute("aria-label")))
+    click(row("巡检技能"))
     await until(() => button("重新读取文件"), "File read failure must expose a retry action")
     failReads = false
     click(button("重新读取文件"))
-    checks.push("Catalog and file read failures expose retries and recover without reloading the app")
-    await until(() => visible(documentView()) && loadedText().includes("运行前检查。") && button("编辑"), "Opening a Skill must read SKILL.md in the original document layout")
-    assert(documentView().querySelector('nav[aria-label="技能文件"]') && documentView().querySelector('[data-slot="document-actions"]'), "Default reading must retain the original file navigation and floating document actions")
-    assert(!visible(fileManager()) && !textarea(), "Skill detail must start in reading mode, not the file manager or editor")
-    const readingShortcut = new KeyboardEvent("keydown", { key: "s", metaKey: true, bubbles: true, cancelable: true })
-    window.dispatchEvent(readingShortcut)
-    assert(!readingShortcut.defaultPrevented && !textarea(), "Reading mode must leave Cmd+S to the browser")
+    await until(() => visible(documentView()) && loadedText().includes("运行前检查。") && button("编辑"), "Selecting a Skill must open SKILL.md directly in the reading layout")
+    assert(fileNav() && documentView().querySelector('[data-slot="document-actions"]'), "Reading must retain file navigation and floating document actions")
+    directReading()
+    const shortcut = new KeyboardEvent("keydown", { key: "s", metaKey: true, bubbles: true, cancelable: true })
+    window.dispatchEvent(shortcut)
+    assert(!shortcut.defaultPrevented && !textarea(), "Reading mode must leave Cmd+S to the browser")
+    checks.push("Versioned list rows open Skill documents directly; catalog/file read failures retry without reloading")
+
     click(button("编辑"))
     await until(textarea, "The reading page must offer source editing")
-    const readingDraft = "# 阅读草稿\n\n切换列表后继续编辑。"
-    write(readingDraft)
-    click(button("列表查看"))
-    await until(() => visible(fileManager()), "List view must expose file management")
-    assert(!textarea(), "List view must hide the document editor")
-    click(button("阅读视图"))
-    await until(() => textarea()?.value === readingDraft, "Returning to reading must retain the current file's unsaved edit and editing mode")
-    assert(await editedText("local-a", "SKILL.md") === originals[0].files[0].content, "Switching views must not implicitly persist edits")
-    click(button("撤销"))
-    await until(() => !textarea() && loadedText().includes("运行前检查。"), "Undo must return to the saved reading content")
-    checks.push("Original reading layout is the default; list round trips preserve unsaved editing without saving")
-    click(button("列表查看"))
-    await until(() => visible(fileManager()), "List view must remain available for uploads")
-    upload([
-      new File([new Uint8Array([0, 255, 128, 13, 10])], "sample.bin", { type: "application/octet-stream" }),
-      new File(["最初的上传文本"], "note.txt", { type: "text/plain" }),
-    ])
-    await until(() => button("sample.bin") && button("note.txt") && !fixture.querySelector('input[aria-label="选择上传文件"]').disabled, "Uploaded files did not appear after persistence")
-    assert(new Uint8Array(await (await baseLibrary.readFile("local-a", "sample.bin")).arrayBuffer()).join(",") === "0,255,128,13,10", "Binary upload must preserve exact bytes")
-    assert(await editedText("local-a", "note.txt") === "最初的上传文本", "Text upload must preserve text")
-    checks.push("Optional list view uploads persist text and exact binary bytes")
+    write("# 阅读草稿\n\n切换后继续编辑。")
+    choose("local-b")
+    await until(() => loadedText().includes("第二个 Skill 的独立内容"), "The other Skill must load its first file")
+    choose("local-a")
+    await until(() => textarea()?.value.includes("切换后继续编辑"), "Switching away and back must retain unsaved source and editor mode")
+    assert(await editedText("local-a", "SKILL.md") === originals[0].files[0].content, "Switching Skill must not save an edit implicitly")
 
-    upload([new File(["明确替换后的文本"], "note.txt", { type: "text/plain" })])
-    await until(() => button("替换") && !button("替换").disabled, "A same-name upload must offer explicit replacement")
-    assert(await editedText("local-a", "note.txt") === "最初的上传文本", "A conflict must not overwrite the original file")
-    upload([new File(["下一批文件"], "next-batch.txt", { type: "text/plain" })])
-    await until(() => button("next-batch.txt") && button("替换") && !button("替换").disabled, "A new upload batch must retain unresolved earlier conflicts")
-    click(button("替换"))
-    await until(() => fixture.textContent.includes("已替换并保存"), "Explicit replacement did not complete")
-    assert(await editedText("local-a", "note.txt") === "明确替换后的文本", "Explicit replacement must persist new bytes")
-    checks.push("Name conflicts survive later upload batches and preserve original bytes until explicit Replace")
+    await beginFile("SKILL.md")
+    click(button("创建文件", document))
+    await until(() => fixture.querySelector('[role="alert"]')?.textContent.includes("同名") && !button("创建文件", document)?.disabled, "A duplicate filename must fail without closing the form")
+    assert(filePathInput()?.value === "SKILL.md" && await editedText("local-a", "SKILL.md") === originals[0].files[0].content, "Creating a duplicate must retain its filename and never replace saved Markdown")
+    changeInput(filePathInput(), "skill.md")
+    click(button("创建文件", document))
+    await until(() => !button("创建文件", document)?.disabled, "A case-insensitive filename conflict must remain retryable")
+    assert(filePathInput()?.value === "skill.md" && !(await baseLibrary.get("local-a")).entries.some(entry => entry.path === "skill.md"), "Case-insensitive conflicts must not create a second entry")
+    changeInput(filePathInput(), "new-note.txt")
     failWrites = true
-    upload([new File(["上传重试保留的内容"], "retry.txt", { type: "text/plain" })])
-    await until(() => button("重试") && !button("重试").disabled, "Failed uploads must retain an actionable retry")
-    assert(!button("retry.txt"), "Failed uploads must not appear as saved files")
+    click(button("创建文件", document))
+    await until(() => fixture.querySelector('[role="alert"]')?.textContent.includes("保存或读取失败") && !button("创建文件", document)?.disabled, "A failed create must leave the filename available for retry")
+    assert(filePathInput()?.value === "new-note.txt" && !(await baseLibrary.get("local-a")).entries.some(entry => entry.path === "new-note.txt"), "A failed create must retain the path without adding a phantom entry")
     failWrites = false
-    click(button("重试"))
-    await until(() => button("retry.txt") && !button("重试"), "Retry must persist the same selected upload without selecting it again")
-    assert(await editedText("local-a", "retry.txt") === "上传重试保留的内容", "Upload retry must retain the original file bytes")
-    checks.push("Failed uploads retain their file bytes and retry without selecting files again")
+    click(button("创建文件", document))
+    await until(() => textarea()?.getAttribute("aria-label") === "编辑 new-note.txt", "Retrying create must select the persisted new file and enter editing")
+    assert(document.activeElement === textarea() && textarea().value === "", "A newly created text file must focus its empty editor")
+    assert((await baseLibrary.get("local-a")).entries.filter(entry => entry.path === "new-note.txt").length === 1, "A successful retry must add exactly one file")
+    write("新增文件的正文")
+    click(button("保存文件"))
+    await until(() => !textarea() && loadedText().includes("新增文件的正文"), "The created file must use the existing save flow")
+    await openFile("SKILL.md")
+    await until(() => loadedText().includes("切换后继续编辑"), "Adding and saving a file must retain the original Markdown draft")
+    click(button("编辑"))
+    await until(() => textarea()?.value.includes("切换后继续编辑"), "The original Markdown draft must remain editable")
+    assert(await editedText("local-a", "SKILL.md") === originals[0].files[0].content, "Adding another file must not implicitly save Markdown")
 
-    click(button("note.txt"))
-    await until(() => visible(documentView()) && button("编辑") && loadedText().includes("明确替换后的文本"), "Opening a file from the list must return to the original reading layout")
-    assert(documentView().querySelector('nav[aria-label="技能文件"]').textContent.includes("note.txt"), "Uploaded files must also appear in the reading navigation")
+    await showFileNavigation()
+    const upload = fileActions().querySelector('input[aria-label="选择 Skill 上传文件"]')
+    const uploadFiles = new DataTransfer()
+    uploadFiles.items.add(new File(["上传失败后仍保留的正文"], "uploaded-note.txt", { type: "text/plain" }))
+    failWrites = true
+    flushSync(() => { upload.files = uploadFiles.files; upload.dispatchEvent(new Event("change", { bubbles: true })) })
+    await until(() => button("重试上传", document), "A failed upload must retain the selected File for retry")
+    assert(button("取消上传", document) && !(await baseLibrary.get("local-a")).entries.some(entry => entry.path === "uploaded-note.txt"), "A failed upload must be cancellable and leave durable files unchanged")
+    failWrites = false
+    click(button("重试上传", document))
+    await until(() => textarea()?.getAttribute("aria-label") === "编辑 uploaded-note.txt" && textarea()?.value === "上传失败后仍保留的正文", "Retry upload must persist the same File and open its editor")
+    assert(await editedText("local-a", "uploaded-note.txt") === "上传失败后仍保留的正文", "Retry upload must preserve the original selected bytes")
+    click(button("保存文件"))
+    await until(() => !textarea() && button("编辑"), "Saving an unchanged uploaded file must leave editing")
+    await openFile("SKILL.md")
+    await until(() => loadedText().includes("切换后继续编辑"), "Uploading another file must preserve the original Markdown draft")
+    click(button("编辑"))
+    await until(() => textarea()?.value.includes("切换后继续编辑"), "The original Markdown draft must still be editable after upload")
+    checks.push("Sidebar and mobile file actions create and upload; conflicts never overwrite; failed writes retain input and existing Markdown drafts")
+
+    click(button("撤销"))
+    await until(() => !textarea() && loadedText().includes("运行前检查。"), "Undo must restore the saved reading content")
+    await openFile("note.txt")
+    await until(() => loadedText().includes("原始参考文本") && button("编辑"), "The document file navigation must open references directly")
+    directReading()
     click(button("编辑"))
     write("失败时保留的编辑")
     failWrites = true
     click(button("保存文件"))
-    await until(() => fixture.querySelector('[role="alert"]') && button("保存文件") && !button("保存文件").disabled, "A failed save must show an error and allow retry")
-    assert(textarea().value === "失败时保留的编辑", "Save failure must retain the editor text")
-    assert(await editedText("local-a", "note.txt") === "明确替换后的文本", "Save failure must preserve persisted bytes")
+    await until(() => fixture.querySelector('[role="alert"]') && button("保存文件") && !button("保存文件").disabled, "Failed saves must remain retryable")
+    assert(textarea().value === "失败时保留的编辑" && await editedText("local-a", "note.txt") === "原始参考文本", "Save failure must preserve draft and durable bytes")
     failWrites = false
     const saving = deferred()
-    saveGate = saving
+    saveGate = saving; saveStarted = false
     write("保存开始时的快照")
     click(button("保存文件"))
     await until(() => saveStarted, "Delayed save did not start")
     write("保存期间继续输入的内容")
     saving.resolve()
-    await until(() => button("保存文件") && !button("保存文件").disabled && textarea()?.value === "保存期间继续输入的内容", "Input typed during save must remain editable and unsaved")
-    assert(textarea().value === "保存期间继续输入的内容", "Saved snapshot must not replace newer editor text")
-    assert(await editedText("local-a", "note.txt") === "保存开始时的快照", "Only the text captured when saving began should persist")
+    await until(() => button("保存文件") && !button("保存文件").disabled && textarea()?.value === "保存期间继续输入的内容", "New typing during saving must remain unsaved")
+    assert(await editedText("local-a", "note.txt") === "保存开始时的快照", "Only the captured save version may persist")
     click(button("保存文件"))
-    await until(() => !textarea() && button("编辑") && loadedText().includes("保存期间继续输入的内容"), "Retry should save the current editor version and return to reading")
-    assert(await editedText("local-a", "note.txt") === "保存期间继续输入的内容", "Retry must persist the newer editor text")
-    checks.push("Failed saves retain text; delayed saves persist only their snapshot and leave newer typing unsaved")
+    await until(() => !textarea() && button("编辑") && loadedText().includes("保存期间继续输入的内容"), "Saving the current version must return to reading")
+    checks.push("Document navigation preserves drafts; failed saves retain bytes; delayed saves preserve newer typing")
 
     click(button("编辑"))
     write("实验保存时的版本")
     const experimentSave = deferred()
-    saveGate = experimentSave
-    saveStarted = false
+    saveGate = experimentSave; saveStarted = false
     click(button("在新会话中实验"))
     await until(() => saveStarted, "Experiment must save pending edits before opening a conversation")
     write("实验等待期间的新编辑")
     const refreshing = deferred()
-    readStarted = false
-    nextReadGate = { ...refreshing, id: "local-a", path: "note.txt" }
+    readStarted = false; nextReadGate = { ...refreshing, id: "local-a", path: "note.txt" }
     experimentSave.resolve()
-    await until(() => readStarted, "The saved file must refresh its persisted content")
-    await until(() => button("在新会话中实验") && !button("在新会话中实验").disabled, "Experiment save did not finish")
-    assert(experiments.length === 0 && textarea()?.value === "实验等待期间的新编辑", "Experiment must retain new edits and must not launch with an older saved version")
+    await until(() => readStarted && button("在新会话中实验") && !button("在新会话中实验").disabled, "Experiment save did not refresh the persisted file")
+    assert(experiments.length === 0 && textarea()?.value === "实验等待期间的新编辑", "An experiment must not launch with an older saved version")
     refreshing.resolve()
-    assert(await editedText("local-a", "note.txt") === "实验保存时的版本", "The first experiment save must persist only its captured version")
     click(button("在新会话中实验"))
-    await until(() => experiments.length === 1, "Retrying experiment must finish after the latest edits are saved")
-    assert(experiments[0] === "local-a" && await editedText("local-a", "note.txt") === "实验等待期间的新编辑", "Experiment must use the selected Skill with the latest saved contents")
-    checks.push("Experiment waits for saved contents and refuses stale versions when editing continues during saving")
-
+    await until(() => experiments.length === 1, "Retrying experiment must save the latest source")
+    assert(experiments[0] === "local-a" && await editedText("local-a", "note.txt") === "实验等待期间的新编辑", "Experiment must use the latest saved source")
     choose("local-b")
-    await until(() => visible(documentView()) && loadedText().includes("第二个 Skill 的独立内容"), "A Skill without SKILL.md must read its first file automatically")
+    await until(() => loadedText().includes("第二个 Skill 的独立内容"), "Second Skill must load")
     const reading = deferred()
-    nextReadGate = { ...reading, id: "local-a", path: "note.txt" }
+    readStarted = false; nextReadGate = { ...reading, id: "local-a", path: "note.txt" }
     choose("local-a")
     await until(() => readStarted, "Delayed preview read did not start")
     choose("local-b")
-    await until(() => loadedText().includes("第二个 Skill 的独立内容"), "The second Skill preview did not load independently")
+    await until(() => loadedText().includes("第二个 Skill 的独立内容"), "Second Skill must load independently")
     reading.resolve()
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
-    assert(currentId === "local-b" && loadedText().includes("第二个 Skill 的独立内容") && !loadedText().includes("实验等待期间的新编辑"), "A stale file response must not contaminate another Skill")
-    checks.push("Switching Skill ignores the previous package's delayed file response")
+    assert(currentId === "local-b" && !loadedText().includes("实验等待期间的新编辑"), "A stale response must not contaminate another Skill")
+    checks.push("Experiments save the latest source; switching Skill ignores delayed file responses")
+
+    await beginFile("background.txt")
+    const backgroundSave = deferred()
+    saveGate = backgroundSave; saveStarted = false
+    click(button("创建文件", document))
+    await until(() => saveStarted, "A background file create must reach persistence")
+    choose("local-a")
+    await until(() => loadedText().includes("实验等待期间的新编辑"), "Switching Skill must keep its own document available while another file is saving")
+    backgroundSave.resolve()
+    await until(() => button("在新会话中实验") && !button("在新会话中实验").disabled, "The background file save must finish")
+    assert(currentId === "local-a" && !textarea() && loadedText().includes("实验等待期间的新编辑"), "A completed background create must not select a file or enter editing in another Skill")
+    assert((await baseLibrary.get("local-b")).entries.some(entry => entry.path === "background.txt"), "A completed background create must remain saved to its original Skill")
+    choose("local-b")
+    await until(() => loadedText().includes("第二个 Skill 的独立内容"), "Returning to a Skill must preserve its selected file after a background create")
+    await openFile("background.txt")
+    await until(() => fixture.querySelector('.skill-file-preview')?.getAttribute("aria-label") === "background.txt 文件内容" && button("编辑") && !button("编辑").disabled, "The file created in the background must be available from navigation")
+    checks.push("Background file creation persists to its original Skill without stealing the current document")
+
+    await beginFile("same-skill-background.txt")
+    const sameSkillSave = deferred()
+    saveGate = sameSkillSave; saveStarted = false
+    click(button("创建文件", document))
+    await until(() => saveStarted, "A delayed same-Skill file create must reach persistence")
+    await openFile("beta.txt")
+    await until(() => loadedText().includes("第二个 Skill 的独立内容"), "File navigation must remain available while a new file is saving")
+    sameSkillSave.resolve()
+    await until(() => button("在新会话中实验") && !button("在新会话中实验").disabled, "The delayed same-Skill file save must finish")
+    assert(currentId === "local-b" && !textarea() && loadedText().includes("第二个 Skill 的独立内容"), "Finishing a file create must not steal a newer file selection within the same Skill")
+    assert((await baseLibrary.get("local-b")).entries.some(entry => entry.path === "same-skill-background.txt"), "A file created after selecting another file must still be persisted")
+    checks.push("Delayed file creation preserves newer file selections within the same Skill")
 
     choose("official")
-    await until(() => visible(documentView()) && loadedText().includes("这是固定的官方内容。"), "Official package must open in reading mode")
-    assert(!button("编辑"), "Official file must not expose editing")
-    click(button("列表查看"))
-    await until(() => visible(fileManager()), "Official package must permit read-only list navigation")
-    assert(!button("上传文件") && fixture.querySelector('input[aria-label="选择上传文件"]').disabled, "Official package must not expose uploads")
-    assert(!button("管理 SKILL.md"), "Official file actions must be read-only")
-    click(button("SKILL.md"))
-    await until(() => loadedText().includes("这是固定的官方内容。"), "Official file content did not load")
-    assert(!button("编辑"), "Official file must stay read-only after opening it from the list")
+    await until(() => loadedText().includes("这是固定的官方内容。"), "Official Skill must open directly in reading mode")
+    assert(!button("编辑"), "Official files must remain read-only")
+    await showFileNavigation()
+    assert(!document.querySelector('[data-slot="skill-file-actions"]') && !button("新建文件", document) && !button("上传文件", document), "Official Skills must not expose file creation or upload in either navigation surface")
+    await closeFileNavigation()
+    directReading()
     click(button("复制为本地 Skill"))
-    await until(() => currentId?.startsWith("copy-") && button("编辑") && !button("编辑").disabled, "Copy to local must open the new package in editable reading mode")
+    await until(() => currentId?.startsWith("copy-") && button("编辑") && !button("编辑").disabled, "A local copy must open its editable document directly")
     const copiedId = currentId
-    click(button("列表查看"))
-    await until(() => visible(fileManager()), "Local copy must permit file management")
-    assert(!fixture.querySelector('input[aria-label="选择上传文件"]').disabled, "Local copy must enable uploads")
-    click(button("SKILL.md"))
-    await until(() => button("编辑") && !button("编辑").disabled, "Local copy must be editable")
-    click(button("编辑"))
-    write("# 本地副本改动")
-    click(button("保存文件"))
-    await until(() => !textarea() && button("编辑") && loadedText().includes("本地副本改动"), "Local copy must return to reading after saving")
-    assert(await editedText(copiedId, "SKILL.md") === "# 本地副本改动", "Local copy changes must persist")
-    assert(await editedText("official", "SKILL.md") === originals[2].files[0].content, "Local copy must not modify the official release")
-    checks.push("Official packages stay read-only; a local copy permits changes without touching the release")
-
+    click(button("编辑")); write("# 本地副本改动"); click(button("保存文件"))
+    await until(() => !textarea() && loadedText().includes("本地副本改动"), "Local copy save must return to reading")
+    assert(await editedText(copiedId, "SKILL.md") === "# 本地副本改动" && await editedText("official", "SKILL.md") === originals[2].files[0].content, "Editing a local copy must not modify the official release")
     choose(null)
-    await until(() => button("新建 Skill"), "Catalog must remain reachable after editing")
-    click(button("新建 Skill"))
-    fill(fixture.querySelector('input[placeholder="例如：生产环境巡检"]'), "回归创建")
-    fill(fixture.querySelector('input[placeholder="这个 Skill 解决什么问题"]'), "创建失败后重试")
-    failWrites = true
-    click(button("创建 Skill"))
-    await until(() => fixture.querySelector('[role="alert"]') && button("创建 Skill") && !button("创建 Skill").disabled, "Failed creation must remain retryable")
-    assert(fixture.querySelector('input[placeholder="例如：生产环境巡检"]').value === "回归创建", "Failed creation must preserve the name")
-    assert(fixture.querySelector('input[placeholder="这个 Skill 解决什么问题"]').value === "创建失败后重试", "Failed creation must preserve the description")
-    failWrites = false
-    click(button("创建 Skill"))
-    await until(() => currentId?.startsWith("copy-") && currentId !== copiedId && loadedText().includes("回归创建"), "Successful creation must open its SKILL.md")
-    const createdId = currentId
-    assert(!fixture.textContent.includes("本地文件 · 保存后生效") && !fixture.textContent.includes("当前浏览器 · 与桌面端目录独立"), "Skill pages must not expose implementation-only storage hints")
-    checks.push("Failed creation preserves both fields; retry opens the new Skill document")
-
-    click(button("列表查看"))
-    const createTrigger = button("新建")
-    await menu(createTrigger, "新建文件")
-    await wait(200)
-    await until(() => document.activeElement === actionName(), "Opening a file form must retain focus after the menu exit animation")
-    fill(actionName(), "cancelled.md")
-    flushSync(() => actionName().dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })))
-    await until(() => !actionName() && document.activeElement === createTrigger, "Escape must close the file form and return focus to New")
-    assert(!(await baseLibrary.get(createdId)).entries.some(entry => entry.path === "cancelled.md"), "Cancelling creation must not add a file")
-    await menu(button("新建"), "新建文件夹")
-    fill(actionName(), "notes")
-    click(button("创建"))
-    await until(() => button("notes") && !button("新建").disabled, "Folder creation must update the list")
-    upload([
-      new File(["不能覆盖目录"], "notes", { type: "text/plain" }),
-      new File(["不能忽略大小写覆盖"], "skill.md", { type: "text/markdown" }),
-    ])
-    const uploadResults = () => fixture.querySelector('[aria-label="文件上传结果"]')
-    await until(() => uploadResults()?.textContent.includes("名称冲突") && !fixture.querySelector('input[aria-label="选择上传文件"]').disabled, "Folder and case-only conflicts must explain how to resolve the name")
-    assert(!button("替换", uploadResults()), "Folder and case-only conflicts must not expose an impossible Replace action")
-    assert([...uploadResults().querySelectorAll("button")].filter(element => element.textContent.trim() === "跳过").length === 2, "Both unreplaceable conflicts must remain dismissible")
-    click(button("跳过", uploadResults()))
-    click(button("跳过", uploadResults()))
-    assert((await baseLibrary.get(createdId)).entries.some(entry => entry.path === "notes" && entry.kind === "folder"), "A directory upload conflict must preserve the directory")
-    assert((await editedText(createdId, "SKILL.md")).includes("回归创建"), "A case-only upload conflict must preserve the original document")
-    click(button("notes"))
-    await menu(button("新建"), "新建文件")
-    fill(actionName(), "draft.md")
-    click(button("创建"))
-    await until(() => visible(documentView()) && button("编辑") && !button("编辑").disabled && !visible(fileManager()), "Creating a file must open its document")
-    click(button("编辑"))
-    write("# 目录中的正文")
-    click(button("保存文件"))
-    await until(() => !textarea() && loadedText().includes("目录中的正文"), "New file content must be editable and saved")
-    click(button("列表查看"))
-    await menu(button("管理 draft.md"), "重命名")
-    fill(actionName(), "renamed.md")
-    failWrites = true
-    click(button("保存名称"))
-    await until(() => actionName()?.getAttribute("aria-invalid") === "true" && document.activeElement === actionName(), "A failed rename must return focus to its invalid name input")
-    assert(actionName().value === "renamed.md" && button("draft.md"), "Failed rename must retain both the proposed name and original file")
-    failWrites = false
-    click(button("保存名称"))
-    await until(() => button("renamed.md") && !button("新建").disabled, "Rename must update the file row")
-    click(button("阅读视图"))
-    await until(() => visible(documentView()) && loadedText().includes("目录中的正文"), "Renaming the selected file must retain a working reading selection")
-    assert(fixture.querySelector('[aria-label="notes/renamed.md 文件内容"]'), "Selected path must follow the renamed file")
-    click(button("列表查看"))
-    click(button("全部文件"))
-    await menu(button("管理 notes"), "重命名")
-    fill(actionName(), "references")
-    click(button("保存名称"))
-    await until(() => button("references") && !button("新建").disabled, "Renaming a parent folder must update its row")
-    click(button("阅读视图"))
-    await until(() => fixture.querySelector('[aria-label="references/renamed.md 文件内容"]') && loadedText().includes("目录中的正文"), "Selected file must follow a renamed parent folder")
-    assert(await editedText(createdId, "references/renamed.md") === "# 目录中的正文", "Renaming a directory must preserve its file bytes")
-    checks.push("Folder and case-only upload conflicts offer no dead Replace action; new files and renamed paths remain readable")
-
-    click(button("列表查看"))
-    await menu(button("管理 references"), "删除")
-    await wait(200)
-    await until(() => document.activeElement === button("取消"), "Delete confirmation must retain safe focus on Cancel after the menu exit animation")
+    await until(() => row("巡检技能"), "The catalog must remain reachable")
+    click(button(`删除 ${(await baseLibrary.get(copiedId)).name}`))
     failWrites = true
     click(button("确认删除"))
-    await until(() => button("确认删除") && !button("确认删除").disabled && fixture.querySelector('[role="alert"]'), "Failed deletion must retain the confirmation for retry")
-    assert(await editedText(createdId, "references/renamed.md") === "# 目录中的正文", "Failed folder deletion must preserve file content")
+    await until(() => fixture.querySelector('[role="alert"]')?.textContent.trim() && button("确认删除") && !button("确认删除").disabled, "Failed deletion must retain confirmation and allow retry")
+    assert(await editedText(copiedId, "SKILL.md") === "# 本地副本改动", "Failed deletion must preserve the Skill")
     failWrites = false
     click(button("确认删除"))
-    await until(() => !button("references") && !button("确认删除") && !button("新建").disabled, "Retried deletion must remove the folder and close its confirmation")
-    click(button("阅读视图"))
-    await until(() => fixture.querySelector('[aria-label="SKILL.md 文件内容"]') && loadedText().includes("回归创建"), "Deleting the selected file's folder must fall back to an existing document")
-    click(button("编辑"))
-    write("删除整个 Skill 前的未保存编辑")
-    choose(null)
-    await until(() => button("删除 回归创建"), "Created Skill must appear in the catalog")
-    click(button("删除 回归创建"))
-    click(button("确认删除"))
-    await until(() => !button("删除 回归创建"), "Deleting the Skill must remove its catalog entry")
-    const unload = new Event("beforeunload", { cancelable: true })
-    window.dispatchEvent(unload)
-    assert(!unload.defaultPrevented, "Deleted Skill drafts must not leave a phantom unsaved-changes warning")
-    checks.push("Failed deletes preserve content and confirmation; retry restores a valid selection and whole-Skill deletion clears drafts")
+    await until(() => !button(`删除 ${(originals[2].name)} 副本`), "Successful deletion must remove the copied Skill")
+    assert(!(await baseLibrary.list()).some(skill => skill.id === copiedId), "Deleted Skill must leave the catalog")
+    checks.push("Official Skills stay read-only; local copies edit independently; failed deletion preserves content and retries")
 
     result.dataset.status = "passed"
     result.textContent = `PASS (${checks.length})\n${checks.join("\n")}`

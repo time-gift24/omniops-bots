@@ -47,6 +47,8 @@ export type AgentBuilderProps = {
   active?: boolean
   copyBusy?: boolean
   initialDraft?: AgentConfiguration
+  /** Open a fresh Agent directly in edit mode. */
+  initialEditing?: boolean
   onDraftChange?: (configuration: AgentConfiguration) => void
   mcpServers: readonly McpServer[]
   tools: readonly AgentResource[]
@@ -68,6 +70,7 @@ export function AgentBuilder({
   active = true,
   copyBusy = false,
   initialDraft = initialConfiguration,
+  initialEditing = false,
   onDraftChange,
   mcpServers,
   tools,
@@ -89,7 +92,9 @@ export function AgentBuilder({
   const [error, setError] = useState("")
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [editing, setEditing] = useState(
-    JSON.stringify(initialDraft) !== JSON.stringify(initialConfiguration)
+    !readOnly &&
+      (initialEditing ||
+        JSON.stringify(initialDraft) !== JSON.stringify(initialConfiguration))
   )
   const [mode, setMode] = useState<MarkdownEditorMode>("source")
   const [outline, setOutline] = useState<DocsSection[]>([])
@@ -111,6 +116,12 @@ export function AgentBuilder({
       mounted.current = false
     }
   }, [])
+  useEffect(() => {
+    if (!initialEditing || !editing) return
+    rootRef.current
+      ?.querySelector<HTMLInputElement>("aside input")
+      ?.focus({ preventScroll: true })
+  }, [initialEditing, editing])
   useEffect(() => {
     if (!dirty) return
     const warn = (event: BeforeUnloadEvent) => {
@@ -156,7 +167,7 @@ export function AgentBuilder({
 
   async function save() {
     if (lock.current || readOnly) return
-    if (!dirty) {
+    if (!dirty && !initialEditing) {
       setEditing(false)
       return
     }
@@ -248,11 +259,7 @@ export function AgentBuilder({
       onSections={updateSections}
       empty={
         <p className="py-12 text-center text-sm text-muted-foreground">
-          {readOnly
-            ? "这个 Agent 尚未提供系统提示词。"
-            : editing
-              ? "输入系统提示词后，可在这里预览。"
-              : "还没有系统提示词，点击「编辑」开始编写。"}
+          暂无系统提示词。
         </p>
       }
     />
@@ -285,132 +292,134 @@ export function AgentBuilder({
           {error}
         </p>
       ) : null}
-      <div className="flex min-h-0 flex-1 flex-col @min-[480px]/agent:flex-row">
-        <aside
-          id={settingsId}
-          aria-label="Agent 配置"
-          className={cn(
-            "max-h-[48%] min-h-0 shrink-0 overflow-y-auto border-b border-border bg-muted/30 px-4 py-4 @min-[480px]/agent:max-h-none @min-[480px]/agent:w-1/3 @min-[480px]/agent:min-w-64 @min-[480px]/agent:border-r @min-[480px]/agent:border-b-0 @min-[760px]/agent:max-w-[26rem] @min-[760px]/agent:px-6 @min-[760px]/agent:py-6",
-            settingsOpen ? "block" : "hidden @min-[480px]/agent:block"
-          )}
-        >
-          <AgentConfigurationPanel
-            disabled={false}
-            readOnly={readOnly || !editing}
-            showApproval={showApproval}
-            mcpServers={mcpServers}
-            onChange={change}
-            tools={tools}
-            skills={skills}
-            value={configuration}
-          />
-          {resourceManager}
-        </aside>
-        <div className="doc-action-surface doc-action-surface-vertical relative flex min-h-0 min-w-0 flex-1">
-          {active ? (
-            <DocumentActions
-              vertical
-              readOnly={readOnly}
-              debugLabel={debugLabel}
-              editing={editing}
-              busy={saving}
-              dirty={dirty}
-              onEdit={() => {
-                setEditing(true)
-                setMode("source")
-              }}
-              onSave={() => void save()}
-              onUndo={() => {
-                change(saved)
-                setEditing(false)
-              }}
-              onDebug={onDebug}
-            >
-              {onCopy ? (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-7 text-muted-foreground/70 hover:text-foreground"
-                  aria-label="复制为本地"
-                  title="复制为本地 Agent"
-                  disabled={copyBusy}
-                  aria-busy={copyBusy}
-                  onClick={onCopy}
-                >
-                  <HugeiconsIcon
-                    icon={Copy01Icon}
-                    size={16}
-                    aria-hidden="true"
-                  />
-                </Button>
-              ) : null}
-              <Button
-                size="icon"
-                variant="ghost"
-                aria-label="Agent 配置"
-                title="Agent 配置"
-                aria-controls={settingsId}
-                aria-expanded={settingsOpen}
-                onClick={() => setSettingsOpen((open) => !open)}
-                className="size-7 text-muted-foreground/70 hover:text-foreground @min-[480px]/agent:hidden"
-              >
-                <HugeiconsIcon
-                  icon={Settings02Icon}
-                  size={16}
-                  aria-hidden="true"
-                />
-              </Button>
-            </DocumentActions>
-          ) : null}
-          <div
-            ref={scrollRef}
-            className={cn(
-              "doc-reading-scroll min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain",
-              editing && "overflow-hidden"
-            )}
-            tabIndex={0}
-            aria-label="系统提示词"
+      <div className="doc-action-surface m-2 flex min-h-0 flex-1 flex-col gap-2 sm:m-3">
+        {active ? (
+          <DocumentActions
+            readOnly={readOnly}
+            debugLabel={debugLabel}
+            editing={editing}
+            busy={saving}
+            dirty={dirty}
+            onEdit={() => {
+              setEditing(true)
+              setMode("source")
+            }}
+            onSave={() => void save()}
+            onUndo={() => {
+              change(saved)
+              setEditing(false)
+            }}
+            onDebug={onDebug}
           >
-            <div
-              className={cn("doc-reading-layout", wide && "doc-reading-wide")}
-              style={editing ? { height: "100%", maxWidth: "none" } : undefined}
-            >
-              <article
-                className={cn(
-                  "doc-article min-w-0 pt-2!",
-                  editing && "flex h-full min-h-0 flex-col p-3!"
-                )}
+            {onCopy ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7 text-muted-foreground/70 hover:text-foreground"
+                aria-label="复制为本地"
+                title="复制为本地 Agent"
+                disabled={copyBusy}
+                aria-busy={copyBusy}
+                onClick={onCopy}
               >
-                {editing ? (
-                  <MarkdownEditor
-                    title="系统提示词"
-                    ariaLabel="系统提示词"
-                    className="min-h-0 min-w-0 flex-1"
-                    value={configuration.instructions}
-                    maxLength={12000}
-                    placeholder="定义这个 Agent 的身份、职责、工作方式与边界。例如：你是客户支持助手，回答时优先使用已连接的工具核实信息……"
-                    autoFocus
-                    preview={preview}
-                    previewScrollRef={editorPreviewRef}
-                    onModeChange={setMode}
-                    onChange={(instructions) =>
-                      change({ ...configuration, instructions })
-                    }
+                <HugeiconsIcon icon={Copy01Icon} size={16} aria-hidden="true" />
+              </Button>
+            ) : null}
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label="Agent 配置"
+              title="Agent 配置"
+              aria-controls={settingsId}
+              aria-expanded={settingsOpen}
+              onClick={() => setSettingsOpen((open) => !open)}
+              className="size-7 text-muted-foreground/70 hover:text-foreground @min-[480px]/agent:hidden"
+            >
+              <HugeiconsIcon
+                icon={Settings02Icon}
+                size={16}
+                aria-hidden="true"
+              />
+            </Button>
+          </DocumentActions>
+        ) : null}
+        <div
+          data-slot="document-body"
+          className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[color:var(--border-strong)] @min-[480px]/agent:flex-row"
+        >
+          <aside
+            id={settingsId}
+            aria-label="Agent 配置"
+            className={cn(
+              "max-h-[48%] min-h-0 shrink-0 overflow-y-auto border-b border-border bg-muted/30 px-4 py-4 @min-[480px]/agent:max-h-none @min-[480px]/agent:w-1/3 @min-[480px]/agent:min-w-64 @min-[480px]/agent:border-r @min-[480px]/agent:border-b-0 @min-[760px]/agent:max-w-[26rem] @min-[760px]/agent:px-6 @min-[760px]/agent:py-6",
+              settingsOpen ? "block" : "hidden @min-[480px]/agent:block"
+            )}
+          >
+            <AgentConfigurationPanel
+              disabled={false}
+              readOnly={readOnly || !editing}
+              showApproval={showApproval}
+              mcpServers={mcpServers}
+              onChange={change}
+              tools={tools}
+              skills={skills}
+              value={configuration}
+            />
+            {resourceManager}
+          </aside>
+          <div className="flex min-h-0 min-w-0 flex-1">
+            <div
+              ref={scrollRef}
+              className={cn(
+                "doc-reading-scroll min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain",
+                editing && "overflow-hidden"
+              )}
+              tabIndex={0}
+              aria-label="系统提示词"
+            >
+              <div
+                className={cn("doc-reading-layout", wide && "doc-reading-wide")}
+                style={
+                  editing ? { height: "100%", maxWidth: "none" } : undefined
+                }
+              >
+                <article
+                  className={cn(
+                    "doc-article min-w-0 pt-2!",
+                    editing && "flex h-full min-h-0 flex-col p-3!"
+                  )}
+                >
+                  {editing ? (
+                    <MarkdownEditor
+                      title="系统提示词"
+                      ariaLabel="系统提示词"
+                      className="min-h-0 min-w-0 flex-1"
+                      value={configuration.instructions}
+                      maxLength={12000}
+                      placeholder="描述这个 Agent 的身份、职责、工作方式和边界。"
+                      autoFocus
+                      preview={preview}
+                      previewScrollRef={editorPreviewRef}
+                      onModeChange={setMode}
+                      onChange={(instructions) =>
+                        change({ ...configuration, instructions })
+                      }
+                    />
+                  ) : (
+                    preview
+                  )}
+                </article>
+                {!wide && outlineSections.length > 0 ? (
+                  <MarkdownOutline
+                    sections={outlineSections}
+                    active={activeSection ?? ""}
+                    onSelect={(id) => {
+                      const node = findDocsHeading(resolveScroll(), id)
+                      if (node) scrollToHeading(node)
+                    }}
                   />
-                ) : (
-                  preview
-                )}
-              </article>
-              {!wide && outlineSections.length > 0 ? (
-                <MarkdownOutline
-                  sections={outlineSections}
-                  active={activeSection ?? ""}
-                  onSelect={(id) => {
-                    const node = findDocsHeading(resolveScroll(), id)
-                    if (node) scrollToHeading(node)
-                  }}
-                />
-              ) : null}
+                ) : null}
+              </div>
             </div>
           </div>
         </div>

@@ -24,18 +24,7 @@
 .doc-article {
   padding: 2.5rem 1.5rem 4rem;
 }
-.doc-action-surface:not(.doc-action-surface-vertical)
-  .doc-article
-  > .doc-preview
-  > .chat-markdown
-  > :first-child,
-.doc-action-surface:not(.doc-action-surface-vertical) .doc-article > h1 {
-  margin-right: 5rem;
-}
-.doc-action-surface-vertical .doc-reading-layout {
-  padding-right: 2rem;
-}
-.doc-action-surface-vertical [data-slot="markdown-editor-toolbar"] {
+.doc-action-surface [data-slot="markdown-editor-toolbar"] {
   padding-right: 0.5rem;
 }
 .doc-outline {
@@ -98,9 +87,7 @@
   .skill-file-sidebar {
     display: flex;
     width: 15rem;
-    margin: 12px 0 12px 12px;
     border-right: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
   }
 }
 @container skill (min-width: 960px) {
@@ -140,8 +127,5 @@
   .doc-action-surface [data-slot="document-actions"] button {
     min-width: 2.75rem;
     min-height: 2.75rem;
-  }
-  .doc-action-surface-vertical .doc-reading-layout {
-    padding-right: 3.25rem;
   }
 }

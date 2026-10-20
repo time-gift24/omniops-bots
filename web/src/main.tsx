@@ -11,6 +11,7 @@ import {
 import { createDemoAdapters } from "@/adapters/demo"
 import { Button } from "@/components/motion/button"
 import { loadInitialThemePreferences } from "@/preferences/theme"
+import type { WorkbenchScope } from "@/workbench/backend"
 
 const container = document.getElementById("root")!
 const isDesktop = "__TAURI_INTERNALS__" in window
@@ -38,21 +39,19 @@ async function start() {
     )
     let unsubscribeWorkspaces: (() => void) | undefined
     if (tauri) {
-      const scopes = () => {
+      const scopes = (): WorkbenchScope[] => {
         const state = dependencies.workspaces.getState()
-        return state.sessions.flatMap((session) => {
+        return state.sessions.map((session) => {
           const workspace = state.workspaces.find(
             (entry) => entry.id === session.workspaceId
           )
           return workspace
-            ? [
-                {
-                  workspaceId: workspace.id,
-                  workspacePath: workspace.path,
-                  sessionId: session.id,
-                },
-              ]
-            : []
+            ? {
+                workspaceId: workspace.id,
+                workspacePath: workspace.path,
+                sessionId: session.id,
+              }
+            : { sessionId: session.id }
         })
       }
       const bound = new Set<string>()
@@ -69,7 +68,9 @@ async function start() {
         if (threadId.startsWith("agent-test:"))
           return { agentId: threadId.slice("agent-test:".length) }
         const scope = scopes().find((entry) => entry.sessionId === threadId)
-        return scope ? { workspacePath: scope.workspacePath } : {}
+        return scope?.workspacePath
+          ? { workspacePath: scope.workspacePath }
+          : {}
       })
       unsubscribeWorkspaces =
         dependencies.workspaces.subscribe(captureBaselines)

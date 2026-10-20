@@ -18,13 +18,13 @@ import {
   AnimatedDropdownTrigger,
 } from "@/components/premium/animated-dropdown"
 
-const themes = [
+export const themeOptions = [
   { value: "light", label: "浅色", icon: Sun01Icon },
   { value: "dark", label: "深色", icon: Moon02Icon },
   { value: "system", label: "跟随系统", icon: ComputerIcon },
 ] as const
 
-const palettes = [
+export const paletteOptions = [
   {
     value: "official",
     label: "官方主题",
@@ -63,7 +63,7 @@ export function ThemePicker() {
       >
         <AnimatedDropdownLabel>主题</AnimatedDropdownLabel>
         <AnimatedDropdownRadioGroup value={theme} aria-label="主题">
-          {themes.map((option) => (
+          {themeOptions.map((option) => (
             <AnimatedDropdownRadioItem
               key={option.value}
               value={option.value}
@@ -84,7 +84,7 @@ export function ThemePicker() {
         <AnimatedDropdownSeparator />
         <AnimatedDropdownLabel>配色</AnimatedDropdownLabel>
         <AnimatedDropdownRadioGroup value={palette} aria-label="配色">
-          {palettes.map((option) => (
+          {paletteOptions.map((option) => (
             <AnimatedDropdownRadioItem
               key={option.value}
               value={option.value}

@@ -19,10 +19,13 @@
   const checks = []
   const packages = new Map()
   const legacy = { id: "legacy-skill", name: "待删除技能", description: "旧资源目录仍保留这一项", files: [{ path: "SKILL.md", content: "# 旧技能" }] }
-  const source = { async list() { return structuredClone([legacy]) } }
+  const official = { id: "official-skill", name: "官方巡检", description: "已发布技能", origin: "official", version: "v1.2.3", files: [{ path: "SKILL.md", content: "# 官方巡检" }] }
+  const source = { async list() { return structuredClone([legacy, official]) } }
   const drafts = { async load() { return {} }, async save() {}, async remove() {} }
   let serial = 0
   let failLists = true
+  let failWrites = false
+  const creationInputs = []
   let pendingSave = null
   let saveStarted = false
   const library = createSkillLibrary({
@@ -33,6 +36,7 @@
     persistence: {
       async load() { return structuredClone([...packages.values()]) },
       async save(skill) {
+        if (failWrites) throw new Error("创建保存暂时失败")
         if (pendingSave) {
           const gate = pendingSave
           pendingSave = null
@@ -55,7 +59,11 @@
   const dependencies = createTestDependencies({
     skills: source,
     skillDrafts: drafts,
-    skillLibrary: { ...library, async list() { if (failLists) throw new Error("目录暂不可读"); return library.list() } },
+    skillLibrary: {
+      ...library,
+      async list() { if (failLists) throw new Error("目录暂不可读"); return library.list() },
+      async create(input) { creationInputs.push(structuredClone(input)); return library.create(input) },
+    },
     agents,
   })
   const assert = (condition, message) => { if (!condition) throw new Error(message) }
@@ -78,7 +86,7 @@
   }
   const fill = (input, value) => flushSync(() => {
     assert(visible(input) && !input.disabled, "Expected an editable form field")
-    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set.call(input, value)
+    Object.getOwnPropertyDescriptor(input instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype, "value").set.call(input, value)
     input.dispatchEvent(new Event("input", { bubbles: true }))
   })
   const navigation = name => fixture.querySelector(`nav[aria-label="工作区导航区域"] button[aria-label="${name}"]`)
@@ -87,8 +95,26 @@
   const settings = () => [...fixture.querySelectorAll('aside[aria-label="Agent 配置"]')].find(visible)
   const skillSwitch = name => [...(settings()?.querySelectorAll('[role="switch"]') ?? [])].find(element => visible(element) && element.getAttribute("aria-label") === `启用 ${name}`)
   const sidebarRow = name => [...document.querySelectorAll('[data-slot="sidebar-menu-item"] button')].find(element => visible(element) && label(element) === name)
+  const mobileDrawer = () => document.querySelector('[data-mobile="true"][aria-hidden="false"]')
+  const openNavigation = async () => {
+    if (innerWidth >= 768 || mobileDrawer()) return
+    click(button("展开导航"))
+    await until(() => mobileDrawer(), "Mobile navigation did not open")
+  }
+  const closeNavigation = async () => {
+    if (!mobileDrawer()) return
+    click(button("Close sidebar", mobileDrawer()))
+    await until(() => !mobileDrawer(), "Mobile navigation did not close")
+  }
+  const checkSidebar = async (name, present, message) => {
+    await openNavigation()
+    await until(() => Boolean(sidebarRow(name)) === present, message)
+    await closeNavigation()
+  }
   const openAgent = async () => {
+    await closeNavigation()
     click(navigation("Agent"))
+    await closeNavigation()
     await until(() => button("测试 Agent") || button("打开 测试 Agent"), "Agent list did not expose the saved Agent")
     click(button("测试 Agent") ?? button("打开 测试 Agent"))
     await until(() => agentScreen() && (settings() || button("Agent 配置", agentScreen())), "Agent page did not open")
@@ -97,9 +123,23 @@
     click([...settings().querySelectorAll('[role="tab"]')].find(element => element.textContent.startsWith("技能")))
   }
   const openCatalog = async () => {
+    await closeNavigation()
     click(navigation("技能"))
-    await until(() => libraryScreen()?.querySelector("h1")?.textContent === "Skill" && (button("新建 Skill", libraryScreen()) || button("创建 Skill", libraryScreen())), "Skill catalog did not open with its current creation state")
+    await openNavigation()
+    click(button("Skill 列表", document))
+    await closeNavigation()
+    await until(() => libraryScreen()?.querySelector("h1")?.textContent === "Skill", "Skill catalog did not open")
   }
+  const startDraft = async () => {
+    await openCatalog()
+    await openNavigation()
+    click(button("新建 Skill", document))
+    await closeNavigation()
+    await until(() => draftBody() && button("保存 Skill"), "New Skill must open directly in the source editor")
+  }
+  const draftBody = () => libraryScreen()?.querySelector('textarea[aria-label="编辑 SKILL.md"]')
+  const catalogEntry = name => [...(libraryScreen()?.querySelectorAll(".skill-catalog-row > button") ?? [])].find(element => element.textContent.includes(name))
+  const noIntermediatePage = () => assert(!fixture.querySelector('[data-slot="file-manager"]') && !button("列表查看") && !button("阅读视图") && !button("下载文件"), "Skill list must open the document directly without file-management or download controls")
   const root = createRoot(fixture)
   try {
     const persisted = await library.create({ name: "已保存技能", description: "上次创建的持久化包" })
@@ -115,27 +155,104 @@
     checks.push("Initial library failure retries; Agent sees existing persisted Skills before visiting the library")
 
     await openCatalog()
-    click(button("新建 Skill", libraryScreen()))
-    fill(libraryScreen().querySelector('input[name="skill-name"]'), "跨页新技能")
-    fill(libraryScreen().querySelector('input[name="skill-description"]'), "验证新建和选择器同步")
+    await until(() => catalogEntry(official.name), "Published Skill row did not finish loading")
+    const versionRow = catalogEntry(official.name).closest(".skill-catalog-row")
+    assert(versionRow?.textContent.includes(official.version), "The Skill list must show each published version")
+    click(catalogEntry(official.name))
+    await until(() => libraryScreen()?.querySelector('[data-slot="skill-screen"]')?.textContent.includes(official.name), "Selecting a Skill must open its document directly")
+    noIntermediatePage()
+    checks.push("Versioned Skill rows open their document directly without a file-manager step")
+
+    await startDraft()
+    assert(creationInputs.length === 0 && !libraryScreen().querySelector('input[name="skill-name"], input[name="skill-description"]') && draftBody().value.includes('name: ""'), "Opening a new Skill must not call create or publish a placeholder")
+    fill(draftBody(), '---\nname: "取消的技能"\ndescription: "取消"\n---\n\n# 草稿')
+    click(button("撤销"))
+    await until(() => !draftBody(), "Undo must leave the unsaved creation editor")
+    assert(creationInputs.length === 0 && !catalogEntry("取消的技能"), "Cancelling a draft must not create or list a Skill")
+
+    await startDraft()
+    for (const invalid of ["# 缺少 frontmatter", '---\nname: "跨页新技能"\n---\n', '---\nname: [invalid\ndescription: test\n---\n']) {
+      fill(draftBody(), invalid)
+      click(button("保存 Skill"))
+      await until(() => libraryScreen()?.querySelector('[role="alert"]')?.textContent.trim() && !button("保存 Skill").disabled, "Invalid frontmatter must remain retryable")
+      assert(creationInputs.length === 0 && draftBody().value === invalid, "Metadata validation must preserve the complete Markdown without creating a Skill")
+    }
+    const content = '---\nname: "跨页新技能"\ndescription: "验证新建和选择器同步"\ncustom: true # 保留自定义字段\n---\n\n# 跨页新技能\n\n使用显式保存的完整正文。'
+    fill(draftBody(), content)
+    assert(creationInputs.length === 0, "Editing a draft must not create it")
+    await checkSidebar("跨页新技能", false, "An unsaved draft must not appear in the sidebar")
     await openAgent()
-    await openCatalog()
-    assert(libraryScreen().querySelector('input[name="skill-name"]')?.value === "跨页新技能", "Leaving the first catalog visit must retain the unfinished creation form")
+    assert(!skillSwitch("跨页新技能"), "An unsaved Skill must not enter the Agent selector")
+    await startDraft()
+    assert(draftBody().value === content, "Creation fields and source must survive leaving and returning")
+    failWrites = true
+    click(button("保存 Skill"))
+    await until(() => libraryScreen()?.querySelector('[role="alert"]')?.textContent.trim() && button("保存 Skill") && !button("保存 Skill").disabled, "Failed creation must expose a retry in the same editor")
+    assert(creationInputs.length === 1 && draftBody().value === content, "A failed save must retain the full draft")
+    await checkSidebar("跨页新技能", false, "A failed save must not publish the Skill")
+    assert(!(await library.list()).some(skill => skill.name === "跨页新技能"), "A failed atomic creation must not leave a saved empty package")
+    failWrites = false
     let release
     pendingSave = { promise: new Promise(resolve => { release = resolve }) }
-    click(button("创建 Skill", libraryScreen()))
-    await until(() => saveStarted, "Creation did not reach durable storage")
+    click(button("保存 Skill"))
+    await until(() => saveStarted && button("保存 Skill").disabled, "Creation must lock repeated saves while persistence is pending")
+    const newerContent = `${content}\n\n保存等待期间继续输入的正文。`
+    fill(draftBody(), newerContent)
+    flushSync(() => draftBody().dispatchEvent(new KeyboardEvent("keydown", { key: "s", ctrlKey: true, bubbles: true })))
+    assert(creationInputs.length === 2, "A repeated save must not duplicate the pending create")
+    await checkSidebar("跨页新技能", false, "A pending save must not publish the Skill early")
     await openAgent()
     release()
     await until(() => skillSwitch("跨页新技能"), "A background creation must update the mounted Agent selector")
     assert(navigation("Agent").getAttribute("aria-current") === "page" && !libraryScreen(), "Delayed creation must not navigate away from the user's current page")
     await openCatalog()
-    await until(() => sidebarRow("跨页新技能") && button("删除 跨页新技能", libraryScreen()), "Creation must update both the library list and sidebar")
-    checks.push("First-visit forms survive navigation; delayed creation updates all catalogs without stealing navigation")
+    await checkSidebar("跨页新技能", true, "Successful creation must update the sidebar")
+    await until(() => catalogEntry("跨页新技能"), "Successful creation must update the catalog")
+    assert([...libraryScreen().querySelectorAll(".skill-catalog-row > button")].filter(element => element.textContent.includes("跨页新技能")).length === 1, "A saved Skill must appear exactly once")
+    const created = (await library.list()).find(skill => skill.name === "跨页新技能")
+    const savedContent = await (await library.readFile(created.id, "SKILL.md")).text()
+    assert(savedContent === content && creationInputs[1].name === "跨页新技能" && creationInputs[1].description === "验证新建和选择器同步", "Creation must save runtime-readable name/description frontmatter and the complete edited body atomically")
+    click(catalogEntry("跨页新技能"))
+    await until(() => draftBody()?.value.endsWith(newerContent) && button("保存文件") && !button("保存文件").disabled, "New source typed during creation must remain editable and unsaved after completion")
+    assert(await (await library.readFile(created.id, "SKILL.md")).text() === savedContent, "Completing creation must persist only its captured version")
+    click(button("保存文件"))
+    await until(() => !draftBody() && button("编辑"), "Saving newer source must return the created Skill to reading mode")
+    assert((await (await library.readFile(created.id, "SKILL.md")).text()).endsWith(newerContent) && creationInputs.length === 2, "Saving newer source must update the same Skill without creating a duplicate")
+    checks.push("New Skills start in edit mode; cancellation and failed/pending saves publish nothing; background completion preserves navigation and newer source remains unsaved until explicitly saved")
+
+    await startDraft()
+    fill(draftBody(), '---\nname: "直接阅读新技能"\ndescription: "验证保存后直接阅读"\n---\n\n# 保存后直接阅读\n\n新建正文。')
+    click(button("保存 Skill"))
+    await until(() => libraryScreen()?.querySelector(".skill-file-preview")?.textContent.includes("保存后直接阅读") && button("编辑") && !draftBody(), "A successful foreground save must open the saved Skill in reading mode")
+    noIntermediatePage()
+    await openCatalog()
+    checks.push("Saving a new Skill opens its complete saved document directly in reading mode")
+    click(catalogEntry("直接阅读新技能"))
+    await until(() => button("编辑"), "Created Skill must open for editing")
+    click(button("编辑"))
+    const renamedSource = "---\nname: 'Markdown 新名称'\ndescription: >-\n  保存后同步说明\n---\n\n# 已重命名\n"
+    fill(draftBody(), renamedSource)
+    failWrites = true
+    click(button("保存文件"))
+    await until(() => !button("保存文件").disabled && libraryScreen()?.querySelector('[role="alert"]'), "Failed metadata saves must remain retryable")
+    assert(draftBody().value === renamedSource, "Failed metadata save must retain the whole Markdown")
+    await checkSidebar("直接阅读新技能", true, "Failed saves must keep the old saved sidebar name")
+    await checkSidebar("Markdown 新名称", false, "Failed saves must not publish an unsaved name")
+    failWrites = false
+    click(button("保存文件"))
+    await until(() => !draftBody() && button("编辑"), "Successful metadata save must return to reading")
+    assert(fixture.querySelector('header').textContent.includes("Markdown 新名称"), "The saved frontmatter name must update the breadcrumb")
+    await openCatalog()
+    await until(() => catalogEntry("Markdown 新名称"), "Metadata saves must update the Skill list")
+    assert(catalogEntry("Markdown 新名称").textContent.includes("保存后同步说明") && !catalogEntry("直接阅读新技能"), "List name and description must come from saved Markdown")
+    await checkSidebar("Markdown 新名称", true, "Metadata saves must update the sidebar")
+    checks.push("Existing Skill name and description follow saved frontmatter; failed saves retain the old list and sidebar values")
+
 
     click(button(`删除 ${legacy.name}`, libraryScreen()))
     click(button("确认删除", libraryScreen()))
-    await until(() => !button(`删除 ${legacy.name}`, libraryScreen()) && !sidebarRow(legacy.name), "Deletion must remove the Skill from the catalog and sidebar")
+    await until(() => !button(`删除 ${legacy.name}`, libraryScreen()), "Deletion must remove the Skill from the catalog")
+    await checkSidebar(legacy.name, false, "Deletion must remove the Skill from the sidebar")
     await openAgent()
     assert(!skillSwitch(legacy.name), "Deleted Skills must not reappear from the stale Agent resources catalog")
     assert(settings().textContent.includes(`资源不可用：${legacy.id}`), "An existing selection must remain explicitly removable when its Skill is deleted")
@@ -144,7 +261,6 @@
     click(skillSwitch("跨页新技能"))
     click(button("保存"))
     await until(() => saved.length === 1 && button("编辑"), "Agent selection changes must save successfully")
-    const created = (await library.list()).find(skill => skill.name === "跨页新技能")
     assert(saved[0].configuration.skillIds.length === 1 && saved[0].configuration.skillIds[0] === created.id, "Saved Agent configuration must contain the new Skill and exclude the deleted one")
     checks.push("Deleted Skills do not resurrect; unavailable selections can be removed and new Skills save into Agent configuration")
 

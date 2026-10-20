@@ -16,7 +16,6 @@ export function DocumentActions({
   busy = false,
   disabled = false,
   dirty = false,
-  vertical = false,
   readOnly = false,
   debugLabel = "调试",
   saveLabel = "保存",
@@ -31,7 +30,6 @@ export function DocumentActions({
   busy?: boolean
   disabled?: boolean
   dirty?: boolean
-  vertical?: boolean
   readOnly?: boolean
   debugLabel?: string
   saveLabel?: string
@@ -63,56 +61,15 @@ export function DocumentActions({
       role="group"
       aria-label="页面操作"
       data-slot="document-actions"
-      className={cn(
-        "absolute top-3 right-3 z-20 flex items-center gap-1",
-        vertical && "flex-col"
-      )}
+      className="flex h-8 shrink-0 items-center gap-1 pointer-coarse:h-11"
     >
-      {!editing && (onDebug || onRestore) ? (
-        <Button
-          variant="ghost"
-          size="icon"
-          className={iconClass}
-          aria-label={onDebug ? debugLabel : "恢复原始内容"}
-          title={onDebug ? debugLabel : "恢复原始内容"}
-          disabled={disabled || busy}
-          onClick={onDebug ?? onRestore}
-        >
-          <HugeiconsIcon
-            icon={onDebug ? Bug01Icon : RefreshIcon}
-            size={16}
-            aria-hidden="true"
-          />
-        </Button>
-      ) : null}
       {!readOnly ? (
-        <div
-          className={cn(
-            "relative flex items-center justify-end gap-1",
-            vertical && "flex-col"
-          )}
-        >
-          {editing ? (
-            <Button
-              variant="ghost"
-              size="icon"
-              className={iconClass}
-              aria-label="撤销"
-              title="撤销编辑"
-              disabled={disabled || busy}
-              onClick={onUndo}
-            >
-              <HugeiconsIcon icon={Undo02Icon} size={16} aria-hidden="true" />
-            </Button>
-          ) : null}
+        <div className="relative flex items-center gap-1">
           <Button
             ref={actionRef}
-            variant="ghost"
+            variant="primary"
             size="icon"
-            className={cn(
-              iconClass,
-              "relative hover:bg-primary/10 hover:text-primary focus-visible:bg-primary/10 focus-visible:text-primary"
-            )}
+            className="relative size-8 shrink-0 shadow-sm"
             aria-label={editing ? saveLabel : "编辑"}
             title={editing ? `${saveLabel}（⌘/Ctrl+S）` : "编辑"}
             aria-busy={busy}
@@ -130,10 +87,44 @@ export function DocumentActions({
               }
             />
             {dirty ? (
-              <span className="absolute top-1 right-1 size-1 rounded-full bg-current" />
+              <span className="absolute top-0.5 right-0.5 size-1 rounded-full bg-primary-foreground" />
             ) : null}
           </Button>
+          {editing ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              className={iconClass}
+              aria-label="撤销"
+              title="撤销编辑"
+              disabled={disabled || busy}
+              onClick={onUndo}
+            >
+              <HugeiconsIcon icon={Undo02Icon} size={16} aria-hidden="true" />
+            </Button>
+          ) : null}
         </div>
+      ) : null}
+      {!editing && (onDebug || onRestore) ? (
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn(
+            iconClass,
+            onDebug &&
+              "bg-amber-100 text-amber-900 hover:bg-amber-200 hover:text-amber-950 focus-visible:text-amber-950 dark:bg-amber-400/15 dark:text-amber-300 dark:hover:bg-amber-400/25 dark:hover:text-amber-200 dark:focus-visible:text-amber-200"
+          )}
+          aria-label={onDebug ? debugLabel : "恢复原始内容"}
+          title={onDebug ? debugLabel : "恢复原始内容"}
+          disabled={disabled || busy}
+          onClick={onDebug ?? onRestore}
+        >
+          <HugeiconsIcon
+            icon={onDebug ? Bug01Icon : RefreshIcon}
+            size={16}
+            aria-hidden="true"
+          />
+        </Button>
       ) : null}
       {children}
       <span role="status" className="sr-only">

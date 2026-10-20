@@ -81,14 +81,29 @@
     assert(!page(name === "skill" ? "agent" : "skill").querySelector('[data-slot="document-actions"]'), "Inactive pages must not retain document actions");
     fixture.style.width = `${innerWidth}px`;
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const bounds = dock.getBoundingClientRect();
+    const body = page(name).querySelector('[data-slot="document-body"]');
+    const bodyBounds = body.getBoundingClientRect();
+    assert(!body.contains(dock), `${name} actions must remain outside the bordered document body`);
+    assert(Math.abs(bounds.left - bodyBounds.left) <= 1 && bounds.bottom <= bodyBounds.top + 1,
+      `${name} actions must align with the frame's left edge above its outer border`);
+    for (const section of [...body.querySelectorAll('.doc-reading-scroll, .skill-file-sidebar, aside[aria-label="Agent 配置"]')].filter(element => element.getClientRects().length > 0)) {
+      assert(section.getBoundingClientRect().top >= bounds.bottom - 1,
+        `${name} content and sidebar must start below the horizontal action row`);
+    }
     const controls = [...dock.querySelectorAll("button")].filter(button => button.getClientRects().length > 0);
+    const primary = [...dock.querySelectorAll("button")].find(action => action.getAttribute("aria-label") === "编辑" || action.getAttribute("aria-label")?.startsWith("保存"));
+    assert(primary && getComputedStyle(primary).backgroundColor !== "rgba(0, 0, 0, 0)",
+      `${name} edit/save must carry a filled background`);
+    assert(controls[0] === primary, `${name} edit/save must start the horizontal action row`);
     for (const [index, control] of controls.entries()) {
       const bounds = control.getBoundingClientRect();
       assert(bounds.left >= -1 && bounds.right <= innerWidth + 1, `${name} body action must fit the viewport`);
-      assert(control.getAttribute("aria-label") && control.textContent.trim() === "", "Body actions must remain accessible icon buttons");
+      assert(control.getAttribute("aria-label") && control.textContent.trim() === "",
+        "Body actions must remain accessible icon buttons");
       if (index) {
         const previous = controls[index - 1].getBoundingClientRect();
-        assert(previous.bottom <= bounds.top + 1 && Math.abs((previous.left + previous.right) / 2 - (bounds.left + bounds.right) / 2) <= 1, `${name} actions must form one vertical column without overlap`);
+        assert(previous.right <= bounds.left + 1 && Math.abs((previous.top + previous.bottom) / 2 - (bounds.top + bounds.bottom) / 2) <= 1, `${name} actions must form one horizontal row without overlap`);
       }
     }
     fixture.style.width = "1800px";

@@ -2,10 +2,7 @@
 
 import * as React from "react"
 import { LayoutGroup, motion, useReducedMotion } from "motion/react"
-import {
-  ArrowDown01Icon,
-  Folder01Icon,
-} from "@hugeicons-pro/core-stroke-rounded"
+import { Folder01Icon } from "@hugeicons-pro/core-stroke-rounded"
 import { HugeiconsIcon } from "@hugeicons/react"
 
 import { useAppDependencies } from "@/app/dependencies"
@@ -31,13 +28,11 @@ export function ChatScreen({
   threadId = "main",
   models,
   workspaceName,
-  onChooseWorkspace,
   suggestions = SUGGESTIONS,
 }: {
   threadId?: string
   models: readonly ModelChoice[]
   workspaceName?: string
-  onChooseWorkspace?: () => void
   suggestions?: readonly string[]
 }) {
   const { threads, desktop, runs } = useAppDependencies()
@@ -112,40 +107,6 @@ export function ChatScreen({
                 transition={reduce ? { duration: 0 } : SPRING_PANEL}
                 className="flex w-full max-w-[736px] flex-col items-center gap-6"
               >
-                <div className="flex flex-col items-center gap-2 text-center">
-                  <h1 className="text-2xl font-medium tracking-tight">
-                    开始一段新对话
-                  </h1>
-                  <p className="text-sm text-muted-foreground">
-                    描述你的问题或任务，agent 会展示它的每一步推理。
-                  </p>
-                  {onChooseWorkspace ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="mt-1 max-w-full text-muted-foreground"
-                      onClick={onChooseWorkspace}
-                      aria-label={
-                        workspaceName
-                          ? `选择工作区，当前为 ${workspaceName}`
-                          : "选择工作区"
-                      }
-                    >
-                      <HugeiconsIcon icon={Folder01Icon} aria-hidden="true" />
-                      <span className="truncate">
-                        {workspaceName ?? "选择工作区"}
-                      </span>
-                      <HugeiconsIcon
-                        icon={ArrowDown01Icon}
-                        aria-hidden="true"
-                      />
-                    </Button>
-                  ) : workspaceName ? (
-                    <p className="mt-1 max-w-full truncate text-sm text-muted-foreground">
-                      {workspaceName}
-                    </p>
-                  ) : null}
-                </div>
                 <motion.div
                   layoutId={reduce ? undefined : "composer"}
                   className="w-full"

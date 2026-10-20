@@ -1,5 +1,5 @@
 import { useRef, useState } from "react"
-import { Bot, Copy, Plus, Search, X } from "lucide-react"
+import { Bot, Copy, Search, X } from "lucide-react"
 import type { AgentEntry } from "@/agents/source"
 import { Button } from "@/components/motion/button"
 import { Input } from "@/components/motion/input"
@@ -9,7 +9,6 @@ export type AgentLibraryScreenProps = {
   agents: readonly AgentEntry[]
   busy: boolean
   canCreate: boolean
-  onCreate: () => void
   onOpen: (id: string) => void
   onCopy?: (id: string) => void
 }
@@ -18,7 +17,6 @@ export function AgentLibraryScreen({
   agents,
   busy,
   canCreate,
-  onCreate,
   onOpen,
   onCopy,
 }: AgentLibraryScreenProps) {
@@ -49,25 +47,8 @@ export function AgentLibraryScreen({
       className="@container/agents relative flex h-full min-h-0 flex-col bg-background"
     >
       <h1 className="sr-only">Agent</h1>
-      <div
-        className="absolute top-3 right-3 z-20 flex flex-col gap-1"
-        role="group"
-        aria-label="Agent 操作"
-      >
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-7 touch-manipulation text-muted-foreground/70 transition-colors hover:text-foreground focus-visible:text-foreground pointer-coarse:size-11"
-          disabled={busy || !canCreate}
-          aria-label="新建本地 Agent"
-          title="新建本地 Agent"
-          onClick={onCreate}
-        >
-          <Plus aria-hidden="true" />
-        </Button>
-      </div>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 @min-[640px]/agents:px-8">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 pr-9 pointer-coarse:pr-12">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div className="flex gap-1" role="group" aria-label="Agent 来源">
             {(["all", "local", "official"] as const).map((value) => (
               <Button
@@ -76,7 +57,7 @@ export function AgentLibraryScreen({
                 size="sm"
                 className={cn(
                   "touch-manipulation rounded-full px-4 text-muted-foreground transition-colors pointer-coarse:min-h-11",
-                  filter === value && "bg-muted text-foreground"
+                  filter === value && "bg-muted text-accent-foreground"
                 )}
                 aria-pressed={filter === value}
                 onClick={() => setFilter(value)}
@@ -216,13 +197,11 @@ export function AgentLibraryScreen({
             <h2 className="text-sm font-medium text-balance">
               {agents.length ? "没有匹配的 Agent" : "还没有 Agent"}
             </h2>
-            <p className="mt-2 max-w-[40ch] text-xs leading-6 text-muted-foreground">
-              {agents.length
-                ? "试试其他关键词，或查看全部来源。"
-                : canCreate
-                  ? "创建一个 Agent，为它设置任务指令并添加需要的能力。"
-                  : "当前接入尚未提供 Agent。"}
-            </p>
+            {!agents.length && !canCreate ? (
+              <p className="mt-2 max-w-[40ch] text-xs leading-6 text-muted-foreground">
+                当前接入尚未提供 Agent。
+              </p>
+            ) : null}
             {agents.length ? (
               <Button
                 variant="outline"

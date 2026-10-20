@@ -66,6 +66,7 @@ export function AgentConfigurationPanel({
             label="名称"
             value={value.name}
             readOnly={readOnly}
+            placeholder="给这个 Agent 起个名字"
             maxLength={80}
             onChange={(name) => onChange({ ...value, name })}
             classNames={{
@@ -85,6 +86,7 @@ export function AgentConfigurationPanel({
               id={`${id}-description`}
               value={value.description}
               readOnly={readOnly}
+              placeholder="一句话说明它负责什么"
               maxLength={160}
               rows={3}
               onChange={(event) =>

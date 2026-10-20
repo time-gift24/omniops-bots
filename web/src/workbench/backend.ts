@@ -27,9 +27,9 @@ export type ChangeSet = {
 }
 
 export type WorkbenchScope = {
-  workspaceId: string
+  workspaceId?: string
   /** Resolved by WorkspaceAccess; workspaceId is only a frontend identity. */
-  workspacePath: string
+  workspacePath?: string
   sessionId: string
 }
 

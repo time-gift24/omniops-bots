@@ -32,7 +32,7 @@ const updateTasks = (tasks, publish = true) => { state = { ...state, tasks, task
 const desktop = {
   getState: () => state,
   subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener) },
-  async setBrowserViewport() {}, async decide() {}, async navigate() {}, async back() {}, async forward() {}, async reload() {},
+  async decide() {}, async navigate() {}, async back() {}, async forward() {}, async reload() {},
   async stop(runId) {
     updateTasks(state.tasks.map(task => task.runId === runId ? { ...task, phase: "stopping" } : task))
     await stopAck.promise
@@ -77,6 +77,9 @@ try {
   assert(bRequests() === 0 && dependencies.threads.get("b").getDraft().text === "Independent B request", "The immediate submit guard must block a newly busy B before subscription delivery")
   notify()
   assert(button("停止任务") && !button("停止任务").disabled, "B must display its own task even when the selected browser task is A")
+  assert(!fixture.textContent.includes("Agent 正在执行任务") && !fixture.textContent.includes("其他会话正在运行任务。"), "Running tasks must not add a status strip above the composer")
+  updateTasks([taskA, { ...taskB, error: "停止未能完成，请重试。" }])
+  assert(fixture.querySelector('[role="alert"]')?.textContent.includes("停止未能完成"), "Removing task status must preserve actionable stop errors")
   updateTasks([taskA])
   const stoppingA = desktop.stop(taskA.runId)
   assert(!button("发送").disabled, "Stopping A must not disable B's composer")

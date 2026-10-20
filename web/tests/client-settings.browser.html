@@ -1,7 +1,7 @@
 <!doctype html>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Client concurrency settings regression</title>
+<title>Client settings and scroll navigation regression</title>
 <div id="fixture"></div>
 <pre id="result" style="max-width: 100%; white-space: pre-wrap; font-size: 11px">Running…</pre>
 <script type="module">
@@ -30,19 +30,42 @@
     field().dispatchEvent(new Event("input", { bubbles: true }))
   })
   const drawer = () => document.querySelector('[data-mobile="true"]')
+  const settingsPage = () => fixture.querySelector('[data-slot="client-settings"]')
+  const navigation = () => (mobile ? drawer() : fixture.querySelector('[data-slot="sidebar"]'))?.querySelector('nav[aria-label="设置分区"]')
+  const sectionLink = id => navigation()?.querySelector(`a[href="#client-settings-${id}"]`)
+  const section = id => settingsPage()?.querySelector(`[data-settings-section="${id}"]`)
   const closeNavigation = async () => {
     if (mobile && drawer()?.getAttribute("aria-hidden") === "false") {
       click(button("Close sidebar"))
       await until(() => drawer()?.getAttribute("aria-hidden") === "true", "Mobile navigation did not close")
     }
   }
+  const revealNavigation = async () => {
+    if (mobile && drawer()?.getAttribute("aria-hidden") !== "false") click(button("展开导航"))
+    await until(() => visible(navigation()), "Settings section navigation must be reachable")
+  }
+  const expectCurrentSection = async id => {
+    await revealNavigation()
+    await until(() => sectionLink(id)?.getAttribute("aria-current") === "location", `Settings navigation must highlight ${id}`)
+    assert(navigation().querySelectorAll('[aria-current="location"]').length === 1, "Only one settings section may be current")
+    await closeNavigation()
+  }
+  const navigateTo = async id => {
+    await revealNavigation()
+    click(sectionLink(id))
+    await closeNavigation()
+    await until(() => {
+      const pageBounds = settingsPage().getBoundingClientRect(), targetBounds = section(id).getBoundingClientRect()
+      return targetBounds.top < pageBounds.bottom && targetBounds.bottom > pageBounds.top
+    }, `${id} section must scroll into view`)
+    await expectCurrentSection(id)
+  }
   const openSettings = async () => {
     await closeNavigation()
     click(button("设置", fixture.querySelector('nav[aria-label="工作区导航区域"]')))
-    await until(() => button("偏好设置", mobile ? drawer() : fixture.querySelector('[data-slot="sidebar"]')), "Preferences item must be reachable")
-    click(button("偏好设置", mobile ? drawer() : fixture.querySelector('[data-slot="sidebar"]')))
+    await until(() => visible(navigation()), "Settings section navigation must open")
     await closeNavigation()
-    await until(() => fixture.querySelector('[data-slot="client-settings"]'), "Preferences page must open")
+    await until(settingsPage, "Preferences page must open directly from the settings rail")
   }
   try {
     if (!viewport) {
@@ -93,21 +116,58 @@
       await until(() => field()?.value === "4", "Default limit must be four")
       const breadcrumb = [...fixture.querySelectorAll('nav[aria-label="面包屑"]')].find(visible)
       assert(breadcrumb?.textContent.includes("设置") && breadcrumb?.querySelector('[aria-current="page"] > span:last-child')?.textContent === "偏好设置", "Settings must use the shared breadcrumb")
-      assert(field().labels[0]?.textContent === "并发任务上限", "Input needs an accessible visible label")
+      assert(field().labels[0]?.textContent === "同时运行的任务数", "Input needs an accessible visible label")
+      await revealNavigation()
+      for (const [id, label] of [["theme", "主题"], ["palette", "配色"], ["tasks", "Agent 运行"]]) {
+        assert(sectionLink(id)?.textContent.trim() === label && section(id)?.id === `client-settings-${id}`, `${label} must link to its settings section`)
+      }
+      await closeNavigation()
+      await expectCurrentSection("theme")
+      await navigateTo("palette")
+      await navigateTo("tasks")
+      assert(settingsPage().scrollTop > 0, "Section links must scroll the settings content")
+      settingsPage().scrollTo({ top: 0, behavior: "instant" })
+      await expectCurrentSection("theme")
+      settingsPage().scrollTo({ top: settingsPage().scrollHeight, behavior: "instant" })
+      await expectCurrentSection("tasks")
+      await navigateTo("theme")
+      for (const theme of ["dark", "light", "system"]) {
+        const radio = settingsPage().querySelector(`input[name="settings-theme"][value="${theme}"]`)
+        click(radio)
+        const resolved = theme === "system" ? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light") : theme
+        await until(() => radio.checked && document.documentElement.classList.contains(resolved) && document.documentElement.style.colorScheme === resolved, `${theme} must immediately update the visible theme`)
+        assert(await dependencies.preferences.readTheme() === theme, "Theme selection must use the existing preferences adapter")
+      }
+      await navigateTo("palette")
+      for (const palette of ["claude", "official"]) {
+        const radio = settingsPage().querySelector(`input[name="settings-palette"][value="${palette}"]`)
+        click(radio)
+        await until(() => radio.checked && document.documentElement.dataset.palette === palette, `${palette} must immediately update the visible palette`)
+        assert(await dependencies.preferences.readPalette() === palette, "Palette selection must use the existing preferences adapter")
+      }
+      assert(saves.length === 0, "Appearance changes must not submit task settings")
+      await navigateTo("tasks")
       for (const invalid of ["", "0", "65", "1.5"]) {
         setValue(invalid)
         assert(field().getAttribute("aria-invalid") === "true" && button("保存设置").disabled, `Reject invalid limit ${invalid}`)
       }
       setValue("8")
+      await navigateTo("theme")
+      await navigateTo("tasks")
+      assert(field().value === "8" && saves.length === 0, "Section navigation must preserve the unsaved task draft without saving it")
       click(button("保存设置"))
       flushSync(() => fixture.querySelector("form").dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })))
       await until(() => saves.length === 1, "Save must reach the desktop adapter")
       assert(field().disabled && button("正在保存…").disabled && saves.length === 1, "Pending save must prevent duplicate submissions")
       pendingSave.reject(new Error("disk full"))
       await until(() => fixture.textContent.includes("设置保存失败"), "Save error must show recovery")
-      assert(field().value === "8" && fixture.textContent.includes("当前生效上限：4") && saved === 4, "Failed save must retain draft and previous saved value")
+      assert(field().value === "8" && fixture.textContent.includes("当前上限：4 个") && saved === 4, "Failed save must retain draft and previous saved value")
       click(button("保存设置"))
       await until(() => saved === 8 && fixture.textContent.includes("设置已保存"), "Successful save must confirm the applied value")
+      const writesBeforeUndo = saves.length
+      setValue("0")
+      click(button("撤销"))
+      assert(field().value === "8" && field().getAttribute("aria-invalid") === "false" && !settingsPage().textContent.includes("请输入 1 到 64 的整数。") && button("保存设置").disabled && saves.length === writesBeforeUndo, "Undo must restore the last saved limit and clear validation without an adapter write")
       await closeNavigation()
       click(button("工作区", fixture.querySelector('nav[aria-label="工作区导航区域"]')))
       failRead = true
@@ -117,6 +177,7 @@
       failRead = false
       click(button("重试", fixture.querySelector('[data-slot="client-settings"]')))
       await until(() => field()?.value === "8", "Reopening and retrying must read the saved value")
+      await navigateTo("tasks")
       const tasks = ["a", "b"].map(threadId => ({ threadId, runId: `run-${threadId}`, title: `任务 ${threadId}`, phase: "running" }))
       flushSync(() => listener({ event: "desktop_state", state: { ...empty, tasks } }))
       setValue("1")
@@ -125,9 +186,10 @@
       assert(runtime.desktop.getState().tasks.length === 2 && !calls.some(([, args]) => args?.method === "stop"), "Lowering must preserve existing runs")
       const bounds = field().getBoundingClientRect(), form = fixture.querySelector("form").getBoundingClientRect()
       assert(bounds.left >= 0 && bounds.right <= innerWidth && form.right <= innerWidth + 1, "Settings must fit the viewport")
-      assert(fixture.textContent.includes("调低上限不会停止正在执行的任务"), "Application timing must be explained")
+      assert(settingsPage().scrollWidth <= settingsPage().clientWidth + 1, "Settings content must not overflow horizontally")
+      assert(fixture.textContent.includes("1–64 个") && fixture.textContent.includes("例如设为 4，可在 4 个会话中同时运行 Agent，包含浏览器任务。"), "Input limits and concurrency meaning must be clear")
     }
-    result.textContent = `PASS ${viewport ?? "desktop + 390px"}: loading, default 4, validation, duplicate save guard, failed save retains draft/value, save, reopen, read retry, active-run lowering, settings navigation and breadcrumb`
+    result.textContent = `PASS ${viewport ?? "desktop + 390px"}: section links and scroll tracking, immediate theme/palette preferences, loading, default 4, validation, duplicate save guard, failed save retains draft/value, save, reopen, read retry, active-run lowering, responsive settings and breadcrumb`
     result.dataset.passed = "true"
   } catch (error) {
     result.textContent = `FAIL ${viewport ?? "all"}: ${error.stack}`

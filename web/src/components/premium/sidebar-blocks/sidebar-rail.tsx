@@ -2,7 +2,7 @@
 
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
 import {
-  ArrowUpRight01Icon,
+  ArrowDown01Icon,
   BookOpen01Icon,
   Cancel01Icon,
   FileTextIcon,
@@ -58,6 +58,13 @@ export type SidebarRailItem = {
   icon?: IconSvgElement
 }
 
+export type SidebarRailAction = {
+  label: string
+  icon?: IconSvgElement
+  disabled?: boolean
+  onSelect: () => void
+}
+
 export type SidebarRailSection = {
   id: string
   label: string
@@ -67,6 +74,8 @@ export type SidebarRailSection = {
     items: readonly SidebarRailItem[]
     /** Extra control rendered beside the group label, e.g. a search button. */
     action?: ReactNode
+    /** List groups collapse from their heading; defaults to true. */
+    collapsible?: boolean
   }[]
   /** A section can own its rows while still supplying searchable items. */
   renderContent?: (closeNavigation: () => void) => ReactNode
@@ -74,7 +83,7 @@ export type SidebarRailSection = {
   collapseOnSelect?: boolean
   /** Sections with a management list open that list before an individual item. */
   selectFirstItem?: boolean
-  /** A persistent list shortcut below the new-conversation action. */
+  /** The section's own list page, rendered below its primary action. */
   overviewLabel?: string
 }
 
@@ -158,6 +167,8 @@ export const defaultSections: readonly SidebarRailSection[] = [
 export type SidebarRailProps = {
   workspaceName?: string
   sections?: readonly SidebarRailSection[]
+  /** The active section's primary action, keyed by section id. */
+  actions?: Partial<Record<string, SidebarRailAction>>
   defaultExpanded?: boolean
   expanded?: boolean
   onExpandedChange?: (expanded: boolean) => void
@@ -167,8 +178,6 @@ export type SidebarRailProps = {
   onSectionSelect?: (section: SidebarRailSection) => void
   onParentSelect?: (section: SidebarRailSection) => void
   onItemSelect?: (item: SidebarRailItem, section: SidebarRailSection) => void
-  onCreate?: () => void
-  createLabel?: string
   account?: { name: string; initials: string }
   onAccountClick?: () => void
   /** Replaces the panel title; search and collapse controls stay built in. Pass null to hide it. */
@@ -192,7 +201,88 @@ export type SidebarRailProps = {
 }
 
 const iconButtonClass =
-  "size-9 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+  "size-9 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:size-11"
+
+function SidebarNavGroup({
+  group,
+  itemId,
+  onSelect,
+}: {
+  group: SidebarRailSection["groups"][number]
+  itemId: string
+  onSelect: (item: SidebarRailItem) => void
+}) {
+  const contentId = useId()
+  const [open, setOpen] = useState(true)
+  const collapsible = group.collapsible !== false
+  return (
+    <AnimatedSidebarGroup className="gap-2 p-0">
+      <div className="flex items-center gap-1 pr-1">
+        {collapsible ? (
+          <h3 className="m-0 flex min-w-0 flex-1 items-center">
+            <button
+              type="button"
+              aria-expanded={open}
+              aria-controls={contentId}
+              onClick={() => setOpen((value) => !value)}
+              className="flex min-h-8 min-w-0 flex-1 items-center gap-1.5 rounded-full px-3 text-left text-xs font-medium text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:min-h-11"
+            >
+              <HugeiconsIcon
+                icon={ArrowDown01Icon}
+                size={14}
+                aria-hidden="true"
+                className={cn(
+                  "shrink-0 transition-transform duration-150 motion-reduce:transition-none",
+                  !open && "-rotate-90"
+                )}
+              />
+              <span className="truncate">{group.label}</span>
+            </button>
+          </h3>
+        ) : (
+          <AnimatedSidebarGroupLabel className="mb-0 flex min-w-0 flex-1 items-center px-3 text-xs font-medium text-muted-foreground">
+            {group.label}
+          </AnimatedSidebarGroupLabel>
+        )}
+        {group.action}
+      </div>
+      <AnimatedSidebarGroupContent id={contentId} hidden={!open}>
+        <SharedLayoutBg
+          as="ul"
+          inset={0}
+          pillClassName="rounded-full bg-muted/70"
+          pillContainerClassName="inset-y-auto top-0 h-9"
+          className="flex w-full min-w-0 list-none flex-col gap-0.5"
+        >
+          {group.items.map((item) => {
+            const Icon = item.icon
+            return (
+              <AnimatedSidebarMenuItem key={item.id}>
+                <AnimatedSidebarMenuButton
+                  icon={
+                    Icon ? (
+                      <HugeiconsIcon
+                        icon={Icon}
+                        aria-hidden="true"
+                        size={16}
+                        strokeWidth={1.7}
+                      />
+                    ) : undefined
+                  }
+                  isActive={item.id === itemId}
+                  onSelect={() => onSelect(item)}
+                  className="rounded-full font-normal [&>span]:rounded-full"
+                >
+                  {item.label}
+                </AnimatedSidebarMenuButton>
+              </AnimatedSidebarMenuItem>
+            )
+          })}
+        </SharedLayoutBg>
+      </AnimatedSidebarGroupContent>
+    </AnimatedSidebarGroup>
+  )
+}
 
 export function SidebarRail({
   defaultExpanded = true,
@@ -241,14 +331,13 @@ export function SidebarRail({
 function SidebarRailShell({
   workspaceName = "omniops-bots",
   sections = defaultSections,
+  actions,
   defaultItemId = "launch-direction",
   activeSectionId,
   activeItemId,
   onSectionSelect,
   onParentSelect,
   onItemSelect,
-  onCreate,
-  createLabel = "新建页面",
   account = { name: "陈晓", initials: "陈" },
   onAccountClick,
   panelHeader,
@@ -281,6 +370,7 @@ function SidebarRailShell({
   const panelId = useId()
   const section =
     sections.find((entry) => entry.id === sectionId) ?? sections[0]
+  const sectionAction = section ? actions?.[section.id] : undefined
   const selectedItem = section?.groups
     .flatMap((group) => group.items)
     .find((item) => item.id === itemId)
@@ -355,6 +445,16 @@ function SidebarRailShell({
     closeNavigation()
   }
 
+  function runSectionAction(action: SidebarRailAction) {
+    if (action.disabled) return
+    action.onSelect()
+    context.setOpenMobile(false)
+    if (!expanded && !context.isMobile) {
+      toggleRef.current?.focus({ preventScroll: true })
+      closePeek()
+    }
+  }
+
   const panelHeaderNode = (
     <AnimatedSidebarHeader className="gap-3 p-4 pb-2">
       <div className="flex items-center gap-1">
@@ -386,44 +486,35 @@ function SidebarRailShell({
         </AnimatedSidebarClose>
       </div>
       <div className="flex flex-col gap-1">
-        <Button
-          variant="ghost"
-          onClick={() => {
-            setItemId("new-page")
-            if (onCreate) setSectionId(sections[0]?.id)
-            onCreate?.()
-            context.setOpenMobile(false)
-            if (!expanded && !context.isMobile) {
-              toggleRef.current?.focus({ preventScroll: true })
-              closePeek()
-            }
-          }}
-          className="h-9 justify-start rounded-full px-2 text-foreground"
-        >
-          <HugeiconsIcon icon={PlusSignIcon} aria-hidden="true" size={16} />
-          {createLabel}
-        </Button>
-        {sections
-          .filter((entry) => entry.overviewLabel)
-          .map((entry) => (
-            <Button
-              key={entry.id}
-              variant="ghost"
-              aria-current={
-                sectionId === entry.id && itemId === "" ? "page" : undefined
-              }
-              onClick={() => selectOverview(entry)}
-              className={cn(
-                "h-9 justify-start rounded-full px-2 text-muted-foreground hover:text-foreground",
-                sectionId === entry.id &&
-                  itemId === "" &&
-                  "bg-accent text-accent-foreground"
-              )}
-            >
-              <HugeiconsIcon icon={ListViewIcon} aria-hidden="true" size={16} />
-              {entry.overviewLabel}
-            </Button>
-          ))}
+        {sectionAction ? (
+          <Button
+            variant="ghost"
+            disabled={sectionAction.disabled}
+            onClick={() => runSectionAction(sectionAction)}
+            className="h-9 justify-start rounded-full px-2 text-foreground pointer-coarse:min-h-11"
+          >
+            <HugeiconsIcon
+              icon={sectionAction.icon ?? PlusSignIcon}
+              aria-hidden="true"
+              size={16}
+            />
+            {sectionAction.label}
+          </Button>
+        ) : null}
+        {section?.overviewLabel ? (
+          <Button
+            variant="ghost"
+            aria-current={itemId === "" ? "page" : undefined}
+            onClick={() => selectOverview(section)}
+            className={cn(
+              "h-9 justify-start rounded-full px-2 text-muted-foreground hover:text-foreground pointer-coarse:min-h-11",
+              itemId === "" && "bg-accent text-accent-foreground"
+            )}
+          >
+            <HugeiconsIcon icon={ListViewIcon} aria-hidden="true" size={16} />
+            {section.overviewLabel}
+          </Button>
+        ) : null}
       </div>
     </AnimatedSidebarHeader>
   )
@@ -467,6 +558,7 @@ function SidebarRailShell({
                 content={entry.label}
                 side="right"
                 disabled={context.isMobile}
+                className={entry.id === "settings" ? "mt-auto" : undefined}
               >
                 <Button
                   variant="ghost"
@@ -517,7 +609,10 @@ function SidebarRailShell({
           })}
           <div
             data-slot="sidebar-rail-footer"
-            className="mt-auto flex flex-col items-center gap-3"
+            className={cn(
+              "flex flex-col items-center gap-3",
+              !sections.some((entry) => entry.id === "settings") && "mt-auto"
+            )}
           >
             {railActions}
             {railFooter === undefined ? (
@@ -547,7 +642,7 @@ function SidebarRailShell({
 
         <AnimatedSidebar
           id={panelId}
-          ariaLabel={`${workspaceName} 导航`}
+          ariaLabel={`${section?.label ?? workspaceName} 导航`}
           collapsible="offcanvas"
           className="w-76 shadow-none md:absolute md:inset-y-0 md:left-16 md:w-auto"
           panelClassName={cn(
@@ -561,48 +656,12 @@ function SidebarRailShell({
             {section?.renderContent
               ? section.renderContent(closeNavigation)
               : groups.map((group) => (
-                  <AnimatedSidebarGroup key={group.label} className="gap-2 p-0">
-                    <div className="flex items-center gap-1 pr-1">
-                      <AnimatedSidebarGroupLabel className="mb-0 flex min-w-0 flex-1 items-center px-3 text-xs font-medium text-muted-foreground">
-                        {group.label}
-                      </AnimatedSidebarGroupLabel>
-                      {group.action}
-                    </div>
-                    <AnimatedSidebarGroupContent>
-                      <SharedLayoutBg
-                        as="ul"
-                        inset={0}
-                        pillClassName="rounded-full bg-muted/70"
-                        pillContainerClassName="inset-y-auto top-0 h-9"
-                        className="flex w-full min-w-0 list-none flex-col gap-0.5"
-                      >
-                        {group.items.map((item) => {
-                          const Icon = item.icon
-                          return (
-                            <AnimatedSidebarMenuItem key={item.id}>
-                              <AnimatedSidebarMenuButton
-                                icon={
-                                  Icon ? (
-                                    <HugeiconsIcon
-                                      icon={Icon}
-                                      aria-hidden="true"
-                                      size={16}
-                                      strokeWidth={1.7}
-                                    />
-                                  ) : undefined
-                                }
-                                isActive={item.id === itemId}
-                                onSelect={() => selectItem(item)}
-                                className="rounded-full font-normal [&>span]:rounded-full"
-                              >
-                                {item.label}
-                              </AnimatedSidebarMenuButton>
-                            </AnimatedSidebarMenuItem>
-                          )
-                        })}
-                      </SharedLayoutBg>
-                    </AnimatedSidebarGroupContent>
-                  </AnimatedSidebarGroup>
+                  <SidebarNavGroup
+                    key={`${section?.id}:${group.label}`}
+                    group={group}
+                    itemId={itemId}
+                    onSelect={selectItem}
+                  />
                 ))}
             {!section?.renderContent && groups.length === 0 ? (
               <output className="px-3 py-4 text-sm text-muted-foreground">
@@ -714,23 +773,7 @@ function SidebarRailShell({
             contentClassName
           )}
         >
-          {children ?? (
-            <div className="grid h-full place-content-center gap-3 text-center">
-              <span className="mx-auto grid size-10 place-items-center rounded-full border border-border text-muted-foreground">
-                <HugeiconsIcon
-                  icon={ArrowUpRight01Icon}
-                  aria-hidden="true"
-                  size={20}
-                />
-              </span>
-              <h3 className="text-xl font-medium">
-                {selectedItem?.label ?? "下一个想法从这里开始"}
-              </h3>
-              <p className="max-w-xs text-sm text-muted-foreground">
-                项目、页面和资料，触手可及。
-              </p>
-            </div>
-          )}
+          {children}
         </div>
         {headerOverlay}
       </div>

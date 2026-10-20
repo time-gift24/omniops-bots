@@ -28,8 +28,7 @@
   ]
   let opened = ""
   let copied = ""
-  let creates = 0
-  const props = { agents, busy: false, canCreate: true, onCreate: () => creates++, onOpen: id => opened = id, onCopy: id => copied = id }
+  const props = { agents, busy: false, canCreate: true, onOpen: id => opened = id, onCopy: id => copied = id }
   const render = updates => flushSync(() => root.render(withTestTheme(React.createElement(AgentLibraryScreen, { ...props, ...updates }), dependencies)))
   const assert = (value, message) => { if (!value) throw new Error(message) }
   const button = label => [...fixture.querySelectorAll("button")].find(node => {
@@ -73,16 +72,15 @@
     assert(rows().length === 4 && document.activeElement === search(), "Inline clear must return keyboard focus to search")
     checks.push("Source filters, description/draft search and reset close their interaction loops")
 
-    click(button("新建本地 Agent"))
-    assert(creates === 1, "Floating create must call the host action")
     render({ busy: true })
-    assert(button("新建本地 Agent").disabled && button("复制 资料研究助手 为本地 Agent").disabled, "Busy state must disable repeated mutations")
+    assert(button("复制 资料研究助手 为本地 Agent").disabled, "Busy state must disable official copy")
     render({ canCreate: false })
-    assert(button("新建本地 Agent").disabled && !button("复制 资料研究助手 为本地 Agent"), "Unavailable creation must not offer an impossible copy")
+    assert(!button("复制 资料研究助手 为本地 Agent"), "Unavailable creation must not offer an impossible copy")
     render({ agents: [] })
-    assert(fixture.textContent.includes("还没有 Agent") && !button("新建本地 Agent").disabled, "Empty libraries must retain the create action")
+    assert(fixture.textContent.includes("还没有 Agent"), "Empty libraries must explain the empty state")
+    assert(!fixture.querySelector('[aria-label="新建本地 Agent"]'), "Creation belongs to the section sidebar, not the list page")
     render({})
-    checks.push("Create/copy callbacks, busy locks, capability limits and empty library recovery")
+    checks.push("Copy is gated by busy and capability; creation stays in the section sidebar; empty libraries explain the state")
     result.dataset.status = "passed"
     result.textContent = `PASS (${checks.length})\n${checks.join("\n")}`
   } catch (error) {

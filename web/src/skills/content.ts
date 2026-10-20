@@ -1,3 +1,44 @@
+import { parseDocument } from "yaml"
+
+export const EMPTY_SKILL_CONTENT = '---\nname: ""\ndescription: ""\n---\n\n'
+
+export function readSkillMetadata(source: string): {
+  name: string
+  description: string
+} {
+  const { metadata } = splitFrontmatter(source)
+  if (metadata === null)
+    throw new Error("请在 SKILL.md 顶部填写以 --- 包围的 name 和 description。")
+  let value: unknown
+  try {
+    const document = parseDocument(metadata)
+    if (document.errors.length) throw new Error("Invalid YAML")
+    value = document.toJS({ maxAliasCount: 0 })
+  } catch {
+    throw new Error("SKILL.md 的 YAML 元信息格式无效，请检查后重试。")
+  }
+  const fields =
+    value && typeof value === "object" && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : {}
+  const { name, description } = fields
+  if (
+    typeof name !== "string" ||
+    !name.trim() ||
+    name.length > 100 ||
+    /\p{Cc}/u.test(name)
+  )
+    throw new Error("frontmatter 的 name 须为 1–100 个可见字符。")
+  if (
+    typeof description !== "string" ||
+    !description.trim() ||
+    description.length > 4096 ||
+    /\p{Cc}/u.test(description)
+  )
+    throw new Error("frontmatter 的 description 须为 1–4096 个可见字符。")
+  return { name: name.trim(), description: description.trim() }
+}
+
 export function splitFrontmatter(source: string): {
   metadata: string | null
   body: string

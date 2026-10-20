@@ -37,7 +37,7 @@ function FileList({
   if (files.data.length === 0) {
     return (
       <p className="px-2.5 py-2 text-xs text-muted-foreground">
-        工作区目录为空。
+        暂无文件。
       </p>
     )
   }

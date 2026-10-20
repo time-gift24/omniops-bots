@@ -13,12 +13,10 @@ import type { BackendDataState } from "./use-backend-data";
 function ToolRow({
   icon,
   label,
-  description,
   onClick,
 }: {
   icon: IconSvgElement;
   label: string;
-  description: string;
   onClick: () => void;
 }) {
   return (
@@ -26,7 +24,7 @@ function ToolRow({
       <Button variant="plain" pressScale={1} whileHover={undefined}
         type="button"
         onClick={onClick}
-        className="flex w-full items-center gap-2.5 rounded-full px-3 py-2 text-left outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex w-full items-center gap-2.5 rounded-full px-3 py-2 text-left outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:min-h-11"
       >
         <HugeiconsIcon
           icon={icon}
@@ -35,12 +33,7 @@ function ToolRow({
           aria-hidden="true"
           className="shrink-0 text-muted-foreground"
         />
-        <span className="min-w-0 flex-1">
-          <span className="block text-sm">{label}</span>
-          <span className="block truncate text-xs text-muted-foreground">
-            {description}
-          </span>
-        </span>
+        <span className="min-w-0 flex-1 text-sm">{label}</span>
         <HugeiconsIcon
           icon={ArrowRight01Icon}
           size={14}
@@ -107,13 +100,6 @@ function SiteTiles({
       </p>
     );
   }
-  if (sites.data.length === 0) {
-    return (
-      <p className="mt-2 px-1 text-xs text-muted-foreground">
-        浏览过的页面会出现在这里。
-      </p>
-    );
-  }
   return (
     <div className="mt-2 grid grid-cols-2 gap-2 @[26rem]:grid-cols-3">
       {sites.data.map((site) => (
@@ -143,31 +129,30 @@ export function StartPage({
       <section aria-label="工具">
         <h3 className="px-1 text-xs font-medium text-muted-foreground">工具</h3>
         <ul className="mt-1.5 space-y-0.5">
-          <ToolRow icon={Globe02Icon} label="运维浏览器" description="在应用内手动操作网页" onClick={onOpenOperationsBrowser} />
+          <ToolRow icon={Globe02Icon} label="运维浏览器" onClick={onOpenOperationsBrowser} />
           <ToolRow
             icon={GitMergeIcon}
             label="变更"
-            description="查看本次会话改动的文件"
             onClick={onOpenChanges}
           />
           <ToolRow
             icon={FolderOpenIcon}
             label="文件"
-            description="浏览工作区目录"
             onClick={onOpenFiles}
           />
           <ToolRow
             icon={PlusSignIcon}
             label="新建页面"
-            description="打开一个新的浏览标签页"
             onClick={onNewTab}
           />
         </ul>
       </section>
-      <section aria-label="推荐" className="mt-7">
-        <h3 className="px-1 text-xs font-medium text-muted-foreground">推荐</h3>
-        <SiteTiles sites={sites} onOpenSite={onOpenSite} />
-      </section>
+      {sites.status !== "ready" || sites.data.length > 0 ? (
+        <section aria-label="推荐" className="mt-7">
+          <h3 className="px-1 text-xs font-medium text-muted-foreground">推荐</h3>
+          <SiteTiles sites={sites} onOpenSite={onOpenSite} />
+        </section>
+      ) : null}
     </div>
   );
 }

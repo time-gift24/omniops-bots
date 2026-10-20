@@ -40,6 +40,8 @@
   const group = name => labeled(`在 ${name} 中新建会话`)?.closest("section");
   const row = (name, title) => [...(group(name)?.querySelectorAll("li > button[title]") ?? [])]
     .find(element => element.title === title);
+  const sessionRow = title => [...document.querySelectorAll('ul[aria-label="会话"] > li > button[title]')]
+    .find(element => element.title === title);
   const setInput = (input, value) => flushSync(() => {
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set.call(input, value);
     input.dispatchEvent(new Event("input", { bubbles: true }));
@@ -141,15 +143,23 @@
       root = createRoot(fixture);
       flushSync(() => root.render(React.createElement(React.StrictMode, null,
         withTestTheme(React.createElement(App), dependencies))));
-      await until(() => Boolean(labeled("工作区")) && Boolean(drawer()) === mobile, "StrictMode App did not mount at the requested viewport");
-      assert(!editor(), "A conversation must require a workspace");
+      await until(() => Boolean(editor()) && Boolean(labeled("工作区")) && Boolean(drawer()) === mobile, "StrictMode App did not mount at the requested viewport");
+      assert(created.length === 1 && !dialog(), "Mounting must create one usable conversation without requiring a workspace");
+      const temporary = dependencies.threads.get(created[0]);
+      write("temporary conversation draft");
+      await selectModel("Sonnet 5");
+      await navigation();
+      assert(!document.querySelector('ul[aria-label="会话"]'), "An unsent temporary conversation must stay out of the sidebar");
+      assert(temporary.send("   ") === false && !sessionRow("新会话"), "Rejected whitespace sends must not publish a temporary conversation");
 
       await newSession();
-      await until(() => dialog()?.querySelector("input"), "New conversation without a workspace must open the picker");
+      assert(created.length === 1 && editor().textContent === "temporary conversation draft" && !dialog(), "New conversation must reuse the unbound draft without opening a workspace picker");
+      await openAdd();
       await addDirectory("/workspace/omniops-bots");
-      assert(created.length === 1, `Adding one directory must create one thread, received ${created.length}: ${created.join(", ")}`);
-      assert(row("omniops-bots", "新会话")?.getAttribute("aria-current") === "page", "Adding a directory must select its empty conversation row");
-      const first = dependencies.threads.get(created[0]);
+      assert(created.length === 2, `Adding one directory must create one more thread, received ${created.length}: ${created.join(", ")}`);
+      assert(editor().textContent === "" && model().textContent.trim() === "Pine 1", "A workspace conversation must have its own draft and model");
+      assert(!row("omniops-bots", "新会话"), "An active empty conversation must not appear in the sidebar");
+      const first = dependencies.threads.get(created[1]);
       write("first workspace draft");
       await selectModel("GPT 5.6");
       const files = new DataTransfer();
@@ -164,15 +174,18 @@
       const selectedFile = first.getDraft().attachments[0].file;
       assert(selectedFile?.name === "notes.txt" && await selectedFile.text() === "keep this file", "The selected attachment must retain its actual file contents");
       await newSession();
+      assert(created.length === 2 && editor().textContent === "temporary conversation draft" && model().textContent.trim() === "Sonnet 5" && !labeled("移除附件 notes.txt"), "Global new conversation must return to the independent temporary draft");
       await newSession("omniops-bots");
-      assert(created.length === 1 && editor().textContent === "first workspace draft", "Both new-conversation entries must reuse the same blank draft");
+      assert(created.length === 2 && editor().textContent === "first workspace draft", "The workspace entry must reuse its own blank draft");
       assert(first.getDraft().attachments[0]?.file === selectedFile, "Reusing a blank conversation must retain its attachment");
+      assert(!row("omniops-bots", "新会话"), "Typing, model selection and attachments must not publish a conversation");
+      assert(first.send("   ") === false && !row("omniops-bots", "新会话"), "Rejected whitespace sends must not publish a conversation");
       passed.push("StrictMode mount, directory add and blank conversation reuse");
 
       await openAdd();
       await addDirectory("/workspace/客户支持");
-      assert(created.length === 2 && editor().textContent === "" && model().textContent.trim() === "Pine 1", "A second workspace must start with an independent draft and model");
-      const second = dependencies.threads.get(created[1]);
+      assert(created.length === 3 && editor().textContent === "" && model().textContent.trim() === "Pine 1", "A second workspace must start with an independent draft and model");
+      const second = dependencies.threads.get(created[2]);
       write("support workspace draft");
       await newSession("omniops-bots");
       assert(editor().textContent === "first workspace draft" && model().textContent.trim() === "GPT 5.6", "Returning to a workspace must restore its text and model");
@@ -184,11 +197,11 @@
       write(title);
       click(labeled("发送"));
       await until(() => held && first.streaming && row("omniops-bots", title), "Starting generation must turn the blank row into a titled history entry");
-      assert(requests[0]?.id === created[0] && requests[0].request.model === "gpt-5.6", "The request must use the selected thread and model");
+      assert(requests[0]?.id === created[1] && requests[0].request.model === "gpt-5.6", "The request must use the selected thread and model");
       assert(requests[0].request.messages[0].attachments?.[0]?.name === "notes.txt", "The request must include the selected thread's attachment");
       assert(editor().textContent === "" && first.getDraft().attachments.length === 0, "Accepted send must clear only its submitted draft");
-      await newSession();
-      assert(created.length === 3 && row("omniops-bots", "新会话")?.getAttribute("aria-current") === "page", "New conversation must inherit the active workspace after the old draft starts executing");
+      await newSession("omniops-bots");
+      assert(created.length === 4 && !row("omniops-bots", "新会话"), "Explicit workspace action must create a new conversation without publishing an empty row");
       write("next conversation draft");
       await newSession("客户支持");
       assert(editor().textContent === "support workspace draft" && first.streaming && aborted === 0, "Switching during generation must retain the other draft without aborting");
@@ -197,11 +210,11 @@
       await until(() => !first.streaming && first.getState().status === "idle", "Background generation did not finish", 15000);
       assert(events > beforeResume && first.getState().messages.at(-1)?.state === "done" && aborted === 0, "An unmounted conversation must continue consuming its real mock stream");
       assert(editor().textContent === "support workspace draft", "Background completion must not alter the visible draft");
-      passed.push("history title, inherited workspace and uninterrupted background generation");
+      passed.push("history title, explicit workspace selection and uninterrupted background generation");
 
       await searchSession(title);
       assert(row("omniops-bots", title)?.getAttribute("aria-current") === "page", "Search must select the existing conversation rather than create one");
-      assert(fixture.textContent.includes(title) && fixture.textContent.includes("缓存键") && created.length === 3, "Search must restore the completed conversation content");
+      assert(fixture.textContent.includes(title) && fixture.textContent.includes("缓存键") && created.length === 4, "Search must restore the completed conversation content");
       click(labeled("编辑"));
       assert(editor().textContent === title && model().textContent.trim() === "GPT 5.6", "Editing must restore the user's text without changing models");
       const edited = `${title}，补充检查`;
@@ -254,13 +267,13 @@
       click(button(suggestion, fixture));
       await until(() => requests.length === requestCount + 1 && row("客户支持", suggestion), "A suggestion must create a titled conversation in its own workspace");
       const suggestionRequest = requests[requestCount];
-      assert(suggestionRequest.id === created[1] && suggestionRequest.request.model === "sonnet-5", "The suggestion must use the support conversation and its selected model");
+      assert(suggestionRequest.id === created[2] && suggestionRequest.request.model === "sonnet-5", "The suggestion must use the support conversation and its selected model");
       assert(suggestionRequest.request.messages.length === 1 && suggestionRequest.request.messages[0].text === suggestion && !suggestionRequest.request.messages[0].attachments?.length, "The suggestion must send only its own text, without draft attachments");
       assert(editor().textContent === "support workspace draft" && second.getDraft().attachments[0]?.file === supportFile, "Suggestion acceptance must preserve the original draft text and File");
 
       const beforeNewSession = created.length;
-      await newSession();
-      assert(created.length === beforeNewSession + 1 && row("客户支持", "新会话")?.getAttribute("aria-current") === "page", "New conversation after a suggestion must create a separate support conversation");
+      await newSession("客户支持");
+      assert(created.length === beforeNewSession + 1 && !row("客户支持", "新会话"), "New conversation after a suggestion must remain absent until sent");
       const freshSupport = dependencies.threads.get(created.at(-1));
       assert(editor().textContent === "" && model().textContent.trim() === "Pine 1" && freshSupport.getDraft().attachments.length === 0, "The new conversation must have an independent empty draft and default model");
       await until(() => !second.streaming && second.getState().messages.at(-1)?.state === "done", "The background suggestion response did not finish", 15000);
@@ -276,6 +289,35 @@
       assert(editor().textContent === suggestion && second.getDraft().attachments.length === 0 && !labeled("移除附件 notes.txt") && model().textContent.trim() === "Sonnet 5", "The edited suggestion draft must stay attachment-free after switching conversations");
       assert(freshSupport.getDraft().text === "" && freshSupport.getDraft().attachments.length === 0 && aborted === 0, "Suggestion and edit navigation must leave the new conversation empty without aborting requests");
       passed.push("suggestion, new conversation, search and edit preserve per-conversation draft semantics");
+
+      await newSession();
+      assert(editor().textContent === "temporary conversation draft" && model().textContent.trim() === "Sonnet 5" && !labeled("移除附件 notes.txt"), "The global entry must preserve its temporary draft after workspace activity");
+      assert(!sessionRow("新会话"), "The temporary draft must remain absent until accepted send");
+      const temporaryTitle = "侧边栏回归：临时会话";
+      write(temporaryTitle);
+      click(labeled("发送"));
+      await until(() => sessionRow(temporaryTitle), "An accepted temporary send must publish its conversation below New conversation");
+      assert(!row("omniops-bots", temporaryTitle) && !row("客户支持", temporaryTitle), "The temporary conversation must not inherit any workspace");
+      const temporaryRequest = requests.find(entry => entry.id === created[0]);
+      assert(temporaryRequest?.request.model === "sonnet-5" && temporaryRequest.request.messages[0].text === temporaryTitle, "The temporary send must use its own thread and selected model");
+      const beforeTemporary = created.length;
+      await newSession();
+      assert(created.length === beforeTemporary + 1 && editor().textContent === "" && model().textContent.trim() === "Pine 1", "New temporary conversation after sending must own an independent blank draft");
+      write("next temporary draft");
+      await navigation();
+      click(sessionRow(temporaryTitle));
+      await closedDrawer();
+      assert(editor().textContent === "" && model().textContent.trim() === "Sonnet 5", "Sidebar revisit must restore the sent temporary conversation");
+      write("temporary follow-up draft");
+      await searchSession(title);
+      assert(editor().textContent === edited, "Returning from a temporary conversation must preserve the workspace draft");
+      await navigation();
+      click(sessionRow(temporaryTitle));
+      await closedDrawer();
+      assert(editor().textContent === "temporary follow-up draft", "Temporary follow-up draft must survive workspace navigation");
+      await newSession();
+      assert(editor().textContent === "next temporary draft" && created.length === beforeTemporary + 1 && aborted === 0, "Global new conversation must reuse the separate temporary blank draft without aborting requests");
+      passed.push("optional workspace, temporary conversation sidebar admission, revisit and draft isolation");
       if (mobile) passed.push("mobile selections close the navigation drawer");
     }
     result.textContent = `PASS ${viewport ?? "all viewports"}: ${passed.join("; ")}`;

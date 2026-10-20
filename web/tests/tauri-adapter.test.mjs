@@ -418,6 +418,36 @@ test("workspace binding failure only blocks Changes, can retry, and file operati
   assert.deepEqual(host.calls.find(([, args]) => args?.method === "workspace_files")[1].params.scope, scope)
 })
 
+test("workspace-free file operations and sends preserve a thread-only scope", async t => {
+  const previousWindow = globalThis.window
+  globalThis.window = { localStorage: { getItem() { return null }, setItem() {}, removeItem() {} }, addEventListener() {}, removeEventListener() {} }
+  t.after(() => { if (previousWindow === undefined) delete globalThis.window; else globalThis.window = previousWindow })
+  const { createTauriAdapters } = await load(t)
+  const host = bridge((_command, args) => {
+    if (args.method === "workspace_files") return [{ name: "answer.txt", path: "answer.txt", size: "2 B" }]
+    if (args.method === "workspace_file") return { path: "answer.txt", lines: ["ok"] }
+    if (args.method === "workspace_changes") return { fileCount: 1, added: 1, removed: 0, files: [{ path: "answer.txt", added: 1, removed: 0 }] }
+    if (args.method === "chat_start") {
+      const run = args.params
+      assert.equal(Object.hasOwn(run, "workspacePath"), false)
+      host.emit({ event: "chat_event", runId: run.runId, threadId: run.threadId, data: completed("done") })
+      return { runId: run.runId }
+    }
+    return null
+  })
+  const runtime = await createTauriAdapters(host)
+  t.after(() => runtime.dispose())
+  const scope = { sessionId: "temporary-thread" }
+  await runtime.bindWorkspace(scope)
+  assert.equal((await runtime.adapters.workbench.listWorkspaceFiles(scope))[0].path, "answer.txt")
+  assert.deepEqual((await runtime.adapters.workbench.readFilePreview(scope, "answer.txt")).lines, ["ok"])
+  assert.equal((await runtime.adapters.workbench.getChangeSet(scope)).fileCount, 1)
+  for (const [, args] of host.calls.filter(([, args]) => args?.method?.startsWith("workspace_"))) assert.deepEqual(args.params.scope, scope)
+  const events = []
+  for await (const event of runtime.adapters.gatewayFor(scope.sessionId).stream(input)) events.push(event)
+  assert.equal(events.at(-1).type, "completed")
+})
+
 test("new sends and historical retry carry exactly preceding conversation without duplicate current input", async t => {
   const { ThreadStoreImpl } = await load(t)
   const requests = []

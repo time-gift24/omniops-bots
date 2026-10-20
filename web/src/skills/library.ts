@@ -1,5 +1,6 @@
 import { fileKey, type SkillDraftCache } from "./drafts.ts"
 import type { SkillSource } from "./source.ts"
+import { readSkillMetadata } from "./content.ts"
 
 export const MAX_SKILL_FILE_BYTES = 20 * 1024 * 1024
 export const MAX_SKILL_PACKAGE_BYTES = 100 * 1024 * 1024
@@ -56,7 +57,11 @@ export interface SkillLibrary {
   }
   list(): Promise<readonly ManagedSkill[]>
   get(id: string): Promise<ManagedSkill>
-  create(input: { name: string; description?: string }): Promise<ManagedSkill>
+  create(input: {
+    name: string
+    description?: string
+    content?: string
+  }): Promise<ManagedSkill>
   copyToLocal(id: string, name?: string): Promise<ManagedSkill>
   readFile(id: string, path: string): Promise<Blob>
   writeFile(
@@ -349,13 +354,13 @@ export function createSkillLibrary({
   }
   const change = (
     id: string,
-    update: (skill: StoredSkill, timestamp: string) => void
+    update: (skill: StoredSkill, timestamp: string) => void | Promise<void>
   ) =>
     ordered(async () => {
       const skill = find(await load(), id)
       editable(skill)
       const timestamp = now()
-      update(skill, timestamp)
+      await update(skill, timestamp)
       skill.modifiedAt = timestamp
       validateStoredSkill(skill)
       await persistence.save(skill)
@@ -377,7 +382,8 @@ export function createSkillLibrary({
           )
         const content = new Blob(
           [
-            `---\nname: ${JSON.stringify(name)}\ndescription: ${JSON.stringify(description)}\n---\n\n# ${name}\n\n${description}\n`,
+            input.content ??
+              `---\nname: ${JSON.stringify(name)}\ndescription: ${JSON.stringify(description)}\n---\n\n# ${name}\n\n${description}\n`,
           ],
           { type: "text/markdown" }
         )
@@ -399,6 +405,7 @@ export function createSkillLibrary({
           ],
         }
         if ((await load()).has(skill.id)) throw conflict()
+        validateStoredSkill(skill)
         await persistence.save(skill)
         return summary(skill)
       }),
@@ -433,7 +440,7 @@ export function createSkillLibrary({
         return entry.content
       }),
     writeFile: (id, path, content, options = {}) =>
-      change(id, (skill, timestamp) => {
+      change(id, async (skill, timestamp) => {
         validateSkillPath(path)
         if (!(content instanceof Blob))
           throw new SkillLibraryError(
@@ -456,6 +463,20 @@ export function createSkillLibrary({
         )
           throw conflict()
         requireParent(skill.entries, path)
+        if (path === "SKILL.md") {
+          const source = await content.text()
+          if (/^---(?:\r?\n|$)/u.test(source)) {
+            try {
+              Object.assign(skill, readSkillMetadata(source))
+            } catch (cause) {
+              throw new SkillLibraryError(
+                "path-invalid",
+                cause instanceof Error ? cause.message : "Skill 元信息无效。",
+                { cause }
+              )
+            }
+          }
+        }
         const entry: StoredSkillEntry = {
           path,
           kind: "file",

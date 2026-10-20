@@ -64,27 +64,49 @@
   const resourceSwitches = () => [...editor().querySelectorAll('[role="switch"]')].filter(visible)
   const checkActions = (editing) => {
     const dock = actions()
-    assert(visible(dock) && !dock.closest("header"), "Agent actions must float in the document body")
+    assert(visible(dock) && !dock.closest("header"), "Agent actions must stay in the page content")
     const controls = [...dock.querySelectorAll("button")].filter(visible)
     const names = controls.map(accessibleLabel).filter(name => name !== "Agent 配置").sort()
     assert(JSON.stringify(names) === JSON.stringify((editing ? ["保存", "撤销"] : ["编辑", "调试"]).sort()),
       "Agent actions must match the current reading or editing mode")
-    for (const control of controls) assert(control.getAttribute("aria-label") && control.textContent.trim() === "",
-      "Agent actions must be icon-only controls with accessible names")
+    const primary = controls.find(control => ["编辑", "保存"].includes(accessibleLabel(control)))
+    assert(primary && primary.textContent.trim() === "", "Edit and save must stay icon-only")
+    assert(getComputedStyle(primary).backgroundColor !== "rgba(0, 0, 0, 0)",
+      "Edit and save must carry a filled background")
+    assert(controls[0] === primary, "Edit/save must start the horizontal action row")
+    for (const control of controls) {
+      assert(control.getAttribute("aria-label") && control.textContent.trim() === "",
+        "Document actions must have accessible names and stay icon-only")
+    }
     for (const control of controls) {
       for (let wrapper = control.parentElement; wrapper && dock.contains(wrapper); wrapper = wrapper.parentElement) {
         const style = getComputedStyle(wrapper)
         assert([style.borderTopWidth, style.borderRightWidth, style.borderBottomWidth, style.borderLeftWidth].every(width => Number.parseFloat(width) === 0),
-          "Agent floating controls must not have an additional enclosing border")
+          "Agent action controls must not have an additional enclosing border")
       }
     }
     const bounds = dock.getBoundingClientRect()
     assert(bounds.left >= -1 && bounds.right <= innerWidth + 1, "Agent action dock must fit the viewport")
+    const body = editor().querySelector('[data-slot="document-body"]')
+    const bodyBounds = body.getBoundingClientRect()
+    assert(!body.contains(dock), "Agent actions must remain outside the bordered document body")
+    assert(Math.abs(bounds.left - bodyBounds.left) <= 1 && bounds.bottom <= bodyBounds.top + 1,
+      "Agent actions must align with the frame's left edge above its outer border")
+    for (const section of [...body.querySelectorAll('.doc-reading-scroll, aside[aria-label="Agent 配置"]')].filter(visible)) {
+      assert(section.getBoundingClientRect().top >= bounds.bottom - 1,
+        "Agent content and configuration must start below the horizontal action row")
+    }
+    if (!editing) {
+      const debug = button("调试", dock)
+      assert(getComputedStyle(debug).backgroundColor !== "rgba(0, 0, 0, 0)" &&
+        getComputedStyle(debug).backgroundColor !== getComputedStyle(primary).backgroundColor,
+        "Debug must have a distinct filled color")
+    }
     for (let index = 1; index < controls.length; index++) {
       const previous = controls[index - 1].getBoundingClientRect()
       const current = controls[index].getBoundingClientRect()
-      assert(previous.bottom <= current.top + 1 && Math.abs((previous.left + previous.right) / 2 - (current.left + current.right) / 2) <= 1,
-        "Agent floating controls must form one vertical column without overlap")
+      assert(previous.right <= current.left + 1 && Math.abs((previous.top + previous.bottom) / 2 - (current.top + current.bottom) / 2) <= 1,
+        "Agent controls must form one horizontal row without overlap")
     }
   }
   const field = (name) => {
@@ -211,8 +233,11 @@
     assert(resourceRows[1].textContent.includes("官方") && !resourceRows[1].textContent.includes("sha256:released") && !resourceRows[1].textContent.includes("v1.2.0") && !resourceRows[1].querySelector('[title="sha256:released"]'), "Skill resources show their source without technical version identifiers")
     checks.push("readable resource sources without content hashes or technical versions")
     flushSync(() => root.render(withDependencies(React.createElement(Probe), dependencies)))
-    if (visible(button("Agent 配置", editor())))
+    if (visible(button("Agent 配置", editor()))) {
+      checkActions(false)
       click(button("Agent 配置", editor()))
+      checkActions(false)
+    }
     assert(
       field("简介") instanceof HTMLTextAreaElement,
       "Summary must use a textarea"
@@ -232,7 +257,7 @@
     checkActions(false)
     assert(!button("Agent 配置", fixture.querySelector("#agent-header")) && !fixture.querySelector('#agent-header [data-slot="document-actions"]'),
       "Agent header must contain location only; all actions belong in the document body")
-    if (button("Agent 配置", editor())) assert(actions().contains(button("Agent 配置", editor())), "Narrow-screen configuration must share the vertical body dock")
+    if (button("Agent 配置", editor())) assert(actions().contains(button("Agent 配置", editor())), "Narrow-screen configuration must share the horizontal body dock")
     checks.push(
       "summary textarea, model removal and debugging collapsed by default"
     )
@@ -245,6 +270,7 @@
       editor().querySelector(".doc-preview")?.textContent.includes("客户支持助手"),
       "Reading view must render the instructions as Markdown"
     )
+    const readingActionBounds = actions().getBoundingClientRect()
     click(button("编辑", editor()))
     assert(
       field("系统提示词") instanceof HTMLTextAreaElement,
@@ -255,6 +281,10 @@
     assert(resourceSwitches().length > 0 && resourceSwitches().every(control => !control.matches(":disabled")),
       "Editing must enable resource switches")
     checkActions(true)
+    const editingActionBounds = actions().getBoundingClientRect()
+    assert(Math.abs(editingActionBounds.left - readingActionBounds.left) <= 1 &&
+      Math.abs(editingActionBounds.top - readingActionBounds.top) <= 1,
+      "Agent reading and editing actions must stay at the same position")
     assert(!button("撤销", actions()).disabled, "Undo must remain available when editing without changes")
     click(button("撤销", actions()))
     assert(
@@ -262,8 +292,12 @@
       "Undo without changes must return to the reading view"
     )
     checkActions(false)
+    const undoActionBounds = actions().getBoundingClientRect()
+    assert(Math.abs(undoActionBounds.left - readingActionBounds.left) <= 1 &&
+      Math.abs(undoActionBounds.top - readingActionBounds.top) <= 1,
+      "Undo must restore reading actions at the same position")
     click(button("编辑", editor()))
-    checks.push("floating icon actions; reading configuration is read-only; unchanged editing can be discarded")
+    checks.push("horizontal actions above the frame; reading configuration is read-only; unchanged editing can be discarded")
 
     write(field("名称"), "")
     click(button("保存", editor()))
@@ -326,6 +360,7 @@
         JSON.stringify(DEFAULT_AGENT.skillIds),
       "Save must preserve capability selections"
     )
+    const savingActionBounds = actions().getBoundingClientRect()
     finishSave()
     await until(
       () => button("编辑", actions()) && !field("系统提示词"),
@@ -336,6 +371,10 @@
     assert(field("名称").readOnly && editor().querySelector(".doc-preview")?.textContent.includes("回归策略"),
       "Saved configuration must appear in the read-only view")
     checkActions(false)
+    const savedActionBounds = actions().getBoundingClientRect()
+    assert(Math.abs(savedActionBounds.left - savingActionBounds.left) <= 1 &&
+      Math.abs(savedActionBounds.top - savingActionBounds.top) <= 1,
+      "Saving must restore reading actions at the same position")
     click(button("编辑", actions()))
     write(field("系统提示词"), "# 未保存的替换")
     click(button("撤销", editor()))
@@ -542,6 +581,20 @@
     renderIsolated({ ...official, copyBusy: false })
     click(button("复制为本地", actions()))
     assert(copied === 1, "Body copy action must invoke the official Agent copy flow")
+    renderIsolated({
+      key: "empty",
+      initialConfiguration: { name: "", description: "", instructions: "", mcpServerIds: [], toolIds: [], skillIds: [] },
+      initialEditing: true,
+      toolbarTarget: null,
+    })
+    assert(button("保存", actions()), "A new Agent must open directly in editing mode")
+    assert(document.activeElement === field("名称"), "A new Agent must focus its name field")
+    assert(field("名称").value === "" && field("名称").placeholder.includes("名字"),
+      "A new Agent name must be empty with a hint instead of example content")
+    const emptyPrompt = editor().querySelector('textarea[aria-label="系统提示词"]')
+    assert(emptyPrompt?.value === "" && emptyPrompt.placeholder.includes("描述"),
+      "A new Agent prompt must be empty with a hint instead of example content")
+    checks.push("a new Agent opens in editing mode with empty fields and placeholder hints")
     header.remove()
     checks.push("inactive Agents release header and shortcuts; official copy remains in the body dock with a busy guard")
     result.dataset.passed = "true"

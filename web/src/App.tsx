@@ -13,6 +13,9 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   BotIcon,
+  BubbleChatAddIcon,
+  FileAddIcon,
+  QuillWrite01Icon,
   Folder01Icon,
   HistoryIcon,
   PackageIcon,
@@ -26,12 +29,11 @@ import type { ManagedSkill } from "@/skills/library"
 import type { ModelChoice } from "@/models/source"
 import { useBackendData } from "@/components/workbench/use-backend-data"
 import { ChatScreen } from "@/components/chat/chat-screen"
-import { TaskBanner } from "@/components/desktop/task-banner"
-import type { DesktopTask } from "@/desktop/runtime"
 import { MorphicTooltip } from "@/components/premium/morphic-tooltip/morphic-tooltip"
 import {
   defaultSections,
   SidebarRail,
+  type SidebarRailAction,
   type SidebarRailItem,
   type SidebarRailSection,
 } from "@/components/premium/sidebar-blocks/sidebar-rail"
@@ -52,6 +54,10 @@ import { EASE_OUT } from "@/lib/ease"
 import { ThemePicker } from "@/components/theme-picker"
 import { RunHistory } from "@/components/runs/run-history"
 import { ClientSettingsScreen } from "@/components/settings/client-settings"
+import {
+  SettingsNavigation,
+  type SettingsSection,
+} from "@/components/settings/settings-navigation"
 import { McpManager } from "@/components/premium/agent-builder/mcp-manager"
 import { replayRuns } from "@/runs/replay"
 import type { RunRecord } from "@/runs/source"
@@ -111,6 +117,7 @@ type View =
   | { kind: "session"; threadId: string; title: string }
   | { kind: "agent"; agentId: string }
   | { kind: "skill" }
+  | { kind: "skill-draft" }
   | { kind: "page"; sectionId: string; itemId: string }
   | { kind: "section"; sectionId: string; workspaceId?: string }
 
@@ -221,7 +228,7 @@ function WorkspaceApp({
     store.getState,
     store.getState
   )
-  const [picker, setPicker] = useState<"add" | "choose" | null>(null)
+  const [picker, setPicker] = useState<"add" | null>(null)
   const [skillSearchOpen, setSkillSearchOpen] = useState(false)
   const [agents, setAgents] = useState<readonly AgentEntry[]>(initialAgents)
   const [resources, setResources] = useState(initialResources)
@@ -236,6 +243,9 @@ function WorkspaceApp({
   )
   const [experimentAgentId, setExperimentAgentId] = useState("")
   const [visitedAgents, setVisitedAgents] = useState<readonly string[]>([])
+  const [unsavedAgentIds, setUnsavedAgentIds] = useState<readonly string[]>([])
+  const unsavedAgentIdsRef = useRef<readonly string[]>([])
+  const agentVersion = useRef(0)
   const [agentListVisited, setAgentListVisited] = useState(false)
   const [view, setView] = useState<View>({ kind: "chat" })
   const currentView = useRef(view)
@@ -249,6 +259,9 @@ function WorkspaceApp({
       mounted.current = false
     }
   }, [])
+  useEffect(() => {
+    if (!store.getState().activeSessionId) store.startSession()
+  }, [store])
   const [agentToolbarTarget, setAgentToolbarTarget] =
     useState<HTMLDivElement | null>(null)
   const [skillCatalog, setSkillCatalog] =
@@ -268,6 +281,9 @@ function WorkspaceApp({
   const workbenchToggleRef = useRef<HTMLButtonElement>(null)
   const reduce = useReducedMotion()
   const contentRef = useRef<HTMLElement>(null)
+  const settingsScrollRef = useRef<HTMLDivElement>(null)
+  const [activeSettingsSection, setActiveSettingsSection] =
+    useState<SettingsSection>("theme")
   const lifetime = useRef({ version: 0 })
   useEffect(() => {
     const media = window.matchMedia("(width < 1100px)")
@@ -344,15 +360,13 @@ function WorkspaceApp({
       current = false
     }
   }, [desktop, browserThreadId])
-  const activeTasks =
-    desktopState.tasks ?? (desktopState.task ? [desktopState.task] : [])
   const activeSkill = skillCatalog.find((skill) => skill.id === openedSkillId)
   const activeSectionId =
     view.kind === "session"
       ? "runs"
       : view.kind === "agent"
         ? "agents"
-        : view.kind === "skill"
+        : view.kind === "skill" || view.kind === "skill-draft"
           ? "skills"
           : view.kind === "page" || view.kind === "section"
             ? view.sectionId
@@ -362,8 +376,10 @@ function WorkspaceApp({
       ? view.threadId
       : view.kind === "agent"
         ? `agent:${view.agentId}`
-        : view.kind === "skill"
-          ? `skill:${openedSkillId}`
+        : view.kind === "skill" || view.kind === "skill-draft"
+          ? view.kind === "skill-draft"
+            ? ""
+            : `skill:${openedSkillId}`
           : view.kind === "page"
             ? view.itemId
             : view.kind === "section"
@@ -377,12 +393,15 @@ function WorkspaceApp({
     overviewLabel: "Agent 列表",
     groups: [
       {
-        label: "本地 Agent",
+        label: "常用 Agent",
         items: agents
-          .filter((agent) => agent.source !== "official")
+          .filter(
+            (agent) =>
+              agent.source !== "official" && !unsavedAgentIds.includes(agent.id)
+          )
           .map((agent) => ({
             id: `agent:${agent.id}`,
-            label: agent.configuration.name,
+            label: agent.configuration.name.trim() || "未命名 Agent",
             icon: BotIcon,
           })),
       },
@@ -407,26 +426,36 @@ function WorkspaceApp({
       section.id === "workspace"
         ? {
             ...section,
-            groups: state.workspaces.map((workspace) => ({
-              label: workspace.name,
-              items: [
-                {
-                  id: `workspace:${workspace.id}`,
-                  label: workspace.name,
-                  icon: Folder01Icon,
-                },
-                ...state.sessions
+            groups: [
+              {
+                label: "会话",
+                items: state.sessions
                   .filter(
-                    (session) =>
-                      session.workspaceId === workspace.id &&
-                      (!session.blank || session.id === state.activeSessionId)
+                    (session) => session.workspaceId === null && !session.blank
                   )
-                  .map((session) => ({
-                    id: session.id,
-                    label: session.blank ? "新会话" : session.title,
-                  })),
-              ],
-            })),
+                  .toSorted((a, b) => b.updatedAt - a.updatedAt)
+                  .map((session) => ({ id: session.id, label: session.title })),
+              },
+              ...state.workspaces.map((workspace) => ({
+                label: workspace.name,
+                items: [
+                  {
+                    id: `workspace:${workspace.id}`,
+                    label: workspace.name,
+                    icon: Folder01Icon,
+                  },
+                  ...state.sessions
+                    .filter(
+                      (session) =>
+                        session.workspaceId === workspace.id && !session.blank
+                    )
+                    .map((session) => ({
+                      id: session.id,
+                      label: session.blank ? "新会话" : session.title,
+                    })),
+                ],
+              })),
+            ],
             renderContent: (close: () => void) => (
               <WorkspacePanel
                 state={
@@ -478,7 +507,7 @@ function WorkspaceApp({
       overviewLabel: "Skill 列表",
       groups: [
         {
-          label: "我的技能",
+          label: "常用 Skill",
           action: (
             <MorphicTooltip content="搜索技能" side="bottom">
               <Button
@@ -487,7 +516,7 @@ function WorkspaceApp({
                 aria-label="搜索技能"
                 aria-haspopup="dialog"
                 onClick={() => setSkillSearchOpen(true)}
-                className="size-7 rounded-full text-muted-foreground hover:text-foreground"
+                className="size-7 rounded-full text-muted-foreground hover:text-foreground pointer-coarse:size-11"
               >
                 <HugeiconsIcon
                   icon={Search01Icon}
@@ -512,12 +541,51 @@ function WorkspaceApp({
   if (settingsSection)
     sections.push({
       ...settingsSection,
+      selectFirstItem: false,
       groups: settingsSection.groups.map((group) => ({
         ...group,
         label: "客户端",
         items: group.items.filter((item) => item.id === "preferences"),
       })),
+      renderContent: (closeNavigation) => (
+        <SettingsNavigation
+          active={activeSettingsSection}
+          onNavigate={(section) => {
+            closeNavigation()
+            requestAnimationFrame(() => {
+              const target =
+                settingsScrollRef.current?.querySelector<HTMLElement>(
+                  `#client-settings-${section}`
+                )
+              target?.focus({ preventScroll: true })
+              target?.scrollIntoView({
+                behavior: reduce ? "instant" : "smooth",
+                block: "start",
+              })
+            })
+          }}
+        />
+      ),
     })
+  const sectionActions: Partial<Record<string, SidebarRailAction>> = {
+    workspace: {
+      label: "新会话",
+      icon: BubbleChatAddIcon,
+      onSelect: () => startSession(),
+    },
+    agents: {
+      label: "新建 Agent",
+      icon: QuillWrite01Icon,
+      disabled: agentBusy || !agentSource.create,
+      onSelect: () => void createAgent(),
+    },
+    skills: {
+      label: "新建 Skill",
+      icon: FileAddIcon,
+      disabled: !skillLibrary,
+      onSelect: openSkillCreate,
+    },
+  }
   const activeSection = sections.find(
     (section) => section.id === activeSectionId
   )
@@ -532,25 +600,46 @@ function WorkspaceApp({
     view.kind === "section" && view.sectionId === "workspace"
       ? overviewWorkspace
         ? state.sessions
-            .filter((session) => session.workspaceId === overviewWorkspace.id)
+            .filter(
+              (session) =>
+                session.workspaceId === overviewWorkspace.id && !session.blank
+            )
             .map((session) => ({
               id: session.id,
               label: session.blank ? "新会话" : session.title,
             }))
-        : state.workspaces.map((workspace) => ({
-            id: `workspace:${workspace.id}`,
-            label: workspace.name,
-          }))
+        : [
+            ...state.sessions
+              .filter(
+                (session) => session.workspaceId === null && !session.blank
+              )
+              .toSorted((a, b) => b.updatedAt - a.updatedAt)
+              .map((session) => ({ id: session.id, label: session.title })),
+            ...state.workspaces.map((workspace) => ({
+              id: `workspace:${workspace.id}`,
+              label: workspace.name,
+            })),
+          ]
       : (activeSection?.groups.flatMap((group) => group.items) ?? [])
 
   async function refreshAgents() {
+    const version = agentVersion.current
     const loaded = await agentSource.load()
-    setAgents((current) =>
-      loaded.agents.map((agent) => ({
-        ...agent,
-        draft: current.find((entry) => entry.id === agent.id)?.draft,
-      }))
-    )
+    if (!mounted.current) return
+    setAgents((current) => {
+      if (version !== agentVersion.current) return current
+      return [
+        ...loaded.agents.map((agent) => ({
+          ...agent,
+          draft: current.find((entry) => entry.id === agent.id)?.draft,
+        })),
+        ...current.filter(
+          (entry) =>
+            unsavedAgentIdsRef.current.includes(entry.id) &&
+            !loaded.agents.some((agent) => agent.id === entry.id)
+        ),
+      ]
+    })
     setResources(loaded.resources)
   }
 
@@ -565,6 +654,9 @@ function WorkspaceApp({
         copyFrom ? { copyFrom } : undefined
       )
       if (!mounted.current) return
+      agentVersion.current++
+      unsavedAgentIdsRef.current = [...unsavedAgentIdsRef.current, agent.id]
+      setUnsavedAgentIds(unsavedAgentIdsRef.current)
       setAgents((current) => [
         ...current.filter((item) => item.id !== agent.id),
         agent,
@@ -591,15 +683,36 @@ function WorkspaceApp({
     contentRef.current?.focus({ preventScroll: true })
   }
 
+  function openSkillCreate() {
+    setSkillsVisited(true)
+    setWorkbenchOpen(false)
+    setView({ kind: "skill-draft" })
+    contentRef.current?.focus({ preventScroll: true })
+  }
+
   function showSession(threadId: string, title: string) {
-    setLocalSessions((current) =>
-      current.some((session) => session.threadId === threadId)
-        ? current
-        : [...current, { threadId, title }]
-    )
     setView({ kind: "session", threadId, title })
     if (compactWindow) setWorkbenchOpen(false)
   }
+
+  useEffect(() => {
+    if (view.kind !== "session") return
+    const { threadId, title } = view
+    const thread = threads.get(threadId)
+    const publish = () => {
+      if (
+        !thread.getState().messages.some((message) => message.role === "user")
+      )
+        return
+      setLocalSessions((current) =>
+        current.some((session) => session.threadId === threadId)
+          ? current
+          : [...current, { threadId, title }]
+      )
+    }
+    publish()
+    return thread.subscribe(publish)
+  }, [view, threads])
 
   function startAgentSession(agent: AgentEntry, skillId?: string) {
     if (!runs) return
@@ -638,10 +751,11 @@ function WorkspaceApp({
   function startSession(workspaceId?: string) {
     setView({ kind: "chat" })
     contentRef.current?.focus({ preventScroll: true })
-    if (!store.startSession(workspaceId)) setPicker("choose")
+    store.startSession(workspaceId)
   }
 
-  function returnToTask(task: DesktopTask | null = desktop.getState().task) {
+  function returnToTask() {
+    const task = desktop.getState().task
     if (!task) return
     if (
       runs &&
@@ -711,6 +825,11 @@ function WorkspaceApp({
           if (expanded && compactWindow) setWorkbenchOpen(false)
         }}
         railActions={<ThemePicker />}
+        panelHeader={
+          activeSectionId === "settings" ? (
+            <h2 className="text-xl font-medium">设置</h2>
+          ) : undefined
+        }
         activeSectionId={activeSectionId}
         activeItemId={activeItemId}
         onSectionSelect={(section) => {
@@ -739,12 +858,17 @@ function WorkspaceApp({
               ref={setAgentToolbarTarget}
               className="@container/agent-header flex min-w-0 flex-1"
             />
-          ) : view.kind === "skill" ? (
+          ) : view.kind === "skill" || view.kind === "skill-draft" ? (
             <div className="@container/skill-header flex min-w-0 flex-1 items-center gap-2">
               <Breadcrumbs
                 items={[
                   { label: "技能", onSelect: () => openSection("skills") },
-                  { label: activeSkill?.name ?? "技能" },
+                  {
+                    label:
+                      view.kind === "skill-draft"
+                        ? "新建 Skill"
+                        : (activeSkill?.name ?? "技能"),
+                  },
                 ]}
               />
             </div>
@@ -759,13 +883,17 @@ function WorkspaceApp({
             <Breadcrumbs
               items={[
                 { label: "工作区", onSelect: () => openSection("workspace") },
-                ...(activeWorkspace && activeSession
+                ...(activeWorkspace
                   ? [
                       {
                         label: activeWorkspace.name,
                         onSelect: () =>
                           openSection("workspace", activeWorkspace.id),
                       },
+                    ]
+                  : []),
+                ...(activeSession
+                  ? [
                       {
                         label: activeSession.blank
                           ? "新会话"
@@ -806,13 +934,15 @@ function WorkspaceApp({
             open={workbenchOpen}
             backend={workbenchBackend}
             scope={
-              activeSession && activeWorkspace
-                ? {
-                    workspaceId: activeWorkspace.id,
-                    workspacePath: activeWorkspace.path,
-                    sessionId: activeSession.id,
-                  }
-                : null
+              view.kind === "session"
+                ? { sessionId: view.threadId }
+                : activeSession
+                  ? {
+                      workspaceId: activeWorkspace?.id,
+                      workspacePath: activeWorkspace?.path,
+                      sessionId: activeSession.id,
+                    }
+                  : null
             }
             models={models}
             onClose={() => setWorkbenchOpen(false)}
@@ -855,8 +985,7 @@ function WorkspaceApp({
         }
         contentClassName="p-0 sm:p-0"
         sections={sections}
-        createLabel="新会话"
-        onCreate={() => startSession()}
+        actions={sectionActions}
         onItemSelect={selectItem}
       >
         <div className="flex h-full min-h-0 flex-col">
@@ -876,23 +1005,6 @@ function WorkspaceApp({
               {actionError}
             </p>
           ) : null}
-          {activeTasks.map((task) => (
-            <TaskBanner
-              key={task.runId}
-              task={task}
-              simulated={desktopState.simulated}
-              onReturn={() => returnToTask(task)}
-              onStop={() => {
-                void desktop.stop(task.runId).catch((error: unknown) => {
-                  setActionError(
-                    error instanceof Error
-                      ? error.message
-                      : "停止未能完成，请重试。"
-                  )
-                })
-              }}
-            />
-          ))}
           <main
             id={contentId}
             ref={contentRef}
@@ -905,6 +1017,7 @@ function WorkspaceApp({
               <div
                 className={
                   view.kind === "skill" ||
+                  view.kind === "skill-draft" ||
                   (view.kind === "section" && view.sectionId === "skills")
                     ? "h-full min-h-0"
                     : "hidden"
@@ -924,10 +1037,14 @@ function WorkspaceApp({
                     <SkillLibraryScreen
                       active={
                         view.kind === "skill" ||
+                        view.kind === "skill-draft" ||
                         (view.kind === "section" && view.sectionId === "skills")
                       }
+                      creating={view.kind === "skill-draft"}
                       skillId={
-                        view.kind === "section" && view.sectionId === "skills"
+                        (view.kind === "section" &&
+                          view.sectionId === "skills") ||
+                        view.kind === "skill-draft"
                           ? null
                           : openedSkillId
                       }
@@ -983,7 +1100,6 @@ function WorkspaceApp({
                       agents={agents}
                       busy={agentBusy}
                       canCreate={!!agentSource.create}
-                      onCreate={() => void createAgent()}
                       onOpen={openAgent}
                       onCopy={
                         agentSource.create
@@ -1024,6 +1140,7 @@ function WorkspaceApp({
                         }
                         copyBusy={agentBusy}
                         initialConfiguration={agent.configuration}
+                        initialEditing={unsavedAgentIds.includes(agent.id)}
                         readOnly={agent.source === "official"}
                         showApproval={desktopState.simulated}
                         debugLabel={runs ? "开始新会话" : undefined}
@@ -1081,6 +1198,10 @@ function WorkspaceApp({
                         }}
                         onSave={async (configuration) => {
                           await agentSource.save(agent.id, configuration)
+                          agentVersion.current++
+                          unsavedAgentIdsRef.current =
+                            unsavedAgentIdsRef.current.filter((id) => id !== agent.id)
+                          setUnsavedAgentIds(unsavedAgentIdsRef.current)
                           setAgents((current) =>
                             current.map((item) =>
                               item.id === agent.id
@@ -1118,13 +1239,11 @@ function WorkspaceApp({
               view.sectionId === "skills" ? null : view.kind === "section" ? (
               <section
                 data-slot="navigation-overview"
+                aria-label={overviewWorkspace?.name ?? activeSection?.label}
                 className="mx-auto w-full max-w-3xl px-6 py-8 sm:px-8"
               >
-                <h1 className="text-2xl font-medium tracking-tight">
-                  {overviewWorkspace?.name ?? activeSection?.label}
-                </h1>
                 {overviewItems.length ? (
-                  <ul className="mt-6 space-y-1">
+                  <ul className="space-y-1">
                     {overviewItems.map((item) => (
                       <li key={item.id}>
                         <Button
@@ -1149,62 +1268,36 @@ function WorkspaceApp({
                     ))}
                   </ul>
                 ) : (
-                  <p className="mt-6 text-sm text-muted-foreground">
-                    暂无内容。
-                  </p>
+                  <p className="text-sm text-muted-foreground">暂无内容。</p>
                 )}
               </section>
             ) : view.kind === "page" &&
               view.sectionId === "settings" &&
               view.itemId === "preferences" ? (
-              <ClientSettingsScreen />
-            ) : view.kind === "page" ? (
-              <div className="grid h-full place-content-center gap-3 px-6 text-center">
-                <h1 className="text-xl font-medium">{activePage?.label}</h1>
-                <p className="text-sm text-muted-foreground">
-                  项目、页面和资料，触手可及。
-                </p>
-              </div>
-            ) : view.kind === "skill" ||
-              view.kind === "agent" ? null : activeSession &&
-              activeWorkspace ? (
+              <ClientSettingsScreen
+                scrollRef={settingsScrollRef}
+                onSectionChange={setActiveSettingsSection}
+              />
+            ) : view.kind === "page" ||
+              view.kind === "skill" ||
+              view.kind === "skill-draft" ||
+              view.kind === "agent" ? null : activeSession ? (
               <ChatScreen
                 models={models}
                 key={activeSession.id}
                 threadId={activeSession.id}
-                workspaceName={activeWorkspace.name}
-                onChooseWorkspace={() => setPicker("choose")}
+                workspaceName={activeWorkspace?.name}
                 suggestions={
                   desktopState.simulated
                     ? [
-                        "打开内置浏览器，访问必应并输入 abcd，不提交搜索",
+                        "打开 Chrome，访问必应并输入 abcd，不提交搜索",
                         "帮我检查网页中的搜索框",
                         "总结一下这个仓库本周的变更",
                       ]
                     : undefined
                 }
               />
-            ) : (
-              <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
-                <h1 className="text-2xl font-medium tracking-tight">
-                  开始一段新对话
-                </h1>
-                <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
-                  选择一个工作区，让对话围绕同一项工作展开。
-                </p>
-                <Button
-                  onClick={() => setPicker("choose")}
-                  className="h-9 gap-2 rounded-full px-4"
-                >
-                  <HugeiconsIcon
-                    icon={Folder01Icon}
-                    size={16}
-                    aria-hidden="true"
-                  />
-                  选择工作区
-                </Button>
-              </div>
-            )}
+            ) : null}
           </main>
         </div>
       </SidebarRail>
@@ -1293,7 +1386,7 @@ function WorkspaceApp({
           if (!open) setPicker(null)
         }}
         workspaces={state.workspaces}
-        addOnly={picker === "add"}
+        addOnly
         onPick={startSession}
         onAdd={(directory) => startSession(store.addWorkspace(directory).id)}
         fallbackFocusRef={contentRef}

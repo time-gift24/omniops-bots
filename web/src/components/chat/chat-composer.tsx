@@ -95,20 +95,14 @@ export function ChatComposer({
           onDraftChange={(approval) => store.updateDraft({ approval })}
           onStop={() => store.stop()}
         />
-      ) : task ? (
-        <div
-          role="status"
-          className="absolute inset-x-0 bottom-[calc(100%+12px)] z-10 flex items-center justify-between gap-2 rounded-xl bg-popover px-3 py-2 text-xs text-muted-foreground shadow-[0_2px_8px_rgb(0_0_0/0.1)]"
+      ) : ownsTask && (task?.error || threadError) ? (
+        <p
+          role="alert"
+          className="absolute inset-x-0 bottom-[calc(100%+12px)] text-xs text-destructive"
         >
-          <span className="min-w-0 break-words">
-            {ownsTask
-              ? stopping
-                ? "正在停止任务，确认结束后释放浏览器…"
-                : (task.error ?? threadError ?? "Agent 正在执行任务")
-              : "其他会话有任务正在进行；你可以先写草稿。"}
-          </span>
-        </div>
-      ) : !desktopState.simulated && !models.length ? (
+          {task?.error ?? threadError}
+        </p>
+      ) : !task && !desktopState.simulated && !models.length ? (
         <p
           role="alert"
           className="absolute inset-x-0 bottom-[calc(100%+12px)] text-xs text-muted-foreground"

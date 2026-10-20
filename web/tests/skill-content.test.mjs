@@ -47,6 +47,13 @@ test("frontmatter 只分离开头闭合块，保留空值、未知字段和原�
   }
 })
 
+test("Skill 名称和说明读取完整 YAML，拒绝缺失字段、重复键和非法值", async (t) => {
+  const { readSkillMetadata } = await setup(t)
+  assert.deepEqual(readSkillMetadata('---\nname: "跨页新技能"\ndescription: "验证新建和选择器同步"\n---\n'), { name: "跨页新技能", description: "验证新建和选择器同步" })
+  assert.deepEqual(readSkillMetadata("---\r\nname: 'O''Brien 的技能'\r\ndescription: >-\r\n  第一行\r\n  第二行\r\ncustom: true\r\n---\r\n# 正文"), { name: "O'Brien 的技能", description: "第一行 第二行" })
+  for (const source of ["# 缺少元信息", "---\nname: x\n---\n", "---\nname: \"\"\ndescription: text\n---\n", "---\nname: 123\ndescription: text\n---\n", "---\nname: a\nname: b\ndescription: text\n---\n", "---\nname: [broken\ndescription: text\n---\n", "---\nname: &alias x\ndescription: *alias\n---\n", `---\nname: ${"x".repeat(101)}\ndescription: text\n---\n`]) assert.throws(() => readSkillMetadata(source))
+})
+
 test("技能链接解析相对目录、中文编码和锚点，拒绝外部链接与非法编码", async (t) => {
   const { resolveSkillLink } = await setup(t)
   assert.deepEqual(

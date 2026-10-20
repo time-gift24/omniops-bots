@@ -77,7 +77,9 @@ test("Agent 创建与复制更新目录，失败不新增；调用方与实例�
   const initial = await source.load()
   const created = await source.create()
   assert.equal(created.source, "local")
-  assert.ok(created.configuration.name.trim())
+  assert.equal(created.configuration.name, "")
+  assert.equal(created.configuration.instructions, "")
+  await assert.rejects(source.save(created.id, created.configuration), /名称/)
   created.configuration.name = "调用方变更"
   assert.notEqual((await source.load()).agents.at(-1).configuration.name, created.configuration.name)
   const copy = await source.create({ copyFrom: initial.agents[0].id })

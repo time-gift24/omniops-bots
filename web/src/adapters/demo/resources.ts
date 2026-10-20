@@ -202,18 +202,21 @@ export function createDemoAgentSource(): AgentSource {
         ? agents.find((agent) => agent.id === input.copyFrom)
         : undefined
       if (input.copyFrom && !original) throw new Error("找不到这个 Agent。")
+      const configured = input.configuration
       const configuration = structuredClone(
-        input.configuration ??
+        configured ??
           original?.configuration ?? {
-            ...DEFAULT_AGENT,
-            name: "未命名 Agent",
+            name: "",
+            description: "",
+            instructions: "",
+            requireApproval: true,
             mcpServerIds: [],
             toolIds: [],
             skillIds: [],
           }
       )
-      validate(configuration)
-      if (original && !input.configuration)
+      if (configured) validate(configuration)
+      if (original && !configured)
         configuration.name = `${configuration.name}（副本）`
       const agent: AgentEntry = {
         id: crypto.randomUUID(),

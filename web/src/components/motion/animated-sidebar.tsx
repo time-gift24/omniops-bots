@@ -10,6 +10,8 @@ import { ChevronRightIcon } from "@hugeicons-pro/core-stroke-rounded"
 import {
   AnimatedSidebarGroupLabel as BeuiGroupLabel,
   AnimatedSidebarMenuButton as BeuiMenuButton,
+  AnimatedSidebarMenuSubButton as BeuiMenuSubButton,
+  type AnimatedSidebarMenuSubButtonProps,
   type AnimatedSidebarMenuButtonProps,
 } from "@/components/beui/motion/animated-sidebar"
 import { cn } from "@/lib/utils"
@@ -38,9 +40,24 @@ export function AnimatedSidebarMenuButton({
   return (
     <BeuiMenuButton
       {...props}
+      focusClassName={props.focusClassName ?? (props.isActive ? "" : "focus-visible:bg-muted/70")}
       chevronIcon={chevronIcon}
       indicatorClassName={cn("bg-accent", indicatorClassName)}
-      className={cn(props.isActive && "text-accent-foreground", className)}
+      className={cn(props.isActive && "text-accent-foreground hover:text-accent-foreground", className)}
+    />
+  )
+}
+
+export function AnimatedSidebarMenuSubButton({
+  className,
+  ...props
+}: AnimatedSidebarMenuSubButtonProps) {
+  return (
+    <BeuiMenuSubButton
+      {...props}
+      focusClassName={props.focusClassName ?? (props.isActive ? "" : "focus-visible:bg-muted/70")}
+      activeClassName={props.activeClassName ?? "text-accent-foreground"}
+      className={className}
     />
   )
 }

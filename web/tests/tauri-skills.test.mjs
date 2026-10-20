@@ -22,6 +22,12 @@ test('desktop Skill adapter preserves binary bytes, readable metadata and confli
   assert.equal(library.storage.kind, 'desktop');
   assert.equal(library.storage.root, await realpath(path.join(root, '.omnimind-ops', 'skills')));
   const skill = await library.create({ name: 'Library test' });
+  const updatedContent = '---\nname: "从 Markdown 改名"\ndescription: "同步到桌面目录"\n---\n\n# 精确保存\n';
+  const updated = await library.writeFile(skill.id, 'SKILL.md', new Blob([updatedContent]), { replace: true });
+  assert.equal(updated.name, '从 Markdown 改名');
+  assert.equal(updated.description, '同步到桌面目录');
+  assert.equal((await library.list())[0].name, updated.name);
+  assert.equal(await (await library.readFile(skill.id, 'SKILL.md')).text(), updatedContent);
   const bytes = new Uint8Array([0, 1, 128, 254, 255]);
   await library.createDirectory(skill.id, 'assets');
   await library.writeFile(skill.id, 'assets/image.png', new Blob([bytes], { type: 'image/png' }));

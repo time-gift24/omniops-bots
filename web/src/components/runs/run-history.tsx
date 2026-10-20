@@ -107,8 +107,7 @@ export function RunHistory({
       aria-label="执行记录"
     >
       <div className="mx-auto max-w-4xl space-y-5">
-        <div className="flex items-center justify-between gap-3">
-          <h1 className="text-xl font-medium">执行记录</h1>
+        <div className="flex justify-end">
           <Button
             variant="outline"
             size="sm"
@@ -122,9 +121,6 @@ export function RunHistory({
             刷新
           </Button>
         </div>
-        <p className="text-sm text-muted-foreground">
-          查看本地执行结果与当时的运行快照。打开记录不会自动重新执行任务。
-        </p>
         {error ? (
           <p role="alert" className="text-sm text-destructive">
             {error}
@@ -134,7 +130,7 @@ export function RunHistory({
           <p role="status">正在读取执行记录…</p>
         ) : !records.length ? (
           <p className="text-sm text-muted-foreground">
-            还没有执行记录。启动一次 Agent 会话后，记录会保存在本地。
+            暂无执行记录。
           </p>
         ) : (
           <ul className="divide-y divide-border">

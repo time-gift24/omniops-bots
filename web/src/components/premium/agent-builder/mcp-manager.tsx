@@ -49,7 +49,7 @@ export function McpManager({
         管理本地 MCP 服务
       </summary>
       <p className="my-3 text-xs leading-5 text-muted-foreground">
-        保存服务地址后先测试连接。凭据只填写环境变量名称，应用不保存密钥。
+        凭据只填写环境变量名称，应用不保存密钥。
       </p>
       <div className="space-y-3">
         {servers.map((server) => (

@@ -103,13 +103,21 @@
       `${name} document action must not appear in the shared Header`);
     const dock = documentActions();
     if ((expected[0] === "Agent" || expected[0] === "技能") && expected.length > 1) {
-      assert(dock && !dock.closest("header"), "Document actions must float in the visible page body");
+      assert(dock && !dock.closest("header"), "Document actions must stay in the visible page content");
       const bounds = dock.getBoundingClientRect();
       assert(bounds.top >= fixture.querySelector("header").getBoundingClientRect().bottom - 1 && bounds.right <= innerWidth + 1 && bounds.left >= -1,
         "The document action dock must remain below the Header and inside the viewport");
-      const readingScroll = dock.parentElement.querySelector(".doc-reading-scroll");
-      assert(readingScroll && readingScroll.getBoundingClientRect().top <= bounds.top + 1,
-        "Document actions must overlay the body without reserving a separate top row");
+      const body = [...fixture.querySelectorAll('[data-slot="document-body"]')].find(visible);
+      const bodyBounds = body.getBoundingClientRect();
+      assert(!body.contains(dock), "Document actions must remain outside the bordered document body");
+      assert(Math.abs(bounds.left - bodyBounds.left) <= 1 && bounds.bottom <= bodyBounds.top + 1,
+        "Document actions must align with the frame's left edge above its outer border");
+      for (const section of [...body.querySelectorAll('.doc-reading-scroll, .skill-file-sidebar, aside[aria-label="Agent 配置"]')].filter(visible)) {
+        assert(section.getBoundingClientRect().top >= bounds.bottom - 1,
+          "Document content and sidebar must start below the horizontal action row");
+      }
+      const readingScroll = body.querySelector(".doc-reading-scroll");
+      assert(readingScroll, "The document body must retain its reading scroll container");
       for (const group of [...readingScroll.querySelectorAll('[role="group"][aria-label="编辑视图"]')].filter(visible)) {
         for (const control of [...group.querySelectorAll("button")].filter(visible)) {
           const rectangle = control.getBoundingClientRect();
@@ -120,20 +128,24 @@
       }
       const actions = [...dock.querySelectorAll("button")].filter(visible);
       for (const action of actions) assert(action.getAttribute("aria-label") && action.textContent.trim() === "",
-        "Document action buttons must expose accessible names without visible text labels");
+        "Document actions must expose accessible names and stay icon-only");
+      const primary = [...dock.querySelectorAll("button")].find(action => action.getAttribute("aria-label") === "编辑" || action.getAttribute("aria-label")?.startsWith("保存"));
+      assert(primary && getComputedStyle(primary).backgroundColor !== "rgba(0, 0, 0, 0)",
+        "Edit/save must carry a filled background");
+      assert(actions[0] === primary, "Edit/save must start the horizontal action row");
       for (const action of actions) {
         for (let wrapper = action.parentElement; wrapper && dock.contains(wrapper); wrapper = wrapper.parentElement) {
           const style = getComputedStyle(wrapper);
           assert([style.borderTopWidth, style.borderRightWidth, style.borderBottomWidth, style.borderLeftWidth].every(width => Number.parseFloat(width) === 0),
-            "Floating controls must not have an additional enclosing border");
+            "Action controls must not have an additional enclosing border");
         }
       }
       if (expected[0] === "Agent" || expected[0] === "技能") {
         for (let index = 1; index < actions.length; index++) {
           const previous = actions[index - 1].getBoundingClientRect();
           const current = actions[index].getBoundingClientRect();
-          assert(previous.bottom <= current.top + 1 && Math.abs((previous.left + previous.right) / 2 - (current.left + current.right) / 2) <= 1,
-            "Page actions must form one vertical column without overlap");
+          assert(previous.right <= current.left + 1 && Math.abs((previous.top + previous.bottom) / 2 - (current.top + current.bottom) / 2) <= 1,
+            "Page actions must form one horizontal row without overlap");
         }
       }
       if (button("撤销", dock)) {
@@ -141,7 +153,7 @@
           "Editing must expose save and undo without reading-mode actions");
       } else assert(button("编辑", dock) && (skillVisible || button("调试", dock)),
         "Reading mode must expose Edit and the Agent debug action");
-    } else assert(!dock, "Leaving a document must hide its floating action dock");
+    } else assert(!dock, "Leaving a document must hide its action row");
     if (expected[0] === "技能") {
       if (expected.length > 1) {
         assert(skillDocument().querySelector('nav[aria-label="技能文件"]') && skillDocument().querySelector(".doc-reading-scroll"),
@@ -186,14 +198,13 @@
   const selectedRow = name => [...(panel()?.querySelectorAll("button") ?? [])]
     .find(element => label(element) === name)?.getAttribute("aria-current") === "page";
   const checkOverview = async (name, items) => {
-    await until(() => visible(overview()) && label(overview().querySelector("h1")) === (name === "技能" ? "Skill" : name),
+    await until(() => visible(overview()) && (overview().getAttribute("aria-label") ?? overview().querySelector("h1")?.textContent) === (name === "技能" ? "Skill" : name),
       `${name} parent did not open its overview page`);
     for (const item of items) await until(() => overviewItem(item), `${name} overview must contain ${item}`);
     if (name === "Agent" || name === "技能") {
       assert(overview().querySelector("h1").classList.contains("sr-only"), "Library titles must not duplicate the shared breadcrumb");
-      const create = button(name === "Agent" ? "新建本地 Agent" : "新建 Skill", overview());
-      assert(create && create.textContent.trim() === "" && !create.closest("header"), "Library creation must use one accessible icon action in the body");
-      assert(create.getBoundingClientRect().top >= fixture.querySelector("header").getBoundingClientRect().bottom, "Library creation must sit below the shared Header");
+      assert(!button(name === "Agent" ? "新建 Agent" : "新建 Skill", overview()), "Library creation belongs to the section sidebar, not the body");
+      assert(!button("新会话", panel()), "Only the workspace tab may offer New conversation");
     }
   };
   const editor = () => fixture.querySelector('[role="textbox"][aria-label="消息输入"]');
@@ -242,6 +253,11 @@
       assert(!moduleRequested(agentModule) && !moduleRequested(skillModule),
         "Agent and skill pages must not load at startup");
       if (button("收起工作台")) click(button("收起工作台"));
+      await until(() => visible(editor()), "The initial conversation must be editable without a workspace");
+      await checkPath("工作区", "新会话");
+      assert(!dialog() && !button("选择工作区") && !button("选择工作区（可选）") && !fixture.textContent.includes("选择一个工作区，让对话围绕同一项工作展开。"),
+        "Starting a conversation must not require a workspace picker or workspace instructions");
+      passed.push("initial conversation is ready to send without a workspace");
 
       const activeAgentPage = () => [...fixture.querySelectorAll('[data-agent-id]')].find(visible);
       const agentName = () => {
@@ -252,24 +268,35 @@
       };
       const agentPrompt = () => activeAgentPage()?.querySelector('textarea[aria-label="系统提示词"]');
       const editAgentPrompt = async () => {
+        const before = documentActions().getBoundingClientRect();
         if (!visible(agentPrompt())) click(button("编辑", documentActions()));
         await until(() => visible(agentPrompt()), "Agent system prompt editor did not open");
+        const after = documentActions().getBoundingClientRect();
+        assert(Math.abs(after.left - before.left) <= 1 && Math.abs(after.top - before.top) <= 1,
+          "Agent reading and editing actions must stay at the same position");
         return agentPrompt();
       };
       await openSection("Agent");
       const sidebarHeader = panel().querySelector('[data-slot="sidebar-header"]');
-      const newSession = button("新会话", sidebarHeader);
-      for (const name of ["Agent 列表", "Skill 列表"]) {
-        const link = button(name, sidebarHeader);
-        assert(link && newSession.compareDocumentPosition(link) & Node.DOCUMENT_POSITION_FOLLOWING,
-          `${name} must sit below New conversation in the sidebar`);
-      }
-      assert(!button("新建本地 Agent", sidebarHeader), "Sidebar must not duplicate the floating creation action");
+      const createAgent = button("新建 Agent", sidebarHeader);
+      const agentList = button("Agent 列表", sidebarHeader);
+      assert(createAgent && agentList && createAgent.compareDocumentPosition(agentList) & Node.DOCUMENT_POSITION_FOLLOWING,
+        "New Agent must sit above the Agent list in that tab's sidebar");
+      assert(!button("新会话", sidebarHeader) && !button("Skill 列表", sidebarHeader),
+        "The Agent tab must not show another tab's action or list");
+      const commonAgents = [...panel().querySelectorAll("button[aria-controls]")]
+        .find(element => element.textContent.includes("常用 Agent"));
+      assert(commonAgents && commonAgents.getAttribute("aria-expanded") === "true",
+        "Common Agents must be an expanded group");
+      click(commonAgents);
+      assert(!button(DEFAULT_AGENT.name, panel()), "Collapsing Common Agents must hide its rows");
+      click(commonAgents);
+      assert(button(DEFAULT_AGENT.name, panel()), "Expanding Common Agents must restore its rows");
       await dismissNavigation();
       await checkPath("Agent");
       await checkOverview("Agent", [DEFAULT_AGENT.name, "数据周报"]);
       assert(!moduleRequested(agentModule), "Opening the Agent list must not implicitly load or select an Agent detail");
-      passed.push("Agent rail opens its real list; sidebar list entries follow New conversation and creation stays in the body");
+      passed.push("Agent tab owns New Agent and its list; Common Agents groups collapse; no New conversation or body creation");
       await selectItem("Agent", DEFAULT_AGENT.name);
       await until(() => visible(activeAgentPage()?.querySelector('aside[aria-label="Agent 配置"] input')) || button("Agent 配置"),
         "Agent editor did not finish loading");
@@ -277,7 +304,7 @@
         "Visiting Agent must load its page without loading the skill page");
       await checkPath("Agent", DEFAULT_AGENT.name);
       assert(!button("编辑", fixture.querySelector("header")) && !button("调试", fixture.querySelector("header")),
-        "Agent editing and debugging actions must leave the shared Header for the floating document dock");
+        "Agent editing and debugging actions must sit above the document frame outside the shared Header");
       let nameField = agentName();
       assert(nameField.readOnly, "Agent configuration must be read-only until editing starts");
       await editAgentPrompt();
@@ -290,7 +317,7 @@
       await checkPath("Agent");
       await checkOverview("Agent", ["导航回归助手", "数据周报"]);
       assert(!visible(nameField), "The Agent overview must hide its editor");
-      assert(!selectedRow(DEFAULT_AGENT.name) && !selectedRow("数据周报"),
+      assert(!selectedRow("导航回归助手") && !selectedRow("数据周报"),
         "The Agent overview must not keep a child selected");
       click(overviewItem("导航回归助手"));
       await checkPath("Agent", "导航回归助手");
@@ -325,7 +352,7 @@
         "Undoing A must not change B's independent draft or dirty state");
       await openSection("工作区");
       await dismissNavigation();
-      await checkPath("工作区");
+      await checkPath("工作区", "新会话");
       await selectItem("Agent", "数据周报");
       await checkPath("Agent", "周报草稿助手");
       assert(agentName().value === "周报草稿助手" && (await editAgentPrompt()).value === secondAgentPrompt && !button("保存").disabled,
@@ -388,20 +415,19 @@
       const openSkillEditor = async () => {
         if (visible(skillDraft())) return;
         await until(() => button("编辑", skillDocument()) && !button("编辑", skillDocument()).disabled, "Skill reading view did not become editable");
+        const before = documentActions().getBoundingClientRect();
         click(button("编辑", skillDocument()));
         await until(() => visible(skillDraft()), "Skill source editor did not open");
+        const after = documentActions().getBoundingClientRect();
+        assert(Math.abs(after.left - before.left) <= 1 && Math.abs(after.top - before.top) <= 1,
+          "Skill reading and editing actions must stay at the same position");
       };
       await openSkillEditor();
       const draft = `${skillDraft().value}\n\n导航保留未保存的草稿`;
       setInput(skillDraft(), draft);
-      click(button("列表查看"));
-      await until(() => visible(skillPage().querySelector('[data-slot="file-manager"]')),
-        "Skill detail must offer the file list as an optional view");
-      assert(!visible(skillDraft()), "File list must hide the current editor");
-      click(button("阅读视图"));
-      await until(() => visible(skillDraft()) && skillDraft().value === draft,
-        "Returning from the file list must preserve the file, editor mode and unsaved source");
-      passed.push("real Skill navigation preserves the original reading layout and optional file-list round trips");
+      assert(!button("列表查看") && !button("下载文件") && !skillPage().querySelector('[data-slot="file-manager"]'),
+        "Skill selection must open its content without a file-list detour or download controls");
+      passed.push("Skill catalog links directly to its readable and editable content");
       await checkPath("技能", DEMO_SKILLS[0].name);
       click(button("技能", breadcrumb()));
       await checkPath("技能");
@@ -414,7 +440,7 @@
         "Returning from the skill parent must preserve its unsaved source");
       await openSection("工作区");
       await dismissNavigation();
-      await checkPath("工作区");
+      await checkPath("工作区", "新会话");
       assert(!visible(skillDraft()), "The workspace must hide the skill editor");
       await selectItem("技能", DEMO_SKILLS[0].name);
       await checkPath("技能", DEMO_SKILLS[0].name);
@@ -423,45 +449,69 @@
         "Returning from the workspace must preserve the unsaved skill editor");
       passed.push("unsaved skill source survives parent and workspace navigation");
 
-      const checkNewSessionNavigation = async workspaceName => {
+      const checkNewSessionNavigation = async () => {
         const count = createdThreads.size;
-        for (const [section, item] of [["Agent", DEFAULT_AGENT.name], ["技能", DEMO_SKILLS[0].name]]) {
-          for (const fromOverview of [false, true]) {
-            await selectItem(section, item);
-            if (fromOverview) {
-              click(button(section, breadcrumb()));
-              await checkPath(section);
-              await checkOverview(section, [item]);
-            }
-            await revealNavigation();
-            click(button("新会话", panel().querySelector('[data-slot="sidebar-header"]')));
-            if (!workspaceName) {
-              await until(() => dialog()?.querySelector("input"), "New conversation without a workspace must open the picker");
-              assert(rail.querySelector('[aria-label="工作区"]')?.getAttribute("aria-current") === "page" &&
-                fixture.querySelector('nav[aria-label="面包屑"] [aria-current="page"]')?.textContent.trim() === "工作区" && !overview(),
-                `New conversation from ${section} ${fromOverview ? "overview" : "detail"} must navigate to workspace before choosing a directory`);
-              click(button("取消", dialog()));
-              await until(() => !dialog(), "Workspace picker cancellation did not close the dialog");
-            }
-            await dismissNavigation();
-            await checkPath(...(workspaceName ? ["工作区", workspaceName, "新会话"] : ["工作区"]));
-            assert(button("工作区", rail)?.getAttribute("aria-current") === "page" && !visible(overview()),
-              "New conversation must select the workspace rail and leave the previous overview");
-            assert(!visible(fixture.querySelector('aside[aria-label="Agent 配置"]')) && !visible(skillPage()),
-              "New conversation must hide Agent and skill pages");
-            if (workspaceName) assert(visible(editor()), "New conversation with a workspace must display the chat editor");
-          }
-        }
-        assert(createdThreads.size === count,
-          workspaceName ? "Repeated new-conversation navigation must reuse the existing empty conversation" : "Cancelling directory selection must not create a conversation");
+        const blank = dependencies.workspaces.getState().sessions.find(session => session.workspaceId === null && session.blank);
+        await openSection("工作区");
+        await dismissNavigation();
+        await revealNavigation();
+        assert(!button("新会话", panel().querySelector('[data-slot="sidebar-header"]'))?.disabled,
+          "The workspace tab must keep its New conversation action enabled");
+        click(button("新会话", panel().querySelector('[data-slot="sidebar-header"]')));
+        await dismissNavigation();
+        await checkPath("工作区", "新会话");
+        assert(button("工作区", rail)?.getAttribute("aria-current") === "page" && !visible(overview()),
+          "New conversation must select the workspace rail and leave the previous overview");
+        assert(!visible(fixture.querySelector('aside[aria-label="Agent 配置"]')) && !visible(skillPage()),
+          "New conversation must hide Agent and skill pages");
+        assert(visible(editor()) && !dialog(), "New conversation must immediately display the chat editor without a picker");
+        const state = dependencies.workspaces.getState();
+        const active = state.sessions.find(session => session.id === state.activeSessionId);
+        assert(active?.workspaceId === null && active.blank,
+          "Global New conversation must always select an empty conversation without a workspace");
+        assert(createdThreads.size === count + Number(!blank) && (!blank || active.id === blank.id),
+          "Global New conversation must reuse the empty conversation for the workspace-free scope");
+        await revealNavigation();
+        assert([...panel().querySelectorAll("button")].filter(element => label(element) === "新会话").length === 1,
+          "The empty conversation must remain absent from the sidebar");
+        await dismissNavigation();
       };
       await checkNewSessionNavigation();
-      passed.push("new conversation leaves Agent and skill details and overviews before directory selection, including cancellation");
+      const standaloneTitle = "无需工作区的临时对话";
+      flushSync(() => {
+        editor().textContent = standaloneTitle;
+        editor().dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: standaloneTitle }));
+      });
+      click(button("发送"));
+      await checkPath("工作区", standaloneTitle);
+      if (button("停止生成")) click(button("停止生成"));
+      await revealNavigation();
+      assert(selectedRow(standaloneTitle), "An accepted workspace-free send must publish and select its sidebar row");
+      await dismissNavigation();
+      click(button("工作区", breadcrumb()));
+      await checkPath("工作区");
+      await checkOverview("工作区", [standaloneTitle]);
+      click(overviewItem(standaloneTitle));
+      await checkPath("工作区", standaloneTitle);
+      await checkNewSessionNavigation();
+      await checkNewSessionNavigation();
+      passed.push("global New conversation reuses a workspace-free draft; sent conversations appear in the sidebar and section directory");
 
       await addWorkspace("/workspace/omniops-bots");
       await checkPath("工作区", "omniops-bots", "新会话");
-      await checkNewSessionNavigation("omniops-bots");
-      passed.push("new conversation from Agent and skill details and overviews returns to the active workspace chat");
+      await revealNavigation();
+      const newConversation = button("新会话", panel().querySelector('[data-slot="sidebar-header"]'));
+      const standaloneRow = button(standaloneTitle, panel());
+      assert(newConversation.compareDocumentPosition(standaloneRow) & Node.DOCUMENT_POSITION_FOLLOWING &&
+        standaloneRow.compareDocumentPosition(button("omniops-bots", panel())) & Node.DOCUMENT_POSITION_FOLLOWING,
+        "Workspace-free conversations must appear below New conversation and above workspace groups");
+      await dismissNavigation();
+      await checkNewSessionNavigation();
+      await openSection("工作区");
+      click(button("在 omniops-bots 中新建会话", panel()));
+      await dismissNavigation();
+      await checkPath("工作区", "omniops-bots", "新会话");
+      passed.push("global New conversation stays workspace-free while each workspace group selects its own conversation");
       const title = "验证会话面包屑在较长标题下仍保留栏目和工作区路径";
       flushSync(() => {
         editor().textContent = title;
@@ -495,10 +545,10 @@
       assert(!visible(editor()), "The workspace parent must show its session list");
       click(button("工作区", breadcrumb()));
       await checkPath("工作区");
-      await checkOverview("工作区", ["omniops-bots", "客户支持"]);
+      await checkOverview("工作区", [standaloneTitle, "omniops-bots", "客户支持"]);
       click(button("客户支持", overview()));
       await checkPath("工作区", "客户支持");
-      await checkOverview("客户支持", ["新会话"]);
+      await checkOverview("客户支持", []);
       click(button("工作区", breadcrumb()));
       await checkPath("工作区");
       click(button("omniops-bots", overview()));
@@ -530,6 +580,19 @@
       for (const name of hiddenItems) assert(![...document.querySelectorAll("[data-slot=command-item]")].some(element => label(element) === name),
         `${name} placeholder must not appear in navigation search results`);
       passed.push("placeholder sections and pages stay hidden in navigation and search");
+      setInput(document.querySelector("[data-slot=command-input]"), standaloneTitle);
+      const standaloneMatch = () => [...document.querySelectorAll("[data-slot=command-item]")]
+        .find(element => visible(element) && label(element) === standaloneTitle);
+      await until(standaloneMatch, "Navigation search must include sent workspace-free conversations");
+      click(standaloneMatch());
+      await until(() => !dialog(), "Workspace-free conversation selection did not close navigation search");
+      await dismissNavigation();
+      await checkPath("工作区", standaloneTitle);
+      await revealNavigation();
+      assert(selectedRow(standaloneTitle), "Search must select the workspace-free conversation in the sidebar");
+      click(button("搜索导航", panel()));
+      await until(() => document.querySelector("[data-slot=command-input]"), "Navigation search did not reopen");
+      passed.push("global navigation search opens workspace-free conversations and selects their sidebar row");
       setInput(document.querySelector("[data-slot=command-input]"), DEMO_SKILLS[1].name);
       const navigationMatch = () => [...document.querySelectorAll("[data-slot=command-item]")]
         .find(element => visible(element) && label(element) === DEMO_SKILLS[1].name);

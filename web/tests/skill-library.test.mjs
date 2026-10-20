@@ -126,6 +126,48 @@ test("完整包保存新增文本、二进制和空目录，重建实例后保�
   assert.equal(legacy.get(JSON.stringify(["seed", "SKILL.md"])), "旧版草稿")
 })
 
+test("创建一次提交完整初始正文，超限或存储失败不留下新包", async (t) => {
+  const {
+    library,
+    create,
+    persistence,
+    documents,
+    setFailure,
+    MAX_SKILL_FILE_BYTES,
+  } = await setup(t)
+  const content =
+    "---\nname: 初始正文\ndescription: 草稿\n---\n\n# 用户编辑\n精确保存。\n"
+  let saves = 0
+  const save = persistence.save
+  persistence.save = async (skill) => {
+    saves++
+    await save(skill)
+  }
+  const skill = await library.create({ name: "初始正文", content })
+  assert.equal(saves, 1)
+  assert.equal(
+    await (await create().readFile(skill.id, "SKILL.md")).text(),
+    content
+  )
+  await assert.rejects(
+    library.create({
+      name: "过大正文",
+      content: "文".repeat(Math.floor(MAX_SKILL_FILE_BYTES / 3) + 1),
+    }),
+    { code: "storage" }
+  )
+  assert.equal(saves, 1, "校验必须在提交之前")
+  assert.equal(documents.size, 1)
+  setFailure(true)
+  await assert.rejects(library.create({ name: "存储失败", content }), {
+    code: "storage",
+  })
+  assert.equal(documents.size, 1)
+  setFailure(false)
+  const empty = await library.create({ name: "空正文", content: "" })
+  assert.equal((await library.readFile(empty.id, "SKILL.md")).size, 0)
+})
+
 test("替换必须明确；目录与大小写冲突不覆盖；重命名与删除保留完整目录关系", async (t) => {
   const { library, create } = await setup(t)
   await assert.rejects(
@@ -338,4 +380,22 @@ test("包大小与条目上限一致，失败保留已有内容；保留临时�
     await assert.rejects(library.writeFile("seed", path, new Blob([])), {
       code: "path-invalid",
     })
+})
+
+
+test("保存 Skill 入口原子更新元信息，失败保留旧名称、说明与正文", async (t) => {
+  const { library, create, setFailure } = await setup(t)
+  const content = '---\nname: "Markdown 名称"\ndescription: "Markdown 说明"\n---\n\n# 原样保留\n'
+  const skill = await library.writeFile("seed", "SKILL.md", new Blob([content]), { replace: true })
+  assert.equal(skill.name, "Markdown 名称")
+  assert.equal(skill.description, "Markdown 说明")
+  assert.equal((await create().get("seed")).name, "Markdown 名称")
+  assert.equal(await (await create().readFile("seed", "SKILL.md")).text(), content)
+  setFailure(true)
+  await assert.rejects(library.writeFile("seed", "SKILL.md", new Blob([content.replace("Markdown 名称", "未保存名称")]), { replace: true }))
+  assert.equal((await library.get("seed")).name, "Markdown 名称")
+  assert.equal(await (await library.readFile("seed", "SKILL.md")).text(), content)
+  setFailure(false)
+  await assert.rejects(library.writeFile("seed", "SKILL.md", new Blob(['---\nname: missing-description\n---\n']), { replace: true }), { code: "path-invalid" })
+  assert.equal((await library.get("seed")).description, "Markdown 说明")
 })

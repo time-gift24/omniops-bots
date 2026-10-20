@@ -164,7 +164,7 @@ export function MarkdownEditor({
                 </Markdown>
               ) : (
                 <p className="py-10 text-center text-xs text-muted-foreground">
-                  写下 Markdown 内容后，即可在这里预览。
+                  暂无预览内容。
                 </p>
               ))}
           </div>

@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react"
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
+import { FilePlus2, Upload } from "lucide-react"
 import {
   BookOpen01Icon,
   FileTextIcon,
@@ -31,6 +32,7 @@ import {
 import { DocsMobileNav } from "@/components/premium/docs-pages/docs-mobile-nav"
 import { useScrollspy } from "@/components/premium/docs-pages/use-scrollspy"
 import { Button } from "@/components/motion/button"
+import { Input } from "@/components/motion/input"
 import {
   CodeBlock,
   CodeBlockActions,
@@ -130,6 +132,7 @@ export type SkillDocumentProps = {
   onRestore?: () => void
   onChange: (value: string) => void
   onSelectFile: (path: string) => void
+  onAddFile?: (path: string, content: Blob) => Promise<void>
   onError: (message: string) => void
 }
 
@@ -153,10 +156,23 @@ export function SkillDocument({
   onRestore,
   onChange,
   onSelectFile,
+  onAddFile,
   onError,
 }: SkillDocumentProps) {
   const [mode, setMode] = useState<MarkdownEditorMode>("source")
   const [navOpen, setNavOpen] = useState(false)
+  const [newFilePath, setNewFilePath] = useState<string | null>(null)
+  const [pendingUpload, setPendingUpload] = useState<{
+    path: string
+    file: File
+  } | null>(null)
+  const mounted = useRef(false)
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+    }
+  }, [])
   const scrollRef = useRef<HTMLDivElement>(null)
   const editorPreviewRef = useRef<HTMLDivElement>(null)
   const [pendingScroll, setPendingScroll] = useState<{
@@ -307,124 +323,258 @@ export function SkillDocument({
       onLink={followLink}
       empty={
         <p className="py-12 text-center text-sm text-muted-foreground">
-          {readOnly
-            ? "这个文件没有正文。"
-            : editing
-              ? "在源码视图中编写内容，即可在这里预览。"
-              : "这个文件还是空的，点击「编辑」开始编写。"}
+          暂无正文
         </p>
       }
     />
   )
 
   const wide = editing && mode !== "preview"
+  const folder = path.includes("/")
+    ? path.slice(0, path.lastIndexOf("/") + 1)
+    : ""
+  async function addFile(filePath: string, content: Blob) {
+    if (busy || !onAddFile) return
+    try {
+      await onAddFile(filePath, content)
+      if (mounted.current) {
+        setNewFilePath(null)
+        setPendingUpload(null)
+        setNavOpen(false)
+      }
+    } catch {
+      // The owner reports the error; retain the filename or selected upload for retry.
+    }
+  }
+  const fileActions = onAddFile ? (
+    <div className="mb-3 space-y-3" data-slot="skill-file-actions">
+      <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={busy}
+          className="flex-1 justify-start"
+          onClick={() => setNewFilePath(folder)}
+        >
+          <FilePlus2 aria-hidden="true" />
+          新建文件
+        </Button>
+        <input
+          type="file"
+          hidden
+          aria-label="选择 Skill 上传文件"
+          disabled={busy}
+          onChange={(event) => {
+            const file = event.currentTarget.files?.[0]
+            event.currentTarget.value = ""
+            if (!file) return
+            const target = folder + file.name
+            setPendingUpload({ path: target, file })
+            void addFile(target, file)
+          }}
+        />
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label="上传文件"
+          title="上传文件"
+          disabled={busy}
+          onClick={(event) =>
+            event.currentTarget.parentElement
+              ?.querySelector<HTMLInputElement>('input[type="file"]')
+              ?.click()
+          }
+        >
+          <Upload aria-hidden="true" />
+        </Button>
+      </div>
+      {newFilePath !== null ? (
+        <form
+          className="space-y-2"
+          aria-label="新建技能文件"
+          onSubmit={(event) => {
+            event.preventDefault()
+            void addFile(newFilePath.trim(), new Blob([""]))
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Escape" && !busy) {
+              event.preventDefault()
+              setNewFilePath(null)
+            }
+          }}
+        >
+          <Input
+            label="文件路径"
+            aria-label="新文件路径"
+            value={newFilePath}
+            onChange={setNewFilePath}
+            placeholder="例如：notes.md"
+            autoFocus
+            required
+            disabled={busy}
+            classNames={{ field: "h-9", input: "text-xs" }}
+          />
+          <div className="flex justify-end gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={busy}
+              onClick={() => setNewFilePath(null)}
+            >
+              取消
+            </Button>
+            <Button
+              type="submit"
+              size="sm"
+              disabled={busy || !newFilePath.trim()}
+            >
+              创建文件
+            </Button>
+          </div>
+        </form>
+      ) : null}
+      {pendingUpload && !busy ? (
+        <div className="space-y-2">
+          <p
+            className="truncate text-xs text-muted-foreground"
+            title={pendingUpload.path}
+          >
+            {pendingUpload.path}
+          </p>
+          <div className="flex justify-end gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setPendingUpload(null)}
+            >
+              取消上传
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                void addFile(pendingUpload.path, pendingUpload.file)
+              }
+            >
+              重试上传
+            </Button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  ) : null
 
   return (
     <div className="skill-docs" data-slot="skill-screen">
-      <div className="flex min-h-0 flex-1">
-        <aside className="skill-file-sidebar">
-          <div className="min-h-0 flex-1 overflow-y-auto px-3 pt-4 pb-4">
-            <SkillFileNav
-              items={menuItems}
-              active={path}
-              onPick={selectFromSidebar}
-            />
-          </div>
-        </aside>
-        <div className="doc-action-surface doc-action-surface-vertical relative flex min-h-0 min-w-0 flex-1">
-          {active ? (
-            <DocumentActions
-              vertical
-              editing={editing}
-              busy={busy}
-              disabled={loading || !file}
-              dirty={dirty}
-              readOnly={readOnly}
-              saveLabel={saveLabel}
-              onEdit={() => {
-                setMode("source")
-                onEdit()
-              }}
-              onSave={onSave}
-              onUndo={onUndo}
-              onRestore={onRestore}
-            >
-              <Button
-                variant="ghost"
-                size="icon"
-                className="skill-files-trigger size-7 text-muted-foreground/70 hover:text-foreground"
-                aria-label="浏览技能文件"
-                title="浏览技能文件"
-                onClick={() => setNavOpen(true)}
-              >
-                <HugeiconsIcon
-                  icon={Files01Icon}
-                  size={16}
-                  aria-hidden="true"
-                />
-              </Button>
-              {actions}
-            </DocumentActions>
-          ) : null}
-          <span role="status" className="sr-only">
-            {message}
-          </span>
-          <div
-            ref={scrollRef}
-            className={cn(
-              "doc-reading-scroll skill-docs-scroll min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain",
-              editing && "overflow-hidden"
-            )}
-            tabIndex={0}
-            aria-label="文件内容"
+      <div className="doc-action-surface m-2 flex min-h-0 flex-1 flex-col gap-2 sm:m-3">
+        {active ? (
+          <DocumentActions
+            editing={editing}
+            busy={busy}
+            disabled={loading || !file}
+            dirty={dirty}
+            readOnly={readOnly}
+            saveLabel={saveLabel}
+            onEdit={() => {
+              setMode("source")
+              onEdit()
+            }}
+            onSave={onSave}
+            onUndo={onUndo}
+            onRestore={onRestore}
           >
-            <div
-              className={cn("doc-reading-layout", wide && "doc-reading-wide")}
-              style={editing ? { height: "100%", maxWidth: "none" } : undefined}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="skill-files-trigger size-7 text-muted-foreground/70 hover:text-foreground"
+              aria-label="浏览技能文件"
+              title="浏览技能文件"
+              onClick={() => setNavOpen(true)}
             >
-              <article
-                className={cn(
-                  "doc-article min-w-0 pt-2!",
-                  editing && "flex h-full min-h-0 flex-col p-3!"
-                )}
+              <HugeiconsIcon icon={Files01Icon} size={16} aria-hidden="true" />
+            </Button>
+            {actions}
+          </DocumentActions>
+        ) : null}
+        <div
+          data-slot="document-body"
+          className="flex min-h-0 flex-1 overflow-hidden rounded-xl border border-[color:var(--border-strong)]"
+        >
+          <aside className="skill-file-sidebar">
+            <div className="min-h-0 flex-1 overflow-y-auto px-3 pt-4 pb-4">
+              {fileActions}
+              <SkillFileNav
+                items={menuItems}
+                active={path}
+                onPick={selectFromSidebar}
+              />
+            </div>
+          </aside>
+          <div className="flex min-h-0 min-w-0 flex-1">
+            <span role="status" className="sr-only">
+              {message}
+            </span>
+            <div
+              ref={scrollRef}
+              className={cn(
+                "doc-reading-scroll skill-docs-scroll min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain",
+                editing && "overflow-hidden"
+              )}
+              tabIndex={0}
+              aria-label="文件内容"
+            >
+              <div
+                className={cn("doc-reading-layout", wide && "doc-reading-wide")}
+                style={
+                  editing ? { height: "100%", maxWidth: "none" } : undefined
+                }
               >
-                {!file ? (
-                  <p role="alert">文件不存在，请从左侧导航选择文件。</p>
-                ) : loading ? (
-                  <p role="status">正在读取文件…</p>
-                ) : editing && !readOnly ? (
-                  <MarkdownEditor
-                    value={source}
-                    ariaLabel={`编辑 ${path}`}
-                    autoFocus
-                    markdown={markdown}
-                    preview={preview}
-                    previewScrollRef={editorPreviewRef}
-                    onModeChange={setMode}
-                    onChange={onChange}
+                <article
+                  className={cn(
+                    "doc-article min-w-0 pt-2!",
+                    editing && "flex h-full min-h-0 flex-col p-3!"
+                  )}
+                >
+                  {!file ? (
+                    <p role="alert">文件不存在，请从左侧导航选择文件。</p>
+                  ) : loading ? (
+                    <p role="status">正在读取文件…</p>
+                  ) : editing && !readOnly ? (
+                    <MarkdownEditor
+                      key={path}
+                      value={source}
+                      ariaLabel={`编辑 ${path}`}
+                      autoFocus
+                      markdown={markdown}
+                      preview={preview}
+                      previewScrollRef={editorPreviewRef}
+                      onModeChange={setMode}
+                      onChange={onChange}
+                    />
+                  ) : customPreview !== undefined || markdown ? (
+                    preview
+                  ) : (
+                    <>
+                      <h1 className="mb-6 text-2xl font-semibold tracking-tight">
+                        {path.split("/").at(-1)}
+                      </h1>
+                      <SourceView source={source} path={path} />
+                    </>
+                  )}
+                </article>
+                {!wide && outlineSections.length > 0 ? (
+                  <MarkdownOutline
+                    key={path}
+                    sections={outlineSections}
+                    active={activeSection ?? ""}
+                    onSelect={(id) => {
+                      const node = findDocsHeading(resolveScroll(), id)
+                      if (node) scrollToHeading(node)
+                    }}
                   />
-                ) : customPreview !== undefined || markdown ? (
-                  preview
-                ) : (
-                  <>
-                    <h1 className="mb-6 text-2xl font-semibold tracking-tight">
-                      {path.split("/").at(-1)}
-                    </h1>
-                    <SourceView source={source} path={path} />
-                  </>
-                )}
-              </article>
-              {!wide && outlineSections.length > 0 ? (
-                <MarkdownOutline
-                  key={path}
-                  sections={outlineSections}
-                  active={activeSection ?? ""}
-                  onSelect={(id) => {
-                    const node = findDocsHeading(resolveScroll(), id)
-                    if (node) scrollToHeading(node)
-                  }}
-                />
-              ) : null}
+                ) : null}
+              </div>
             </div>
           </div>
         </div>
@@ -441,7 +591,9 @@ export function SkillDocument({
             onPick={selectFromDrawer}
           />
         }
-      />
+      >
+        {fileActions}
+      </DocsMobileNav>
     </div>
   )
 }

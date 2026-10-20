@@ -14,13 +14,13 @@ import { createTauriAdapters } from "/src/adapters/tauri/index.ts"
 import { createAppDependencies } from "/src/app/dependencies.tsx"
 import { withTestTheme } from "/tests/support.tsx"
 const result = document.querySelector("#result"), fixture = document.querySelector("#fixture")
-const root = createRoot(fixture), calls = [], records = [], sessions = new Map()
+const root = createRoot(fixture), calls = [], records = [], sessions = new Map(), fileScopes = []
 const activeTasks = new Map(), stopAcknowledgements = new Map()
 let browserThreadId = null
 const metadata = { providerName: "fixture", protocolName: "langgraph", requestedModel: "test-model" }
 const configuration = { name: "本地巡检", description: "执行检查", instructions: "# 巡检\n检查运行状态。", skillIds: [], toolIds: ["browser"], mcpServerIds: [] }
 let agents = [{ id: "local", source: "local", contentId: "local-v1", configuration }, { id: "official", source: "official", contentId: "official-v1", releaseTag: "v1", configuration: { ...configuration, name: "官方巡检" } }]
-let servers = [], listener, starts = [], skillText = "# 实验技能\n原始内容", failedMcp = true, failedSkillWrite = true
+let servers = [], listener, starts = [], skillText = "# 实验技能\n原始内容", failedMcp = true, failedSkillWrite = true, holdRuns = false
 const managed = () => ({ id: "skill", name: "实验技能", description: "验证完整草稿", origin: "local", contentId: "skill-v1", readOnly: false, modifiedAt: null, entries: [{ path: "SKILL.md", kind: "file", size: 20, mimeType: "text/markdown", modifiedAt: null }] })
 const empty = () => ({ simulated: false, tasks: [...activeTasks.values()], task: [...activeTasks.values()].find(task => task.threadId === browserThreadId) ?? null, browserThreadId, browserRequest: 0, browser: { url: "", title: "", status: "empty", canGoBack: false, canGoForward: false } })
 const response = text => ({ assistant: { parts: [{ type: "text", text }] }, finish: { reason: "stop" }, usage: {}, metadata })
@@ -28,7 +28,7 @@ const bridge = {
   async listen(_name, handler) { listener = handler; return () => { listener = undefined } },
   async invoke(command, args) {
     calls.push([command, args])
-    if (["browser_set_bounds", "runtime_prepare_run", "runtime_release_run"].includes(command)) return null
+    if (["runtime_prepare_run", "runtime_release_run"].includes(command)) return null
     if (command !== "runtime_request") throw new Error(`Unexpected command ${command}`)
     const { method, params } = args
     switch (method) {
@@ -61,7 +61,9 @@ const bridge = {
         sessions.set(params.threadId, snapshot)
         const answer = response(`执行完成 ${starts.length}`)
         records.push({ runId: params.runId, threadId: params.threadId, agentId: params.agentId, title: params.request.messages[0].text, status: "completed", startedAt: new Date().toISOString(), endedAt: new Date().toISOString(), inputMessages: params.request.messages, snapshot, result: answer })
-        setTimeout(() => { listener?.({ event: "chat_event", runId: params.runId, threadId: params.threadId, data: { type: "started", metadata } }); listener?.({ event: "chat_event", runId: params.runId, threadId: params.threadId, data: { type: "completed", response: answer } }) }, 30)
+        const held = holdRuns
+        if (held) activeTasks.set(params.runId, { runId: params.runId, threadId: params.threadId, title: params.request.messages[0].text, phase: "running" })
+        setTimeout(() => { listener?.({ event: "chat_event", runId: params.runId, threadId: params.threadId, data: { type: "started", metadata } }); if (!held) listener?.({ event: "chat_event", runId: params.runId, threadId: params.threadId, data: { type: "completed", response: answer } }) }, 30)
         return { runId: params.runId }
       }
       default: throw new Error(`Unexpected method ${method}`)
@@ -75,7 +77,20 @@ const visible = element => element?.getClientRects().length && !element.closest(
 const button = (name, scope = document) => [...scope.querySelectorAll("button")].find(element => visible(element) && (element.getAttribute("aria-label") === name || element.textContent.trim() === name || (name.startsWith("打开 ") && (element.getAttribute("aria-label") ?? element.textContent.trim()).startsWith(name))))
 const click = name => { const element = typeof name === "string" ? button(name) : name; assert(visible(element) && !element.disabled, `Missing enabled control ${name}`); flushSync(() => element.click()) }
 function input(element, text) { assert(element, "Missing input"); flushSync(() => { if (element.isContentEditable) element.textContent = text; else Object.getOwnPropertyDescriptor(element instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype, "value").set.call(element, text); element.dispatchEvent(new Event("input", { bubbles: true })) }) }
-async function mount() { const runtime = await createTauriAdapters(bridge); runtime.setContextResolver(async () => ({})); const dependencies = createAppDependencies(runtime.adapters); flushSync(() => root.render(withTestTheme(React.createElement(App), dependencies))); await until(() => button("Agent"), "App did not load"); return runtime }
+async function mount() {
+  const runtime = await createTauriAdapters(bridge)
+  runtime.setContextResolver(async () => ({}))
+  const dependencies = createAppDependencies({ ...runtime.adapters, workbench: {
+    ...runtime.adapters.workbench,
+    async listWorkspaceFiles(scope) {
+      fileScopes.push({ ...scope })
+      return [{ name: `artifact-${scope.sessionId}.txt`, path: "artifact.txt", size: "1 B" }]
+    },
+  } })
+  flushSync(() => root.render(withTestTheme(React.createElement(App), dependencies)))
+  await until(() => button("Agent"), "App did not load")
+  return runtime
+}
 const activeAgentPage = () => [...fixture.querySelectorAll('[data-agent-id]')].find(visible)
 async function agent(name) {
   click(button("Agent", fixture.querySelector('nav[aria-label="工作区导航区域"]')))
@@ -86,7 +101,23 @@ async function agent(name) {
   click(button(`打开 ${name}`, library()))
   await until(() => activeAgentPage() && button("开始新会话", activeAgentPage()), "Agent page did not load")
 }
-async function send(text) { await until(() => [...fixture.querySelectorAll('[contenteditable="true"]')].some(visible), "Composer missing"); input([...fixture.querySelectorAll('[contenteditable="true"]')].find(visible), text); await until(() => button("发送") && !button("发送").disabled, "Send disabled"); click("发送"); await until(() => !button("停止任务") && fixture.textContent.includes(`执行完成 ${starts.length}`), "Run did not complete") }
+async function send(text, complete = true) { await until(() => [...fixture.querySelectorAll('[contenteditable="true"]')].some(visible), "Composer missing"); input([...fixture.querySelectorAll('[contenteditable="true"]')].find(visible), text); await until(() => button("发送") && !button("发送").disabled, "Send disabled"); click("发送"); if (complete) await until(() => fixture.textContent.includes(`执行完成 ${starts.length}`), "Run did not complete") }
+async function checkWorkbenchScope(threadId) {
+  const before = fileScopes.length
+  if (button("打开工作台")) click("打开工作台")
+  if (button("返回新标签页")) click("返回新标签页")
+  const files = () => [...fixture.querySelectorAll('section[aria-label="工具"] button')]
+    .find(element => visible(element) && element.textContent.trim() === "文件")
+  await until(files, "Workbench file action missing")
+  click(files())
+  await until(() => fileScopes.length > before && fixture.textContent.includes(`artifact-${threadId}.txt`),
+    "Workbench must display files from the active Agent, Skill experiment or historical session")
+  const scope = fileScopes.at(-1)
+  assert(scope.sessionId === threadId && scope.workspaceId === undefined && scope.workspacePath === undefined,
+    "Workbench must use the active run session without inheriting the workspace draft's identity or directory")
+  click("返回新标签页")
+  click("收起工作台")
+}
 let runtime
 try {
   runtime = await mount()
@@ -94,15 +125,19 @@ try {
   assert(!button("编辑"), "Official Agent must be read-only")
   assert(!fixture.textContent.includes("official-v1"), "Agent configuration must not expose content hashes")
   click("复制为本地")
-  await until(() => button("编辑"), "Copy must create editable local Agent")
+  await until(() => button("保存"), "Copy must open the local Agent in edit mode")
+  click("保存")
+  await until(() => button("编辑"), "Saving the copy must make the local Agent available for execution")
   assert(agents.length === 3, "Agent copy must be persisted through source")
   assert(!fixture.textContent.includes("new-2-v1"), "Local Agent configuration must not expose content hashes")
   assert(!fixture.querySelector('[aria-label="变更数据的操作需要批准"]'), "Real runtime must not display approval configuration")
   click("开始新会话"); await send("检查一次")
   const firstThread = starts[0].threadId
   assert(starts[0].agentId === "new-2", "Agent identity must reach chat_start")
+  await checkWorkbenchScope(firstThread)
   await agent("新建巡检"); click("开始新会话"); await send("再次检查")
   assert(starts[1].threadId !== firstThread, "Each Agent launch requires a fresh stable session")
+  await checkWorkbenchScope(starts[1].threadId)
   assert(!calls.some(([, args]) => args?.method === "agent_instructions"), "Frontend must not assemble instructions per turn")
   await agent("新建巡检")
   const manager = [...activeAgentPage().querySelectorAll("summary")].find(element => element.textContent === "管理本地 MCP 服务")
@@ -140,6 +175,7 @@ try {
   await send("实验一次")
   assert(skillText.includes("完整实验草稿"), "Experiment must save the complete current draft before opening a session")
   assert(starts[2].experimentSkillId === "skill" && starts[2].threadId !== starts[1].threadId, "Skill experiment must create a fresh Agent-bound session")
+  await checkWorkbenchScope(starts[2].threadId)
   flushSync(() => root.render(null)); runtime.dispose(); runtime = await mount()
   assert(starts.length === 3, "Reloading must not start execution")
   click("执行记录"); if (button("Close sidebar")) click("Close sidebar"); await until(() => fixture.querySelector('section[aria-label="执行记录"]')?.textContent.includes("检查一次"), "Persisted runs unavailable after remount")
@@ -149,40 +185,52 @@ try {
   assert(fixture.textContent.includes("local-v1"), "Historical content identity must remain inspectable")
   click("继续会话"); await until(() => fixture.textContent.includes("执行完成 1"), "Recovered transcript missing")
   assert(starts.length === 3, "Opening historical conversation must not execute")
+  await checkWorkbenchScope(firstThread)
   await send("继续检查")
   assert(starts[3].threadId === firstThread, "Continuation must use the original session identity")
-  click("Agent"); await until(() => visible(fixture.querySelector('[data-testid="agent-library"]')) && button("新建本地 Agent"), "Agent list creation control missing")
-  const create = button("新建本地 Agent", fixture.querySelector('[data-testid="agent-library"]'))
-  assert(create.querySelector("svg") && create.textContent.trim() === "", "List creation must be an accessible icon button")
-  const controlBounds = create.getBoundingClientRect(), listHeaderBounds = fixture.querySelector("header").getBoundingClientRect()
-  assert(controlBounds.width === controlBounds.height && controlBounds.height >= 24, "Creation control must be square with an accessible target")
-  assert(controlBounds.top >= listHeaderBounds.bottom && !create.closest("header"), "Creation control must float in the body below the breadcrumb")
-  create.focus(); assert(document.activeElement === create, "Creation control must accept keyboard focus")
-  click(create); await until(() => agents.length === 4 && button("编辑"), "Icon creation must still open a new local Agent")
+  click("Agent"); await until(() => visible(fixture.querySelector('[data-testid="agent-library"]')), "Agent list did not open")
+  const sidebar = fixture.querySelector('[data-slot="sidebar"]')
+  const create = [...sidebar.querySelectorAll("button")].find(element => visible(element) && (element.getAttribute("aria-label") ?? element.textContent).trim() === "新建 Agent")
+  assert(create, "Agent sidebar must expose New Agent")
+  create.focus(); assert(document.activeElement === create, "Creation action must accept keyboard focus")
+  const actionBounds = create.getBoundingClientRect(), listBounds = button("Agent 列表", sidebar).getBoundingClientRect()
+  assert(actionBounds.bottom <= listBounds.top + 1, "New Agent must sit above the Agent list")
+  assert(!button("新会话", sidebar), "Agent tab must not expose New conversation")
+  click(create); await until(() => agents.length === 4 && button("保存"), "New Agent must open in edit mode")
+  assert(fixture.querySelector('textarea[aria-label="系统提示词"]'), "New Agent must open its instruction editor")
   assert(!fixture.textContent.includes("浏览器会话切换失败"), "Selecting pages through the App must not display a bridge error")
-  const taskA = { runId: "concurrent-banner-a", threadId: firstThread, title: "并行任务 A", phase: "running" }
-  const taskB = { runId: "concurrent-banner-b", threadId: starts[1].threadId, title: "并行任务 B", phase: "running" }
+  async function openSession(title, threadId) {
+    click("执行记录")
+    if (button("Close sidebar")) click("Close sidebar")
+    const row = () => [...fixture.querySelectorAll('section[aria-label="执行记录"] button')].find(element => visible(element) && element.textContent.includes(title))
+    await until(row, `Run ${title} missing`)
+    click(row()); await until(() => button("继续会话"), "Run details missing"); click("继续会话")
+    await until(() => browserThreadId === threadId && [...fixture.querySelectorAll('[contenteditable="true"]')].some(visible), "Opening a run must select its conversation and browser page")
+  }
+  holdRuns = true
+  await openSession("检查一次", firstThread); await send("并行任务 A", false)
+  await until(() => activeTasks.size === 1, "A must start before navigating away")
+  await openSession("再次检查", starts[1].threadId); await send("并行任务 B", false)
+  await until(() => activeTasks.size === 2, "Both conversations must run concurrently")
+  const [taskA, taskB] = [...activeTasks.values()]
   const stoppedA = Promise.withResolvers()
   stopAcknowledgements.set(taskA.runId, stoppedA)
-  activeTasks.set(taskA.runId, taskA); activeTasks.set(taskB.runId, taskB)
-  flushSync(() => listener({ event: "desktop_state", state: empty() }))
-  const banner = task => [...fixture.querySelectorAll(`[title="${task.title}"]`)].map(element => element.parentElement).find(element => button("停止任务", element))
-  await until(() => banner(taskA) && banner(taskB), "The App must display both concurrent task banners")
-  assert(button("停止任务", banner(taskA)) && button("停止任务", banner(taskB)), "Every task banner needs its own stop control")
-  click(button("停止任务", banner(taskA)))
-  await until(() => button("停止任务", banner(taskA))?.disabled, "Only the requested task must enter stopping")
-  assert(!button("停止任务", banner(taskB)).disabled, "Stopping A must not lock B's banner")
-  click(button("返回任务", banner(taskB)))
-  await until(() => browserThreadId === taskB.threadId, "Returning to B must select B's browser page")
-  assert(banner(taskA) && banner(taskB), "Changing the selected page must preserve both task banners")
+  await openSession("检查一次", taskA.threadId)
+  await until(() => button("停止任务"), "A must expose its composer stop control")
+  assert(!button("返回任务") && !fixture.textContent.includes("Agent 正在执行任务"), "Running tasks must not add a top banner or composer status card")
+  click("停止任务")
+  await until(() => button("正在停止任务")?.disabled, "Only A's composer must enter stopping")
+  await openSession("再次检查", taskB.threadId)
+  await until(() => button("停止任务") && !button("停止任务").disabled, "Stopping A must not lock B's composer")
+  assert(activeTasks.size === 2 && !button("返回任务") && !fixture.textContent.includes("Agent 正在执行任务"), "Switching conversations must preserve both tasks without status banners")
   stoppedA.resolve()
-  await until(() => !banner(taskA) && banner(taskB), "Acknowledging A must remove only A's banner")
-  assert(calls.filter(([, args]) => args?.method === "stop").at(-1)[1].params.runId === taskA.runId, "The stop RPC must retain the clicked banner's run identity")
-  assert(!button("停止任务", banner(taskB)).disabled && starts.length === 4, "B must remain available without replaying any task")
+  await until(() => !activeTasks.has(taskA.runId) && activeTasks.has(taskB.runId), "Acknowledging A must stop only A")
+  assert(calls.filter(([, args]) => args?.method === "stop").at(-1)[1].params.runId === taskA.runId, "The composer stop RPC must retain A's run identity")
+  assert(!button("停止任务").disabled && browserThreadId === taskB.threadId && starts.length === 6, "B must remain selected and running without replaying any task")
   activeTasks.delete(taskB.runId)
-  flushSync(() => listener({ event: "desktop_state", state: empty() }))
-  await until(() => !banner(taskB), "Completing B must release its own banner")
-  result.textContent = "PASS: official read-only/copy, Agent-bound unique sessions, native gate, MCP save/test failure/success, Skill draft-save failure/retry and experiment, persisted history/snapshot, restore without execution, continuation, concurrent App banners and isolated stop/page selection"
+  flushSync(() => listener({ event: "chat_event", runId: taskB.runId, threadId: taskB.threadId, data: { type: "completed", response: response("并行任务 B 完成") } }))
+  await until(() => !button("停止任务") && fixture.textContent.includes("并行任务 B 完成"), "Completing B must release its composer stop control")
+  result.textContent = "PASS: official read-only/copy, Agent-bound unique sessions, native gate, MCP save/test failure/success, Skill draft-save failure/retry and experiment, persisted history/snapshot, restore without execution, continuation, Agent/Skill/history workbench file scopes, no task banners or status cards, isolated concurrent composer stop/page selection"
   result.dataset.passed = "true"
 } catch (error) { result.textContent = `FAIL: ${error.stack}`; result.dataset.passed = "false"; throw error }
 </script>
