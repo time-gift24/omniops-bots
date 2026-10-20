@@ -1,0 +1,15 @@
+{
+  "method": "native-viewer-svg-export",
+  "sourceArtifact": "../diagrams/11-provider.html",
+  "artifactSha256": "f4cddcb698211c30b49a8ffd63acac1ad75ea837a1176ce3f9a2264370966a60",
+  "nativeExport": {
+    "sha256": "1fdaddc47fd68b7aacd8ad16a4d6623d089e7cce828da28b4d6aa36cce822cb7",
+    "bytes": 56439
+  },
+  "normalization": "Remove trailing line whitespace and ensure one EOF newline; parsed SVG tags, attributes, text and tails unchanged apart from trailing whitespace.",
+  "savedExport": {
+    "path": "../assets/11-provider.svg",
+    "sha256": "d54bc8c3b071a949110611ab36c81c6eda8aa975245ef4942cb30f0367976cdb",
+    "bytes": 56419
+  }
+}

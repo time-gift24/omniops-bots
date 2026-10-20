@@ -68,15 +68,21 @@ test('document comments work across chapters, reloads, narrow screens, and stora
     assert.match(await page.locator('article:not([hidden])').textContent(), /SQLite/);
     await page.getByRole('button', { name: '下一章', exact: true }).click();
     await page.locator('[id="10-server-api"]').waitFor({ state: 'visible' });
-    assert.equal(await page.locator('#progress').textContent(), '11 / 11');
-    assert.equal(await page.locator('#next').isDisabled(), true);
+    assert.equal(await page.locator('#progress').textContent(), '11 / 12');
+    assert.equal(await page.locator('#next').isDisabled(), false);
     assert.match(await page.locator('article:not([hidden])').textContent(), /latest\.json/);
+    await page.getByRole('button', { name: '下一章', exact: true }).click();
+    await page.locator('[id="11-provider"]').waitFor({ state: 'visible' });
+    assert.equal(await page.locator('#progress').textContent(), '12 / 12');
+    assert.equal(await page.locator('#next').isDisabled(), true);
+    assert.equal(await page.locator('#source').getAttribute('href'), '11-Provider.md');
+    assert.match(await page.locator('article:not([hidden])').textContent(), /操作系统凭据库/);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     await page.getByRole('button', { name: '本章评论', exact: true }).click();
     await page.getByLabel('记录本章意见').fill('待保存草稿');
     await page.getByRole('button', { name: '关闭文档评论' }).click();
     await page.getByLabel('章节', { exact: true }).selectOption('01-skill');
-    await page.getByLabel('章节', { exact: true }).selectOption('10-server-api');
+    await page.getByLabel('章节', { exact: true }).selectOption('11-provider');
     await page.getByRole('button', { name: '本章评论', exact: true }).click();
     assert.equal(await page.getByLabel('记录本章意见').inputValue(), '待保存草稿');
     await page.evaluate(() => {

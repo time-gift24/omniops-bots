@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/11-provider.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/11-provider.html",
+  "specification": {
+    "sha256": "2919eca3e856420101eea3a7cad9ee683dbff75424a547dadfdf98c110ffc841",
+    "bytes": 4648
+  },
+  "artifact": {
+    "sha256": "f4cddcb698211c30b49a8ffd63acac1ad75ea837a1176ce3f9a2264370966a60",
+    "bytes": 712962
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

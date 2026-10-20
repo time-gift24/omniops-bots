@@ -17,6 +17,8 @@
 
 HTTPS 传输物料、发布请求和诊断包；WebSocket 传输任务控制与结果，不传 Skill 文件包，也不持续上报每条模型输出。Playwright 与内置 Chrome／Chromium 运行在客户端，服务端不远程暴露浏览器 CDP 端口或接收浏览器 profile。
 
+[11 · Provider](./11-Provider.md) 的配置由客户端本地维护，仅支持 OpenAI Chat Completions 兼容接口及自定义 base URL，本期不新增平台 Provider 管理、配置下发或 Key 同步 API。Key 可选，有值时使用 Bearer，无值时不发送认证头；Key 存操作系统凭据库，普通配置只保存引用。运行快照与诊断材料均不包含 Key 或原始认证头，Provider／模型选择也不进入 Agent 发布内容 ID。手动连接测试由客户端向选定模型发送固定最小请求，不使用任务通道、不读取会话或执行工具。
+
 ## 统一契约
 
 业务 API 使用 HTTPS `/api/…`，JSON 使用 UTF-8，时间为带时区的 RFC 3339；业务 JSON 请求体、成功响应和 WebSocket 报文携带 `schemaVersion: 1`，不支持的版本明确拒绝。GET 请求无需 JSON 请求体；二进制上传在 manifest 声明版本，二进制下载与 Tauri 更新清单遵循各自格式，不套 JSON 业务响应。

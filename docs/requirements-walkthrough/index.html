@@ -8,7 +8,7 @@
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{scroll-behavior:auto!important}}
 @media print{.rail,.sidebar,.header,.section-links,.mobile-nav,article footer{display:none}.main,.reading{margin:0;padding:0}body{background:white;color:black}article,article[hidden]{display:block;break-before:page;padding:20px}article:first-of-type{break-before:auto}h2,h3,figure{break-inside:avoid}}
 article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);border-radius:var(--radius);font-size:13px;line-height:1.6}article pre code{padding:0;background:transparent;font-size:inherit}
-</style><link rel="stylesheet" href="comments.css"></head><body><a class="skip" href="#content">跳到正文</a><div class="rail" aria-label="文档工具"><a class="icon-control" href="#00-overview" aria-label="客户端总体设计" title="客户端总体设计"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6a2 2 0 0 1 2 2v14a3 3 0 0 0-3-2H4zM20 4h-6a2 2 0 0 0-2 2v14a3 3 0 0 1 3-2h5z"/></svg></a><a class="icon-control" href="#08-frontend" aria-label="前端现状与缺口" title="前端现状与缺口"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg></a><button type="button" class="icon-control theme-toggle" aria-label="切换为深色"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.7A8.4 8.4 0 0 1 8.3 4 8.5 8.5 0 1 0 20 15.7Z"/></svg></button></div><aside class="sidebar"><p class="wordmark">omniops-bots<small>客户端需求串讲</small></p><nav class="chapter-nav" aria-label="串讲章节"><a href="#00-overview"><span class="num">00</span><span>客户端总体设计</span></a><a href="#01-skill"><span class="num">01</span><span>SKILL</span></a><a href="#02-mcp"><span class="num">02</span><span>MCP</span></a><a href="#03-builtintool"><span class="num">03</span><span>builtinTool</span></a><a href="#04-agent"><span class="num">04</span><span>Agent</span></a><a href="#05-updater"><span class="num">05</span><span>桌面端更新</span></a><a href="#06-sync"><span class="num">06</span><span>同步与装配</span></a><a href="#07-execution"><span class="num">07</span><span>任务执行与恢复</span></a><a href="#08-frontend"><span class="num">08</span><span>前端现状与缺口</span></a><a href="#09-operations"><span class="num">09</span><span>运维与诊断上传</span></a><a href="#10-server-api"><span class="num">10</span><span>服务端 API</span></a></nav><div class="sidebar-foot">10 章需求与接口设计 · 1 章完成情况<br>桌面运行实拍 · 资源页演示图<br><a href="README.md">Markdown 目录</a><br><a href="https://github.com/time-gift24/omniops-bots/issues/3" target="_blank" rel="noopener">已确认规格</a></div></aside><main class="main" id="content" tabindex="-1"><header class="header"><nav class="breadcrumbs" aria-label="面包屑"><a href="#00-overview">客户端设计</a><span aria-hidden="true">/</span><span id="current-title" aria-current="page"></span></nav><div class="actions"><a class="text-control source-control" id="source" href="00-总体架构.md">Markdown</a><a class="text-control" id="diagram" href="diagrams/00-overview.html" target="_blank" rel="noopener">打开运行模型<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-8 8M10 20H4v-6M4 20l8-8"/></svg></a><div class="pagination"><button type="button" id="prev" class="icon-control" aria-label="上一章"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button><span class="progress" id="progress"></span><button type="button" id="next" class="icon-control" aria-label="下一章"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button></div></div></header><div class="mobile-nav"><label for="chapter-select">章节</label><select id="chapter-select"><option value="00-overview">00 客户端总体设计</option><option value="01-skill">01 SKILL</option><option value="02-mcp">02 MCP</option><option value="03-builtintool">03 builtinTool</option><option value="04-agent">04 Agent</option><option value="05-updater">05 桌面端更新</option><option value="06-sync">06 同步与装配</option><option value="07-execution">07 任务执行与恢复</option><option value="08-frontend">08 前端现状与缺口</option><option value="09-operations">09 运维与诊断上传</option><option value="10-server-api">10 服务端 API</option></select><button type="button" class="icon-control theme-toggle" aria-label="切换为深色"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.7A8.4 8.4 0 0 1 8.3 4 8.5 8.5 0 1 0 20 15.7Z"/></svg></button></div><div class="reading"><nav class="section-links" id="sections" aria-label="本章目录"></nav><article id="00-overview" data-file="00-总体架构.md" hidden><h1>00 客户端总体设计</h1>
+</style><link rel="stylesheet" href="comments.css"></head><body><a class="skip" href="#content">跳到正文</a><div class="rail" aria-label="文档工具"><a class="icon-control" href="#00-overview" aria-label="客户端总体设计" title="客户端总体设计"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6a2 2 0 0 1 2 2v14a3 3 0 0 0-3-2H4zM20 4h-6a2 2 0 0 0-2 2v14a3 3 0 0 1 3-2h5z"/></svg></a><a class="icon-control" href="#08-frontend" aria-label="前端现状与缺口" title="前端现状与缺口"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg></a><button type="button" class="icon-control theme-toggle" aria-label="切换为深色"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.7A8.4 8.4 0 0 1 8.3 4 8.5 8.5 0 1 0 20 15.7Z"/></svg></button></div><aside class="sidebar"><p class="wordmark">omniops-bots<small>客户端需求串讲</small></p><nav class="chapter-nav" aria-label="串讲章节"><a href="#00-overview"><span class="num">00</span><span>客户端总体设计</span></a><a href="#01-skill"><span class="num">01</span><span>SKILL</span></a><a href="#02-mcp"><span class="num">02</span><span>MCP</span></a><a href="#03-builtintool"><span class="num">03</span><span>builtinTool</span></a><a href="#04-agent"><span class="num">04</span><span>Agent</span></a><a href="#05-updater"><span class="num">05</span><span>桌面端更新</span></a><a href="#06-sync"><span class="num">06</span><span>同步与装配</span></a><a href="#07-execution"><span class="num">07</span><span>任务执行与恢复</span></a><a href="#08-frontend"><span class="num">08</span><span>前端现状与缺口</span></a><a href="#09-operations"><span class="num">09</span><span>运维与诊断上传</span></a><a href="#10-server-api"><span class="num">10</span><span>服务端 API</span></a><a href="#11-provider"><span class="num">11</span><span>Provider</span></a></nav><div class="sidebar-foot">11 章需求与接口设计 · 1 章完成情况<br>桌面运行实拍 · 资源页演示图<br><a href="README.md">Markdown 目录</a><br><a href="https://github.com/time-gift24/omniops-bots/issues/3" target="_blank" rel="noopener">已确认规格</a></div></aside><main class="main" id="content" tabindex="-1"><header class="header"><nav class="breadcrumbs" aria-label="面包屑"><a href="#00-overview">客户端设计</a><span aria-hidden="true">/</span><span id="current-title" aria-current="page"></span></nav><div class="actions"><a class="text-control source-control" id="source" href="00-总体架构.md">Markdown</a><a class="text-control" id="diagram" href="diagrams/00-overview.html" target="_blank" rel="noopener">打开运行模型<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-8 8M10 20H4v-6M4 20l8-8"/></svg></a><div class="pagination"><button type="button" id="prev" class="icon-control" aria-label="上一章"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button><span class="progress" id="progress"></span><button type="button" id="next" class="icon-control" aria-label="下一章"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button></div></div></header><div class="mobile-nav"><label for="chapter-select">章节</label><select id="chapter-select"><option value="00-overview">00 客户端总体设计</option><option value="01-skill">01 SKILL</option><option value="02-mcp">02 MCP</option><option value="03-builtintool">03 builtinTool</option><option value="04-agent">04 Agent</option><option value="05-updater">05 桌面端更新</option><option value="06-sync">06 同步与装配</option><option value="07-execution">07 任务执行与恢复</option><option value="08-frontend">08 前端现状与缺口</option><option value="09-operations">09 运维与诊断上传</option><option value="10-server-api">10 服务端 API</option><option value="11-provider">11 Provider</option></select><button type="button" class="icon-control theme-toggle" aria-label="切换为深色"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.7A8.4 8.4 0 0 1 8.3 4 8.5 8.5 0 1 0 20 15.7Z"/></svg></button></div><div class="reading"><nav class="section-links" id="sections" aria-label="本章目录"></nav><article id="00-overview" data-file="00-总体架构.md" hidden><h1>00 客户端总体设计</h1>
 <p><strong>我们要构建一个让运维人员快速迭代物料、验证效果并执行任务的桌面客户端。</strong> 运维人员在客户端修改 Skill、补充文件、调整 Agent 提示词与装配，选一个 Agent 就能在本地实验；看到结果后继续修改，自己确认可用，再上传并发布确定版本，让团队使用这次改进。</p>
 <p><strong>日常工作主线是：发现问题 → 在客户端编辑 → 本地实验与修正 → 运维本人确认 → 上传发布版本 → 新会话使用并反馈。</strong> 客户端承载这段完整工作过程；服务端配合保存草稿修订和正式版本、校验运维身份并分发物料。未上传的编辑也能实验，上传保存草稿与正式发布是两个动作，发布提交即表示运维本人已经确认。</p>
 <p>用户也可直接选择 Agent 执行运维任务，由 Agent 通过 <strong>Playwright 操作随客户端交付的内置 Chrome</strong> 完成。这里的“内置 Chrome”实际采用 CEF／Chromium 内核，页面直接展示在客户端工作台中。</p>
@@ -78,6 +78,11 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <td>校验身份权限，保存完整草稿修订与不可变发布版本，分发已确认物料</td>
 </tr>
 <tr>
+<td><a href="#11-provider">Provider 配置</a></td>
+<td>本地管理多个 OpenAI Chat Completions 兼容接入地址及模型，选择默认项、手动测试连接，Key 存系统凭据库</td>
+<td>本期不下发 Provider 配置或 Key，不新增平台 API</td>
+</tr>
+<tr>
 <td>同步装配</td>
 <td>核对版本、按需下载、保留历史包、固定运行快照</td>
 <td>通过 HTTPS 提供版本清单与物料</td>
@@ -109,6 +114,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 </tbody></table>
 <p>客户端保留未同步编辑、已下载历史版本、会话快照与执行记录。本地资源可自由编辑；官方已发布资源同步后只读，服务端只调用官方 Agent。</p>
+<p>Provider 配置是客户端运行条件：允许自定义 base URL，手动维护上游模型名；新会话可使用全局默认 Provider 与模型或在开始前改选，开始后固定，不可用时明确报错，不自动切换。当前桌面仍由 Node runtime 从环境变量／<code>model.env</code> 读取单模型；多 Provider 管理、连接测试与系统凭据存储属于待实现设计，详见 <a href="#11-provider">11 · Provider</a>。</p>
 <h3>Playwright 与内置 Chrome</h3>
 <p><strong>执行链路：用户或服务端任务 → 客户端 LangGraph Agent → 所选 builtinTool → Playwright → 本地 CDP → 内置 Chrome 页面。</strong> 模型负责决定步骤，Playwright 负责页面检查和操作，内置浏览器承载真实网站与登录态；右侧工作台展示的就是被操作的页面。</p>
 <table>
@@ -473,7 +479,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <figure class="usecase"><a class="screenshot-link" href="./assets/04-agent-usecase.svg" target="_blank" rel="noopener" aria-label="放大用例图"><img src="./assets/04-agent-usecase.svg" alt="Agent 用例图：用户选择与编辑、运维发布、服务端调用"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure><h2 id="04-agent-简要设计">简要设计</h2>
 <p>客户端提供本地 Agent 编辑和官方 Agent 使用两条路径。本地 Agent 可以随时编辑、保存，不设发布标签，服务端不会调用它。用户同步官方 Agent 后，可以查看只读配置并主动发起会话；运维人员在客户端维护官方草稿并发布新版本，由服务端配合保存和分发。</p>
 <p>客户端开始会话时固定 Agent 与 Skill 快照，并按装配执行。用户主动发起的会话允许正常输入；接到服务端调用时，客户端使用传入的上下文新建独立会话，该会话仅供本地查看过程和结果。</p>
-<p>Agent 的内容 ID 根据系统提示词、固定 Skill 版本、所选 builtinTool 和 MCP 装配配置生成。正式发布时手填 <code>v.1.0.0</code> 形式的标签，已发布内容和标签指向不可变。模型和推理参数仅记录于运行快照，不参与内容 ID。</p>
+<p>Agent 的内容 ID 根据系统提示词、固定 Skill 版本、所选 builtinTool 和 MCP 装配配置生成。正式发布时手填 <code>v.1.0.0</code> 形式的标签，已发布内容和标签指向不可变。Provider、模型和推理参数属于运行条件，不参与内容 ID；Provider 的非敏感接入身份、实际模型与参数记录于运行快照。</p>
 <h3>装配清单里保存什么</h3>
 <table>
 <thead>
@@ -510,12 +516,13 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 <tr>
 <td>运行条件</td>
-<td>当前会话实际选用的模型、推理参数与桌面版本</td>
+<td>当前会话实际选用的 Provider 非敏感接入身份、模型、推理参数与桌面版本</td>
 <td>模型实例和运行环境</td>
-<td>记录在运行快照，不因模型参数变化发布新的 Agent</td>
+<td>记录在运行快照，不因 Provider、模型或参数变化发布新的 Agent</td>
 </tr>
 </tbody></table>
 <p>配置保存的是“本次需要哪些能力”，运行装配则将它们解析为实际文件和可调用工具。MVP 保持 MCP 服务级选择：连接选中的服务并取得工具清单，不新增逐工具授权管理界面。密钥、Token 从运行时凭据来源取得，其值不进入发布指纹或快照。</p>
+<p>按 <a href="#11-provider">11 · Provider</a> 的目标设计，客户端本地维护全局默认 Provider 与模型，新会话开始前允许改选，开始后固定；后续轮次不跟随默认项变化。所选接入不可用时明确失败，不自动更换地址或模型。Provider Key 从系统凭据库读取，其值不进入 Agent 包、运行快照或诊断材料；管理界面和系统凭据存储仍待实现，当前桌面为环境变量／<code>model.env</code> 单模型接入。</p>
 <h3>两端一致的 Agent 版本文件</h3>
 <p>服务端与客户端均采用 <code>agents/releases/&lt;agentId&gt;/&lt;contentId&gt;/</code>：<code>agentId</code> 是稳定资源身份，<code>contentId</code> 是确定装配的版本摘要。每个版本只包含 <code>prompt.md</code> 和 <code>agent.json</code>；人工标签保存在上一级 <code>tags.json</code>，不进入版本包。正式调用携带的 <code>agentContentId</code> 就是这里的 <code>contentId</code>。</p>
 <table>
@@ -598,7 +605,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 <tr>
 <td>6. 固定运行条件</td>
-<td>保存 Agent／Skill 身份、启用工具和 MCP 清单、桌面版本、模型与参数</td>
+<td>保存 Agent／Skill 身份、启用工具和 MCP 清单、桌面版本、Provider 非敏感接入身份、模型与参数</td>
 <td>本次运行快照不含密钥或 Token；调用 ID、状态、起止时间与错误另记执行记录</td>
 </tr>
 <tr>
@@ -634,6 +641,10 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <tr>
 <td>MCP 连接、鉴权失败或工具清单无法取得</td>
 <td>标明失败的 MCP 并结束；不移除这个 MCP 后继续执行</td>
+</tr>
+<tr>
+<td>固定的 Provider／模型不可用，或所需凭据无法读取</td>
+<td>明确报错，不回退到全局默认或其他接入；规则见 <a href="#11-provider">Provider</a></td>
 </tr>
 <tr>
 <td>工具名称存在无法区分的冲突</td>
@@ -681,7 +692,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <td>运行前生成，不建立发布版本</td>
 </tr>
 </tbody></table>
-<p>运行快照保留 Agent/Skill 内容身份、官方标签、启用工具和 MCP 清单、桌面端版本、实际模型与参数；密钥和 Token 不进入快照。调用 ID、状态和错误属于执行记录。仅调整模型参数不发布新 Agent，实际参数记录在新会话的运行快照中。</p>
+<p>运行快照保留 Agent/Skill 内容身份、官方标签、启用工具和 MCP 清单、桌面端版本、Provider 非敏感接入身份、实际模型与参数；密钥和 Token 不进入快照。调用 ID、状态和错误属于执行记录。仅调整 Provider、模型或参数不发布新 Agent，实际选择记录在新会话的运行快照中。</p>
 <h2 id="04-agent-服务端配合">服务端配合</h2>
 <p>为支持客户端维护、同步和执行官方 Agent，服务端需要配合：</p>
 <ul>
@@ -1004,6 +1015,12 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <td>按 thread 选择材料、脱敏预览、上传与接收状态；独立诊断导出入口</td>
 <td>SQLite checkpoint 持久化已接入；诊断导出、HTTPS 上传、服务端校验保存与回执仍待实现，Windows 实机加载还需验收</td>
 </tr>
+<tr>
+<td><a href="#11-provider">11 Provider</a></td>
+<td>会话入口展示当前可用的单模型</td>
+<td>多 Provider／模型管理、自定义 base URL、手填模型名、可选 Key、默认项与新会话改选、选定模型手动连接测试</td>
+<td>当前 Node runtime 从环境变量／<code>model.env</code> 读取单模型；系统凭据库和配置引用待接入，Rust provider 尚未接入桌面；本期不依赖服务端配置下发</td>
+</tr>
 </tbody></table>
 <figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/04-agent.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/04-agent.png" alt="现有 Agent 页面：配置、能力选择与系统提示词"></a><figcaption>图为前期 Agent 页面。当前本地实现已支持从 Agent 开始新会话，以及从 Skill 页面选择 Agent 实验完整本地草稿；官方发布流程仍待接入。</figcaption></figure>
 <figure class="screenshot"><a class="screenshot-link" href="./assets/screenshots/01-skill-list.png" target="_blank" rel="noopener" aria-label="查看原始页面截图"><img src="./assets/screenshots/01-skill-list.png" alt="Skill 列表：已实现的来源筛选与本地管理"></a><figcaption>本次 Web 界面实拍。Skill 列表和包内文件管理已实现；图片中的数据为演示内容。</figcaption></figure>
@@ -1013,6 +1030,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <ul>
 <li><strong>审批不属于本期 MVP 流程。</strong> 真实本地运行不经过操作审批；旧截图和演示适配器中的审批内容不代表桌面执行流程，正式发布也无审核环节。</li>
 <li><strong>本地草稿实验已完成。</strong> 先保存当前编辑，再选择 Agent 新建实验会话；运行时固定完整草稿，不修改模板 Agent 或已有会话。</li>
+<li><strong>Provider 管理仍待实现。</strong> 第 11 章描述目标能力，不代表已有配置页面或系统凭据存储。当前桌面直接使用 Node <code>ChatOpenAI</code>；Rust provider 的文本流实现不能作为桌面多模型、工具调用或凭据管理已完成的依据。连接测试按选定模型发送固定最小请求，不读取会话或执行工具，保存配置不自动测试。</li>
 <li><strong>本地多会话并发已接入。</strong> 每个 thread 固定浏览器页面；切换工作台不改变运行目标，停止仅作用于所选 run。真实 CDP 回归已覆盖一个页面导航阻塞时另一任务与脚本完成、独立取消、共享登录态及下一轮复用原页面；macOS 原生 CEF 隐藏页面的创建、切换与释放也已单独检查。历史单会话截图不作为这些并发行为的验证依据。</li>
 <li><strong>本地会话持久化不等于 checkpoint 持久化。</strong> <code>.sessions</code> 保存消息和装配快照，<code>.records</code> 保存运行证据；图状态已由 execution 使用原生 SQLite saver 单独保存，诊断导出与上传仍待实现，见第 09 章。</li>
 <li><strong>服务端接入与桌面更新仍未完成。</strong> 登录权限、官方同步/发布、WebSocket 任务与结果交付不能以本地链路通过作为完成依据。</li>
@@ -1024,6 +1042,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <li>Skill 文件操作：<a href="../../web/src/components/skills/skill-library-screen.tsx">Skill 管理页</a>、<a href="../../web/src/skills/library.ts">SkillLibrary 接口与本地行为</a>、<a href="../../web/src/adapters/browser-skill-library.ts">浏览器 IndexedDB</a>、<a href="../../web/src/adapters/tauri/skills.ts">Tauri 适配器</a>、<a href="../../desktop/runtime/skill-library.mjs">桌面文件存储</a>。</li>
 <li>Agent 身份、持久化与完整快照：<a href="../../desktop/runtime/assembly.ts">assembly.ts</a>、<a href="../../web/src/agents/source.ts">AgentSource</a>、<a href="../../web/src/components/premium/agent-builder/agent-builder.tsx">Agent 界面</a>、<a href="../../web/src/adapters/tauri/resources.ts">Tauri 资源映射</a>。</li>
 <li>MCP 配置、真实连接与工具调用：<a href="../../desktop/runtime/mcp.ts">mcp.ts</a>、<a href="../../web/src/components/premium/agent-builder/mcp-manager.tsx">MCP 管理界面</a>、<a href="../../web/src/components/premium/agent-builder/mcp-capability-dialog.tsx">MCP 能力弹窗</a>。</li>
+<li>当前单模型来源与接入：<a href="../../desktop/runtime/main.mjs">Node runtime 入口</a>、<a href="../../web/src/models/source.ts">模型列表接口</a>；独立的 <a href="../../crates/omniops-bots-provider/src/lib.rs">Rust provider</a> 尚未接入桌面。</li>
 <li>图装配、执行与恢复边界：<a href="../../desktop/runtime/graphs/browser-agent.ts">graphs/browser-agent.ts</a>、<a href="../../desktop/runtime/runtime.mjs">runtime.mjs</a>、<a href="../../desktop/runtime/execution/records.ts">execution/records.ts</a>、<a href="../../web/src/components/runs/run-history.tsx">执行记录页</a>、<a href="../../web/src/adapters/tauri/runtime.ts">Tauri 运行适配器</a>。</li>
 <li>更新与同步接口范围：<a href="../../web/src/app/dependencies.tsx">应用依赖</a>、<a href="../../web/src/agents/source.ts">Agent 来源接口</a>、<a href="../../web/src/skills/source.ts">Skill 来源接口</a>。桌面资源加载见 <a href="../../desktop/runtime/resources.mjs">resources.mjs</a>；现有 Web 未接入官方物料下载或桌面更新流程。</li>
 <li>视觉依据：<a href="../../web/src/index.css">index.css</a> 第 13–14、57–92 行；<a href="../../web/src/components/premium/docs-pages/docs-article.css">文档阅读样式</a> 第 20–25、41–83 行。</li>
@@ -1310,6 +1329,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 </tbody></table>
 <p>HTTPS 传输物料、发布请求和诊断包；WebSocket 传输任务控制与结果，不传 Skill 文件包，也不持续上报每条模型输出。Playwright 与内置 Chrome／Chromium 运行在客户端，服务端不远程暴露浏览器 CDP 端口或接收浏览器 profile。</p>
+<p><a href="#11-provider">11 · Provider</a> 的配置由客户端本地维护，仅支持 OpenAI Chat Completions 兼容接口及自定义 base URL，本期不新增平台 Provider 管理、配置下发或 Key 同步 API。Key 可选，有值时使用 Bearer，无值时不发送认证头；Key 存操作系统凭据库，普通配置只保存引用。运行快照与诊断材料均不包含 Key 或原始认证头，Provider／模型选择也不进入 Agent 发布内容 ID。手动连接测试由客户端向选定模型发送固定最小请求，不使用任务通道、不读取会话或执行工具。</p>
 <h2 id="10-server-api-统一契约">统一契约</h2>
 <p>业务 API 使用 HTTPS <code>/api/…</code>，JSON 使用 UTF-8，时间为带时区的 RFC 3339；业务 JSON 请求体、成功响应和 WebSocket 报文携带 <code>schemaVersion: 1</code>，不支持的版本明确拒绝。GET 请求无需 JSON 请求体；二进制上传在 manifest 声明版本，二进制下载与 Tauri 更新清单遵循各自格式，不套 JSON 业务响应。</p>
 <ul>
@@ -1661,7 +1681,187 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <li>上传真实的指定 thread 诊断包，验证持久接收、回执幂等、权限、材料缺失和附件下载；浏览诊断不产生执行副作用。</li>
 </ol>
 <p>首版使用持久化的修订、发布结果、调用状态、交付确认和诊断回执完成排查，不新增日志平台、span 或指标。后续确需遥测时再确认字段与统计口径；用户正文、checkpoint 和浏览器凭据不作为遥测材料。</p>
-<footer><span class="footer-label">客户端 MVP 设计 · 2026-10-19</span><a href="#00-overview">回到客户端总体设计</a></footer></article></div></main><script>const chapters=[["00-overview","00-总体架构.md","客户端总体设计"],["01-skill","01-SKILL.md","SKILL"],["02-mcp","02-MCP.md","MCP"],["03-builtintool","03-buildintool.md","builtinTool"],["04-agent","04-agent.md","Agent"],["05-updater","05-桌面端更新.md","桌面端更新"],["06-sync","06-同步与装配.md","同步与装配"],["07-execution","07-任务执行与恢复.md","任务执行与恢复"],["08-frontend","08-前端现状与缺口.md","前端现状与缺口"],["09-operations","09-运维与诊断上传.md","运维与诊断上传"],["10-server-api","10-服务端API.md","服务端 API"]];
+<footer><span class="footer-label">客户端 MVP 设计 · 2026-10-19</span><a href="#11-provider">下一章：Provider</a></footer></article><article id="11-provider" data-file="11-Provider.md" hidden><h1>11 · Provider：本地模型接入与选择</h1>
+<blockquote>
+<p>串讲重点：用户在客户端维护多个 OpenAI 兼容接入，每个 Provider 配置多个模型；新会话选择确定的模型，凭据留在本机，配置不可用就明确报错。</p>
+</blockquote>
+<p><strong>本章是已确认的需求设计，Provider 管理页面、操作系统凭据存储和多模型选择仍待实现。</strong> 当前桌面端从 <code>model.env</code>／环境变量读取单个模型，通过 Node <code>ChatOpenAI</code> 调用；已有 Rust Provider 库尚未接入这条桌面运行链路。</p>
+<h2 id="11-provider-US">US</h2>
+<h3>界面设计</h3>
+<p>在客户端设置中提供 Provider 管理入口：列表展示名称、接入地址、鉴权是否已配置和模型数量；详情支持新增、编辑、删除 Provider，手动维护模型列表、设置全局默认模型，并选择一个模型手动测试连接。密钥只显示“已配置／未配置”，提供替换和清除操作。</p>
+<p>新会话入口默认选中全局默认的 Provider＋模型，开始前允许改选；开始后展示本会话的固定选择。测试结果属于设置页面的接入检查，不生成 Agent 会话或浏览器操作记录。本章不使用演示截图代替已完成界面的证据。</p>
+<ol>
+<li>作为用户，我能配置多个接入地址，并在每个 Provider 下维护多个实际模型名称。</li>
+<li>作为用户，我能为需要鉴权的服务配置 API Key，也能连接无鉴权服务；密钥保存在本机操作系统凭据库。</li>
+<li>作为用户，我能设置默认模型，在新会话开始前改选，并明确知道本次实际使用哪个 Provider 和模型。</li>
+<li>作为用户，我能手动测试指定模型的接入，看到明确结果；保存配置不会自动发起模型请求。</li>
+<li>作为使用者，我能区分配置、凭据和调用失败；失败不会让客户端自动切换到另一个 Provider 或模型。</li>
+</ol>
+<h2 id="11-provider-简要设计">简要设计</h2>
+<figure class="diagram"><a class="screenshot-link" href="./diagrams/11-provider.html" target="_blank" rel="noopener" aria-label="打开 Provider 可交互关系图"><img src="./assets/11-provider.svg" alt="Provider 本地接入：配置与凭据分开保存，会话调用和手动测试使用明确的模型选择"></a><figcaption>结构关系图 · 待实现的目标设计 · 点击缩放查看</figcaption></figure>
+<p><a href="./diagrams/11-provider.html">打开可交互关系图</a></p>
+<p>图示为待实现的目标设计。配置、凭据读取、会话选择和连接测试均在客户端；只有模型请求访问所配地址。手动测试直接使用选定模型，不经过会话快照，也不读取历史内容。</p>
+<h3>Provider 与模型的关系</h3>
+<p>Provider 是一个具名接入，首版统一使用 <strong>OpenAI Chat Completions 兼容接口</strong>，允许自定义 base URL。名称在本机配置内唯一；相同地址可以因使用不同凭据配置为不同 Provider。每个 Provider 下手动填写多个上游实际 <code>model</code> 名称，不自动拉取模型列表。</p>
+<table>
+<thead>
+<tr>
+<th>配置项</th>
+<th>保存内容与校验</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Provider 名称</td>
+<td>非空、在本机配置内唯一，用于展示与选择</td>
+</tr>
+<tr>
+<td>接入地址</td>
+<td>绝对 HTTP／HTTPS base URL，保留路径前缀，例如 <code>https://gateway.example/v1</code>；不允许 URL 用户信息、查询参数或片段携带凭据</td>
+</tr>
+<tr>
+<td>协议</td>
+<td>首版固定为 OpenAI Chat Completions 兼容接口，不因供应商名称自动切换协议</td>
+</tr>
+<tr>
+<td>鉴权</td>
+<td>可选 API Key 的本地凭据引用；未配置时不发送认证头，已配置时使用 <code>Authorization: Bearer &lt;key&gt;</code></td>
+</tr>
+<tr>
+<td>模型列表</td>
+<td>手动维护实际 <code>model</code> 名称，保留大小写；不允许空名或同一 Provider 内重复，不同 Provider 下允许同名模型</td>
+</tr>
+<tr>
+<td>全局默认模型</td>
+<td>一个明确的 Provider＋模型组合；必须能在本地配置中解析，不以列表第一项作为隐式默认值</td>
+</tr>
+</tbody></table>
+<p>客户端按配置的 base URL 连接模型服务或内部网关，不经过本项目服务端转发。地址无效时不发送请求；HTTPS 保留正常证书校验，路径前缀不能被固定地址或重复拼接的版本路径覆盖。首版不增加原生 Anthropic／Gemini 协议、自定义认证头或 OAuth。</p>
+<h3>凭据的本地边界</h3>
+<p>普通配置文件只保存凭据引用，API Key 值写入操作系统凭据库。新增时留空表示无鉴权；编辑已有配置时明确区分保留、替换和清除，避免把未回显的密钥当作空值误删。清除后移除凭据引用，后续请求不再发送认证头。</p>
+<p><strong>主动选择无鉴权与凭据读取失败是不同状态。</strong> 配置仍有引用，但凭据缺失、库被锁定或访问被拒绝时，停止测试或调用，不降级成无鉴权请求。保存或凭据写入失败时保留输入和原有效配置，不把未完成的修改显示为已保存。</p>
+<p>密钥值不进入 Agent 发布包、内容摘要、运行快照、普通配置导出、诊断包或遥测；界面和错误信息不回显密钥、原始认证头或上游响应正文。凭据引用由本地解析，不通过服务端下发密钥。</p>
+<h3>默认模型与会话固定</h3>
+<p>新会话在开始前使用全局默认值，用户可以改选其他 Provider＋模型。开始时固定实际 Provider、模型、协议、接入地址和非敏感运行参数；这些属于运行条件，不参与 Agent 内容 ID 或发布标签。</p>
+<p>修改默认值只影响新会话。已有会话不重新绑定到同名的新配置，也不因为修改设置而切换正在执行的模型。后续调用仍使用固定运行条件；固定配置或所需凭据不可用时明确失败，保留已有会话内容，不自动选择其他接入。删除默认模型或其 Provider 后，要求重新选择默认值，不自动补成其他模型。</p>
+<p>固定运行条件不代表把密钥复制进快照，也不保证外部模型服务行为永远不变。运行快照只记录非敏感选择；凭据值通过本机凭据边界取得。与 Agent 装配的关系见 <a href="#04-agent">04 · Agent</a>。</p>
+<h2 id="11-provider-客户端">客户端</h2>
+<ul>
+<li>提供本地 Provider 新增、编辑、删除与模型增删，展示空列表、保存中、保存失败和凭据不可用状态。</li>
+<li>设置一个全局默认模型；新会话开始前可改选，开始后展示实际固定选择。未配置默认值且没有明确选择时，提示配置或选择模型。</li>
+<li>用操作系统凭据库保存可选 API Key；普通配置只保存引用，列表和详情不读取并回显已有密钥。</li>
+<li>仅在用户选择模型并点击“测试连接”时发起检查；保存配置、打开页面和切换模型不自动测试。</li>
+<li>测试期间显示进行中，支持结束本地等待；展示本次 Provider、模型和结果。配置修改后，旧结果不能作为新配置已测试的证明。</li>
+<li>配置不可用、鉴权失败、超时或断流均明确报错；不自动切换 Provider、模型，不自动重发整次请求。</li>
+</ul>
+<h2 id="11-provider-详细设计">详细设计</h2>
+<h3>运行模型一：保存本地接入</h3>
+<table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>客户端行为</th>
+<th>结果或失败边界</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1. 编辑</td>
+<td>填写名称、base URL、模型列表，按需设置 API Key</td>
+<td>未保存内容保留在编辑状态，不立即影响已有配置</td>
+</tr>
+<tr>
+<td>2. 校验</td>
+<td>检查空值、重复名称、地址和默认模型引用</td>
+<td>失败指出字段，不访问模型服务</td>
+</tr>
+<tr>
+<td>3. 保存</td>
+<td>有 Key 时写入系统凭据库，配置仅保存引用；无 Key 时不创建鉴权引用</td>
+<td>任一步失败显示未保存，保留原有效配置和编辑输入</td>
+</tr>
+<tr>
+<td>4. 完成</td>
+<td>更新本地 Provider 和可选模型列表，显示已保存</td>
+<td>不自动测试、不发起模型请求，不生成 Agent 或 Skill 发布版本</td>
+</tr>
+</tbody></table>
+<h3>运行模型二：手动测试指定模型</h3>
+<p><strong>条件：</strong> 用户在 Provider 详情选择已配置模型并点击“测试连接”。有修改时先保存，避免测试对象与已保存对象不一致。</p>
+<table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>客户端行为</th>
+<th>结果或失败边界</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1. 固定测试对象</td>
+<td>取得本次 Provider、模型、地址和鉴权状态</td>
+<td>编辑不改变已经发出的请求</td>
+</tr>
+<tr>
+<td>2. 取得鉴权</td>
+<td>无引用则不添加认证头；有引用则读取 Key 并添加 Bearer 头</td>
+<td>凭据不可用时在发送前失败，不发送无鉴权替代请求</td>
+</tr>
+<tr>
+<td>3. 发送最小请求</td>
+<td>对指定模型发送固定、最小的文本请求，并设置有界超时</td>
+<td>不读取会话、提示词、Skill 或 MCP 配置，不装配工具、不占用浏览器执行入口</td>
+</tr>
+<tr>
+<td>4. 展示结果</td>
+<td>校验响应正常结束，显示成功或脱敏失败类别</td>
+<td>超时、取消或未完成响应不能显示成功；不自动重试，不保存回复正文作为会话</td>
+</tr>
+</tbody></table>
+<p>测试成功只说明这次模型请求成功，不代表支持全部工具、图像或扩展参数。界面区分字段无效、保存失败、凭据不可用、连接／TLS／超时、上游拒绝和响应不完整；能依据结构化上游错误确定时，再展示鉴权失败、模型不可用或限流等类别，不仅凭 HTTP 404 断定模型不存在。</p>
+<p>取消只结束本地等待，不承诺上游计算已经停止；测试取消或失败不会触发 Agent、工具、浏览器任务或自动重发。</p>
+<h3>运行模型三：新会话选择与后续使用</h3>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>客户端处理</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>有有效全局默认值</td>
+<td>新会话预选默认组合，开始前允许明确改选</td>
+</tr>
+<tr>
+<td>无默认值或默认组合不可用</td>
+<td>提示配置或选择有效模型，不任意选一个模型开始</td>
+</tr>
+<tr>
+<td>开始会话</td>
+<td>固定实际模型运行条件，按第 04 章完成 Agent 装配；失败不进入模型或工具执行</td>
+</tr>
+<tr>
+<td>会话后续轮次</td>
+<td>沿用固定选择；修改全局默认值不影响该会话</td>
+</tr>
+<tr>
+<td>原配置或凭据不可用</td>
+<td>保留历史和固定选择，显示错误，不把历史发送给其他 Provider 或模型</td>
+</tr>
+</tbody></table>
+<h3>验收与观测边界</h3>
+<ol>
+<li>验证两个 Provider 及各自多个模型，包括不同 Provider 下的同名模型；实际请求使用正确地址、路径前缀和 <code>model</code>。</li>
+<li>验证有 Key 的 Bearer 头、无 Key 时无认证头、已有引用无法读取时不发送请求；普通配置、快照和诊断材料均无密钥值。</li>
+<li>验证字段错误、保存失败和凭据库访问失败后，原有效配置和输入保留，没有半完成的成功状态。</li>
+<li>验证手动测试不读取会话、不执行工具，保存时不自动测试；超时、取消、上游拒绝和断流不误报成功或自动重发。</li>
+<li>验证默认值持久保存、新会话改选、开始后固定，以及配置不可用时不自动切换；修改设置不改变正在执行的请求。</li>
+</ol>
+<p>Provider 管理与连接测试首版不新增专门的日志、span 或指标：界面的操作状态、测试结果与稳定的脱敏错误类别满足本期排查和验收。模型生成调用的观测继续遵循已有规范，密钥、认证头、提示词与回复正文不写入遥测。</p>
+<h3>当前实现与接入缺口</h3>
+<p>当前 <a href="../../desktop/runtime/main.mjs">桌面入口</a> 在启动时读取 <code>model.env</code>／环境变量，通过 <code>ChatOpenAI</code> 使用单个模型；<a href="../../web/src/models/source.ts">模型来源接口</a> 仅提供模型列表。现有选择界面不代表已具备可持久保存的多 Provider 管理。</p>
+<p><a href="../../crates/omniops-bots-provider/src/lib.rs">Rust Provider 库</a> 已有独立的配置与调用能力，由 CLI 使用，尚未接入当前 Node 桌面运行链路；不计作客户端管理功能已完成。待接入项包括 Provider／模型配置持久化、系统凭据存储、无鉴权调用、全局默认与会话固定选择，以及上述管理和测试界面。完成情况见 <a href="#08-frontend">08 · 前端现状与缺口</a>。</p>
+<h2 id="11-provider-服务端配合">服务端配合</h2>
+<p>首版 Provider 配置和凭据由客户端本地管理，无需本项目服务端提供配置下发、凭据托管、模型发现或模型请求转发接口。接入地址可以指向既有内部网关，网关按自身约定提供 OpenAI 兼容服务。</p>
+<p>已有服务端契约见 <a href="#10-server-api">10 · 服务端 API</a>。远端任务接入时也不能通过任务正文携带密钥或要求客户端自动切换其他模型。</p>
+<footer><span class="footer-label">客户端 MVP 设计 · 2026-10-20</span><a href="#00-overview">回到客户端总体设计</a></footer></article></div></main><script>const chapters=[["00-overview","00-总体架构.md","客户端总体设计"],["01-skill","01-SKILL.md","SKILL"],["02-mcp","02-MCP.md","MCP"],["03-builtintool","03-buildintool.md","builtinTool"],["04-agent","04-agent.md","Agent"],["05-updater","05-桌面端更新.md","桌面端更新"],["06-sync","06-同步与装配.md","同步与装配"],["07-execution","07-任务执行与恢复.md","任务执行与恢复"],["08-frontend","08-前端现状与缺口.md","前端现状与缺口"],["09-operations","09-运维与诊断上传.md","运维与诊断上传"],["10-server-api","10-服务端API.md","服务端 API"],["11-provider","11-Provider.md","Provider"]];
 const navLinks=[...document.querySelectorAll('.chapter-nav a')];
 const articles=[...document.querySelectorAll('article')];
 let current=-1;

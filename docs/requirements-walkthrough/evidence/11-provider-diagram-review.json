@@ -1,0 +1,39 @@
+{
+  "diagram_type": "architecture",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/11-provider.html",
+  "specification_sha256": "2919eca3e856420101eea3a7cad9ee683dbff75424a547dadfdf98c110ffc841",
+  "artifact_sha256": "f4cddcb698211c30b49a8ffd63acac1ad75ea837a1176ce3f9a2264370966a60",
+  "validation": "9/9 showcase, 0 errors, 0 warnings",
+  "browser_evidence": "passed",
+  "browser_receipt": "../diagrams/11-provider.visual-check.json",
+  "visual_review": "passed",
+  "correction_rounds": 0,
+  "visual_review_scope": {
+    "reviewer": "image-capable assistant",
+    "screenshots": [
+      "11-provider.visual-check.1440x900.light.png",
+      "11-provider.visual-check.1440x900.dark.png",
+      "11-provider.visual-check.2048x1320.light.png",
+      "11-provider.visual-check.2048x1320.dark.png"
+    ],
+    "observations": [
+      "Reviewed both themes at 1440x900 and 2048x1320; routes, labels, node text and cards remain legible without overlaps.",
+      "Largest viewport uses the diagram and necessary boundary cards with balanced vertical space.",
+      "Reviewed native PNG export; no viewer controls, focus state or export menu appear in the image."
+    ],
+    "embedded_svg_loaded": true,
+    "reader_mobile_390_no_horizontal_overflow": true
+  },
+  "exports": [
+    {
+      "path": "../assets/11-provider.svg",
+      "sha256": "d54bc8c3b071a949110611ab36c81c6eda8aa975245ef4942cb30f0367976cdb",
+      "bytes": 56419
+    },
+    {
+      "path": "../assets/11-provider.png",
+      "sha256": "606af5eac78cec55790125137636d3558ca998f0d00548505fd1c448706bfde5",
+      "bytes": 538166
+    }
+  ]
+}

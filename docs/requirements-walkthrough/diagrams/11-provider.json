@@ -1,0 +1,221 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Provider 本地接入设计",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1320,
+      620
+    ]
+  },
+  "components": [
+    {
+      "id": "provider-settings",
+      "type": "frontend",
+      "label": "Provider 管理",
+      "sublabel": "手填模型 · 配置默认项",
+      "pos": [
+        70,
+        40
+      ],
+      "size": [
+        200,
+        76
+      ]
+    },
+    {
+      "id": "local-provider-catalog",
+      "type": "database",
+      "label": "本地接入配置",
+      "sublabel": "地址 · 多模型 · 凭据引用",
+      "pos": [
+        70,
+        230
+      ],
+      "size": [
+        200,
+        76
+      ]
+    },
+    {
+      "id": "new-session-choice",
+      "type": "frontend",
+      "label": "新会话选择",
+      "sublabel": "默认 Provider＋模型 · 可改选",
+      "pos": [
+        400,
+        230
+      ],
+      "size": [
+        200,
+        76
+      ]
+    },
+    {
+      "id": "pinned-session",
+      "type": "backend",
+      "label": "会话固定快照",
+      "sublabel": "开始后固定 · 不含密钥",
+      "pos": [
+        730,
+        230
+      ],
+      "size": [
+        200,
+        76
+      ]
+    },
+    {
+      "id": "model-request",
+      "type": "backend",
+      "label": "模型请求",
+      "sublabel": "按固定地址与模型发送",
+      "pos": [
+        1060,
+        230
+      ],
+      "size": [
+        200,
+        76
+      ]
+    },
+    {
+      "id": "os-key-store",
+      "type": "security",
+      "label": "系统凭据库",
+      "sublabel": "仅本机保存 API Key 值",
+      "pos": [
+        730,
+        40
+      ],
+      "size": [
+        200,
+        76
+      ]
+    },
+    {
+      "id": "manual-model-test",
+      "type": "backend",
+      "label": "手动连接测试",
+      "sublabel": "固定最小文本 · 不执行工具",
+      "pos": [
+        730,
+        470
+      ],
+      "size": [
+        200,
+        76
+      ]
+    },
+    {
+      "id": "compatible-model-service",
+      "type": "external",
+      "label": "OpenAI 兼容服务",
+      "sublabel": "自定义地址 · 服务或内部网关",
+      "pos": [
+        1060,
+        470
+      ],
+      "size": [
+        200,
+        76
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "save-provider-config",
+      "from": "provider-settings",
+      "to": "local-provider-catalog",
+      "label": "保存配置",
+      "labelAt": [
+        170,
+        174
+      ]
+    },
+    {
+      "id": "store-api-key",
+      "from": "provider-settings",
+      "to": "os-key-store",
+      "label": "Key 另存",
+      "variant": "security"
+    },
+    {
+      "id": "resolve-default-model",
+      "from": "local-provider-catalog",
+      "to": "new-session-choice",
+      "label": "预选默认",
+      "variant": "emphasis"
+    },
+    {
+      "id": "pin-session-selection",
+      "from": "new-session-choice",
+      "to": "pinned-session",
+      "label": "开始会话",
+      "variant": "emphasis"
+    },
+    {
+      "id": "use-pinned-settings",
+      "from": "pinned-session",
+      "to": "model-request",
+      "label": "固定参数",
+      "variant": "emphasis",
+      "labelDy": 26,
+      "labelDx": -32
+    },
+    {
+      "id": "resolve-local-key",
+      "from": "os-key-store",
+      "to": "model-request",
+      "label": "按引用取 Key",
+      "variant": "security"
+    },
+    {
+      "id": "trigger-explicit-test",
+      "from": "local-provider-catalog",
+      "to": "manual-model-test",
+      "label": "选定模型 · 手动触发",
+      "variant": "dashed"
+    },
+    {
+      "id": "send-minimal-test",
+      "from": "manual-model-test",
+      "to": "model-request",
+      "label": "最小测试请求",
+      "variant": "dashed"
+    },
+    {
+      "id": "call-compatible-model",
+      "from": "model-request",
+      "to": "compatible-model-service",
+      "label": "Chat Completions",
+      "variant": "emphasis",
+      "labelAt": [
+        1160,
+        390
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "凭据边界",
+      "items": [
+        "有 Key 时发送 Bearer，无 Key 时不发送认证头",
+        "凭据引用不可读时，在发送前明确失败",
+        "Key 值不进入运行快照、诊断包或遥测"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "运行边界",
+      "items": [
+        "会话开始后固定，不可用时报错且不自动切换",
+        "连接测试不读取会话内容、不执行工具",
+        "保存配置不自动测试；本图表示待实现设计"
+      ]
+    }
+  ]
+}
