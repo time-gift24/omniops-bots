@@ -18,8 +18,12 @@ import {
 } from "@hugeicons-pro/core-stroke-rounded"
 import { motion, useReducedMotion } from "motion/react"
 import {
+  type Dispatch,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
   type ReactNode,
   type RefObject,
+  type SetStateAction,
   useEffect,
   useId,
   useRef,
@@ -205,6 +209,19 @@ export type SidebarRailProps = {
 const iconButtonClass =
   "size-9 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:size-11"
 
+const RAIL_WIDTH = 64
+const SIDEBAR_MIN_WIDTH = 240
+const SIDEBAR_DEFAULT_WIDTH = 280
+const SIDEBAR_MAX_WIDTH = 420
+
+function clampSidebarWidth(value: number): number {
+  const viewportCap = Math.max(
+    SIDEBAR_MIN_WIDTH,
+    Math.min(SIDEBAR_MAX_WIDTH, window.innerWidth - RAIL_WIDTH - 420)
+  )
+  return Math.round(Math.min(Math.max(value, SIDEBAR_MIN_WIDTH), viewportCap))
+}
+
 function SidebarNavGroup({
   group,
   itemId,
@@ -298,8 +315,18 @@ export function SidebarRail({
 }: SidebarRailProps) {
   const [internalExpanded, setInternalExpanded] = useState(defaultExpanded)
   const [focused, setFocused] = useState(false)
+  const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_DEFAULT_WIDTH)
   const toggleRef = useRef<HTMLButtonElement>(null)
   const expanded = controlledExpanded ?? internalExpanded
+
+  useEffect(() => {
+    function onResize() {
+      if (window.innerWidth < 768) return
+      setSidebarWidth((current) => clampSidebarWidth(current))
+    }
+    window.addEventListener("resize", onResize)
+    return () => window.removeEventListener("resize", onResize)
+  }, [])
 
   function setExpanded(next: boolean) {
     if (!next) toggleRef.current?.focus({ preventScroll: true })
@@ -315,7 +342,7 @@ export function SidebarRail({
           open={expanded || focused}
           onOpenChange={setExpanded}
           style={{
-            "--sidebar-width": "17rem",
+            "--sidebar-width": `${sidebarWidth}px`,
             "--sidebar-width-mobile": "19rem",
           }}
           className="relative h-full min-h-0 overflow-hidden bg-background"
@@ -326,6 +353,8 @@ export function SidebarRail({
             setExpanded={setExpanded}
             setFocused={setFocused}
             toggleRef={toggleRef}
+            sidebarWidth={sidebarWidth}
+            setSidebarWidth={setSidebarWidth}
           />
         </AnimatedSidebarProvider>
       </MorphicTooltipProvider>
@@ -359,11 +388,15 @@ function SidebarRailShell({
   setExpanded,
   setFocused,
   toggleRef,
+  sidebarWidth,
+  setSidebarWidth,
 }: Omit<SidebarRailProps, "expanded" | "onExpandedChange"> & {
   expanded: boolean
   setExpanded: (next: boolean) => void
   setFocused: (next: boolean) => void
   toggleRef: RefObject<HTMLButtonElement | null>
+  sidebarWidth: number
+  setSidebarWidth: Dispatch<SetStateAction<number>>
 }) {
   const context = useAnimatedSidebar()
   const { triggerRef } = context
@@ -381,6 +414,81 @@ function SidebarRailShell({
     .flatMap((group) => group.items)
     .find((item) => item.id === itemId)
   const groups = section?.groups ?? []
+  const [dragging, setDragging] = useState(false)
+  const [resizing, setResizing] = useState(false)
+  const dragState = useRef<{
+    pointerId: number
+    startX: number
+    startWidth: number
+  } | null>(null)
+  const resizeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined
+  )
+
+  useEffect(() => {
+    if (!dragging) return
+    const previous = document.body.style.userSelect
+    document.body.style.userSelect = "none"
+    return () => {
+      document.body.style.userSelect = previous
+    }
+  }, [dragging])
+  useEffect(() => () => clearTimeout(resizeTimer.current), [])
+
+  function markResizing() {
+    setResizing(true)
+    clearTimeout(resizeTimer.current)
+    resizeTimer.current = setTimeout(() => setResizing(false), 180)
+  }
+
+  function handleResizeStart(event: ReactPointerEvent<HTMLDivElement>) {
+    if (event.button !== 0) return
+    event.preventDefault()
+    dragState.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startWidth: sidebarWidth,
+    }
+    event.currentTarget.setPointerCapture(event.pointerId)
+    setDragging(true)
+    setResizing(true)
+  }
+
+  function handleResizeMove(event: ReactPointerEvent<HTMLDivElement>) {
+    const drag = dragState.current
+    if (!drag || drag.pointerId !== event.pointerId) return
+    setSidebarWidth(
+      clampSidebarWidth(drag.startWidth + event.clientX - drag.startX)
+    )
+  }
+
+  function handleResizeEnd(event: ReactPointerEvent<HTMLDivElement>) {
+    const drag = dragState.current
+    if (!drag || drag.pointerId !== event.pointerId) return
+    dragState.current = null
+    if (event.currentTarget.hasPointerCapture(event.pointerId))
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    setDragging(false)
+    setResizing(false)
+  }
+
+  function handleResizeKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    const step = event.shiftKey ? 64 : 16
+    if (event.key === "ArrowLeft") {
+      event.preventDefault()
+      markResizing()
+      setSidebarWidth((current) => clampSidebarWidth(current - step))
+    } else if (event.key === "ArrowRight") {
+      event.preventDefault()
+      markResizing()
+      setSidebarWidth((current) => clampSidebarWidth(current + step))
+    }
+  }
+
+  function resetSidebarWidth() {
+    markResizing()
+    setSidebarWidth(SIDEBAR_DEFAULT_WIDTH)
+  }
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -529,8 +637,15 @@ function SidebarRailShell({
     <>
       <motion.div
         initial={false}
-        animate={{ width: !context.isMobile && expanded ? "21.5rem" : "4rem" }}
-        transition={reduce ? { duration: 0 } : SPRING_PANEL}
+        animate={{
+          width:
+            !context.isMobile && expanded
+              ? RAIL_WIDTH + sidebarWidth
+              : RAIL_WIDTH,
+        }}
+        transition={
+          reduce || dragging || resizing ? { duration: 0 } : SPRING_PANEL
+        }
         data-rail-state={expanded ? "expanded" : "collapsed"}
         data-peeking={!expanded && context.open ? "true" : "false"}
         className="relative z-20 h-full shrink-0 max-md:w-16!"
@@ -676,6 +791,37 @@ function SidebarRailShell({
             ) : null}
           </AnimatedSidebarContent>
         </AnimatedSidebar>
+
+        {!context.isMobile && expanded ? (
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="调整导航宽度"
+            aria-valuenow={sidebarWidth}
+            aria-valuemin={SIDEBAR_MIN_WIDTH}
+            aria-valuemax={SIDEBAR_MAX_WIDTH}
+            tabIndex={0}
+            title="拖拽调整宽度，双击恢复默认"
+            data-slot="sidebar-resize-handle"
+            onPointerDown={handleResizeStart}
+            onPointerMove={handleResizeMove}
+            onPointerUp={handleResizeEnd}
+            onPointerCancel={handleResizeEnd}
+            onDoubleClick={resetSidebarWidth}
+            onKeyDown={handleResizeKeyDown}
+            className="group absolute inset-y-0 right-0 z-40 w-2 translate-x-1/2 cursor-col-resize touch-none outline-none max-md:hidden"
+          >
+            <span
+              aria-hidden="true"
+              className={cn(
+                "absolute inset-y-0 left-1/2 w-px -translate-x-1/2 transition-colors duration-150 motion-reduce:transition-none",
+                dragging
+                  ? "bg-primary/60"
+                  : "group-hover:bg-primary/50 group-focus-visible:bg-primary/50"
+              )}
+            />
+          </div>
+        ) : null}
       </motion.div>
 
       <MorphicCommandPalette

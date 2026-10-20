@@ -64,6 +64,48 @@ Running…</pre>
     fixture.querySelector('[data-slot="chat-composer-anchor"]')
   const approval = () => fixture.querySelector('[data-slot="approval-panel"]')
   const workbench = () => fixture.querySelector('aside[aria-label="工作台"]')
+  const checkSidebarResize = async () => {
+    const handle = fixture.querySelector('[data-slot="sidebar-resize-handle"]')
+    assert(handle, "Expanded desktop navigation must expose a resize handle")
+    await until(
+      () => Math.abs(rail().getBoundingClientRect().width - 344) < 1.5,
+      "Expanded navigation must settle before resizing"
+    )
+    const beforeWidth = rail().getBoundingClientRect().width
+    const before = Number(handle.getAttribute("aria-valuenow"))
+    flushSync(() =>
+      handle.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })
+      )
+    )
+    assert(
+      Number(handle.getAttribute("aria-valuenow")) === before + 16,
+      "ArrowRight must widen the navigation"
+    )
+    await until(
+      () =>
+        Math.abs(rail().getBoundingClientRect().width - (beforeWidth + 16)) <
+        1.5,
+      "Resized navigation must update its layout width"
+    )
+    const railRect = rail().getBoundingClientRect()
+    const handleRect = handle.getBoundingClientRect()
+    assert(
+      Math.abs(handleRect.x + handleRect.width / 2 - railRect.right) < 1,
+      "Resize handle must stay on the navigation edge"
+    )
+    flushSync(() =>
+      handle.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }))
+    )
+    assert(
+      Number(handle.getAttribute("aria-valuenow")) === 280,
+      "Double-click must restore the default navigation width"
+    )
+    await until(
+      () => Math.abs(rail().getBoundingClientRect().width - 344) < 1.5,
+      "Default navigation width must be restored"
+    )
+  }
   try {
     const root = createRoot(fixture)
     flushSync(() =>
@@ -73,6 +115,10 @@ Running…</pre>
     const content = fixture.querySelector("main")
     const header = fixture.querySelector("[data-slot='sidebar-rail-workspace-header']")
     if (innerWidth < 768) {
+      assert(
+        !fixture.querySelector('[data-slot="sidebar-resize-handle"]'),
+        "Mobile navigation must not expose a desktop resize handle"
+      )
       assert(content.closest("[inert]") && header.closest("[inert]"), "The mobile workbench must hide covered content and header from keyboard input")
       const attachment = button("添加附件")
       attachment.focus()
@@ -88,6 +134,7 @@ Running…</pre>
     } else {
       assert(!content.closest("[inert]") && !header.closest("[inert]"), "A side-by-side workbench must keep chat and header interactive")
     }
+    if (innerWidth >= 1100) await checkSidebarResize()
     flushSync(() => thread.send("打开浏览器核对发布计划"))
     await until(
       () => approval() && fixture.querySelector('[aria-label="浏览器页面"]'),
@@ -107,6 +154,7 @@ Running…</pre>
         () => button("打开工作台") && rail().dataset.railState === "expanded",
         "Expanding left navigation must collapse browser"
       )
+      await checkSidebarResize()
       click("打开工作台")
       await until(
         () => rail().dataset.railState === "collapsed" && !button("打开工作台"),
