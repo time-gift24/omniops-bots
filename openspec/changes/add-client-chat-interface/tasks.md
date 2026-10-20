@@ -9,7 +9,7 @@
 
 ## 2. 对话数据网关与 DTO
 
-- [x] 2.1 定义 DTO：`ChatEvent`、`ChatRequest`、消息 / 输出部分 / 用量 / 元信息类型，为 `reasoning` 与 `tool-call` / `tool-result` 预留扩展位，逐变体注释与 `omniops-bots-core` `GenerationEvent` 的等价映射，确认 typecheck 通过
+- [x] 2.1 定义 DTO：`ChatEvent`、`ChatRequest`、消息 / 输出部分 / 用量 / 元信息类型，为 `reasoning` 与 `tool-call` / `tool-result` 预留扩展位，逐变体注释运行时事件到客户端 DTO 的映射，确认 typecheck 通过
 - [x] 2.2 定义 `ChatGateway` 接口（`stream(request): AsyncIterable<ChatEvent>` + `abort()`）与实现绑定入口，确认界面侧只 import 接口与 DTO
 - [x] 2.3 实现 mock 网关：脚本化事件序列、可配置逐段延迟、故障注入（步骤失败 / 发送失败 / 停止），覆盖 spec `client-chat-gateway` 的全部 mock 场景
 - [x] 2.4 实现 `foldChatEvent` 纯函数（事件流 → 线程视图模型：消息、输出部分、思维链步骤状态、运行 / 错误态），用 `node --test` 覆盖完整流、流中错误、停止截断三类场景并全部通过

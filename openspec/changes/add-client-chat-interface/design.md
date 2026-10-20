@@ -2,7 +2,7 @@
 
 ## Context
 
-`web/` 是 Vite + React 19 + Tailwind 4 的 shadcn 工程（radix-nova 风格），现有界面只有 `SidebarRail` 外壳；设计令牌已按 DESIGN.md 落到 `src/index.css` 的 CSS 变量，动效弹簧在 `src/lib/ease.ts`。shadcn 注册表已配置官方源与 beui-pro 付费源（令牌在 `web/.env.local`）。后端侧，`omniops-bots-core` 已定义流式契约 `GenerationEvent`（Started / PartStarted / Delta / PartCompleted / Usage / Completed，错误以 `Err` 终止流），但当前 `PartKind` 仅有 `Text`，尚无推理与工具调用事件；`add-provider-streaming-chat` 也只交付文本流。动机见 proposal.md。
+`web/` 是 Vite + React 19 + Tailwind 4 的 shadcn 工程（radix-nova 风格），现有界面只有 `SidebarRail` 外壳；设计令牌已按 DESIGN.md 落到 `src/index.css` 的 CSS 变量，动效弹簧在 `src/lib/ease.ts`。shadcn 注册表已配置官方源与 beui-pro 付费源（令牌在 `web/.env.local`）。桌面运行时通过传输适配器提供流式事件，客户端 DTO 与网关维护独立的前端契约。动机见 proposal.md。
 
 ## Goals / Non-Goals
 
@@ -37,21 +37,21 @@ interface ChatGateway {
 }
 ```
 
-`ChatEvent` 与 `GenerationEvent` 当前等价，映射显式声明：
+传输适配器将运行时事件显式映射为客户端 `ChatEvent`：
 
-| 后端 `GenerationEvent` | 前端 `ChatEvent` |
+| 运行时事件语义 | 前端 `ChatEvent` |
 | --- | --- |
-| `Started(GenerationMetadata)` | `Started(metadata)`（provider / protocol / 请求与解析模型、请求 ID） |
+| `Started(metadata)` | `Started(metadata)`（provider / protocol / 请求与解析模型、请求 ID） |
 | `PartStarted { part, kind }` | `PartStarted { partId, kind }` |
 | `Delta { part, delta: Text }` | `Delta { partId, text }` |
 | `PartCompleted { part, content }` | `PartCompleted { partId, content }` |
 | `Usage(...)` | `Usage(...)`（输入 / 输出 / 推理 / 缓存 token 均可缺省） |
-| `Completed(GenerationResponse)` | `Completed(response)`（完整 AssistantMessage、FinishReason、用量、元信息） |
+| `Completed(response)` | `Completed(response)`（完整 AssistantMessage、FinishReason、用量、元信息） |
 | 流以 `Err` 终止 | `Failed(error)`（分类 + 诊断信息） |
 
 备选「`@ai-sdk/react` 的 `useChat` + 自定义 transport」被否：它把 AI SDK 的 `UIMessage` 形状渗进 UI 状态，违背「DTO 独立演进、传输可换」的目标，且停止 / 重试语义要被 AI SDK 的状态机再包一层。
 
-DTO 的 `PartKind` 预留 `reasoning` 与 `tool-call` / `tool-result` 扩展位（后端尚未产出，映射注释标明「当前等价、扩展位为前瞻设计」）；思维链 UI 的步骤数据由 mock 以扩展位产出。这样后端落地工具事件时只扩展适配层，UI 不动。
+DTO 的 `PartKind` 预留 `reasoning` 与 `tool-call` / `tool-result` 扩展位；思维链 UI 的步骤数据由 mock 以扩展位产出。这样后端落地工具事件时只扩展适配层，UI 不动。
 
 ### D3: 外部 store + `useSyncExternalStore`，线程缓存接口一次定义到位
 

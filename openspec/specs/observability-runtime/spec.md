@@ -1,18 +1,18 @@
-# Spec Delta
+# observability-runtime Specification
 
 ## Purpose
 
 为应用提供随进程生命周期管理的可观测运行能力，以标准协议输出日志、链路和指标，并将监控后端、网络故障及输出背压与业务执行隔离，使调用方可以独立选择是否初始化和接入哪种监控平台。
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Explicit process lifecycle
 
 系统 SHALL 仅在程序入口显式初始化时启用自己的可观测运行资源，并在业务结束后统一关闭。一次初始化 SHALL 服务多次业务调用，不要求每次记录创建或关闭采集器。公共初始化和关闭入口 SHALL 返回可分类且保留实际错误来源的本库错误；重复初始化 SHALL 明确失败，不替换已有全局配置。
 
-#### Scenario: Many generations share one initialization
+#### Scenario: Many operations share one initialization
 
-- **WHEN** 程序初始化一次后执行多次 Generation
+- **WHEN** 程序初始化一次后执行多次业务调用
 - **THEN** 每次调用均使用同一套运行资源，业务函数无需接收采集器对象或执行初始化、关闭
 
 #### Scenario: Initialization is attempted twice
@@ -26,8 +26,8 @@
 
 #### Scenario: Run the library without initialization
 
-- **WHEN** 一个未安装任何观测实现的进程直接运行正常或失败的模型调用
-- **THEN** 调用结果、错误和流事件仍按原契约返回，且没有遥测输出、外发请求或历史补发缓存
+- **WHEN** 一个未安装任何观测实现的进程直接运行正常或失败的业务调用
+- **THEN** 调用结果和错误仍按原契约返回，且没有遥测输出、外发请求或历史补发缓存
 
 ### Requirement: Local-only mode without remote configuration
 
@@ -44,7 +44,7 @@
 
 #### Scenario: Export to a compatible receiver
 
-- **WHEN** 配置有效的通用接收端点并完成一次有文本和用量的 Generation
+- **WHEN** 配置有效的通用接收端点并通过标准 API 记录日志、span 和指标
 - **THEN** 接收端分别收到日志、链路和指标，且本地 stderr 也能收到已启用级别的日志
 
 #### Scenario: Switch a compatible backend
@@ -58,8 +58,8 @@
 
 #### Scenario: Remote receiver stalls
 
-- **WHEN** 监控接收端持续不返回响应，而模型服务正常生成文本
-- **THEN** 模型文本仍可增量消费，业务调用不等待监控响应或队列空位
+- **WHEN** 监控接收端持续不返回响应，而桌面任务正常执行
+- **THEN** 业务结果仍正常返回，业务调用不等待监控响应或队列空位
 
 #### Scenario: Standard error is blocked
 
@@ -68,16 +68,16 @@
 
 ### Requirement: Telemetry failure preserves business behavior
 
-监控连接失败、超时、拒绝写入和队列丢弃 SHALL 不转化为模型错误、不触发模型请求重试、不改变业务结果或退出码。导出失败诊断 SHALL 安全、限频并只走本地后台输出，避免把导出器自身故障再次发送到同一远程日志管线形成循环。
+监控连接失败、超时、拒绝写入和队列丢弃 SHALL 不转化为业务错误、不触发业务请求重试、不改变业务结果或退出码。导出失败诊断 SHALL 安全、限频并只走本地后台输出，避免把导出器自身故障再次发送到同一远程日志管线形成循环。
 
 #### Scenario: Receiver is unavailable
 
-- **WHEN** 遥测端点无法连接，而模型服务正常返回完成结果
-- **THEN** 业务仍成功，stderr 尽力给出安全诊断；允许丢失遥测数据，没有额外模型调用
+- **WHEN** 遥测端点无法连接，而桌面任务正常返回完成结果
+- **THEN** 业务仍成功，stderr 尽力给出安全诊断；允许丢失遥测数据，没有额外业务调用
 
 ### Requirement: Invalid telemetry configuration degrades explicitly
 
-系统 SHALL 校验服务名、端点、协议、认证头和过滤配置。非法服务名或无法建立基本运行资源 SHALL 返回本库错误；无效远程配置 SHALL 禁用本次远程导出并保留本地模式和安全诊断，不悄悄切换协议或端点。非法日志过滤值 SHALL 明确诊断并使用约定默认级别。CLI SHALL 不将观测初始化失败变成业务失败。
+系统 SHALL 校验服务名、端点、协议、认证头和过滤配置。非法服务名或无法建立基本运行资源 SHALL 返回本库错误；无效远程配置 SHALL 禁用本次远程导出并保留本地模式和安全诊断，不悄悄切换协议或端点。非法日志过滤值 SHALL 明确诊断并使用约定默认级别。桌面入口 SHALL 不将观测初始化失败变成业务失败。
 
 #### Scenario: A remote protocol is unsupported
 
