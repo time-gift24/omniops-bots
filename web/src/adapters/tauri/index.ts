@@ -4,7 +4,8 @@ import { createBrowserStorage } from "../browser-storage"
 import { RECOMMENDED_SITES } from "../recommendations"
 import { safeHttpUrl } from "./attachments"
 import { createTauriSkillLibrary } from "./skills"
-import { array, boolean, object, string } from "./protocol"
+import { array, boolean } from "./protocol"
+import { createTauriProviders } from "./providers"
 import {
   readAgents,
   readAgent,
@@ -87,6 +88,7 @@ export async function createTauriAdapters(providedBridge?: TauriBridge) {
     throw error
   })
   const sessions = createRunSource(request)
+  const providerSources = createTauriProviders(request)
   const adapters: FrontendAdapters = {
     backendId: "desktop",
     gatewayFor: runtime.gatewayFor,
@@ -119,13 +121,7 @@ export async function createTauriAdapters(providedBridge?: TauriBridge) {
     runs: sessions.runs,
     skills: { list: async () => readSkills(await request("skills_list")) },
     skillLibrary,
-    models: {
-      list: async () =>
-        array(await request("models_list"), (entry) => {
-          const raw = object(entry)
-          return { id: string(raw.id), label: string(raw.label) }
-        }),
-    },
+    ...providerSources,
     workspaceAccess: {
       listDirectories: async () =>
         array(await request("workspace_directories"), readDirectory),

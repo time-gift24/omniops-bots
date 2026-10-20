@@ -8,7 +8,7 @@ import {
 } from "@hugeicons-pro/core-stroke-rounded"
 import { cn } from "@/lib/utils"
 
-export type SettingsSection = "theme" | "palette" | "tasks"
+export type SettingsSection = "theme" | "palette" | "providers" | "tasks"
 
 const groups = [
   {
@@ -20,7 +20,10 @@ const groups = [
   },
   {
     label: "运行",
-    items: [{ id: "tasks", label: "Agent 运行", icon: Settings02Icon }],
+    items: [
+      { id: "providers", label: "Provider", icon: Settings02Icon },
+      { id: "tasks", label: "Agent 运行", icon: Settings02Icon },
+    ],
   },
 ] as const
 

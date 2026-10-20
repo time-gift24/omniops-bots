@@ -2,7 +2,7 @@
 
 > 串讲重点：用户在客户端维护多个 OpenAI 兼容接入，每个 Provider 配置多个模型；新会话选择确定的模型，凭据留在本机，配置不可用就明确报错。
 
-**本章是已确认的需求设计，Provider 管理页面、操作系统凭据存储和多模型选择仍待实现。** 当前桌面端由 Node.js runtime 从 `model.env`／环境变量读取单个模型，通过 `@langchain/openai` 的 `ChatOpenAI` 调用。
+**本章首版已接入：Provider 管理、系统凭据存储、多模型选择与手动连接测试。** Node.js runtime 通过 `@langchain/openai` 的 `ChatOpenAI` 使用明确的本地配置；macOS 凭据存储已验证，Windows 实机验收待完成。
 
 ## US
 
@@ -24,7 +24,7 @@
 
 [打开可交互关系图](./diagrams/11-provider.html)
 
-图示为待实现的目标设计。配置、凭据读取、会话选择和连接测试均在客户端；只有模型请求访问所配地址。手动测试直接使用选定模型，不经过会话快照，也不读取历史内容。
+图示为本地 Provider 的设计关系。配置、凭据读取、会话选择和连接测试均在客户端；只有模型请求访问所配地址。手动测试直接使用选定模型，不经过会话快照，也不读取历史内容。
 
 ### Provider 与模型的关系
 
@@ -85,7 +85,7 @@ Provider 是一个具名接入，首版统一使用 **OpenAI Chat Completions �
 | --- | --- | --- |
 | 1. 固定测试对象 | 取得本次 Provider、模型、地址和鉴权状态 | 编辑不改变已经发出的请求 |
 | 2. 取得鉴权 | 无引用则不添加认证头；有引用则读取 Key 并添加 Bearer 头 | 凭据不可用时在发送前失败，不发送无鉴权替代请求 |
-| 3. 发送最小请求 | 对指定模型发送固定、最小的文本请求，并设置有界超时 | 不读取会话、提示词、Skill 或 MCP 配置，不装配工具、不占用浏览器执行入口 |
+| 3. 发送最小请求 | 对指定模型发送固定、最小的文本请求，并设置 15 秒总超时 | 不读取会话、提示词、Skill 或 MCP 配置，不装配工具、不占用浏览器执行入口 |
 | 4. 展示结果 | 校验响应正常结束，显示成功或脱敏失败类别 | 超时、取消或未完成响应不能显示成功；不自动重试，不保存回复正文作为会话 |
 
 测试成功只说明这次模型请求成功，不代表支持全部工具、图像或扩展参数。界面区分字段无效、保存失败、凭据不可用、连接／TLS／超时、上游拒绝和响应不完整；能依据结构化上游错误确定时，再展示鉴权失败、模型不可用或限流等类别，不仅凭 HTTP 404 断定模型不存在。
@@ -114,9 +114,11 @@ Provider 管理与连接测试首版不新增专门的日志、span 或指标：
 
 ### 当前实现与接入缺口
 
-当前 [Node.js 桌面 runtime 入口](../../desktop/runtime/main.mjs) 在启动时读取 `model.env`／环境变量，通过 `@langchain/openai` 的 `ChatOpenAI` 使用单个模型；[模型来源接口](../../web/src/models/source.ts) 仅提供模型列表。现有选择界面不代表已具备可持久保存的多 Provider 管理。
+已接入 [Provider 设置页](../../web/src/components/settings/provider-settings.tsx) 与 [ProviderSource](../../web/src/providers/source.ts)：可新增、编辑、删除接入，维护多个模型，设置全局默认值，并手动测试已保存模型；新会话开始前可改选，开始后固定。保存不触发测试；测试支持取消，不读取会话或执行工具。
 
-待接入项包括 Provider／模型配置持久化、系统凭据存储、无鉴权调用、全局默认与会话固定选择，以及上述管理和测试界面。完成情况见 [08 · 前端现状与缺口](./08-前端现状与缺口.md)。
+[Node.js Provider 模块](../../desktop/runtime/providers.mjs) 将配置原子保存到 `providers.json`，凭据字段只含 UUID 引用；[凭据 IPC](../../desktop/runtime/credentials.mjs) 连接 [原生凭据边界](../../crates/omniops-bots-desktop/src/credentials.rs)，分别使用 macOS Keychain 与 Windows Credential Manager。macOS 隔离 Keychain 验证已通过；Windows 尚未实机验证。无 Key 时不发送认证头，有引用但无法读取时明确失败，不自动降级或重试。
+
+兼容迁移仅在 `providers.json` 不存在时导入旧环境变量／`model.env`；原文件保留，不自动删除，导入后由用户自行管理旧文件中的敏感内容。新配置读取失败可重试，不回退到旧单模型。缺少 Provider 快照的旧会话仍可查看，但须新建会话才能运行。完成情况见 [08 · 前端现状与缺口](./08-前端现状与缺口.md)。
 
 ## 服务端配合
 

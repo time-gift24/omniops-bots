@@ -17,6 +17,7 @@ import { Button } from "@/components/motion/button"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { SPRING_PANEL } from "@/lib/ease"
 import type { ModelChoice } from "@/models/source"
+import { providerModelLabel } from "@/providers/source"
 
 const SUGGESTIONS = [
   "为什么这次构建这么慢？",
@@ -52,6 +53,10 @@ export function ChatScreen({
     store.subscribe,
     () => store.getState().messages.length === 0
   )
+  const draftModel = React.useSyncExternalStore(
+    store.subscribeDraft,
+    () => store.getDraft().model
+  )
   React.useEffect(() => {
     if (!runs || empty || desktopTask) return
     let live = true
@@ -69,13 +74,14 @@ export function ChatScreen({
       live = false
     }
   }, [runs, threadId, empty, desktopTask, store])
-  const sessionModels = fixedModel
+  const actualFixedModel = fixedModel ?? (!empty ? draftModel : null)
+  const sessionModels = actualFixedModel
     ? [
         {
-          id: fixedModel,
+          id: actualFixedModel,
           label:
-            models.find((model) => model.id === fixedModel)?.label ??
-            fixedModel,
+            models.find((model) => model.id === actualFixedModel)?.label ??
+            providerModelLabel(actualFixedModel),
         },
       ]
     : models
@@ -91,6 +97,7 @@ export function ChatScreen({
     <ChatComposer
       store={store}
       models={sessionModels}
+      locked={!empty}
       className="mx-auto w-full"
     />
   )
@@ -119,20 +126,31 @@ export function ChatScreen({
                   {suggestions.map((suggestion) => (
                     <Button
                       key={suggestion}
-                      disabled={!sessionModels.length || Boolean(desktopTask)}
+                      disabled={
+                        !sessionModels.some((choice) =>
+                          draftModel
+                            ? choice.id === draftModel
+                            : choice.isDefault
+                        ) || Boolean(desktopTask)
+                      }
                       variant="outline"
                       size="sm"
                       className="rounded-full"
                       onClick={() => {
                         if (threadTask(desktop.getState(), threadId)) return
                         preloadChatThread()
-                        store.send(
+                        const selected = draftModel
+                          ? sessionModels.find(
+                              (choice) => choice.id === draftModel
+                            )?.id
+                          : sessionModels.find((choice) => choice.isDefault)?.id
+                        if (!selected) return
+                        const accepted = store.send(
                           suggestion,
                           undefined,
-                          sessionModels.find(
-                            (choice) => choice.id === store.getDraft().model
-                          )?.id ?? sessionModels[0]?.id
+                          selected
                         )
+                        if (accepted) store.updateDraft({ model: selected })
                       }}
                     >
                       {suggestion}

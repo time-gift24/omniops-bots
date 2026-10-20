@@ -55,7 +55,7 @@ async function mcpFixture() {
     http.closeAllConnections(); await new Promise(resolve => http.close(resolve));
   } };
 }
-async function client(directory, model, manual = {}) {
+async function client(directory, model, manual = {}, keys = new Map()) {
   const child = spawn(process.env.OMNIOPS_BOTS_TEST_NODE_EXECUTABLE || process.execPath, ['main.mjs'], {
     cwd: process.env.OMNIOPS_BOTS_TEST_RUNTIME_DIRECTORY || new URL('..', import.meta.url), env: {
     ...process.env, OMNIOPS_BOTS_DATA_DIR: join(directory, 'app'), OMNIOPS_BOTS_LOCAL_ROOT: join(directory, 'local'),
@@ -70,6 +70,13 @@ async function client(directory, model, manual = {}) {
   child.on('exit', code => { exited.resolve(code); ready.reject(new Error(`Runtime exited: ${code} ${stderr}`)); for (const request of pending.values()) request.reject(new Error('Runtime exited')); });
   readline.createInterface({ input: child.stdout }).on('line', line => {
     const message = JSON.parse(line);
+    if (message.event === 'credential_request') {
+      if (message.operation === 'set') keys.set(message.reference, message.secret);
+      if (message.operation === 'delete') keys.delete(message.reference);
+      child.stdin.write(JSON.stringify({ event: 'credential_reply', requestId: message.requestId,
+        result: message.operation === 'get' ? keys.get(message.reference) ?? null : null }) + '\n');
+      return;
+    }
     if (message.event) events.push(message);
     if (message.event === 'ready') ready.resolve();
     const request = pending.get(message.id);
@@ -90,6 +97,7 @@ async function client(directory, model, manual = {}) {
 
 test('client JSONL isolates manual CDP operations from Agent Chrome, runs pinned Skills and MCP, and restores without replay', { timeout: 90_000 }, async () => {
   const directory = await realpath(await mkdtemp(join(tmpdir(), 'omniops-bots-client-')));
+  const keys = new Map();
   let control, manualServer, manualControl, runtime, model, mcp;
   async function chromeContext() {
     await control?.close();
@@ -135,7 +143,7 @@ test('client JSONL isolates manual CDP operations from Agent Chrome, runs pinned
     const manualSession = await manualControl.contexts()[0].newCDPSession(manualPage);
     manual.targetId = (await manualSession.send('Target.getTargetInfo')).targetInfo.targetId;
     await manualSession.detach();
-    runtime = await client(directory, model, manual);
+    runtime = await client(directory, model, manual, keys);
     const rpc = (...args) => runtime.rpc(...args);
     assert.equal((await rpc('operations_browser_status')).status, 'empty');
     const manualUrl = `${model.baseURL.replace(/\/v1\/?$/, '')}/page`;
@@ -189,7 +197,7 @@ test('client JSONL isolates manual CDP operations from Agent Chrome, runs pinned
     assert.equal(control.isConnected(), false, 'runtime shutdown closes its own external Chrome');
     assert.equal(manualPage.isClosed(), false, 'runtime only disconnects from the native manual browser');
     const requestCount = model.requests.length;
-    runtime = await client(directory, model, manual);
+    runtime = await client(directory, model, manual, keys);
     assert.equal((await rpc('operations_browser_status')).url, `${manualUrl}?manual=two`);
     assert.equal((await rpc('runs_list')).length, 1);
     assert.deepEqual(await rpc('session_snapshot', { threadId: 'stable-session' }), first.snapshot);
@@ -207,7 +215,7 @@ test('client JSONL isolates manual CDP operations from Agent Chrome, runs pinned
     await until(() => runtime.events.some(event => event.runId === 'interrupted' && event.data?.type === 'started'));
     await runtime.close(true);
     const beforeRestart = model.requests.length;
-    runtime = await client(directory, model, manual);
+    runtime = await client(directory, model, manual, keys);
     const interrupted = await rpc('run_get', { runId: 'interrupted' });
     assert.equal(interrupted.status, 'interrupted');
     assert.match(interrupted.error.message, /结果未知/);

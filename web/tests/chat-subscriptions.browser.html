@@ -68,16 +68,16 @@
   let deltaReads;
   try {
     render("subscriptions-first");
-    assert(fixture.querySelector("h1"), "Empty thread must show the welcome screen");
+    assert(editor() && !fixture.querySelector('[aria-label="本会话固定模型"]'), "Empty thread must show an editable composer without a fixed model");
     type("first request");
     flushSync(() => first.updateDraft({ model: "sonnet-5", attachments: [{ id: "file", name: "notes.txt", type: "text/plain" }] }));
     assert(first.getDraft().text === "first request" && action("选择模型: Sonnet 5") && action("移除附件 notes.txt"), "Draft text, model and attachment must stay subscribed");
     click(action("发送"));
     const gateway = gateways.get("subscriptions-first");
-    assert(first.getState().status === "submitted" && action("停止生成") && !fixture.querySelector("h1"), "Submitting must switch the screen and show Stop");
+    assert(first.getState().status === "submitted" && action("停止生成") && fixture.querySelector('[aria-label="本会话固定模型"]'), "Submitting must switch the screen, fix the model and show Stop");
     assert(gateway.requests[0].model === "sonnet-5" && gateway.requests[0].messages[0].attachments[0].name === "notes.txt", "Submit must use the latest model and attachments");
     assert(first.getDraft().text === "" && first.getDraft().attachments.length === 0, "Accepted submission must clear the submitted draft");
-    assert(action("选择模型: Sonnet 5").disabled && fixture.querySelector('input[type="file"]').disabled, "Submitted state must disable model and attachment changes");
+    assert(!action("选择模型: Sonnet 5") && fixture.querySelector('[aria-label="本会话固定模型"]').textContent === "Sonnet 5" && fixture.querySelector('input[type="file"]').disabled, "Submitted state must fix the model and disable attachment changes");
     await emit(first, { type: "started", metadata });
     await emit(first, { type: "part-started", partId: 0, kind: "text" });
     await emit(first, { type: "delta", partId: 0, text: "Live" });
@@ -116,7 +116,7 @@
     restoreEditor = () => {};
 
     await emit(first, { type: "completed", response: { assistant: { parts: [{ type: "text", text: "Live one two three" }] }, finish: { reason: "stop" }, usage: {}, metadata } });
-    assert(first.getState().status === "idle" && action("发送") && !action("发送").disabled && !action("选择模型: Sonnet 5").disabled, "Completion must re-enable Send, model and attachments");
+    assert(first.getState().status === "idle" && action("发送") && !action("发送").disabled && !action("选择模型: Sonnet 5") && fixture.querySelector('[aria-label="本会话固定模型"]').textContent === "Sonnet 5", "Completion must re-enable Send and attachments while keeping the model fixed");
     click(action("发送"));
     await emit(first, { type: "failed", error: { kind: "transport", message: "Connection lost" } });
     type("retry after failure");
@@ -126,7 +126,7 @@
     flushSync(() => second.updateDraft({ text: "second draft", model: "opus-4.8" }));
     render("subscriptions-second");
     await emit(first, { type: "started", metadata });
-    assert(editor().textContent === "second draft" && action("选择模型: Opus 4.8") && action("发送") && fixture.querySelector("h1"), "An inactive thread's status must not leak into the active screen");
+    assert(editor().textContent === "second draft" && action("选择模型: Opus 4.8") && action("发送") && !fixture.querySelector('[aria-label="本会话固定模型"]'), "An inactive thread's status must not leak into the active screen");
     render("subscriptions-first");
     assert(editor().textContent === "first next draft" && action("停止生成"), "Returning to a streaming thread must recover its draft and status");
     click(action("停止生成"));

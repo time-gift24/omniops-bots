@@ -36,6 +36,10 @@ pub enum Error {
     Clipboard(#[from] tauri_plugin_clipboard_manager::Error),
     #[error("external link could not be opened")]
     Opener(#[from] tauri_plugin_opener::Error),
+    #[error("系统凭据库不可用，请解锁凭据库或检查权限。")]
+    Credentials(#[source] keyring_core::Error),
+    #[error("{0}")]
+    CredentialBoundary(&'static str),
 }
 
 impl Error {
@@ -56,6 +60,7 @@ impl Error {
             Self::Dialog(_) => "dialog",
             Self::Clipboard(_) => "clipboard",
             Self::Opener(_) => "opener",
+            Self::Credentials(_) | Self::CredentialBoundary(_) => "credentials",
         }
     }
 }
@@ -91,6 +96,7 @@ impl From<Error> for IpcError {
             #[cfg(windows)]
             Error::NativeIo { .. } => "native-browser",
             Error::Protocol(_) => "protocol",
+            Error::Credentials(_) | Error::CredentialBoundary(_) => "credentials",
             _ => "host",
         };
         Self {

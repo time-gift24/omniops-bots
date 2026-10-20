@@ -81,6 +81,18 @@ export async function connectMcp(configurations: readonly McpConfiguration[], {
       const config = validateMcp(candidate);
       const secret = config.credentialEnv ? env[config.credentialEnv] : undefined;
       const sanitized = <T>(value: T): T => JSON.parse(JSON.stringify(value, (_key, item) => typeof item === 'string' ? redact(secret ? item.replaceAll(secret, '[redacted]') : item) : item));
+      const schemaMaps = new Set(['properties', 'patternProperties', '$defs', 'definitions', 'dependentSchemas', 'dependentRequired', 'dependencies']);
+      const schemaMetadata = new Set(['description', 'title', '$comment', 'default', 'examples']);
+      // Schema keywords, property names and validation literals are execution contracts.
+      const sanitizedSchema = <T>(value: T, propertyMap = false): T => {
+        if (Array.isArray(value)) return value.map(item => sanitizedSchema(item)) as T;
+        if (!value || typeof value !== 'object') return value;
+        return Object.fromEntries(Object.entries(value).map(([key, item]) => [key,
+          !propertyMap && schemaMetadata.has(key) ? sanitized(item)
+            : !propertyMap && ['const', 'enum'].includes(key) ? item
+              : sanitizedSchema(item, !propertyMap && schemaMaps.has(key)),
+        ])) as T;
+      };
       if (config.credentialEnv && !secret) throw new RuntimeError('authentication', `MCP ${config.name} 缺少凭据环境变量 ${config.credentialEnv}。`);
       const client = new Client({ name: 'omniops-bots', version: '0.1.0' });
       clients.push(client);
@@ -97,17 +109,20 @@ export async function connectMcp(configurations: readonly McpConfiguration[], {
       const cursors = new Set<string>();
       do {
         let page;
-        try { page = advertised?.tools ? sanitized(await client.listTools(cursor ? { cursor } : {}, options)) : { tools: [] }; }
+        try { page = advertised?.tools ? await client.listTools(cursor ? { cursor } : {}, options) : { tools: [] }; }
         catch { signal.throwIfAborted(); throw new RuntimeError('mcp-discovery', `MCP ${config.name} 无法读取工具清单。`); }
         for (const definition of page.tools) {
+          if (secret && definition.name.includes(secret)) throw invalid('MCP 工具名称包含敏感信息，请检查服务端配置。');
           const name = `mcp_${config.id}_${definition.name}`;
-          if (!/^[a-zA-Z0-9_-]{1,64}$/.test(name) || names.has(name)) throw invalid(`MCP ${config.name} 工具名称无效或冲突：${definition.name}。`);
+          if (!/^[a-zA-Z0-9_-]{1,64}$/.test(name) || names.has(name)) throw invalid('MCP 工具名称无效或冲突。');
           names.add(name);
           if (names.size > 256) throw invalid('MCP 工具总数超过 256，请减少所选服务。');
-          manifest.tools.push({ name, sourceName: definition.name, description: definition.description, inputSchema: definition.inputSchema });
-          catalog.capabilities.tools.push({ name: definition.name, description: definition.description ?? '', params: JSON.stringify(definition.inputSchema) });
+          const description = definition.description === undefined ? undefined : sanitized(definition.description);
+          const inputSchema = sanitizedSchema(definition.inputSchema);
+          manifest.tools.push({ name, sourceName: definition.name, description, inputSchema });
+          catalog.capabilities.tools.push({ name: definition.name, description: description ?? '', params: JSON.stringify(inputSchema) });
           tools.push(new DynamicStructuredTool({
-            name, description: definition.description || `${config.name}: ${definition.name}`, schema: definition.inputSchema,
+            name, description: description || sanitized(`${config.name}: ${definition.name}`), schema: inputSchema,
             responseFormat: 'content_and_artifact',
             func: async (args, _manager, toolConfig) => {
               const nodeSignal = toolConfig?.signal ?? signal;
@@ -147,12 +162,12 @@ export async function connectMcp(configurations: readonly McpConfiguration[], {
           try {
             const input: { cursor?: string } = cursor ? { cursor } : {};
             if (kind === 'resources') {
-              const page = sanitized(await client.listResources(input, options));
-              catalog.capabilities.resources.push(...page.resources.map(item => ({ name: item.name, description: item.description ?? '', params: item.uri })));
+              const page = await client.listResources(input, options);
+              catalog.capabilities.resources.push(...page.resources.map(item => sanitized({ name: item.name, description: item.description ?? '', params: item.uri })));
               cursor = page.nextCursor;
             } else {
-              const page = sanitized(await client.listPrompts(input, options));
-              catalog.capabilities.prompts.push(...page.prompts.map(item => ({ name: item.name, description: item.description ?? '', params: JSON.stringify(item.arguments ?? []) })));
+              const page = await client.listPrompts(input, options);
+              catalog.capabilities.prompts.push(...page.prompts.map(item => ({ name: sanitized(item.name), description: sanitized(item.description ?? ''), params: JSON.stringify(sanitized(item.arguments ?? [])) })));
               cursor = page.nextCursor;
             }
           } catch { signal.throwIfAborted(); throw new RuntimeError('mcp-discovery', `MCP ${config.name} 无法读取${kind === 'resources' ? '资源' : '提示词'}清单。`); }

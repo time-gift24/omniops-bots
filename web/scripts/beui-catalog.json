@@ -2432,7 +2432,7 @@
       "path": "components/premium/agent-chat-input/agent-chat-credits.tsx",
       "originalMirrorSha256": "d5b1b07ef3a763daefc4afe27566f77c308c54f4e88ed49e076e072ac28b929d",
       "sourceSha256": "d5b1b07ef3a763daefc4afe27566f77c308c54f4e88ed49e076e072ac28b929d",
-      "installedSha256": "61cb88f6bd1bcf6c877cbcbf24051140690d02e03207903e79e7a90c99d16ccf",
+      "installedSha256": "b31c42fe4573805936cfb182647e0f1ded6c520cb24cdb8be0ad3586584d4fc5",
       "source": {
         "kind": "mirror",
         "path": "components/premium/agent-chat-input/agent-chat-credits.tsx"
@@ -2455,7 +2455,7 @@
         },
         {
           "kind": "shared-product-compatibility",
-          "details": "Share rejected-submission preservation, model catalog fallback and validity, disabled/busy attachment guards. allowAttachmentOnly defaults to the template behavior; optional presentation preserves product density without replacing template defaults."
+          "details": "Share rejected-submission preservation, explicit model selection and catalog validity, disabled/busy attachment guards. allowAttachmentOnly defaults to the template behavior; optional presentation preserves product density without replacing template defaults. Removed implicit first-model fallback; a missing selection stays unselected until the caller or user chooses."
         }
       ],
       "installedPath": "src/components/beui/premium/agent-chat-input/agent-chat-credits.tsx"
@@ -2712,7 +2712,7 @@
       "path": "components/premium/agent-chat-input/credits-model-selector.tsx",
       "originalMirrorSha256": "149c2b110b70391b26417c5d11614e6d3f530ea187eaeb60e3933f6f7d55794a",
       "sourceSha256": "149c2b110b70391b26417c5d11614e6d3f530ea187eaeb60e3933f6f7d55794a",
-      "installedSha256": "0275dbf6f1e9b5d68c5e036cc0083789ab3b9f1de4b649ae3a11e56b753176fb",
+      "installedSha256": "6a920325db49dfe1ca6e086a9a809ccd4b3ee797295b0479d966a78bc931b607",
       "source": {
         "kind": "mirror",
         "path": "components/premium/agent-chat-input/credits-model-selector.tsx"
@@ -2735,7 +2735,7 @@
         },
         {
           "kind": "shared-product-compatibility",
-          "details": "Share closing on disabled, selection focus restoration and initial focus on the selected option. Optional glyphs and product vertical-placement fallback preserve the template complete placement API by default."
+          "details": "Share closing on disabled, selection focus restoration and initial focus on the selected option. Optional glyphs and product vertical-placement fallback preserve the template complete placement API by default. Removed implicit first-model fallback; a missing selection stays unselected until the caller or user chooses."
         }
       ],
       "installedPath": "src/components/beui/premium/agent-chat-input/credits-model-selector.tsx"

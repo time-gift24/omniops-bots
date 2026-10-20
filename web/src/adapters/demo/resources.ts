@@ -161,7 +161,7 @@ const INITIAL_AGENTS: readonly AgentEntry[] = [
 ]
 
 export const DEMO_MODELS: readonly ModelChoice[] = [
-  { id: "pine-1", label: "Pine 1" },
+  { id: "pine-1", label: "Pine 1", isDefault: true },
   { id: "sonnet-5", label: "Sonnet 5" },
   { id: "opus-4.8", label: "Opus 4.8" },
   { id: "gpt-5.6", label: "GPT 5.6" },

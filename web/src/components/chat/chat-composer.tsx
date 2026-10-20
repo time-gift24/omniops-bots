@@ -22,6 +22,7 @@ import type { AgentChatInputStatus } from "@/components/premium/agent-chat-input
 import { Button } from "@/components/motion/button"
 import { cn } from "@/lib/utils"
 import type { ModelChoice } from "@/models/source"
+import { providerModelLabel } from "@/providers/source"
 
 const LABELS: Partial<AgentChatCreditsLabels> = {
   editor: "消息输入",
@@ -47,10 +48,12 @@ function toComposerStatus(status: string): AgentChatInputStatus {
 export function ChatComposer({
   store,
   models,
+  locked = false,
   className,
 }: {
   store: ThreadStore
   models: readonly ModelChoice[]
+  locked?: boolean
   className?: string
 }) {
   const { desktop } = useAppDependencies()
@@ -72,8 +75,14 @@ export function ChatComposer({
     store.getDraft,
     store.getDraft
   )
-  const model =
-    models.find((choice) => choice.id === draft.model)?.id ?? models[0]?.id
+  const model = locked
+    ? (draft.model ?? "")
+    : draft.model
+      ? (models.find((choice) => choice.id === draft.model)?.id ?? "")
+      : (models.find((choice) => choice.isDefault)?.id ?? "")
+  const modelLabel =
+    models.find((choice) => choice.id === model)?.label ??
+    providerModelLabel(model)
   const task = threadTask(desktopState, store.getState().threadId)
   const ownsTask = task?.threadId === store.getState().threadId
   const approval = ownsTask ? task?.approval : undefined
@@ -102,12 +111,14 @@ export function ChatComposer({
         >
           {task?.error ?? threadError}
         </p>
-      ) : !task && !desktopState.simulated && !models.length ? (
+      ) : !task && !model ? (
         <p
           role="alert"
           className="absolute inset-x-0 bottom-[calc(100%+12px)] text-xs text-muted-foreground"
         >
-          尚未配置模型。请设置本地模型配置并重新打开应用；目录与浏览器仍可使用。
+          {models.length
+            ? "请选择模型，或在设置中配置全局默认模型。"
+            : "尚未配置模型。请在设置的 Provider 中添加接入与模型。"}
         </p>
       ) : null}
       <AgentChatCredits
@@ -122,7 +133,10 @@ export function ChatComposer({
         placeholder=""
         models={models}
         model={model}
-        onModelChange={(model) => store.updateDraft({ model })}
+        defaultModel=""
+        onModelChange={(model) => {
+          if (!locked) store.updateDraft({ model })
+        }}
         attachments={draft.attachments}
         onAttachmentsChange={(attachments) =>
           store.updateDraft({ attachments })
@@ -131,6 +145,7 @@ export function ChatComposer({
         onSubmit={(text, sent) => {
           if (threadTask(desktop.getState(), store.getState().threadId))
             return false
+          if (!model) return false
           const accepted = store.send(
             text,
             sent.map((attachment) => ({
@@ -143,7 +158,7 @@ export function ChatComposer({
             })),
             model
           )
-          if (accepted) store.updateDraft({ text: "", attachments: [] })
+          if (accepted) store.updateDraft({ text: "", attachments: [], model })
           return accepted
         }}
         className="max-w-none"
@@ -155,7 +170,17 @@ export function ChatComposer({
               <AgentComposerAttach />
             </div>
             <div className="flex shrink-0 items-center gap-1">
-              <AgentComposerModel />
+              {locked ? (
+                <span
+                  aria-label="本会话固定模型"
+                  title={modelLabel}
+                  className="max-w-56 truncate px-1.5 text-xs text-muted-foreground"
+                >
+                  {modelLabel || "正在读取固定模型…"}
+                </span>
+              ) : (
+                <AgentComposerModel />
+              )}
               {task ? (
                 <Button
                   size="icon"

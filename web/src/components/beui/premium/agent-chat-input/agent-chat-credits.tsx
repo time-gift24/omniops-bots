@@ -169,7 +169,7 @@ export function AgentChatCredits({
     onChange: onModelChange,
   });
   const selectedModel =
-    (models.find((option) => option.id === requestedModel) ?? models[0])?.id ?? "";
+    models.find((option) => option.id === requestedModel)?.id ?? "";
 
   const currentAttachments = attachments ?? internalAttachments;
   const previewUrls = useAttachmentPreviewUrls(currentAttachments);

@@ -8,6 +8,7 @@ import {
   type ThreadStoreRegistry,
 } from "@/chat/registry"
 import type { ModelSource } from "@/models/source"
+import type { ProviderSource } from "@/providers/source"
 import type { HostCapabilities } from "@/platform/host"
 import type { ThemePreferences } from "@/preferences/theme"
 import type { SkillDraftCache } from "@/skills/drafts"
@@ -28,6 +29,7 @@ export interface FrontendAdapters {
   readonly skills: SkillSource
   readonly skillLibrary?: SkillLibrary
   readonly models: ModelSource
+  readonly providers?: ProviderSource
   readonly workspaceAccess: WorkspaceAccess
   readonly skillDrafts: SkillDraftCache
   readonly preferences: ThemePreferences

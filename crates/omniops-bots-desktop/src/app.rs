@@ -1,3 +1,5 @@
+#[path = "credentials.rs"]
+mod credentials;
 #[path = "error.rs"]
 pub(crate) mod error;
 #[cfg(all(target_os = "macos", feature = "native-browser"))]
@@ -31,13 +33,15 @@ use tauri_plugin_shell::{
     ShellExt,
     process::{CommandChild, CommandEvent},
 };
-use tokio::sync::oneshot;
+use tokio::sync::{Semaphore, oneshot};
 
 type Reply = Result<Value, IpcError>;
 
 struct Runtime {
-    inner: Mutex<Inner>,
+    inner: Arc<Mutex<Inner>>,
     next_id: AtomicU64,
+    credential_slots: Arc<Semaphore>,
+    credential_gate: Arc<Semaphore>,
 }
 
 struct Inner {
@@ -55,7 +59,7 @@ struct Inner {
 impl Runtime {
     fn new() -> Self {
         Self {
-            inner: Mutex::new(Inner {
+            inner: Arc::new(Mutex::new(Inner {
                 child: None,
                 ready: false,
                 error: None,
@@ -65,8 +69,11 @@ impl Runtime {
                 task_active: false,
                 shutting_down: false,
                 exit_allowed: false,
-            }),
+            })),
             next_id: AtomicU64::new(1),
+            credential_slots: Arc::new(Semaphore::new(64)),
+            // ponytail: one OS operation at a time avoids per-entry credential store races.
+            credential_gate: Arc::new(Semaphore::new(1)),
         }
     }
 
@@ -210,6 +217,10 @@ impl Runtime {
             return Err(Error::InvalidInput("Runtime response is too large"));
         }
         let message: Value = serde_json::from_slice(line)?;
+        if message["event"] == "credential_request" {
+            self.credential_request(message);
+            return Ok(None);
+        }
         if let Some(id) = message["id"].as_u64() {
             let mut inner = self.inner.lock().unwrap();
             inner.starting.remove(&id);
@@ -258,6 +269,57 @@ impl Runtime {
         }
     }
 
+    fn credential_request(&self, message: Value) {
+        let Some(request_id) = credentials::request_id(&message) else {
+            return;
+        };
+        let request = match credentials::Request::parse(message) {
+            Ok(request) => request,
+            Err(error) => {
+                credential_reply(&self.inner, request_id, Err(error));
+                return;
+            }
+        };
+        let Ok(slot) = self.credential_slots.clone().try_acquire_owned() else {
+            credential_reply(
+                &self.inner,
+                request_id,
+                Err(Error::CredentialBoundary("系统凭据请求过多，请稍后重试。")),
+            );
+            return;
+        };
+        let inner = self.inner.clone();
+        let gate = self.credential_gate.clone();
+        tauri::async_runtime::spawn(async move {
+            let operation = async {
+                let permit = gate
+                    .acquire_owned()
+                    .await
+                    .map_err(|_| Error::CredentialBoundary("系统凭据连接已关闭。"))?;
+                let unavailable = {
+                    let inner = inner.lock().unwrap();
+                    inner.shutting_down || inner.child.is_none()
+                };
+                if unavailable {
+                    return Err(Error::CredentialBoundary("系统凭据连接已关闭。"));
+                }
+                tauri::async_runtime::spawn_blocking(move || {
+                    let _permit = permit;
+                    request.execute()
+                })
+                .await
+                .map_err(|_| Error::CredentialBoundary("系统凭据操作失败。"))?
+            };
+            let result = tokio::time::timeout(Duration::from_secs(15), operation)
+                .await
+                .unwrap_or(Err(Error::CredentialBoundary(
+                    "系统凭据操作超时，请检查凭据库后重试。",
+                )));
+            credential_reply(&inner, request_id, result);
+            drop(slot);
+        });
+    }
+
     fn terminated(&self) {
         let child = self.inner.lock().unwrap().child.take();
         if let Some(child) = child {
@@ -285,6 +347,23 @@ impl Runtime {
             }
             tokio::time::sleep(Duration::from_millis(100)).await;
         }
+    }
+}
+
+fn credential_reply(inner: &Mutex<Inner>, request_id: u64, result: Result<Option<String>, Error>) {
+    let message = match result {
+        Ok(result) => json!({"event":"credential_reply", "requestId":request_id, "result":result}),
+        Err(error) => {
+            json!({"event":"credential_reply", "requestId":request_id, "error":IpcError::from(error)})
+        }
+    };
+    let mut inner = inner.lock().unwrap();
+    if let Some(child) = inner.child.as_mut()
+        && let Ok(mut line) = serde_json::to_vec(&message)
+    {
+        line.push(b'\n');
+        // Credential replies only travel to the private child, never the WebView or logs.
+        let _ = child.write(&line);
     }
 }
 
@@ -1080,5 +1159,24 @@ mod tests {
                 .unwrap()
                 .is_none()
         );
+    }
+
+    #[test]
+    fn credential_requests_never_reach_webview_or_consume_ui_replies() {
+        let runtime = Runtime::new();
+        let (sender, _receiver) = oneshot::channel();
+        runtime.inner.lock().unwrap().pending.insert(1, sender);
+        let request = json!({
+            "event":"credential_request", "requestId":1, "id":1,
+            "operation":"set", "reference":"../../other-app", "secret":"FIXTURE_PRIVATE_SECRET"
+        });
+        assert!(
+            runtime
+                .receive(&serde_json::to_vec(&request).unwrap())
+                .unwrap()
+                .is_none()
+        );
+        assert!(runtime.inner.lock().unwrap().pending.contains_key(&1));
+        assert!(runtime.receive(br#"{"event":"credential_reply","requestId":1,"result":"FIXTURE_PRIVATE_SECRET"}"#).unwrap().is_none());
     }
 }

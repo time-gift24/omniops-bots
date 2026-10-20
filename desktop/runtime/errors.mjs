@@ -11,7 +11,7 @@ export const invalid = message => new RuntimeError('invalid-request', message);
 export function safeError(error) {
   if (error instanceof RuntimeError) return { kind: error.kind, message: error.message };
   if (error?.name === 'AbortError') return { kind: 'aborted', message: '任务已停止。' };
-  if (error?.name === 'TimeoutError' || error?.code === 'ETIMEDOUT') return { kind: 'timeout', message: '操作超时，请重试。' };
+  if (error?.name === 'TimeoutError' || error?.name === 'APIConnectionTimeoutError' || error?.code === 'ETIMEDOUT') return { kind: 'timeout', message: '操作超时，请重试。' };
   if (error?.status === 401 || error?.status === 403) return { kind: 'authentication', message: '模型认证失败，请检查本地模型配置。' };
   if (error?.status === 429) return { kind: 'rate-limited', message: '模型服务暂时限流，请稍后重试。' };
   if (error?.status === 400 || error?.status === 422) return { kind: 'unsupported', message: '模型不接受本次输入，请检查是否支持所附媒体和工具调用。' };

@@ -139,6 +139,14 @@ function skillResource(
 export function App() {
   const dependencies = useAppDependencies()
   const [attempt, setAttempt] = useState(0)
+  const [modelRevision, setModelRevision] = useState(0)
+  useEffect(
+    () =>
+      dependencies.models.subscribe?.(() =>
+        setModelRevision((value) => value + 1)
+      ),
+    [dependencies.models]
+  )
   const agents = useBackendData(
     attempt,
     () => dependencies.agents.load(),
@@ -154,15 +162,11 @@ export function App() {
     dependencies.skillLibrary ?? dependencies.skills
   )
   const models = useBackendData(
-    attempt,
+    `${attempt}:${modelRevision}`,
     () => dependencies.models.list(),
     dependencies.models
   )
-  if (
-    agents.status === "error" ||
-    skills.status === "error" ||
-    models.status === "error"
-  ) {
+  if (agents.status === "error" || skills.status === "error") {
     return (
       <div
         role="alert"
@@ -178,11 +182,7 @@ export function App() {
       </div>
     )
   }
-  if (
-    agents.status !== "ready" ||
-    skills.status !== "ready" ||
-    models.status !== "ready"
-  ) {
+  if (agents.status !== "ready" || skills.status !== "ready") {
     return (
       <p role="status" className="p-6 text-sm text-muted-foreground">
         正在加载工作区…
@@ -190,12 +190,29 @@ export function App() {
     )
   }
   return (
-    <WorkspaceApp
-      initialAgents={agents.data.agents}
-      resources={agents.data.resources}
-      skills={skills.data}
-      models={models.data}
-    />
+    <>
+      <WorkspaceApp
+        initialAgents={agents.data.agents}
+        resources={agents.data.resources}
+        skills={skills.data}
+        models={models.status === "ready" ? models.data : []}
+      />
+      {models.status === "error" ? (
+        <div
+          role="alert"
+          className="fixed right-5 bottom-5 z-50 flex max-w-sm items-center gap-3 rounded-lg border border-border bg-background p-3 text-sm shadow-lg"
+        >
+          <span>模型目录读取失败，可重试或在设置中检查 Provider。</span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setModelRevision((value) => value + 1)}
+          >
+            重试模型目录
+          </Button>
+        </div>
+      ) : null}
+    </>
   )
 }
 

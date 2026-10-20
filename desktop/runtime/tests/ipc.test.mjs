@@ -5,6 +5,7 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import readline from 'node:readline';
+import { setTimeout as delay } from 'node:timers/promises';
 
 test('JSONL entry returns structured safe errors, exact snapshots and clean shutdown without a configured model', { timeout: 15_000 }, async () => {
   const directory = await mkdtemp(join(tmpdir(), 'omniops-bots-ipc-'));
@@ -52,9 +53,11 @@ test('JSONL entry returns structured safe errors, exact snapshots and clean shut
     assert.deepEqual((await rpc('settings_get')).result, { maxConcurrentRuns: 6 });
     assert.deepEqual((await rpc('models_list')).result, []);
     assert.equal((await rpc('run_get', { runId: 'missing' })).error.kind, 'invalid-request');
-    const failure = await rpc('chat_start', { runId: 'test', threadId: 'test', request: { messages: [{ role: 'user', text: 'hello' }] } });
-    assert.equal(failure.error.kind, 'unavailable');
-    assert.equal(typeof failure.error.message, 'string');
+    assert.deepEqual((await rpc('chat_start', { runId: 'test', threadId: 'test', request: { messages: [{ role: 'user', text: 'hello' }] } })).result, { runId: 'test' });
+    let failure;
+    while (!(failure = events.find(event => event.event === 'chat_event' && event.runId === 'test' && event.data.type === 'failed'))) await delay(5);
+    assert.equal(failure.data.error.kind, 'unavailable');
+    assert.equal(typeof failure.data.error.message, 'string');
     assert.equal((await rpc('agent_run', { task: 'bypass' })).error.kind, 'invalid-request');
     assert.equal((await rpc('script_run', { name: 'bypass.mjs' })).error.kind, 'invalid-request');
     assert.deepEqual((await rpc('shutdown')).result, { stopped: true });

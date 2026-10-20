@@ -37,7 +37,7 @@
   const dialog = () => document.querySelector('[data-slot="dialog-content"]');
   const drawer = () => document.querySelector('[data-mobile="true"]');
   const editor = () => fixture.querySelector('[role="textbox"][aria-label="消息输入"]');
-  const model = () => fixture.querySelector('button[aria-label^="选择模型:"]');
+  const model = () => fixture.querySelector('button[aria-label^="选择模型:"]') ?? fixture.querySelector('[aria-label="本会话固定模型"]');
   const group = name => labeled(`在 ${name} 中新建会话`)?.closest("section");
   const row = (name, title) => [...(group(name)?.querySelectorAll("li > button[title]") ?? [])]
     .find(element => element.title === title);

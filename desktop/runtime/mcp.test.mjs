@@ -16,7 +16,7 @@ async function until(check) {
   while (!check() && Date.now() < deadline) await delay(10);
   assert.ok(check(), 'Local MCP protocol did not reach the expected state');
 }
-async function fixture({ secret, toolName = 'double', denyMethod, fail = false, slow = false, tools = true, metadataText = '' } = {}) {
+async function fixture({ secret, toolName = 'double', denyMethod, fail = false, slow = false, tools = true, metadataText = '', schemaMetadata = false } = {}) {
   const sessions = new Map(), responses = new Set(), calls = [], notes = [], authorizations = [], methods = [];
   const entered = Promise.withResolvers(), release = Promise.withResolvers();
   let requestCount = 0;
@@ -46,7 +46,10 @@ async function fixture({ secret, toolName = 'double', denyMethod, fail = false, 
       let session = sessions.get(request.headers['mcp-session-id']);
       if (!session && body?.method === 'initialize') {
         const server = new McpServer({ name: 'local-mcp-fixture', version: '1.0.0' });
-        if (tools) server.registerTool(toolName, { description: `Double an integer.${metadataText}`, inputSchema: { value: z.number().int(), note: z.string().optional() } }, async ({ value, note }) => {
+        if (tools) server.registerTool(toolName, { description: `Double an integer.${metadataText}`, inputSchema: {
+          value: z.number().int(), note: schemaMetadata ? z.string().meta({ examples: ['a'] }).optional() : z.string().optional(),
+          ...(schemaMetadata ? { description: z.array(z.enum(['alpha', 'array'])).describe('a description').default(['alpha']) } : {}),
+        } }, async ({ value, note }) => {
           calls.push(value);
           notes.push(note);
           entered.resolve();
@@ -174,6 +177,36 @@ test('the global redactor covers MCP metadata, events, results and artifacts wit
   } finally { await connected?.close(); await server.close(); }
 });
 
+test('a short provider key preserves real MCP tool/schema contracts while metadata and evidence stay redacted', async () => {
+  const server = await fixture({ toolName: 'array', schemaMetadata: true, metadataText: ' a' });
+  const events = [];
+  let connected;
+  try {
+    connected = await connectMcp([server.config], { signal: new AbortController().signal,
+      redact: value => value.replaceAll('a', '[redacted]'), onTool: event => events.push(event) });
+    const definition = connected.manifests[0].tools[0];
+    assert.equal(definition.name, 'mcp_fixture_array');
+    assert.equal(definition.sourceName, 'array');
+    assert.equal(definition.inputSchema.type, 'object');
+    assert.deepEqual(definition.inputSchema.required, ['value']);
+    const field = definition.inputSchema.properties.description;
+    assert.equal(field.type, 'array');
+    assert.deepEqual(field.items.enum, ['alpha', 'array']);
+    assert.equal(field.description, '[redacted] description');
+    assert.deepEqual(field.default, ['[redacted]lph[redacted]']);
+    assert.deepEqual(definition.inputSchema.properties.note.examples, ['[redacted]']);
+    assert.match(definition.description, /\[redacted\]/u);
+    const output = await connected.tools[0].invoke({ type: 'tool_call', id: 'short-key', name: 'mcp_fixture_array', args: { value: 6, note: 'a', description: ['alpha'] } });
+    assert.deepEqual(server.calls, [6]);
+    assert.deepEqual(server.notes, ['a']);
+    assert.equal(output.artifact.executedArgs.note, '[redacted]');
+    assert.equal(events[0].name, 'mcp_fixture_array');
+    assert.equal(events[0].args.note, '[redacted]');
+    assert.match(output.artifact.value.content[0].text, /12/u);
+    assert.match(output.artifact.value.content[0].text, /\[redacted\]/u);
+  } finally { await connected?.close(); await server.close(); }
+});
+
 test('missing or invalid credentials and failed tool discovery reject the complete MCP assembly', async () => {
   const authorized = await fixture({ secret: 'correct-fixture-key' });
   const denied = await fixture({ denyMethod: 'tools/list' });
@@ -216,13 +249,21 @@ test('tool failures remain errors and cancelling an in-flight MCP call closes it
 test('invalid and colliding MCP tool names fail instead of silently replacing capabilities', async () => {
   const invalid = await fixture({ toolName: 'invalid.name' });
   const duplicate = await fixture();
+  const reflectedSecret = 'reflected-fixture-secret';
+  const reflected = await fixture({ secret: reflectedSecret, toolName: `echo_${reflectedSecret}` });
   const controller = new AbortController();
   try {
     await assert.rejects(connectMcp([invalid.config], { signal: controller.signal }), /名称无效或冲突/u);
     await assert.rejects(connectMcp([duplicate.config, duplicate.config], { signal: controller.signal }), /名称无效或冲突/u);
+    await assert.rejects(connectMcp([reflected.config], { signal: controller.signal, env: { MCP_FIXTURE_KEY: reflectedSecret } }), error => {
+      assert.equal(error.kind, 'invalid-request');
+      assert.equal(error.message.includes(reflectedSecret), false);
+      return true;
+    });
     assert.deepEqual(invalid.calls, []);
     assert.deepEqual(duplicate.calls, []);
-  } finally { await invalid.close(); await duplicate.close(); }
+    assert.deepEqual(reflected.calls, []);
+  } finally { await invalid.close(); await duplicate.close(); await reflected.close(); }
 });
 
 test('MCP tool effects use the node cancellation signal and retain one tracked close promise', async () => {

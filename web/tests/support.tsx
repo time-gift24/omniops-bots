@@ -6,6 +6,7 @@ import {
   type FrontendAdapters,
 } from "../src/app/dependencies"
 import { createDemoAdapters } from "../src/adapters/demo"
+import { createDemoModelSource } from "../src/adapters/demo/resources"
 import { ThemeProvider } from "../src/components/theme-provider"
 import { fileKey } from "../src/skills/drafts"
 import type { Theme, Palette } from "../src/preferences/theme"
@@ -17,6 +18,7 @@ export function createTestDependencies(overrides: Partial<FrontendAdapters> = {}
   let palette: Palette | null = null
   return createAppDependencies(createDemoAdapters({
     backendId: "test",
+    models: createDemoModelSource(),
     preferences: {
       async readTheme() { return theme },
       async readPalette() { return palette },

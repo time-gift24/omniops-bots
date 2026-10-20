@@ -48,7 +48,7 @@ export function CreditsModelSelector({
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const selected =
-    models.find((model) => model.id === selectedModel) ?? models[0];
+    models.find((model) => model.id === selectedModel);
   if (disabled && open) setOpen(false);
 
   function changeOpen(next: boolean) {
@@ -56,7 +56,7 @@ export function CreditsModelSelector({
     setOpen(next);
   }
 
-  if (!selected) return null;
+  if (!models.length) return null;
 
   return (
     <MorphPopover open={open && !disabled} onOpenChange={changeOpen}>
@@ -66,7 +66,7 @@ export function CreditsModelSelector({
           variant="plain"
           type="button"
           disabled={disabled}
-          aria-label={`${labels.selectModel}: ${selected.label}`}
+          aria-label={selected ? `${labels.selectModel}: ${selected.label}` : labels.selectModel}
           whileTap={reduce ? undefined : { scale: 0.96 }}
           transition={SPRING_PRESS}
           className={cn(
@@ -74,8 +74,8 @@ export function CreditsModelSelector({
             className,
           )}
         >
-          <span aria-hidden>{selected.icon}</span>
-          <span className="truncate">{selected.label}</span>
+          <span aria-hidden>{selected?.icon}</span>
+          <span className="truncate">{selected?.label ?? labels.selectModel}</span>
           <ChevronIcon
             className={cn(
               "size-3 shrink-0 text-muted-foreground transition-transform duration-200",
@@ -96,7 +96,7 @@ export function CreditsModelSelector({
         }}
       >
         {models.map((model) => {
-          const active = model.id === selected.id;
+          const active = model.id === selected?.id;
           return (
             <Button
               variant="plain"

@@ -34,7 +34,7 @@
     assert(condition(), message);
   };
   const click = element => flushSync(() => element.click());
-  const modelButton = () => fixture.querySelector('button[aria-label^="选择模型"]');
+  const modelButton = () => fixture.querySelector('button[aria-label^="选择模型"]') ?? fixture.querySelector('[aria-label="本会话固定模型"]');
   const selectModel = async (label) => {
     click(modelButton());
     await wait();

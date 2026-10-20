@@ -168,13 +168,15 @@
     flushSync(() => editor().dispatchEvent(new ClipboardEvent("paste", { clipboardData, bubbles: true, cancelable: true })));
     assert(ref.current.serialize().text === "wxyz", "Paste must count selected line breaks when computing remaining capacity");
   });
-  await run("Replacing the model catalog submits the visible model", () => {
+  await run("Replacing the model catalog requires an explicit selection", () => {
     let submittedModel;
     const props = { skills: [], defaultValue: "draft", onSubmit: (_text, _files, _skills, model) => { submittedModel = model; } };
     render(AgentChatCredits, { ...props, models: [{ id: "a", label: "A" }] });
     render(AgentChatCredits, { ...props, models: [{ id: "b", label: "B" }] });
+    assert(fixture.querySelector('button[aria-label="Send message"]').disabled && submittedModel === undefined, "A removed selection must not fall back to the first model after a catalog refresh");
+    render(AgentChatCredits, { ...props, models: [{ id: "b", label: "B" }], model: "b" });
     click(fixture.querySelector('button[aria-label="Send message"]'));
-    assert(submittedModel === "b", "Submission must use the model displayed after a catalog refresh");
+    assert(submittedModel === "b", "An explicit new selection may submit");
     render(AgentChatCredits, { ...props, models: [] });
     assert(fixture.querySelector('button[aria-label="Send message"]').disabled, "An empty catalog must not submit a removed model");
   });

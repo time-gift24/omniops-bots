@@ -9,6 +9,7 @@ import { Button } from "@/components/motion/button"
 import { Input } from "@/components/motion/input"
 import { useBackendData } from "@/components/workbench/use-backend-data"
 import type { SettingsSection } from "./settings-navigation"
+import { ProviderSettings } from "./provider-settings"
 import "./client-settings.css"
 
 export function ClientSettingsScreen({
@@ -152,6 +153,7 @@ export function ClientSettingsScreen({
             ))}
           </fieldset>
         </section>
+        <ProviderSettings />
         <section
           id="client-settings-tasks"
           data-settings-section="tasks"
