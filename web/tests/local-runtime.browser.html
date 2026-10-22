@@ -48,7 +48,7 @@ const bridge = {
       case "skill_library_list": return [managed()]
       case "skill_library_read": return { data: btoa(unescape(encodeURIComponent(skillText))), mimeType: "text/markdown" }
       case "skill_library_write": if (failedSkillWrite) throw { kind: "unavailable", message: "Skill 保存失败，请重试。" }; skillText = decodeURIComponent(escape(atob(params.data))); return managed()
-      case "models_list": return [{ id: "test-model", label: "测试模型" }]
+      case "models_list": return [{ id: "test-model", label: "测试模型", isDefault: true }]
       case "mcp_save": servers = [...servers.filter(server => server.id !== params.server.id), params.server]; return null
       case "mcp_remove": servers = servers.filter(server => server.id !== params.id); return null
       case "mcp_test": if (failedMcp) throw { kind: "mcp-connection", message: "MCP 连接失败，请检查服务地址。" }; return { tools: [{ name: "lookup", description: "查找" }], resources: [], prompts: [] }
@@ -134,6 +134,7 @@ try {
   click("开始新会话"); await send("检查一次")
   const firstThread = starts[0].threadId
   assert(starts[0].agentId === "new-2", "Agent identity must reach chat_start")
+  assert(starts[0].request.model === "test-model", "Configured default model must reach chat_start")
   await checkWorkbenchScope(firstThread)
   await agent("新建巡检"); click("开始新会话"); await send("再次检查")
   assert(starts[1].threadId !== firstThread, "Each Agent launch requires a fresh stable session")

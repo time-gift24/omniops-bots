@@ -353,6 +353,7 @@ export function SkillLibraryScreen({
   onExperiment,
   active = true,
   creating = false,
+  officialOnly = false,
 }: {
   skillId: string | null
   onOpenSkill: (id: string | null) => void
@@ -360,6 +361,8 @@ export function SkillLibraryScreen({
   onExperiment?: (skillId: string) => void
   active?: boolean
   creating?: boolean
+  /** User edition: published official packages only, with no management actions. */
+  officialOnly?: boolean
 }) {
   const { skillLibrary: library, skills: source } = useAppDependencies()
   const [catalog, setCatalog] = useState<readonly ManagedSkill[]>([])
@@ -449,7 +452,13 @@ export function SkillLibraryScreen({
     void list
       .then((items) => {
         if (live) {
-          setCatalog(items)
+          setCatalog(
+            officialOnly
+              ? items
+                  .filter((item) => item.origin === "official")
+                  .map((item) => ({ ...item, readOnly: true }))
+              : items
+          )
           setLoadFailed(false)
           setLoaded(true)
         }
@@ -465,7 +474,7 @@ export function SkillLibraryScreen({
       live = false
       mounted.current = false
     }
-  }, [library, source, loadAttempt, showError])
+  }, [library, source, loadAttempt, showError, officialOnly])
   const unsaved =
     Object.values(edits).some((edit) => edit.value !== edit.saved) ||
     draftEntries.length !== 1 ||
@@ -852,36 +861,37 @@ export function SkillLibraryScreen({
         .toLowerCase()
         .includes(query.toLowerCase().trim())
   )
-  const detailActions = skill ? (
-    <>
-      {onExperiment && !creating && !skill.readOnly ? (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-7 text-muted-foreground/70 hover:text-foreground"
-          aria-label="在新会话中实验"
-          title="在新会话中实验"
-          disabled={busy || !library}
-          onClick={() => void experiment()}
-        >
-          <HugeiconsIcon icon={Bug01Icon} size={16} aria-hidden="true" />
-        </Button>
-      ) : null}
-      {skill.origin === "official" ? (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-7 text-muted-foreground/70 hover:text-foreground"
-          aria-label="复制为本地 Skill"
-          title="复制为本地 Skill"
-          disabled={busy || !library}
-          onClick={() => void copy(skill)}
-        >
-          <Copy />
-        </Button>
-      ) : null}
-    </>
-  ) : null
+  const detailActions =
+    skill && !officialOnly ? (
+      <>
+        {onExperiment && !creating && !skill.readOnly ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 text-muted-foreground/70 hover:text-foreground"
+            aria-label="在新会话中实验"
+            title="在新会话中实验"
+            disabled={busy || !library}
+            onClick={() => void experiment()}
+          >
+            <HugeiconsIcon icon={Bug01Icon} size={16} aria-hidden="true" />
+          </Button>
+        ) : null}
+        {skill.origin === "official" ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 text-muted-foreground/70 hover:text-foreground"
+            aria-label="复制为本地 Skill"
+            title="复制为本地 Skill"
+            disabled={busy || !library}
+            onClick={() => void copy(skill)}
+          >
+            <Copy />
+          </Button>
+        ) : null}
+      </>
+    ) : null
   return (
     <div
       className="skill-library relative flex h-full min-h-0 flex-col bg-background"
@@ -926,27 +936,29 @@ export function SkillLibraryScreen({
       ) : !skillId && !creating ? (
         <div className="min-h-0 flex-1 overflow-auto px-5 py-6 md:px-8">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex gap-1" role="group" aria-label="Skill 来源">
-              {(["all", "local", "official"] as const).map((value) => (
-                <Button
-                  key={value}
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    "rounded-full px-4 text-muted-foreground",
-                    filter === value && "bg-muted text-accent-foreground"
-                  )}
-                  aria-pressed={filter === value}
-                  onClick={() => setFilter(value)}
-                >
-                  {value === "all"
-                    ? "全部"
-                    : value === "local"
-                      ? "本地"
-                      : "官方"}
-                </Button>
-              ))}
-            </div>
+            {!officialOnly ? (
+              <div className="flex gap-1" role="group" aria-label="Skill 来源">
+                {(["all", "local", "official"] as const).map((value) => (
+                  <Button
+                    key={value}
+                    variant="ghost"
+                    size="sm"
+                    className={cn(
+                      "rounded-full px-4 text-muted-foreground",
+                      filter === value && "bg-muted text-accent-foreground"
+                    )}
+                    aria-pressed={filter === value}
+                    onClick={() => setFilter(value)}
+                  >
+                    {value === "all"
+                      ? "全部"
+                      : value === "local"
+                        ? "本地"
+                        : "官方"}
+                  </Button>
+                ))}
+              </div>
+            ) : null}
             <Input
               ref={searchInput}
               type="search"
@@ -1002,7 +1014,7 @@ export function SkillLibraryScreen({
                   {item.version || item.contentId || "未标注版本"}
                 </span>
                 <div className="flex justify-end">
-                  {item.origin === "official" ? (
+                  {officialOnly ? null : item.origin === "official" ? (
                     <Button
                       variant="ghost"
                       size="icon-sm"
@@ -1225,6 +1237,7 @@ export function SkillLibraryScreen({
               skills={sourceSkills}
               skillId={skill.id}
               active={active}
+              readOnly={officialOnly || skill.origin === "official"}
             />
           ) : (
             <p className="p-6 text-sm text-muted-foreground">

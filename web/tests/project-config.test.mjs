@@ -15,6 +15,19 @@ test("local registry configuration stays ignored and untracked", () => {
   assert.equal(tracked.stdout, "", "Local registry configuration must not be tracked");
 });
 
+test("Makefile selects the edition for default, user and operations builds", () => {
+  const cwd = fileURLToPath(new URL("../../", import.meta.url));
+  const input = 'build-web dev package-macos package-windows:\n\t@"$(NODE)" -e "console.log(process.env.VITE_APP_EDITION)"\n';
+  for (const [target, edition] of [["build-web", "user"], ["build-web-user", "user"], ["build-web-operations", "operations"], ["dev-user", "user"], ["dev-operations", "operations"], ["package-user", "user"], ["package-operations", "operations"]]) {
+    const result = spawnSync("make", ["--no-print-directory", "-f", "Makefile", "-f", "-", target], { cwd, input, encoding: "utf8" });
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout.trim(), edition);
+  }
+  const invalid = spawnSync("make", ["build-web", "EDITION=invalid"], { cwd, encoding: "utf8" });
+  assert.notEqual(invalid.status, 0);
+  assert.match(invalid.stderr, /EDITION must be user or operations/);
+});
+
 test("typecheck catches errors in both referenced projects", async (t) => {
   const { scripts } = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
   const [command, ...args] = scripts.typecheck.split(/\s+/);

@@ -106,7 +106,13 @@ async function start() {
             initialPreferences={initialPreferences}
           >
             <ToastProvider>
-              <App />
+              <App
+                edition={
+                  import.meta.env.VITE_APP_EDITION === "operations"
+                    ? "operations"
+                    : "user"
+                }
+              />
             </ToastProvider>
           </ThemeProvider>
         </AppDependenciesProvider>

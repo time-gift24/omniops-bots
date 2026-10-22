@@ -76,8 +76,7 @@ Running…</pre>
     flushSync(() =>
       root.render(withTestTheme(React.createElement(App), dependencies))
     )
-    await until(() => composer() && button("收起工作台"), "App did not load")
-    click("收起工作台")
+    await until(() => composer() && button("打开工作台"), "App did not load with a collapsed workbench")
     await until(() => button("打开工作台"), "Workbench did not collapse")
     start()
     await until(

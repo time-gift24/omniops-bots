@@ -10,10 +10,12 @@ export function SkillScreen({
   skills,
   skillId,
   active,
+  readOnly = false,
 }: {
   skills: readonly Skill[]
   skillId: string
   active: boolean
+  readOnly?: boolean
 }) {
   const { skillDrafts, host } = useAppDependencies()
   const [saved, setSaved] = useState<Record<string, string>>({})
@@ -22,7 +24,8 @@ export function SkillScreen({
     cache: typeof skillDrafts
     skills: readonly Skill[]
   } | null>(null)
-  const loading = loaded?.cache !== skillDrafts || loaded?.skills !== skills
+  const loading =
+    !readOnly && (loaded?.cache !== skillDrafts || loaded?.skills !== skills)
   const toast = useToast()
   const showError = (message: string) =>
     toast.notify({
@@ -48,6 +51,7 @@ export function SkillScreen({
     }
   }, [])
   useEffect(() => {
+    if (readOnly) return
     let live = true
     void Promise.resolve()
       .then(() => skillDrafts.load(skills))
@@ -73,8 +77,9 @@ export function SkillScreen({
     return () => {
       live = false
     }
-  }, [skillDrafts, skills, toast])
-  const source = contents[key] ?? file?.content ?? ""
+  }, [skillDrafts, skills, toast, readOnly])
+  const source =
+    (readOnly ? file?.content : (contents[key] ?? file?.content)) ?? ""
   const currentSource = useRef(source)
   useLayoutEffect(() => {
     selectedKey.current = key
@@ -89,7 +94,8 @@ export function SkillScreen({
     })
   )
   async function save() {
-    if (!skill || !file || !editing || loading || operation.current) return
+    if (readOnly || !skill || !file || !editing || loading || operation.current)
+      return
     if (!dirty) {
       setEditing(false)
       return
@@ -142,7 +148,7 @@ export function SkillScreen({
   }
 
   async function restore() {
-    if (!skill || loading || operation.current) return
+    if (readOnly || !skill || loading || operation.current) return
     operation.current = true
     setBusy(true)
     try {
@@ -199,6 +205,7 @@ export function SkillScreen({
           loading={loading}
           busy={busy}
           dirty={dirty}
+          readOnly={readOnly}
           editing={editing}
           onEdit={() => {
             setEditing(true)
@@ -215,7 +222,7 @@ export function SkillScreen({
             setMessage("")
           }}
           onRestore={
-            saved[key] !== undefined || source !== original
+            !readOnly && (saved[key] !== undefined || source !== original)
               ? () => void restore()
               : undefined
           }

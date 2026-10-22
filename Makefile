@@ -7,6 +7,11 @@
 NODE ?= node
 PYTHON ?= python3
 MACOS_ARGS ?=
+EDITION ?= user
+ifeq ($(filter $(EDITION),user operations),)
+$(error EDITION must be user or operations)
+endif
+export VITE_APP_EDITION := $(EDITION)
 
 ifeq ($(OS),Windows_NT)
 SHELL := cmd.exe
@@ -20,11 +25,19 @@ NPM ?= npm
 endif
 
 .PHONY: help install check-node build-web dev package package-macos package-debug package-windows install-windows-cross
+.PHONY: dev-user dev-operations build-web-user build-web-operations package-user package-operations
 
 help:
 	@echo make install                Install locked web, runtime and Cargo dependencies
 	@echo make build-web              Build web/dist on Windows or Unix
 	@echo make dev                    Run the macOS client with Vite hot updates
+	@echo make dev-user               Run the user edition - execution records and official skills
+	@echo make dev-operations         Run the operations edition - full workspace
+	@echo make build-web-user         Build the user frontend
+	@echo make build-web-operations   Build the operations frontend
+	@echo make package-user           Package the user edition for this host
+	@echo make package-operations     Package the operations edition for this host
+	@echo All build/dev/package targets accept EDITION=user or EDITION=operations - default: user.
 	@echo make package                Build the release package for this host
 	@echo make package-macos          Build macOS ARM64 .app and .dmg
 	@echo make package-debug          Build macOS ARM64 debug .app
@@ -51,6 +64,12 @@ install: check-node
 
 build-web: check-node
 	"$(NPM)" --prefix web run build
+
+dev-user build-web-user package-user: export VITE_APP_EDITION := user
+dev-operations build-web-operations package-operations: export VITE_APP_EDITION := operations
+dev-user dev-operations: dev
+build-web-user build-web-operations: build-web
+package-user package-operations: package
 
 ifeq ($(HOST_OS),Windows)
 package: package-windows

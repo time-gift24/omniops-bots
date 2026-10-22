@@ -114,6 +114,9 @@ Running…</pre>
     await until(() => composer(), "App did not load")
     const content = fixture.querySelector("main")
     const header = fixture.querySelector("[data-slot='sidebar-rail-workspace-header']")
+    await until(() => button("打开工作台"), "Workbench must start collapsed")
+    assert(!content.closest("[inert]"), "Collapsed workbench must keep content interactive")
+    click("打开工作台")
     if (innerWidth < 768) {
       assert(
         !fixture.querySelector('[data-slot="sidebar-resize-handle"]'),

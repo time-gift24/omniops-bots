@@ -137,35 +137,50 @@ function skillResource(
   }
 }
 
-export function App() {
+export function App({
+  edition = "operations",
+}: {
+  edition?: "user" | "operations"
+}) {
   const dependencies = useAppDependencies()
+  const operations = edition === "operations"
   const toast = useToast()
   const [attempt, setAttempt] = useState(0)
   const [modelRevision, setModelRevision] = useState(0)
   useEffect(
     () =>
-      dependencies.models.subscribe?.(() =>
-        setModelRevision((value) => value + 1)
-      ),
-    [dependencies.models]
+      operations
+        ? dependencies.models.subscribe?.(() =>
+            setModelRevision((value) => value + 1)
+          )
+        : undefined,
+    [dependencies.models, operations]
   )
   const agents = useBackendData(
-    attempt,
-    () => dependencies.agents.load(),
+    `${edition}:${attempt}`,
+    () =>
+      operations
+        ? dependencies.agents.load()
+        : Promise.resolve({
+            agents: [],
+            resources: { skills: [], tools: [], mcpServers: [] },
+          }),
     dependencies.agents
   )
   const skills = useBackendData(
-    attempt,
+    `${edition}:${attempt}`,
     async () => {
       const items = await (dependencies.skillLibrary?.list() ??
         dependencies.skills.list())
-      return items.map(skillResource)
+      return items
+        .filter((item) => operations || item.origin === "official")
+        .map(skillResource)
     },
     dependencies.skillLibrary ?? dependencies.skills
   )
   const models = useBackendData(
-    `${attempt}:${modelRevision}`,
-    () => dependencies.models.list(),
+    `${edition}:${attempt}:${modelRevision}`,
+    () => (operations ? dependencies.models.list() : Promise.resolve([])),
     dependencies.models
   )
   useEffect(() => {
@@ -205,6 +220,7 @@ export function App() {
   }
   return (
     <WorkspaceApp
+      operations={operations}
       initialAgents={agents.data.agents}
       resources={agents.data.resources}
       skills={skills.data}
@@ -214,11 +230,13 @@ export function App() {
 }
 
 function WorkspaceApp({
+  operations,
   initialAgents,
   resources: initialResources,
   skills,
   models,
 }: {
+  operations: boolean
   initialAgents: readonly AgentEntry[]
   resources: AgentResources
   skills: readonly AgentResource[]
@@ -272,7 +290,9 @@ function WorkspaceApp({
   const unsavedAgentIdsRef = useRef<readonly string[]>([])
   const agentVersion = useRef(0)
   const [agentListVisited, setAgentListVisited] = useState(false)
-  const [view, setView] = useState<View>({ kind: "chat" })
+  const [view, setView] = useState<View>(
+    operations ? { kind: "chat" } : { kind: "section", sectionId: "runs" }
+  )
   const currentView = useRef(view)
   const mounted = useRef(false)
   useLayoutEffect(() => {
@@ -285,15 +305,15 @@ function WorkspaceApp({
     }
   }, [])
   useEffect(() => {
-    if (!store.getState().activeSessionId) store.startSession()
-  }, [store])
+    if (operations && !store.getState().activeSessionId) store.startSession()
+  }, [store, operations])
   const [agentToolbarTarget, setAgentToolbarTarget] =
     useState<HTMLDivElement | null>(null)
   const [skillCatalog, setSkillCatalog] =
     useState<readonly AgentResource[]>(skills)
   const [openedSkillId, setOpenedSkillId] = useState<string | null>(null)
   const [skillsVisited, setSkillsVisited] = useState(false)
-  const [workbenchOpen, setWorkbenchOpen] = useState(true)
+  const [workbenchOpen, setWorkbenchOpen] = useState(false)
   const mobileWindow = useIsMobile()
   const workbenchOverlay = mobileWindow && workbenchOpen
   const [navigationExpanded, setNavigationExpanded] = useState(true)
@@ -517,7 +537,7 @@ function WorkspaceApp({
         : section
     ),
     agentSection,
-    ...(runs
+    ...(runs || !operations
       ? [
           {
             id: "runs",
@@ -541,10 +561,10 @@ function WorkspaceApp({
       label: "技能",
       icon: PackageIcon,
       selectFirstItem: false,
-      overviewLabel: "Skill 列表",
+      overviewLabel: operations ? "Skill 列表" : "技能列表",
       groups: [
         {
-          label: "常用 Skill",
+          label: operations ? "常用 Skill" : "官方技能",
           action: (
             <MorphicTooltip content="搜索技能" side="bottom">
               <Button
@@ -571,11 +591,13 @@ function WorkspaceApp({
         },
       ],
     },
-  ]
+  ].filter(
+    (section) => operations || section.id === "runs" || section.id === "skills"
+  )
   const settingsSection = defaultSections.find(
     (section) => section.id === "settings"
   )
-  if (settingsSection)
+  if (operations && settingsSection)
     sections.push({
       ...settingsSection,
       selectFirstItem: false,
@@ -1028,7 +1050,7 @@ function WorkspaceApp({
         }
         contentClassName="p-0 sm:p-0"
         sections={sections}
-        actions={sectionActions}
+        actions={operations ? sectionActions : {}}
         onItemSelect={selectItem}
       >
         <div className="flex h-full min-h-0 flex-col">
@@ -1062,6 +1084,7 @@ function WorkspaceApp({
                     }
                   >
                     <SkillLibraryScreen
+                      officialOnly={!operations}
                       active={
                         view.kind === "skill" ||
                         view.kind === "skill-draft" ||
@@ -1092,7 +1115,7 @@ function WorkspaceApp({
                         )
                       }}
                       onExperiment={
-                        runs
+                        operations && runs
                           ? (id) => {
                               setExperimentSkillId(id)
                               setExperimentAgentId(agents[0]?.id ?? "")
@@ -1261,8 +1284,14 @@ function WorkspaceApp({
                 workspaceName={view.title}
                 suggestions={[]}
               />
-            ) : view.kind === "section" && view.sectionId === "runs" && runs ? (
-              <RunHistory source={runs} onContinue={continueSession} />
+            ) : view.kind === "section" && view.sectionId === "runs" ? (
+              runs ? (
+                <RunHistory source={runs} onContinue={continueSession} />
+              ) : (
+                <p className="px-5 py-6 text-sm text-muted-foreground">
+                  暂无执行记录。
+                </p>
+              )
             ) : view.kind === "section" &&
               view.sectionId === "agents" ? null : view.kind === "section" &&
               view.sectionId === "skills" ? null : view.kind === "section" ? (

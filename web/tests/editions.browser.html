@@ -1,0 +1,95 @@
+<!doctype html>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Frontend editions regression</title>
+<div id="fixture" style="height:100dvh"></div>
+<pre id="result">Running…</pre>
+<script type="module">
+  import React from "react"
+  import { createRoot } from "react-dom/client"
+  import { flushSync } from "react-dom"
+  import "/src/index.css"
+  import { App } from "/src/App.tsx"
+  import { createSkillLibrary } from "/src/skills/library.ts"
+  import { fileKey } from "/src/skills/drafts.ts"
+  import { createTestDependencies, withTestTheme } from "/tests/support.tsx"
+
+  const fixture = document.querySelector("#fixture")
+  const result = document.querySelector("#result")
+  const checks = []
+  const assert = (value, message) => { if (!value) throw new Error(message) }
+  const until = async (condition, message) => {
+    const deadline = performance.now() + 10000
+    while (!condition() && performance.now() < deadline) await new Promise(resolve => setTimeout(resolve, 20))
+    assert(condition(), message)
+  }
+  const visible = element => !!element?.getClientRects().length && !element.closest('[hidden],[inert],[aria-hidden="true"]')
+  const button = (label, scope = fixture) => [...scope.querySelectorAll("button")].find(element =>
+    visible(element) && (element.getAttribute("aria-label") === label || element.textContent.trim() === label))
+  const click = label => { const target = typeof label === "string" ? button(label) : label; assert(target && !target.disabled, `Missing ${label}`); flushSync(() => target.click()) }
+  const record = () => [...fixture.querySelectorAll('section[aria-label="执行记录"] button')].find(element => visible(element) && element.textContent.includes("检查服务"))
+  const officialSkill = () => [...fixture.querySelectorAll('[data-testid="skill-library"] button')].find(element => visible(element) && element.textContent.includes("官方巡检"))
+  const closeNavigation = () => { if (button("Close sidebar")) click("Close sidebar") }
+  const official = { id: "official", name: "官方巡检", description: "官方使用说明", origin: "official", version: "v1", files: [{ path: "SKILL.md", content: "# 官方巡检\n\n发布的原始说明。" }] }
+  const local = { id: "local", name: "本地草稿技能", description: "不在用户版显示", files: [{ path: "SKILL.md", content: "# 本地草稿技能" }] }
+  const run = { runId: "run-one", threadId: "thread-one", title: "检查服务", status: "completed", startedAt: "2026-10-22T00:00:00Z", endedAt: "2026-10-22T00:00:01Z", snapshot: { model: "test", skills: [] } }
+  let root
+  try {
+    for (const fallback of [false, true]) {
+      let draftReads = 0, mutations = 0, agentReads = 0, modelReads = 0
+      const drafts = { async load() { draftReads++; return { [fileKey("official", "SKILL.md")]: "本地草稿不应出现" } }, async save() { mutations++ }, async remove() { mutations++ } }
+      const source = { async list() { return structuredClone([official, local]) } }
+      const library = createSkillLibrary({ source, legacyDrafts: drafts, storage: { kind: "browser", root: "editions fixture" }, persistence: { async load() { return [] }, async save() { mutations++ }, async remove() { mutations++ } } })
+      const dependencies = createTestDependencies({
+        skills: source,
+        skillDrafts: drafts,
+        skillLibrary: library,
+        agents: { async load() { agentReads++; throw new Error("User view must not load Agent configuration") } },
+        models: { async list() { modelReads++; throw new Error("User view must not load model configuration") } },
+        runs: { async list() { return [run] }, async get() { return run }, async snapshot() { return run.snapshot }, bindSession() {} },
+      })
+      if (fallback) dependencies.skillLibrary = undefined
+      root = createRoot(fixture)
+      flushSync(() => root.render(withTestTheme(React.createElement(App, { edition: "user" }), dependencies)))
+      await until(record, "User edition must start at execution records")
+      assert(button("打开工作台") && !button("收起工作台"), "Right panel must start collapsed")
+      assert(!button("工作区") && !button("Agent") && !button("设置") && !button("新建 Skill"), "User edition must expose only records and skills")
+      assert(agentReads === 0 && modelReads === 0, "Unrelated configuration must not block user startup")
+      assert(dependencies.workspaces.getState().sessions.length === 0, "User startup must not create a blank conversation")
+      click(record())
+      await until(() => fixture.querySelector('[aria-label="执行详情"]'), "Execution details must remain available")
+      click("技能")
+      closeNavigation()
+      await until(officialSkill, "Official skill must be listed")
+      assert(!button("本地草稿技能") && !button("复制 官方巡检") && !fixture.querySelector('[aria-label="Skill 来源"]'), "User catalog must hide local skills and management controls")
+      click(officialSkill())
+      await until(() => [...fixture.querySelectorAll('[aria-label="文件内容"]')].some(element => visible(element) && element.textContent.includes("发布的原始说明。")), "Official original must be readable")
+      assert(!button("编辑") && !button("复制为本地 Skill") && !button("在新会话中实验") && !button("恢复原始内容"), "User detail must have no editing or experiment actions")
+      assert(!fixture.textContent.includes("本地草稿不应出现"), "Draft content must not override official content")
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "s", ctrlKey: true, bubbles: true, cancelable: true }))
+      assert(mutations === 0, "Read-only navigation and save shortcut must not write")
+      if (fallback) assert(draftReads === 0, "Read-only source fallback must not load drafts")
+      click("执行记录")
+      closeNavigation()
+      await until(record, "Returning to records must work")
+      checks.push(`user ${fallback ? "source fallback" : "library"}`)
+      root.unmount()
+      root = null
+    }
+    const operations = createTestDependencies()
+    root = createRoot(fixture)
+    flushSync(() => root.render(withTestTheme(React.createElement(App, { edition: "operations" }), operations)))
+    await until(() => button("Agent") && button("设置"), "Operations edition must retain its full navigation")
+    assert(button("打开工作台") && !button("收起工作台"), "Operations workbench must also start collapsed")
+    click("技能")
+    closeNavigation()
+    await until(() => fixture.querySelector('[data-testid="skill-library"] [aria-label="Skill 来源"]'), "Operations edition must retain local skill management")
+    checks.push("operations navigation and local skill management")
+    result.textContent = `PASS: ${checks.join("; ")}`
+    result.dataset.passed = "true"
+  } catch (error) {
+    result.textContent = `FAIL: ${error.stack ?? error.message}\n${fixture.textContent}`
+    result.dataset.passed = "false"
+    throw error
+  } finally { root?.unmount() }
+</script>
