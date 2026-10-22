@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "90691d82-5099-46a5-b34f-82f4a3d5d4e1",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/server-deployment/topology.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/server-deployment/topology.html",
+  "specification": {
+    "sha256": "4e91d55faf8d97efdca4055d6b1905e3516db3f5dc14a85c74c328830f6850b2",
+    "bytes": 3275
+  },
+  "artifact": {
+    "sha256": "6130acc52df42df9940252dc84c0ba37699f955b433fd246dceee004f55c7163",
+    "bytes": 817961
+  }
+}

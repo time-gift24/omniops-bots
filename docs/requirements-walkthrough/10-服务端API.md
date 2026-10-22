@@ -116,6 +116,8 @@ Skill 服务端修订存于 `skills/drafts/<skillId>/revisions/<draftRevisionId>
 
 ## A2A 任务通道：WSS 只负责传输
 
+API／网关／worker 拆分、跨机器 Compose 与文件持久化见[核心 · 服务端部署与持久化](./核心-服务端部署与持久化.md)，均为外部服务端待实施方案。
+
 线上运行顺序和异常场景集中见[核心 · A2A 任务执行与恢复](./核心-服务端通过WS调用客户端.md)。本节规定客户端依赖的协议契约，**仍待实现**。使用 [A2A 1.0.0](https://a2a-protocol.org/v1.0.0/specification/)，协商版本为 `1.0`，不沿用原私有任务消息体系。
 
 ### WSS 传输绑定

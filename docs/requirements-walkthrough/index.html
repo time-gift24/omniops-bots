@@ -8,9 +8,323 @@
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{scroll-behavior:auto!important}}
 @media print{.rail,.sidebar,.header,.section-links,.mobile-nav,article footer{display:none}.main,.reading{margin:0;padding:0}body{background:white;color:black}article,article[hidden]{display:block;break-before:page;padding:20px}article:first-of-type{break-before:auto}h2,h3,figure{break-inside:avoid}}
 article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);border-radius:var(--radius);font-size:13px;line-height:1.6}article pre code{padding:0;background:transparent;font-size:inherit}
-</style><link rel="stylesheet" href="comments.css"></head><body><a class="skip" href="#content">跳到正文</a><div class="rail" aria-label="文档工具"><a class="icon-control" href="#preface-versioning" aria-label="需求串讲首页" title="需求串讲首页"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6a2 2 0 0 1 2 2v14a3 3 0 0 0-3-2H4zM20 4h-6a2 2 0 0 0-2 2v14a3 3 0 0 1 3-2h5z"/></svg></a><a class="icon-control" href="#08-frontend" aria-label="前端现状与缺口" title="前端现状与缺口"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg></a><button type="button" class="icon-control theme-toggle" aria-label="切换为深色"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.7A8.4 8.4 0 0 1 8.3 4 8.5 8.5 0 1 0 20 15.7Z"/></svg></button></div><aside class="sidebar"><p class="wordmark">omniops-bots<small>客户端需求串讲</small></p><nav class="chapter-nav" aria-label="串讲章节"><details class="chapter-group" id="nav-core" open><summary>核心</summary><div class="chapter-group-links"><a href="#preface-versioning"><span class="num">序</span><span>Agent 版本管理</span></a><a href="#00-overview"><span class="num">00</span><span>客户端需求与职责</span></a><a href="#core-ws"><span class="num">A2A</span><span>A2A 任务执行与恢复</span></a><a href="#core-skill-system"><span class="num">SK</span><span>Skill 模板与迭代</span></a></div></details><details class="chapter-group" id="nav-details"><summary>细节</summary><div class="chapter-group-links"><a href="#01-skill"><span class="num">01</span><span>SKILL</span></a><a href="#02-mcp"><span class="num">02</span><span>MCP</span></a><a href="#03-builtintool"><span class="num">03</span><span>builtinTool</span></a><a href="#04-agent"><span class="num">04</span><span>Agent</span></a><a href="#05-updater"><span class="num">05</span><span>桌面端更新</span></a><a href="#06-sync"><span class="num">06</span><span>同步与装配</span></a><a href="#07-execution"><span class="num">07</span><span>任务执行与恢复</span></a><a href="#08-frontend"><span class="num">08</span><span>前端现状与缺口</span></a><a href="#09-operations"><span class="num">09</span><span>运维与诊断上传</span></a><a href="#10-server-api"><span class="num">10</span><span>服务端 API</span></a><a href="#11-provider"><span class="num">11</span><span>Provider</span></a></div></details></nav><div class="sidebar-foot">核心主线 · 客户端操作细节<br>桌面运行实拍 · 资源页演示图<br><a href="README.md">Markdown 目录</a><br><a href="https://github.com/time-gift24/omniops-bots/issues/3" target="_blank" rel="noopener">已确认规格</a></div></aside><main class="main" id="content" tabindex="-1"><header class="header"><nav class="breadcrumbs" aria-label="面包屑"><a href="#preface-versioning">需求串讲</a><span aria-hidden="true">/</span><span id="current-title" aria-current="page"></span></nav><div class="actions"><a class="text-control source-control" id="source" href="00-总体架构.md">Markdown</a><a class="text-control" id="diagram" href="diagrams/00-overview.html" target="_blank" rel="noopener">打开运行模型<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-8 8M10 20H4v-6M4 20l8-8"/></svg></a><div class="pagination"><button type="button" id="prev" class="icon-control" aria-label="上一章"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button><span class="progress" id="progress"></span><button type="button" id="next" class="icon-control" aria-label="下一章"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button></div></div></header><div class="mobile-nav"><label for="chapter-select">章节</label><select id="chapter-select"><optgroup label="核心"><option value="preface-versioning">序 Agent 版本管理</option><option value="00-overview">00 客户端需求与职责</option><option value="core-ws">A2A A2A 任务执行与恢复</option><option value="core-skill-system">SK Skill 模板与迭代</option></optgroup><optgroup label="细节"><option value="01-skill">01 SKILL</option><option value="02-mcp">02 MCP</option><option value="03-builtintool">03 builtinTool</option><option value="04-agent">04 Agent</option><option value="05-updater">05 桌面端更新</option><option value="06-sync">06 同步与装配</option><option value="07-execution">07 任务执行与恢复</option><option value="08-frontend">08 前端现状与缺口</option><option value="09-operations">09 运维与诊断上传</option><option value="10-server-api">10 服务端 API</option><option value="11-provider">11 Provider</option></optgroup></select><button type="button" class="icon-control theme-toggle" aria-label="切换为深色"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.7A8.4 8.4 0 0 1 8.3 4 8.5 8.5 0 1 0 20 15.7Z"/></svg></button></div><div class="reading"><nav class="section-links" id="sections" aria-label="本章目录"></nav><article id="preface-versioning" data-file="前置-Agent版本管理.md" hidden><h1>前置 · Agent 版本管理：评估与回退的基础</h1>
+</style><link rel="stylesheet" href="comments.css"></head><body><a class="skip" href="#content">跳到正文</a><div class="rail" aria-label="文档工具"><a class="icon-control" href="#core-server-deployment" aria-label="需求串讲首页" title="需求串讲首页"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6a2 2 0 0 1 2 2v14a3 3 0 0 0-3-2H4zM20 4h-6a2 2 0 0 0-2 2v14a3 3 0 0 1 3-2h5z"/></svg></a><a class="icon-control" href="#08-frontend" aria-label="前端现状与缺口" title="前端现状与缺口"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg></a><button type="button" class="icon-control theme-toggle" aria-label="切换为深色"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.7A8.4 8.4 0 0 1 8.3 4 8.5 8.5 0 1 0 20 15.7Z"/></svg></button></div><aside class="sidebar"><p class="wordmark">omniops-bots<small>客户端需求串讲</small></p><nav class="chapter-nav" aria-label="串讲章节"><details class="chapter-group" id="nav-core" open><summary>核心</summary><div class="chapter-group-links"><a href="#core-server-deployment"><span class="num">DEP</span><span>服务端部署与持久化</span></a><a href="#preface-versioning"><span class="num">序</span><span>Agent 版本管理</span></a><a href="#00-overview"><span class="num">00</span><span>客户端需求与职责</span></a><a href="#core-ws"><span class="num">A2A</span><span>A2A 任务执行与恢复</span></a><a href="#core-skill-system"><span class="num">SK</span><span>Skill 模板与迭代</span></a></div></details><details class="chapter-group" id="nav-details"><summary>细节</summary><div class="chapter-group-links"><a href="#01-skill"><span class="num">01</span><span>SKILL</span></a><a href="#02-mcp"><span class="num">02</span><span>MCP</span></a><a href="#03-builtintool"><span class="num">03</span><span>builtinTool</span></a><a href="#04-agent"><span class="num">04</span><span>Agent</span></a><a href="#05-updater"><span class="num">05</span><span>桌面端更新</span></a><a href="#06-sync"><span class="num">06</span><span>同步与装配</span></a><a href="#07-execution"><span class="num">07</span><span>任务执行与恢复</span></a><a href="#08-frontend"><span class="num">08</span><span>前端现状与缺口</span></a><a href="#09-operations"><span class="num">09</span><span>运维与诊断上传</span></a><a href="#10-server-api"><span class="num">10</span><span>服务端 API</span></a><a href="#11-provider"><span class="num">11</span><span>Provider</span></a></div></details></nav><div class="sidebar-foot">核心主线 · 客户端操作细节<br>桌面运行实拍 · 资源页演示图<br><a href="README.md">Markdown 目录</a><br><a href="https://github.com/time-gift24/omniops-bots/issues/3" target="_blank" rel="noopener">已确认规格</a></div></aside><main class="main" id="content" tabindex="-1"><header class="header"><nav class="breadcrumbs" aria-label="面包屑"><a href="#preface-versioning">需求串讲</a><span aria-hidden="true">/</span><span id="current-title" aria-current="page"></span></nav><div class="actions"><a class="text-control source-control" id="source" href="核心-服务端部署与持久化.md">Markdown</a><a class="text-control" id="diagram" href="diagrams/00-overview.html" target="_blank" rel="noopener">打开运行模型<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-8 8M10 20H4v-6M4 20l8-8"/></svg></a><div class="pagination"><button type="button" id="prev" class="icon-control" aria-label="上一章"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button><span class="progress" id="progress"></span><button type="button" id="next" class="icon-control" aria-label="下一章"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button></div></div></header><div class="mobile-nav"><label for="chapter-select">章节</label><select id="chapter-select"><optgroup label="核心"><option value="core-server-deployment">DEP 服务端部署与持久化</option><option value="preface-versioning">序 Agent 版本管理</option><option value="00-overview">00 客户端需求与职责</option><option value="core-ws">A2A A2A 任务执行与恢复</option><option value="core-skill-system">SK Skill 模板与迭代</option></optgroup><optgroup label="细节"><option value="01-skill">01 SKILL</option><option value="02-mcp">02 MCP</option><option value="03-builtintool">03 builtinTool</option><option value="04-agent">04 Agent</option><option value="05-updater">05 桌面端更新</option><option value="06-sync">06 同步与装配</option><option value="07-execution">07 任务执行与恢复</option><option value="08-frontend">08 前端现状与缺口</option><option value="09-operations">09 运维与诊断上传</option><option value="10-server-api">10 服务端 API</option><option value="11-provider">11 Provider</option></optgroup></select><button type="button" class="icon-control theme-toggle" aria-label="切换为深色"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.7A8.4 8.4 0 0 1 8.3 4 8.5 8.5 0 1 0 20 15.7Z"/></svg></button></div><div class="reading"><nav class="section-links" id="sections" aria-label="本章目录"></nav><article id="core-server-deployment" data-file="核心-服务端部署与持久化.md" hidden><h1>核心 · 服务端部署与持久化</h1>
+<p><strong>将原来同时处理 Console 请求和执行图的 3 个 worker，调整为 API、WebSocket 网关、图 worker 三种运行角色。每台应用服务器用同一份 Docker Compose 启动，连接同一套 PostgreSQL、Redis 和共享文件存储。</strong> 本章作为核心第一章，先讲系统部署和 Skill／提示词的文件位置；随后进入<a href="#preface-versioning">Agent 版本管理</a>、<a href="#00-overview">客户端需求与职责</a>，再到<a href="#core-ws">核心 A2A 章节</a>说明确定版本如何被调用。Skill 模板章节仍放在核心最后。</p>
+<p>本章是外部服务端的<strong>目标部署方案，待实施</strong>。已确认的现状是：单机 Nginx 做负载均衡，3 个 worker 同时承担 Console 交互和图执行，通过 Make 启动，已有共享 PostgreSQL 和 Redis 消息队列。服务端源码、镜像入口、队列实现与基础设施配置不在本仓，以下不作为已上线或已验证的容器能力。</p>
+<h2 id="core-server-deployment-单机改造前后先分职责再扩到多机">单机改造前后：先分职责，再扩到多机</h2>
+<p><strong>第一步可以先在一台应用机器上用 Compose 完成改造：保留 3 个图 worker，把 Console API 和 WebSocket 网关拆成独立运行角色，接入统一持久化。第二步再在其他机器启动同一套 Compose，形成应用多实例。</strong> 后文多机部署图展示第二步的目标形态；单机容器化本身不提供整机故障容错。</p>
+<table>
+<thead>
+<tr>
+<th>对比项</th>
+<th>当前单机形态</th>
+<th>改造后：单机 Compose</th>
+<th>后续：跨机器扩容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td data-label="对比项">Console 交互</td>
+<td data-label="当前单机形态">Nginx 分发到 3 个 worker，每个同时处理前端请求和图执行</td>
+<td data-label="改造后：单机 Compose">Nginx 转发到独立 API；图交给原运行队列和 worker，API 不执行图</td>
+<td data-label="后续：跨机器扩容">Nginx 转发到不同机器的 API；均读取同一持久运行状态</td>
+</tr>
+<tr>
+<td data-label="对比项">图执行</td>
+<td data-label="当前单机形态">3 个 worker 可以运行不同图</td>
+<td data-label="改造后：单机 Compose">仍保留 3 个 worker；示例同机运行 API × 1、网关 × 1、worker × 3，分别占用进程／容器资源</td>
+<td data-label="后续：跨机器扩容">将同一 worker 池分布到不同机器；需要容错的图至少有两个兼容实例</td>
+</tr>
+<tr>
+<td data-label="对比项">桌面任务接入</td>
+<td data-label="当前单机形态">WSS／A2A 接入仍待实现</td>
+<td data-label="改造后：单机 Compose">Nginx 转发到独立网关；WS 管传输，A2A 模块管调用与交付，Agent 逻辑留在 worker／桌面 runtime</td>
+<td data-label="后续：跨机器扩容">多个网关分别持有本机连接；断线重连后按原消息与 Task 身份恢复</td>
+</tr>
+<tr>
+<td data-label="对比项">启动与发布</td>
+<td data-label="当前单机形态">Make 启动原有进程</td>
+<td data-label="改造后：单机 Compose">Compose 启动同一镜像的 API／gateway／worker 入口；Make 可作薄封装</td>
+<td data-label="后续：跨机器扩容">各机器使用同一镜像与共享配置；新增 API／网关加入 Nginx upstream</td>
+</tr>
+<tr>
+<td data-label="对比项">状态与文件</td>
+<td data-label="当前单机形态">已有共享 PostgreSQL、Redis；文件共享方式待明确</td>
+<td data-label="改造后：单机 Compose">复用原数据库和队列，版本物料、可写工作区与产物挂同一 NAS／NFS 导出</td>
+<td data-label="后续：跨机器扩容">连接相同 PostgreSQL、Redis 和 NFS；不在新机器另建一套数据</td>
+</tr>
+<tr>
+<td data-label="对比项">故障边界</td>
+<td data-label="当前单机形态">单机 Nginx 是入口单点，单个图若只有一个可执行 worker 也无替代实例</td>
+<td data-label="改造后：单机 Compose">可分别重启应用角色；同一应用机器故障仍影响本机全部容器，业务执行不因容器重启自动重跑</td>
+<td data-label="后续：跨机器扩容">应用节点可互相分担；单机 Nginx 仍是入口单点，共享依赖的 HA 也须单独保障</td>
+</tr>
+</tbody></table>
+<p>改造首先解决职责耦合、发布方式和跨 worker 持久交接，使后续增加机器不依赖原 worker 的内存与本机文件。单机阶段不增加原有图 worker 总数，也不宣称吞吐一定提高；API、网关与 worker 仍共享该机器的 CPU、内存和网络。NAS、PostgreSQL、Redis 的部署位置与可用性独立核实，不能仅凭“共享”认定已经跨机或高可用。</p>
+<h2 id="core-server-deployment-先看文件位置skill提示词与运行目录">先看文件位置：Skill、提示词与运行目录</h2>
+<figure class="diagram"><a href="./diagrams/server-deployment/filesystem.html" target="_blank" rel="noopener" aria-label="打开交互图：共享文件系统中的 Skill、Agent 提示词和运行目录"><img src="./assets/server-deployment/filesystem.svg" alt="共享文件系统中的 Skill、Agent 提示词和运行目录"></a><figcaption>共享文件系统中的 Skill、Agent 提示词和运行目录 · 点击查看可缩放交互图</figcaption></figure>
+<p><a href="./diagrams/server-deployment/filesystem.html">打开文件系统目录图</a></p>
+<p><strong>图中根目录是各应用机器挂载的同一个 NFS 导出，文件位置属于目标服务端。</strong> 桌面端按需下载物料，保持正式包的相同相对路径；其本地根目录与运行记录仍独立，不直接挂载服务端 NFS。图只展开正式物料和运行目录，草稿路径另见下表；可选的 <code>scripts/</code>、<code>references/</code>、<code>assets/</code> 不要求每个 Skill 都创建空目录。</p>
+<table>
+<thead>
+<tr>
+<th>内容</th>
+<th>相对共享根的文件位置</th>
+<th>与版本／执行的关系</th>
+</tr>
+</thead>
+<tbody><tr>
+<td data-label="内容">Agent 完整系统提示词</td>
+<td data-label="相对共享根的文件位置"><code>agents/releases/&lt;agentId&gt;/&lt;contentId&gt;/prompt.md</code></td>
+<td data-label="与版本／执行的关系">随 Agent 包固定，不单独建立一套 Prompt 发布标签</td>
+</tr>
+<tr>
+<td data-label="内容">Agent 装配清单</td>
+<td data-label="相对共享根的文件位置">同版本目录中的 <code>agent.json</code></td>
+<td data-label="与版本／执行的关系">固定 <code>skills[]</code> 中的 <code>skillId</code>、Skill <code>contentId</code> 和 <code>mountPath</code>，以及 tool／MCP 配置；不复制成另一份 Skill 包</td>
+</tr>
+<tr>
+<td data-label="内容">Skill 完整包</td>
+<td data-label="相对共享根的文件位置"><code>skills/releases/&lt;skillId&gt;/&lt;contentId&gt;/</code></td>
+<td data-label="与版本／执行的关系">入口是 <code>SKILL.md</code>，脚本、参考文件和资源按包内原结构保存；整个包决定该 Skill 内容 ID</td>
+</tr>
+<tr>
+<td data-label="内容">已保存草稿修订</td>
+<td data-label="相对共享根的文件位置"><code>agents/drafts/&lt;agentId&gt;/revisions/&lt;draftRevisionId&gt;/</code>、<code>skills/drafts/&lt;skillId&gt;/revisions/&lt;draftRevisionId&gt;/</code></td>
+<td data-label="与版本／执行的关系">保存完整不可变修订，不作为正式发布版本；本机可编辑 working 副本不等同于服务端正式物料</td>
+</tr>
+<tr>
+<td data-label="内容">运行时工作目录</td>
+<td data-label="相对共享根的文件位置"><code>workspaces/&lt;组织&gt;/&lt;workspaceId&gt;/</code></td>
+<td data-label="与版本／执行的关系">保存获准运行可修改的文件，不能写回正式 Agent／Skill 包</td>
+</tr>
+<tr>
+<td data-label="内容">运行产物</td>
+<td data-label="相对共享根的文件位置"><code>artifacts/&lt;组织&gt;/&lt;serverRunId&gt;/</code></td>
+<td data-label="与版本／执行的关系">截图、报告等由确定运行产生，索引与权限在 PostgreSQL</td>
+</tr>
+</tbody></table>
+<p>一个 Agent 的 <code>agent.json</code> 可以引用多个确定 Skill 包；只改 <code>prompt.md</code> 就发布新的 Agent 内容版本，Skill 包可继续复用。运行时先解析到固定内容 ID，再以只读版本文件装配 Agent；模型和推理参数参与后续运行指纹，不写进这些正式版本文件。完整包格式与摘要规则沿用<a href="../agent-version-layout.md">Agent 版本布局</a>和<a href="../skill-version-layout.md">Skill 版本布局</a>。</p>
+<p>阅读主线由此展开：<strong>共享文件系统保存物料 → Agent 版本管理固定组合与运行指纹 → 总体章节说明 Console／服务端／桌面职责 → A2A 选择确定 Agent 入口并创建独立 Task。</strong> 文件位置解决“字节在哪里”，版本身份解决“用哪一份”，A2A 解决“如何调用和交付”，不能用共享目录或 <code>contextId</code> 自动恢复桌面执行现场。</p>
+<h2 id="core-server-deployment-从当前部署到目标部署">从当前部署到目标部署</h2>
+<figure class="diagram"><a href="./diagrams/server-deployment/topology.html" target="_blank" rel="noopener" aria-label="打开交互图：多主机 Compose 与共享持久化的目标部署"><img src="./assets/server-deployment/topology.svg" alt="多主机 Compose 与共享持久化的目标部署"></a><figcaption>多主机 Compose 与共享持久化的目标部署 · 点击查看可缩放交互图</figcaption></figure>
+<p><a href="./diagrams/server-deployment/topology.html">打开部署交互图</a></p>
+<table>
+<thead>
+<tr>
+<th>角色</th>
+<th>当前</th>
+<th>目标职责与扩容方式</th>
+</tr>
+</thead>
+<tbody><tr>
+<td data-label="角色">Nginx</td>
+<td data-label="当前">单机入口，分发到 3 个 worker</td>
+<td data-label="目标职责与扩容方式">沿用入口，分别代理 Console API／实时连接与桌面 WSS；应用跨机器扩容后显式更新 upstream</td>
+</tr>
+<tr>
+<td data-label="角色">API</td>
+<td data-label="当前">由 worker 同时承担</td>
+<td data-label="目标职责与扩容方式">接收 Console 请求、鉴权、资源管理、运行查询与现有实时交互；发起执行先保存记录，再通知队列；不在请求进程中执行图</td>
+</tr>
+<tr>
+<td data-label="角色">WebSocket 网关</td>
+<td data-label="当前">远端桌面接入待实现</td>
+<td data-label="目标职责与扩容方式">管理已鉴权连接、心跳、有界收发、重连与流清理；装配独立的 A2A 客户端处理模块，后者负责调用关联、结果持久化与交付确认；不执行图</td>
+</tr>
+<tr>
+<td data-label="角色">图 worker</td>
+<td data-label="当前">3 个进程执行不同图，并直接交互 Console</td>
+<td data-label="目标职责与扩容方式">只领取允许执行的图任务，装配 Agent、调用模型／工具、保存状态与产物；结果通过共享记录和通知交给 API／网关</td>
+</tr>
+<tr>
+<td data-label="角色">文件能力</td>
+<td data-label="当前">存放位置与跨机器共享待明确</td>
+<td data-label="目标职责与扩容方式">API 内的文件模块负责鉴权、索引和上传下载；NAS／NFSv4 负责文件字节和工作目录；不另造通用文件微服务</td>
+</tr>
+</tbody></table>
+<p>三种应用角色可以使用同一份服务端镜像、选择不同启动入口；共享业务模块，按角色分别运行。单机验证阶段总 worker 数保持 3；进入应用节点容错阶段，再把这 3 个 worker 分布到至少两台应用机器，API 与网关也至少各有两个跨机器实例。单台机器只需启用本机承担的角色，不能把两台机器各启 3 个 worker 误写成原来的总容量。</p>
+<p>如果某种图只有一个 worker 能运行，它仍只有一个执行实例。需要保障的每种图应至少有两个兼容实例可处理；复用已有队列的图类型选择、运行租约和同 run／thread 互斥。实际能否接管进行中的服务端 run，取决于现有图引擎与持久化策略，不能仅因增加副本就承诺自动恢复。</p>
+<h2 id="core-server-deployment-consoleworker-和桌面调用如何衔接">Console、worker 和桌面调用如何衔接</h2>
+<figure class="diagram"><a href="./diagrams/server-deployment/handoff.html" target="_blank" rel="noopener" aria-label="打开交互图：Console 请求与跨 worker 的持久结果交接"><img src="./assets/server-deployment/handoff.svg" alt="Console 请求与跨 worker 的持久结果交接"></a><figcaption>Console 请求与跨 worker 的持久结果交接 · 点击查看可缩放交互图</figcaption></figure>
+<p><a href="./diagrams/server-deployment/handoff.html">打开 Console 与 worker 交接顺序图</a></p>
+<p>**前提：**图中 worker 1 负责原执行，后续步骤由现有运行机制允许的 worker 2 领取；这不是让任意 worker 同时修改同一个运行。</p>
+<p>API 先持久保存业务 run 和待调度记录，再向 Console 返回运行身份。Redis 队列消息引用持久记录；运行状态、调用意图和最终结果不能只放在某个 worker 的内存回调里。Console 的后续请求可以落到其他 API 实例，仍从共享存储取得同一 run 的状态；实时连接沿用 Console 现有契约，不绑定执行 worker。</p>
+<p>调用桌面前，持久保存目标安装、确定 Agent 版本、稳定 <code>messageId</code> 与服务端 run／步骤的关联。网关收到通知后，只对本机持有的目标连接发送 A2A 请求；首次受理响应保存原 <code>taskId</code>。更换 worker 或网关时，沿用原调用身份，不能生成新 <code>messageId</code> 再执行一次。</p>
+<p>桌面最终结果由接入进程中的 A2A 处理模块接收：<strong>同一数据库事务保存原 Task／结果索引及待推进记录，提交后才能发送既有交付确认扩展。</strong> 后续推进通过原运行队列处理，使用唯一约束、条件更新与已有运行互斥做幂等；重复结果不能重复产生下一步。确认不依赖最初那个 worker 仍存活。</p>
+<p>结果若引用文件，先完成文件持久化与授权索引，再确认结果交付；保存一个失效的临时下载地址或另一台机器不可达的本机路径，不算已经持久接收附件。</p>
+<p>PostgreSQL 与 Redis 不能当成一个跨系统原子事务。待派发、待入队和待推进记录先留在 PostgreSQL，通知失败、进程退出或队列丢失后，复用服务端后台处理检查未完成记录并重新通知；重复入队仍须幂等领取。已有可靠 outbox／调度机制能覆盖时直接复用，不另建一套调度框架。</p>
+<h2 id="core-server-deployment-网关多实例与断线恢复">网关多实例与断线恢复</h2>
+<figure class="diagram"><a href="./diagrams/server-deployment/gateway-reconnect.html" target="_blank" rel="noopener" aria-label="打开交互图：网关 A 退出后经原 Nginx 连接网关 B"><img src="./assets/server-deployment/gateway-reconnect.svg" alt="网关 A 退出后经原 Nginx 连接网关 B"></a><figcaption>网关 A 退出后经原 Nginx 连接网关 B · 点击查看可缩放交互图</figcaption></figure>
+<p><a href="./diagrams/server-deployment/gateway-reconnect.html">打开网关切换顺序图</a></p>
+<p>**前提：**Nginx 及共享依赖仍可用；故障是网关 A 退出，桌面进程没有重启。已有 WSS 不迁移到网关 B，而由桌面重新连接。</p>
+<p>当前规模使用 Redis Pub/Sub 广播小型唤醒通知，各网关检查目标安装是否连接在本机。不要让所有网关在同一个竞争消费组随机领取下行调用：领取者可能没有目标 socket。暂不建立全局连接发现平台；网关数量或广播量成为瓶颈时，再考虑定向路由。</p>
+<p>Pub/Sub 只负责提醒，不保存唯一业务事实。Redis 官方定义它为 at-most-once，离线期间的通知会丢失；网关在连接建立、订阅恢复及定期核对时查询 PostgreSQL 中仍待处理的调用与交付记录。数据库中的工作不会因一次通知丢失被标记完成。<a href="https://redis.io/docs/latest/develop/pubsub/">Redis Pub/Sub 交付语义</a>。</p>
+<p>连接按已鉴权组织、调用方与安装隔离；并发重连可能短暂保留旧连接，持久幂等仍必须成立，旧连接清理不得删除新连接的本机映射。网络层的连接身份不进入 A2A 业务对象，也不以安装地址代替授权。</p>
+<p>恢复沿用标准 A2A：未知 <code>taskId</code> 时以原 <code>messageId</code> 重投；非终态用 <code>SubscribeToTask</code>，已终态用 <code>GetTask</code>；未确认结果继续交付。不补播历史事件，不增加私有恢复消息。桌面断线继续执行、重启不续跑的约束保持不变。</p>
+<p>Nginx 明确转发 WebSocket <code>Upgrade</code>／<code>Connection</code>，上游读取超时与心跳配合；Console 若采用流式响应，还应沿用其现有缓冲与超时要求。计划发布先摘除新连接与任务准入，再限时排空，客户端退避并加抖动重连。<a href="https://nginx.org/en/docs/http/websocket.html">Nginx WebSocket 代理说明</a>。</p>
+<h2 id="core-server-deployment-一台与多台机器怎样用-compose-启动">一台与多台机器怎样用 Compose 启动</h2>
+<p>每台机器运行同一份应用 Compose，镜像版本、共享端点、环境与队列命名空间一致；本机名称、端口和副本数可以不同。应用 Compose <strong>不重复创建 PostgreSQL、Redis 或独立文件服务器</strong>。测试环境的单机依赖可以另用独立 Compose，但不能复制到第二台后形成两套互不相通的数据。</p>
+<table>
+<thead>
+<tr>
+<th>配置</th>
+<th>跨机器保持一致</th>
+<th>每台机器独立</th>
+</tr>
+</thead>
+<tbody><tr>
+<td data-label="配置">应用与兼容性</td>
+<td data-label="跨机器保持一致">经兼容验证的镜像版本、协议、数据库 schema、队列命名空间</td>
+<td data-label="每台机器独立">发布批次与容器实例身份</td>
+</tr>
+<tr>
+<td data-label="配置">共享依赖</td>
+<td data-label="跨机器保持一致">PostgreSQL 地址、Redis 地址与数据库／前缀、NFS 导出</td>
+<td data-label="每台机器独立">同一共享依赖的本机挂载与受限凭据文件路径</td>
+</tr>
+<tr>
+<td data-label="配置">身份认证</td>
+<td data-label="跨机器保持一致">会话／签名配置、授权规则，必要会话数据存共享库</td>
+<td data-label="每台机器独立">节点身份；不能将登录会话仅存在 API 内存</td>
+</tr>
+<tr>
+<td data-label="配置">网络</td>
+<td data-label="跨机器保持一致">私网路由、名称解析、防火墙与传输安全策略</td>
+<td data-label="每台机器独立">Nginx 可达的私网地址、API／网关映射端口</td>
+</tr>
+<tr>
+<td data-label="配置">文件访问</td>
+<td data-label="跨机器保持一致">NFS 导出、目录协议、匹配的 UID／GID 和授权范围</td>
+<td data-label="每台机器独立">本机临时目录与可丢弃缓存</td>
+</tr>
+<tr>
+<td data-label="配置">容量</td>
+<td data-label="跨机器保持一致">每种图的兼容 worker 范围与并发规则</td>
+<td data-label="每台机器独立">本机 API、网关、worker 副本数与资源限制</td>
+</tr>
+</tbody></table>
+<p>普通 Compose 的 bridge 网络与服务名只作用于对应 Docker 主机；相同 network／volume 名称不提供跨机器共享。第二台机器通过可达的私网地址连接共享服务。新增 worker 可领取同一队列；新增 API／网关还要将该机器的映射端口加入 Nginx upstream，配置检查成功后平滑 reload。Compose 本身不负责跨主机调度、服务注册或自动修改 Nginx。<a href="https://docs.docker.com/compose/how-tos/networking/">Compose 网络说明</a>。</p>
+<p><a href="./deployment/compose.example.yaml">应用 Compose 契约示例</a>展示服务拆分、共享 NFS 与凭据文件挂载。它要求外部服务端镜像实现 <code>api</code>、<code>gateway</code>、<code>worker</code> 三个入口并读取指定配置；<strong>当前没有该镜像与入口的实现证据，示例不是可以直接部署现有服务端的交付包</strong>。端口、停止预算和目录是本方案的示例值，实施时应与实际进程契约核对。</p>
+<p>服务端仓库落地时交付 Dockerfile、真实入口、<code>compose.yaml</code> 与本地部署配置。Make 可以保留为 Compose 的薄封装，不再绕过容器另启动一套 worker。两台机器的命令形态如下；<code>node-a.env</code>／<code>node-b.env</code> 只保存本机部署参数，凭据放受限文件，不提交仓库：</p>
+<pre><code class="language-sh"># 机器 A：2 个 worker；API 与网关各 1 个实例
+docker compose --env-file node-a.env -f compose.yaml config --quiet
+docker compose --env-file node-a.env -f compose.yaml up -d --scale worker=2
+
+# 机器 B：连接相同共享服务，再增加 1 个 worker
+docker compose --env-file node-b.env -f compose.yaml config --quiet
+docker compose --env-file node-b.env -f compose.yaml up -d --scale worker=1
+</code></pre>
+<p>镜像应固定版本或 digest，不用 <code>latest</code>；正式部署不挂载源码，不给应用挂 Docker socket。数据库迁移由一次受控部署步骤执行，不能每个副本并发迁移。进程接收到关闭信号时停止准入／领取，排空并关闭资源；<code>restart</code> 只负责容器重启，不能等同于业务重跑。就绪检查需确认本角色必需的共享依赖；依赖失效时拒绝新工作、保留未确认记录，恢复后重新核对。</p>
+<h2 id="core-server-deployment-文件服务先用一个共享文件系统">文件服务：先用一个共享文件系统</h2>
+<p>用户确认的持久化范围包括 <strong>Agent／Skill 版本物料、运行时可修改工作目录和运行产物</strong>。本期推荐优先选成熟的托管 NAS 或已有高可用 NFSv4.1 服务，让 API 与 worker 直接挂载同一导出；API 的文件模块提供对外访问。这是推荐选型，NAS 产品、地址、容量、备份与可用性尚待实施确认。</p>
+<p>这个范围需要普通目录与文件读写，先用共享文件系统可复用已有文件工具和包布局，不为运行时文件另写 S3 文件系统适配器。Docker 支持通过 volume 驱动挂载 NFS；各主机同名 volume 背后必须显式指向同一个 NFS 导出。<a href="https://docs.docker.com/engine/storage/volumes/#create-a-service-which-creates-an-nfs-volume">Docker NFS volume 说明</a>。</p>
+<figure class="diagram"><a href="./diagrams/server-deployment/files.html" target="_blank" rel="noopener" aria-label="打开交互图：版本发布、工作目录写入与跨 worker 读取"><img src="./assets/server-deployment/files.svg" alt="版本发布、工作目录写入与跨 worker 读取"></a><figcaption>版本发布、工作目录写入与跨 worker 读取 · 点击查看可缩放交互图</figcaption></figure>
+<p><a href="./diagrams/server-deployment/files.html">打开文件持久化顺序图</a></p>
+<table>
+<thead>
+<tr>
+<th>数据</th>
+<th>权威存放位置</th>
+<th>写入与读取边界</th>
+</tr>
+</thead>
+<tbody><tr>
+<td data-label="数据">业务身份、run／Task 关联、结果索引、文件权限、工作区身份与修订</td>
+<td data-label="权威存放位置">PostgreSQL</td>
+<td data-label="写入与读取边界">数据库约束、事务和现有运行互斥；Redis 不承载唯一副本</td>
+</tr>
+<tr>
+<td data-label="数据">服务端图状态与 checkpoint</td>
+<td data-label="权威存放位置">沿用图引擎支持的共享持久后端，优先复用现有 PostgreSQL</td>
+<td data-label="写入与读取边界">不留在单个容器的内存／本机 SQLite；具体 checkpointer 在服务端核实</td>
+</tr>
+<tr>
+<td data-label="数据">Agent／Skill 正式包与草稿修订</td>
+<td data-label="权威存放位置">共享 NFS：<code>agents/</code>、<code>skills/</code></td>
+<td data-label="写入与读取边界">继续采用既有正式版本布局；已发布内容不可变，运行时只读</td>
+</tr>
+<tr>
+<td data-label="数据">可修改工作目录</td>
+<td data-label="权威存放位置">共享 NFS：<code>workspaces/&lt;组织&gt;/&lt;workspaceId&gt;/</code></td>
+<td data-label="写入与读取边界">服务端显式分配身份、限定授权根目录；同一工作区同一时刻只有一个获准写入的运行</td>
+</tr>
+<tr>
+<td data-label="数据">截图、报告和其他产物</td>
+<td data-label="权威存放位置">共享 NFS：<code>artifacts/&lt;组织&gt;/&lt;serverRunId&gt;/</code></td>
+<td data-label="写入与读取边界">写入完成并校验后公布索引；终态引用确定文件修订／摘要</td>
+</tr>
+<tr>
+<td data-label="数据">缓存、临时文件</td>
+<td data-label="权威存放位置">容器临时目录或本机缓存卷</td>
+<td data-label="写入与读取边界">可以重建；不作为工作目录、版本全集或唯一产物副本</td>
+</tr>
+</tbody></table>
+<p>根目录示例为 <code>/srv/omniops-data</code>。正式物料相对路径完全沿用<a href="../agent-version-layout.md">Agent 版本布局</a>和<a href="../skill-version-layout.md">Skill 版本布局</a>，不因服务端换存储而重命名客户端文件协议。<code>workspaceId</code> 是服务端持久工作区身份，不由 worker 地址或容器 ID 生成；跨 worker 访问要传入同一授权工作区。它也不等同于 A2A <code>contextId</code>，不会让不同桌面 Task 自动共享本地 thread、页面或执行现场。</p>
+<p>标签映射与发布可见性以 PostgreSQL 已提交记录为准；既有 <code>tags.json</code> 格式保留，作为该记录的读取投影或可重建文件镜像。API 不能从未提交的标签文件公布新版本，也不直接公开整个 NFS 根目录，让文件暂存绕过发布事务。</p>
+<p>Deep Agents 文件工具通过现有 backend 访问受限工作根；选用的实际 SDK 若已有 FilesystemBackend，优先复用。纯虚拟小文件／记忆可以使用框架已有持久 Store，但不能把 Store 文件或对象存储当作 shell、第三方工具可直接使用的 POSIX 工作目录；本文不要求切换现有图框架。<a href="https://docs.langchain.com/oss/python/deepagents/backends">Deep Agents backend 分工</a>。</p>
+<h3 id="core-server-deployment-文件写成功与业务提交是两个边界">文件写成功与业务提交是两个边界</h3>
+<ol>
+<li>发布包、完整文件或产物先写入同一共享文件系统的暂存位置，校验大小、文件清单与摘要，完成必要的 flush／close，再用所选文件系统支持的原子重命名公布完整文件／目录。不能暴露半包，不能假设本机 <code>write()</code> 返回就等于远程持久完成。</li>
+<li>文件可读且满足存储持久性约定后，提交 PostgreSQL 中的版本索引、文件修订或业务结果。文件系统和 PostgreSQL 没有跨系统原子事务：写文件后数据库失败，只留下未公布暂存／孤立文件；不得反过来先发布一个不存在的文件。重试检查原身份、内容与索引，避免生成第二份业务结果。</li>
+<li>可修改工作区由获准的运行单写，文件工具采用临时文件替换等方式避免截断已有内容；读者在已提交边界后重新打开文件。工作目录会保留崩溃前已写入的内容，不承诺与图 checkpoint 一起回滚，也不因看见文件就认为对应外部操作或整个 run 成功。</li>
+<li>队列租约与数据库版本不能撤销旧进程已经发出的 NFS 写。运行失去所有权应停止写；只有确认旧写者停止、必要锁释放后才能交给下一写者。网络分区无法确认时停止该工作区的新写入，按既有失败／人工核对策略处理，不宣称租约超时即可安全双写。需要分区期间自动接管时，必须另行具备存储侧 fencing 能力。</li>
+</ol>
+<p>具体 NAS 的 close／fsync、可见性、重命名和锁行为必须验收。例如 EFS 提供 NFS close-to-open 语义，其锁为 advisory，并不会自动阻止不遵守锁的写入；其他 NFS 产品不能直接套用 EFS 的持久性保证。<a href="https://docs.aws.amazon.com/efs/latest/ug/features.html">文件一致性与锁说明</a>。</p>
+<h3 id="core-server-deployment-对外文件访问与权限">对外文件访问与权限</h3>
+<p>文件能力复用现有资源、发布和诊断 API，正文格式继续见<a href="#10-server-api">第 10 章</a>，本章不新增公开端点或第二套上传协议。工作区／产物访问归原 API 文件模块；如果实际服务端还没有相应入口，实施时须结合真实调用方补齐完整公开签名、输入输出、错误分类、取消清理与调用示例，再接入。调用方使用受控资源身份、相对路径与必要的预期修订，不能取得宿主机真实路径；此处的存储建议不表示接口已可调用。</p>
+<p>API 从已鉴权组织与资源归属解析目录，拒绝绝对路径、<code>..</code>、越根符号链接和未授权工作区；限制单文件／包大小、路径、数量与配额。发布冲突、修订冲突、权限拒绝、文件不存在、存储不可用分别传播安全错误，不能伪造空文件或成功。上传取消清理本次暂存，保留已提交版本；下载取消只释放流和句柄。</p>
+<p>运行用正式物料只读；工作目录与产物按组织、业务工作区和运行隔离。带 shell／原生工具的执行不能仅靠路径前缀当安全沙箱，需使用受限挂载／既有执行隔离；不能让模型或用户指定任意 NFS 根目录。外部用户不直接访问 NFS，不公开列出整个共享根，也不把共享存储凭据下发给桌面。</p>
+<p>初期直接由 API 流式上传下载。大文件分发量或存储规模增长后，可以将不可变版本包与产物迁移到 S3 兼容对象存储，保留 PostgreSQL 权限与索引、NFS 工作目录和现有 HTTPS 契约；按需求使用成熟存储 SDK，暂不增加对象存储和第二套文件平台。预签名 URL 是后续可选能力，需有过期和授权范围，不能把它当永久文件身份。<a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/PresignedUrlUploadObject.html">S3 预签名上传机制</a>。</p>
+<h2 id="core-server-deployment-可用性边界与迁移验收">可用性边界与迁移验收</h2>
+<table>
+<thead>
+<tr>
+<th>部分</th>
+<th>本次目标</th>
+<th>仍需明确的边界</th>
+</tr>
+</thead>
+<tbody><tr>
+<td data-label="部分">API／网关／worker</td>
+<td data-label="本次目标">两台以上应用机器独立 Compose，共享状态与文件</td>
+<td data-label="仍需明确的边界">剩余节点容量、每种图兼容实例及实际运行恢复策略</td>
+</tr>
+<tr>
+<td data-label="部分">入口</td>
+<td data-label="本次目标">复用当前单机 Nginx</td>
+<td data-label="仍需明确的边界"><strong>仍是单点</strong>。完整入口 HA 需云负载均衡，或网络支持下的双 Nginx＋VIP；本次不将任意网络都支持漂移 VIP 写成事实</td>
+</tr>
+<tr>
+<td data-label="部分">PostgreSQL／Redis</td>
+<td data-label="本次目标">复用现有共享实例／集群</td>
+<td data-label="仍需明确的边界">共享不代表已经 HA；需核实副本、故障切换、持久化、备份和可接受的数据丢失窗口</td>
+</tr>
+<tr>
+<td data-label="部分">文件存储</td>
+<td data-label="本次目标">共享 NAS／NFSv4.1，API 提供访问</td>
+<td data-label="仍需明确的边界">优先成熟 HA 产品；单机 NFS 容器只是新增单点，同一路径在两台机器分别创建也不是共享</td>
+</tr>
+<tr>
+<td data-label="部分">备份恢复</td>
+<td data-label="本次目标">保留数据库记录与其引用的文件</td>
+<td data-label="仍需明确的边界">定义协调备份点、恢复顺序并验证索引与文件一致；应用多副本不能代替备份</td>
+</tr>
+</tbody></table>
+<p>实施顺序：先固定运行镜像与三种入口，接共享配置和文件根；将 Console 接入迁到 API、图执行留在 worker；再落地网关与 A2A 持久调用／结果交接；机器 A 验证后在机器 B 用同一 Compose 接入，最后更新 Nginx upstream。旧 Make 入口切到 Compose，逐步排空旧 worker，避免新旧路径同时推进同一运行。</p>
+<p>服务端实施时至少验收：机器 B 直接领取同一队列；同一图可由另一兼容实例处理；跨 API 查询同一 run；网关退出后恢复原 Task；原 worker 退出后结果仍能落盘；重复通知／入队／结果不重复推进；Redis 通知丢失后能核对恢复；文件半写、数据库提交失败和 NFS 失联不发布假成功；另一台 worker 重新打开同一工作区与已发布文件；单机 Nginx 故障会造成入口中断。进行中的图和写者的接管限制必须按上述策略验收，不以容器自动重启代替业务验证。</p>
+<p>本次只交付文档、部署契约示例和图形，不修改桌面执行路径，不新增日志、span 或指标。服务端实施时复用既有安全日志与错误边界；新增观测项目、字段和统计口径另按项目规范确认，禁止记录凭据、文件正文、提示词或原始 A2A 报文。</p>
+<h2 id="core-server-deployment-继续阅读">继续阅读</h2>
+<ul>
+<li><a href="#preface-versioning">下一章：Agent 版本管理</a>：将这里的 Skill 与提示词文件固定为版本组合，并结合模型生成运行指纹。</li>
+<li><a href="#00-overview">客户端需求与职责</a>：说明 Console、服务端 Agent 与桌面执行端的业务分工。</li>
+<li><a href="#core-ws">随后：核心 · A2A 任务执行与恢复</a>：按确定 AgentCard 入口调用版本物料装配出的能力，沿用标准任务操作、消息幂等、断线恢复和交付确认。</li>
+<li><a href="#10-server-api">10 · 服务端 API</a>：客户端依赖的物料、发布、任务和诊断契约。</li>
+<li><a href="#core-skill-system">核心 · Skill 模板与迭代</a>：核心最后一章，说明运维能力如何积累与发布。</li>
+</ul>
+<footer><span class="footer-label">客户端 MVP 设计 · 2026-10-22</span><a href="#preface-versioning">下一章：Agent 版本管理</a></footer></article><article id="preface-versioning" data-file="前置-Agent版本管理.md" hidden><h1>前置 · Agent 版本管理：评估与回退的基础</h1>
 <p><strong>Agent 的能力由 Skill、系统提示词和模型共同决定。我们需要管理 Skill 的版本、Prompt 的版本，并在运行前根据确定的版本组合与模型选择，自动生成唯一的 Agent 运行指纹。</strong> 这样每次评估、每次线上执行都能回答“用的是哪套能力”，效果变差时也能明确回到哪套组合。</p>
 <p>本章是后续资源管理、装配与执行设计的前提；这里的运行指纹是新增需求，不代表当前客户端已实现，也不改变既有 Agent 发布内容 ID 的定义。</p>
+<p>承接<a href="#core-server-deployment">上一章：服务端部署与持久化</a>：Skill 包保存在 <code>skills/releases/&lt;skillId&gt;/&lt;contentId&gt;/</code>，Agent 的 <code>prompt.md</code> 与 <code>agent.json</code> 保存在 <code>agents/releases/&lt;agentId&gt;/&lt;contentId&gt;/</code>。本章解释这些文件如何形成不可变版本与运行指纹；再经<a href="#00-overview">客户端总体职责</a>，进入<a href="#core-ws">A2A 任务执行</a>，说明服务端怎样调用确定版本并交付结果。</p>
 <h2 id="preface-versioning-为什么必须管理版本">为什么必须管理版本</h2>
 <p>同一个 Agent 名称不代表相同的执行能力。修改 Skill 的操作步骤、调整系统提示词，或换用另一个模型，都可能改变任务完成率、输出质量、耗时和成本。如果只记录名称或“最新版”，评估结果就无法归属到确定组合，出现退化也无法选择已验证的历史组合。</p>
 <p>版本管理要保留不可变的历史资产；运行指纹要把实际使用的组合与评估结果关联起来。团队才能先比较、再发布，发现退化后显式切回已验证组合，后续仍可继续优化。</p>
@@ -24,26 +338,27 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 </thead>
 <tbody><tr>
-<td>Skill</td>
-<td><code>{SKILL}.{Version}</code>，例如 <code>巡检规范.v.1.0.0</code></td>
-<td>Skill 的稳定身份、不可变完整包内容 ID；包括 <code>SKILL.md</code>、脚本及参考文件，不只固定入口文本</td>
+<td data-label="对象">Skill</td>
+<td data-label="人可读的指定方式"><code>{SKILL}.{Version}</code>，例如 <code>巡检规范.v.1.0.0</code></td>
+<td data-label="实际固定的内容">Skill 的稳定身份、不可变完整包内容 ID；包括 <code>SKILL.md</code>、脚本及参考文件，不只固定入口文本</td>
 </tr>
 <tr>
-<td>Agent 系统提示词（Prompt）</td>
-<td><code>{AgentName}.{Version}</code>，例如 <code>巡检Agent.v.1.0.0</code></td>
-<td>指定 Agent 版本中的完整系统提示词；沿用 Agent 发布标签与内容 ID，不另建独立 Prompt 标签体系</td>
+<td data-label="对象">Agent 系统提示词（Prompt）</td>
+<td data-label="人可读的指定方式"><code>{AgentName}.{Version}</code>，例如 <code>巡检Agent.v.1.0.0</code></td>
+<td data-label="实际固定的内容">指定 Agent 版本中的完整系统提示词；沿用 Agent 发布标签与内容 ID，不另建独立 Prompt 标签体系</td>
 </tr>
 <tr>
-<td>模型</td>
-<td>确定的 Provider 接入身份与模型 ID；服务商支持时指定模型快照／修订</td>
-<td>本次实际选择的模型及有效推理参数；接入地址使用非敏感身份表示，不包含密钥</td>
+<td data-label="对象">模型</td>
+<td data-label="人可读的指定方式">确定的 Provider 接入身份与模型 ID；服务商支持时指定模型快照／修订</td>
+<td data-label="实际固定的内容">本次实际选择的模型及有效推理参数；接入地址使用非敏感身份表示，不包含密钥</td>
 </tr>
 </tbody></table>
 <p>名称与版本写法便于阅读，实际装配必须解析到稳定资源身份与内容 ID，不能仅按名称匹配，也不能在执行时重新解释为“最新版”。一个 Agent 可以引用多个 Skill，每个引用均固定版本及挂载路径。</p>
 <p>提示词随 Agent 版本管理：只改 Prompt 就发布新的 Agent 版本；改 Skill 就发布新的完整包，并联动更新受影响 Agent 的固定引用与版本。已发布标签与内容不可覆盖；草稿实验没有正式标签，仍须固定当次完整内容快照，才能与其他实验比较。</p>
-<h2 id="preface-versioning-自动生成 Agent 运行指纹">自动生成 Agent 运行指纹</h2>
+<h2 id="preface-versioning-自动生成-agent-运行指纹">自动生成 Agent 运行指纹</h2>
 <p><strong>运行指纹 = 对“固定 Skill 版本集合 + 指定 Agent 系统提示词版本 + 实际模型选择”规范化后计算的内容摘要。</strong> 同一组合生成相同指纹；任一 Skill 版本、Prompt 版本或模型选择发生变化，生成不同指纹。指纹由客户端在装配成功、执行开始前自动生成，无需人工填写。</p>
 <figure class="diagram"><a href="./diagrams/preface-fingerprint.html" target="_blank" rel="noopener" aria-label="打开交互图：版本组合如何生成 Agent 运行指纹"><img src="./assets/preface-fingerprint.svg" alt="版本组合如何生成 Agent 运行指纹"></a><figcaption>版本组合如何生成 Agent 运行指纹 · 点击查看可缩放交互图</figcaption></figure>
+<p><a href="./diagrams/preface-fingerprint.html">打开交互图：版本组合如何生成 Agent 运行指纹</a></p>
 <table>
 <thead>
 <tr>
@@ -52,20 +367,20 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 </thead>
 <tbody><tr>
-<td>Agent 版本</td>
-<td>使用稳定 Agent ID 与正式内容 ID；内容 ID 已覆盖系统提示词和装配配置。草稿实验使用本次不可变内容快照摘要</td>
+<td data-label="指纹输入">Agent 版本</td>
+<td data-label="固定规则">使用稳定 Agent ID 与正式内容 ID；内容 ID 已覆盖系统提示词和装配配置。草稿实验使用本次不可变内容快照摘要</td>
 </tr>
 <tr>
-<td>Skill 版本集合</td>
-<td>逐项包含 Skill ID、内容 ID 和挂载路径，按固定字段顺序排序；本地编辑内容先捕获完整快照，不使用浮动引用</td>
+<td data-label="指纹输入">Skill 版本集合</td>
+<td data-label="固定规则">逐项包含 Skill ID、内容 ID 和挂载路径，按固定字段顺序排序；本地编辑内容先捕获完整快照，不使用浮动引用</td>
 </tr>
 <tr>
-<td>模型选择</td>
-<td>包含 Provider 的非敏感接入身份、模型 ID、可取得的模型快照／修订，以及实际生效的推理参数；仅改变本机展示名或轮换密钥不改变指纹</td>
+<td data-label="指纹输入">模型选择</td>
+<td data-label="固定规则">包含 Provider 的非敏感接入身份、模型 ID、可取得的模型快照／修订，以及实际生效的推理参数；仅改变本机展示名或轮换密钥不改变指纹</td>
 </tr>
 <tr>
-<td>摘要规则</td>
-<td>固定指纹格式版本，使用规范化 JSON 与 SHA-256；对象键排序，Skill 集合按固定顺序排列，明确参数默认值，保留完整摘要作为身份</td>
+<td data-label="指纹输入">摘要规则</td>
+<td data-label="固定规则">固定指纹格式版本，使用规范化 JSON 与 SHA-256；对象键排序，Skill 集合按固定顺序排列，明确参数默认值，保留完整摘要作为身份</td>
 </tr>
 </tbody></table>
 <p>例如，<code>巡检规范.v.1.0.0 + 巡检Agent.v.1.0.0 + 模型A</code> 对应指纹 F1；只把 Skill 换为 <code>v.1.1.0</code> 后产生 F2；在 F2 的资产组合上换成模型 B，又产生 F3。每个指纹都保留其组成清单，界面可展示缩写，不能仅保存一个无法解释的哈希。</p>
@@ -79,7 +394,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <h2 id="preface-versioning-如何支持评估与回退">如何支持评估与回退</h2>
 <p>后续将根据具体 Skill 的任务目标、操作场景与输出要求，分别构建测试集，覆盖典型任务、边界情况和失败场景，并明确输入、预期结果与判定口径，用于比较不同版本组合的效果和回归验证。测试集建设不在本次范围内，本次仅明确后续方向，不制作测试集或实现自动化评估。</p>
 <figure class="diagram"><a href="./diagrams/preface-evaluation-rollback.html" target="_blank" rel="noopener" aria-label="打开交互图：从版本评估到显式回退"><img src="./assets/preface-evaluation-rollback.svg" alt="从版本评估到显式回退"></a><figcaption>从版本评估到显式回退 · 点击查看可缩放交互图</figcaption></figure>
-
+<p><a href="./diagrams/preface-evaluation-rollback.html">打开交互图：从版本评估到显式回退</a></p>
 <ol>
 <li><strong>准备评估</strong>：固定评估用例、输入与判定口径，为每个候选组合生成指纹；尽量每次只改变一个因素，区分 Skill、Prompt 或模型带来的影响。</li>
 <li><strong>记录结果</strong>：每次评估及正式执行关联运行指纹与组成清单；评估结果按指纹归集，结合运行快照对照完成率、质量、耗时和成本，缺失数据不补零。</li>
@@ -87,7 +402,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <li><strong>显式回退</strong>：发现退化后，选择已验证指纹对应的 Agent／Skill 历史版本及模型参数，为新会话或新任务恢复该组合。先检查物料可取得、模型可用及当前工具兼容；无法恢复时明确失败，不静默替换模型或版本。</li>
 </ol>
 <p>回退不改写历史标签，不改变正在运行的任务，不自动重跑失败或取消的请求；需要再次执行时显式创建新 Run。回退范围是上述资产与模型组合，不承诺撤销业务操作或恢复旧 MCP／旧桌面工具实现。</p>
-<h2 id="preface-versioning-MCP 与 builtinTool：只做正向优化">MCP 与 builtinTool：只做正向优化</h2>
+<h2 id="preface-versioning-mcp-与-builtintool只做正向优化">MCP 与 builtinTool：只做正向优化</h2>
 <p><strong>本项目将 MCP 与 builtinTool 视为持续做正向优化的基础能力，不为其实现建立与 Skill／Prompt 相同的多版本选择、评估回退体系。</strong> 正向优化指在保持既有调用契约兼容的前提下修复问题、提高稳定性与效率；这是维护要求，不是对每次变更一定提升效果的保证。</p>
 <table>
 <thead>
@@ -98,14 +413,14 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 </thead>
 <tbody><tr>
-<td>MCP</td>
-<td>由远端服务持续维护实现，不纳入本项目发布版本，不提供历史实现切换</td>
-<td>Agent 选择的完整非敏感连接配置仍参与 Agent 发布内容 ID；远端实现升级本身不生成新的 Agent 运行指纹，实际能力清单记录于运行快照</td>
+<td data-label="基础能力">MCP</td>
+<td data-label="演进方式">由远端服务持续维护实现，不纳入本项目发布版本，不提供历史实现切换</td>
+<td data-label="与 Agent 指纹的关系">Agent 选择的完整非敏感连接配置仍参与 Agent 发布内容 ID；远端实现升级本身不生成新的 Agent 运行指纹，实际能力清单记录于运行快照</td>
 </tr>
 <tr>
-<td>builtinTool</td>
-<td>实现随桌面应用更新交付，不另设独立工具版本仓库、安装或回退入口</td>
-<td>所选工具 ID 仍参与 Agent 发布内容 ID；仅实现随桌面升级不生成新的 Agent 运行指纹，实际桌面版本与工具清单记录于运行快照</td>
+<td data-label="基础能力">builtinTool</td>
+<td data-label="演进方式">实现随桌面应用更新交付，不另设独立工具版本仓库、安装或回退入口</td>
+<td data-label="与 Agent 指纹的关系">所选工具 ID 仍参与 Agent 发布内容 ID；仅实现随桌面升级不生成新的 Agent 运行指纹，实际桌面版本与工具清单记录于运行快照</td>
 </tr>
 </tbody></table>
 <p>正向优化不能静默删除既有能力或破坏参数、返回值与错误语义。发生不兼容变化时，应先完成兼容处理或明确调整 Agent 装配并重新验证；工具缺失、连接失败仍按现有边界明确失败。选择哪些工具、连接哪个 MCP 属于 Agent 装配，修改这些选择仍形成新的 Agent 内容 ID，并改变运行指纹。</p>
@@ -146,29 +461,29 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 </thead>
 <tbody><tr>
-<td>就地编辑</td>
-<td>修改 <code>SKILL.md</code>、上传或替换包内文件，按需调整 Agent 提示词与装配</td>
-<td>可继续编辑的本地内容或官方草稿，无须每改一个文件就上传服务端</td>
+<td data-label="工作步骤">就地编辑</td>
+<td data-label="运维在客户端做什么">修改 <code>SKILL.md</code>、上传或替换包内文件，按需调整 Agent 提示词与装配</td>
+<td data-label="得到什么">可继续编辑的本地内容或官方草稿，无须每改一个文件就上传服务端</td>
 </tr>
 <tr>
-<td>快速实验</td>
-<td>在 Skill 页面勾选 Agent，发起独立实验；结合结果继续改、再试</td>
-<td>每次实验固定完整快照，过程与产物可查看；未上传的内容也能试跑</td>
+<td data-label="工作步骤">快速实验</td>
+<td data-label="运维在客户端做什么">在 Skill 页面勾选 Agent，发起独立实验；结合结果继续改、再试</td>
+<td data-label="得到什么">每次实验固定完整快照，过程与产物可查看；未上传的内容也能试跑</td>
 </tr>
 <tr>
-<td>本人确认</td>
-<td>运维确认这次内容可用于正式任务，选择本次发布范围并手填标签</td>
-<td>明确要上传发布的完整内容；不增加审核人或强制实验通过门槛</td>
+<td data-label="工作步骤">本人确认</td>
+<td data-label="运维在客户端做什么">运维确认这次内容可用于正式任务，选择本次发布范围并手填标签</td>
+<td data-label="得到什么">明确要上传发布的完整内容；不增加审核人或强制实验通过门槛</td>
 </tr>
 <tr>
-<td>上传发布</td>
-<td>上传确定的完整草稿修订并提交正式发布；已上传且未变化的修订可直接使用</td>
-<td>服务端校验权限与标签，保存不可变版本；Skill 与受影响 Agent 的新标签一次联动发布</td>
+<td data-label="工作步骤">上传发布</td>
+<td data-label="运维在客户端做什么">上传确定的完整草稿修订并提交正式发布；已上传且未变化的修订可直接使用</td>
+<td data-label="得到什么">服务端校验权限与标签，保存不可变版本；Skill 与受影响 Agent 的新标签一次联动发布</td>
 </tr>
 <tr>
-<td>使用与反馈</td>
-<td>新会话同步并装配所选版本，从实际任务中发现下一次改进</td>
-<td>团队复用已确认的运维方法，旧会话沿用原快照，历史版本保留</td>
+<td data-label="工作步骤">使用与反馈</td>
+<td data-label="运维在客户端做什么">新会话同步并装配所选版本，从实际任务中发现下一次改进</td>
+<td data-label="得到什么">团队复用已确认的运维方法，旧会话沿用原快照，历史版本保留</td>
 </tr>
 </tbody></table>
 <p>周内可以反复编辑与实验，也可以按需上传保存草稿；<strong>只有运维明确提交正式发布，改进才成为可供团队同步使用的官方版本。</strong> 团队按周汇总已确认的改进发布，上传本身不增加审批环节。客户端负责把迭代做得便捷，服务端负责把已确认版本保存完整、分发准确。</p>
@@ -181,49 +496,49 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 </thead>
 <tbody><tr>
-<td>线上基础状态</td>
-<td>后台保持任务连接，仅向线上用户展示连接状态等基础信息</td>
-<td>提供连接鉴权与状态确认，Console 承载业务操作及任务结果</td>
+<td data-label="客户端能力">线上基础状态</td>
+<td data-label="主要行为">后台保持任务连接，仅向线上用户展示连接状态等基础信息</td>
+<td data-label="服务端需配合">提供连接鉴权与状态确认，Console 承载业务操作及任务结果</td>
 </tr>
 <tr>
-<td>运维资源管理</td>
-<td>在调试桌面修改 Skill 文件与 Agent 提示词、装配，反复本地实验，运维确认后上传发布</td>
-<td>校验身份权限，保存完整草稿修订与不可变发布版本，分发已确认物料</td>
+<td data-label="客户端能力">运维资源管理</td>
+<td data-label="主要行为">在调试桌面修改 Skill 文件与 Agent 提示词、装配，反复本地实验，运维确认后上传发布</td>
+<td data-label="服务端需配合">校验身份权限，保存完整草稿修订与不可变发布版本，分发已确认物料</td>
 </tr>
 <tr>
-<td><a href="#11-provider">Provider 配置</a></td>
-<td>本地管理多个 OpenAI Chat Completions 兼容接入地址及模型，选择默认项、手动测试连接，Key 存系统凭据库</td>
-<td>本期不下发 Provider 配置或 Key，不新增平台 API</td>
+<td data-label="客户端能力"><a href="#11-provider">Provider 配置</a></td>
+<td data-label="主要行为">本地管理多个 OpenAI Chat Completions 兼容接入地址及模型，选择默认项、手动测试连接，Key 存系统凭据库</td>
+<td data-label="服务端需配合">本期不下发 Provider 配置或 Key，不新增平台 API</td>
 </tr>
 <tr>
-<td>同步装配</td>
-<td>核对版本、按需下载、保留历史包、固定运行快照</td>
-<td>通过 HTTPS 提供版本清单与物料</td>
+<td data-label="客户端能力">同步装配</td>
+<td data-label="主要行为">核对版本、按需下载、保留历史包、固定运行快照</td>
+<td data-label="服务端需配合">通过 HTTPS 提供版本清单与物料</td>
 </tr>
 <tr>
-<td>浏览器执行底座</td>
-<td>随包提供 Playwright，按需启动本机 Google Chrome，按会话绑定独立页面并保留专用登录态</td>
-<td>通过任务协议调用客户端；浏览器与网站登录态保留在本机</td>
+<td data-label="客户端能力">浏览器执行底座</td>
+<td data-label="主要行为">随包提供 Playwright，按需启动本机 Google Chrome，按会话绑定独立页面并保留专用登录态</td>
+<td data-label="服务端需配合">通过任务协议调用客户端；浏览器与网站登录态保留在本机</td>
 </tr>
 <tr>
-<td>任务执行</td>
-<td>线上接收服务端 Agent 的任务调用；运维可在调试桌面手动试跑，均经 builtinTool 和 Playwright 在外部 Chrome 中执行</td>
-<td>服务端 Agent 使用标准 A2A 消息与取消操作，WSS 仅负责网络传输</td>
+<td data-label="客户端能力">任务执行</td>
+<td data-label="主要行为">线上接收服务端 Agent 的任务调用；运维可在调试桌面手动试跑，均经 builtinTool 和 Playwright 在外部 Chrome 中执行</td>
+<td data-label="服务端需配合">服务端 Agent 使用标准 A2A 消息与取消操作，WSS 仅负责网络传输</td>
 </tr>
 <tr>
-<td>结果交付</td>
-<td>本地保存状态、结果与快照，断线后补传；逐条过程仅供运维调试查看</td>
-<td>接收 Task 状态、最终结果与必要运行摘要，持久保存后确认，服务端 Agent 继续编排，Console 展示任务状态与结果</td>
+<td data-label="客户端能力">结果交付</td>
+<td data-label="主要行为">本地保存状态、结果与快照，断线后补传；逐条过程仅供运维调试查看</td>
+<td data-label="服务端需配合">接收 Task 状态、最终结果与必要运行摘要，持久保存后确认，服务端 Agent 继续编排，Console 展示任务状态与结果</td>
 </tr>
 <tr>
-<td>桌面更新</td>
-<td>检查、下载、验签，在空闲时由用户确认安装</td>
-<td>提供更新清单和已签名整包下载</td>
+<td data-label="客户端能力">桌面更新</td>
+<td data-label="主要行为">检查、下载、验签，在空闲时由用户确认安装</td>
+<td data-label="服务端需配合">提供更新清单和已签名整包下载</td>
 </tr>
 <tr>
-<td>运维诊断</td>
-<td>将指定 thread 的 SQLite checkpoint、运行快照与记录导出，经预览后上传</td>
-<td>校验并持久保存诊断包，返回回执，提供只读排查入口</td>
+<td data-label="客户端能力">运维诊断</td>
+<td data-label="主要行为">将指定 thread 的 SQLite checkpoint、运行快照与记录导出，经预览后上传</td>
+<td data-label="服务端需配合">校验并持久保存诊断包，返回回执，提供只读排查入口</td>
 </tr>
 </tbody></table>
 <p>客户端保留未同步编辑、已下载历史版本、会话快照与执行记录。运维调试时可自由编辑本地资源；官方已发布资源同步后只读，服务端只调用官方 Agent。线上任务按调用指定版本自动准备物料，不要求线上用户进入资源管理页。</p>
@@ -239,28 +554,28 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 </thead>
 <tbody><tr>
-<td>服务端 Console 与 Agent（外部系统）</td>
-<td>Console 承载线上用户操作；服务端 Agent 编排业务，以任务调用客户端 Agent 并消费结果</td>
+<td data-label="组成">服务端 Console 与 Agent（外部系统）</td>
+<td data-label="职责">Console 承载线上用户操作；服务端 Agent 编排业务，以任务调用客户端 Agent 并消费结果</td>
 </tr>
 <tr>
-<td>Tauri 界面</td>
-<td>线上展示连接等基础状态；运维调试桌面管理 Agent、Skill、会话与执行记录，通过 adapter 调用 Node 后端</td>
+<td data-label="组成">Tauri 界面</td>
+<td data-label="职责">线上展示连接等基础状态；运维调试桌面管理 Agent、Skill、会话与执行记录，通过 adapter 调用 Node 后端</td>
 </tr>
 <tr>
-<td>本地 Node.js／LangGraph runtime</td>
-<td>在后台执行服务端任务或运维调试任务，装配固定快照、调用模型与工具，管理并发运行、停止、超时及 Chrome 生命周期</td>
+<td data-label="组成">本地 Node.js／LangGraph runtime</td>
+<td data-label="职责">在后台执行服务端任务或运维调试任务，装配固定快照、调用模型与工具，管理并发运行、停止、超时及 Chrome 生命周期</td>
 </tr>
 <tr>
-<td>Playwright</td>
-<td>连接本次 thread 指定的 CDP target，执行检查与脚本；目标不匹配时结束操作</td>
+<td data-label="组成">Playwright</td>
+<td data-label="职责">连接本次 thread 指定的 CDP target，执行检查与脚本；目标不匹配时结束操作</td>
 </tr>
 <tr>
-<td>外部 Google Chrome</td>
-<td>使用应用专用 profile 保存登录态，各 thread 绑定独立页面；用户可在真实 Chrome 窗口中操作</td>
+<td data-label="组成">外部 Google Chrome</td>
+<td data-label="职责">使用应用专用 profile 保存登录态，各 thread 绑定独立页面；用户可在真实 Chrome 窗口中操作</td>
 </tr>
 <tr>
-<td>内嵌运维 CEF</td>
-<td>固定手动页面 <code>__manual__</code>；独立的地址、历史、布局和输入，由运维人员操作，Agent 工具不接入</td>
+<td data-label="组成">内嵌运维 CEF</td>
+<td data-label="职责">固定手动页面 <code>__manual__</code>；独立的地址、历史、布局和输入，由运维人员操作，Agent 工具不接入</td>
 </tr>
 </tbody></table>
 <p>Node.js、Playwright 和 CEF 随桌面整包交付；Google Chrome 需单独安装，其更新由 Chrome 自身管理。普通会话切换只选择状态，不启动或抢焦点；浏览器工具首次执行或用户显式「显示 Chrome」才按需创建页面。应用更新范围见第 05 章。</p>
@@ -278,24 +593,24 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 </thead>
 <tbody><tr>
-<td>Agent 提示词</td>
-<td>角色、目标、操作边界、决策要求与输出要求</td>
-<td>作为 Agent 装配的一部分保存；正式修改生成新的 Agent 内容 ID 和人工发布标签，不另建一套提示词发布体系</td>
+<td data-label="对象">Agent 提示词</td>
+<td data-label="沉淀内容">角色、目标、操作边界、决策要求与输出要求</td>
+<td data-label="版本与演进方式">作为 Agent 装配的一部分保存；正式修改生成新的 Agent 内容 ID 和人工发布标签，不另建一套提示词发布体系</td>
 </tr>
 <tr>
-<td>Skill 完整包</td>
-<td><code>SKILL.md</code>、操作说明、引用资料、脚本及随包资源</td>
-<td>完整包生成内容 ID；已发布包不可变，新版本保留旧包，Agent 明确引用所需版本</td>
+<td data-label="对象">Skill 完整包</td>
+<td data-label="沉淀内容"><code>SKILL.md</code>、操作说明、引用资料、脚本及随包资源</td>
+<td data-label="版本与演进方式">完整包生成内容 ID；已发布包不可变，新版本保留旧包，Agent 明确引用所需版本</td>
 </tr>
 <tr>
-<td>Agent 装配清单</td>
-<td>提示词、固定 Skill 版本、builtinTool 选择和 MCP 配置</td>
-<td>将核心资产组合为可运行的 Agent；装配变化生成新 ID，并手填 <code>v.1.0.0</code> 形式的标签</td>
+<td data-label="对象">Agent 装配清单</td>
+<td data-label="沉淀内容">提示词、固定 Skill 版本、builtinTool 选择和 MCP 配置</td>
+<td data-label="版本与演进方式">将核心资产组合为可运行的 Agent；装配变化生成新 ID，并手填 <code>v.1.0.0</code> 形式的标签</td>
 </tr>
 <tr>
-<td>运行快照与执行记录</td>
-<td>本次使用的装配、运行条件、过程与结果</td>
-<td>为问题定位和下一轮改进提供依据；快照不建立发布版本，实验产物不混入 Skill 包</td>
+<td data-label="对象">运行快照与执行记录</td>
+<td data-label="沉淀内容">本次使用的装配、运行条件、过程与结果</td>
+<td data-label="版本与演进方式">为问题定位和下一轮改进提供依据；快照不建立发布版本，实验产物不混入 Skill 包</td>
 </tr>
 </tbody></table>
 <p>客户端提供核心资产的编辑、实验与使用入口；服务端统一保存官方草稿修订和不可变发布历史。提示词只改目标或行为要求时，可以复用原有 Skill 版本；Skill 正式发布时，一并更新受影响 Agent 的引用与内容 ID，并由运维手填各自的新标签。保存草稿不触发联动发布。</p>
@@ -310,19 +625,19 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 </thead>
 <tbody><tr>
-<td>周内迭代</td>
-<td>结合实际任务结果定位不足，修改 Agent 提示词或 Skill 草稿，按需选 Agent 实验</td>
-<td>可继续修改的草稿、独立保存的实验记录；未完成内容留在草稿中</td>
+<td data-label="阶段">周内迭代</td>
+<td data-label="运维在客户端完成的工作">结合实际任务结果定位不足，修改 Agent 提示词或 Skill 草稿，按需选 Agent 实验</td>
+<td data-label="形成的结果">可继续修改的草稿、独立保存的实验记录；未完成内容留在草稿中</td>
 </tr>
 <tr>
-<td>每周发布</td>
-<td>选择本周本人已确认的改进，上传确定的完整修订，手填本次 Skill 与受影响 Agent 的新标签，提交正式发布</td>
-<td>一次确定的资产更新；只改提示词则发布 Agent，Skill 改动则联动发布受影响 Agent；无变化的物料继续复用</td>
+<td data-label="阶段">每周发布</td>
+<td data-label="运维在客户端完成的工作">选择本周本人已确认的改进，上传确定的完整修订，手填本次 Skill 与受影响 Agent 的新标签，提交正式发布</td>
+<td data-label="形成的结果">一次确定的资产更新；只改提示词则发布 Agent，Skill 改动则联动发布受影响 Agent；无变化的物料继续复用</td>
 </tr>
 <tr>
-<td>发布后使用与反馈</td>
-<td>新会话核对并装配所选新版，观察执行结果，把新问题纳入下一周</td>
-<td>旧会话保持原快照，发布历史可追溯，改进持续积累</td>
+<td data-label="阶段">发布后使用与反馈</td>
+<td data-label="运维在客户端完成的工作">新会话核对并装配所选新版，观察执行结果，把新问题纳入下一周</td>
+<td data-label="形成的结果">旧会话保持原快照，发布历史可追溯，改进持续积累</td>
 </tr>
 </tbody></table>
 <p>按周发布是团队的迭代节奏，不增加审核人、审批流或强制实验门槛；运维提交即表示本人已确认。标签始终人工输入，周次和日期不替代发布标签，也不自动覆盖历史版本。没有已确认变更时不创建空版本。</p>
@@ -370,10 +685,11 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <li><strong>桌面更新来源</strong>：提供更新清单和已签名整包下载，供客户端检查、下载与校验。</li>
 <li><strong>诊断接收</strong>：接收用户指定 thread 的诊断包，校验并持久保存后返回回执，支持运维按编号只读查看；不会因此恢复或重新执行任务。</li>
 </ul>
-<p>服务端高可用和内部编排实现另行定义；客户端依赖的 HTTPS API、A2A 操作、WSS 绑定和接收确认契约统一见 <a href="#10-server-api">10 · 服务端 API</a>。</p>
+<p>应用角色拆分、跨机器 Compose、网关多实例与共享文件存储见<a href="#core-server-deployment">核心 · 服务端部署与持久化</a>；当前单机 Nginx 仍是入口单点，服务端方案待实施。客户端依赖的 HTTPS API、A2A 操作、WSS 绑定和接收确认契约统一见 <a href="#10-server-api">10 · 服务端 API</a>。</p>
 <footer><span class="footer-label">客户端 MVP 设计 · 2026-10-22</span><a href="#core-ws">下一章：A2A 任务执行与恢复</a></footer></article><article id="core-ws" data-file="核心-服务端通过WS调用客户端.md" hidden><h1>核心 · A2A 任务执行与恢复</h1>
 <p><strong>客户端主动建立一条 WSS，服务端 Agent 通过 A2A 调用确定版本的客户端 Agent。WebSocket 负责网络传输，A2A 负责任务语义，现有 Node.js runtime 负责 Agent 执行。</strong> 线上用户仍在 Console 发起业务、查看状态和结果；运维调试桌面用于编辑、实验和排障。</p>
 <p>以下图示是本次确认的<strong>目标设计</strong>，不是已实现链路。远端 A2A、WSS 绑定、持久去重与交付确认仍待接入。协议以 <a href="https://a2a-protocol.org/v1.0.0/specification/">A2A 1.0.0</a> 为基线，协商版本为 <code>1.0</code>；WebSocket 使用明确声明的自定义绑定，不宣称它是标准 HTTP JSON-RPC 绑定。</p>
+<p>部署前提见<a href="#core-server-deployment">核心 · 服务端部署与持久化</a>：Console API、网关和图 worker 分开运行，多台 Compose 共享 PostgreSQL、Redis 与文件存储；当前单机 Nginx 仍是入口单点。本章只规定跨端任务行为，不把容器重启解释为桌面任务恢复。</p>
 <h2 id="core-ws-三层职责网络协议执行">三层职责：网络、协议、执行</h2>
 <figure class="diagram"><a href="./diagrams/a2a/layers.html" target="_blank" rel="noopener" aria-label="打开交互图：网络、A2A 与 Agent 执行分开"><img src="./assets/a2a/layers.svg" alt="网络、A2A 与 Agent 执行分开"></a><figcaption>网络、A2A 与 Agent 执行分开 · 点击查看可缩放交互图</figcaption></figure>
 <p><a href="./diagrams/a2a/layers.html">打开职责图</a></p>
@@ -386,19 +702,19 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 </thead>
 <tbody><tr>
-<td>WSS 网络传输</td>
-<td>客户端主动连接、身份认证、心跳、退避重连、有界收发、连接与流清理</td>
-<td>不装配 Agent，不判断业务终态，不因断线取消运行；发送成功不表示结果已交付</td>
+<td data-label="职责">WSS 网络传输</td>
+<td data-label="负责什么">客户端主动连接、身份认证、心跳、退避重连、有界收发、连接与流清理</td>
+<td data-label="关键边界">不装配 Agent，不判断业务终态，不因断线取消运行；发送成功不表示结果已交付</td>
 </tr>
 <tr>
-<td>A2A 协议与任务处理</td>
-<td>标准操作与对象校验、<code>tenant</code> 路由、<code>messageId</code> 持久去重、Task 状态、订阅与查询、结果交付</td>
-<td>在受理前检查授权；执行前受理落盘；重投只返回原 Task；执行状态与交付状态分开</td>
+<td data-label="职责">A2A 协议与任务处理</td>
+<td data-label="负责什么">标准操作与对象校验、<code>tenant</code> 路由、<code>messageId</code> 持久去重、Task 状态、订阅与查询、结果交付</td>
+<td data-label="关键边界">在受理前检查授权；执行前受理落盘；重投只返回原 Task；执行状态与交付状态分开</td>
 </tr>
 <tr>
-<td>Agent 执行</td>
-<td>复用现有装配、并发准入、LangGraph、模型、MCP、Playwright、取消排空与执行证据</td>
-<td>接收明确输入和固定版本；不接触 socket 或原始网络报文；不自建第二套调度器</td>
+<td data-label="职责">Agent 执行</td>
+<td data-label="负责什么">复用现有装配、并发准入、LangGraph、模型、MCP、Playwright、取消排空与执行证据</td>
+<td data-label="关键边界">接收明确输入和固定版本；不接触 socket 或原始网络报文；不自建第二套调度器</td>
 </tr>
 </tbody></table>
 <p>这些是职责边界，共用一个 Node runtime，不要求新增独立服务、通用容器或每个 Agent 一条连接。Rust 继续承担原生宿主与系统能力。</p>
@@ -455,24 +771,24 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 </thead>
 <tbody><tr>
-<td>本轮超时</td>
-<td><code>FAILED</code></td>
-<td><code>timed-out</code> 与安全说明</td>
+<td data-label="情况">本轮超时</td>
+<td data-label="标准 Task 状态"><code>FAILED</code></td>
+<td data-label="状态 Message 的 Data Part"><code>timed-out</code> 与安全说明</td>
 </tr>
 <tr>
-<td>缺少必要输入</td>
-<td><code>FAILED</code></td>
-<td><code>missing-input</code> 与待补信息说明</td>
+<td data-label="情况">缺少必要输入</td>
+<td data-label="标准 Task 状态"><code>FAILED</code></td>
+<td data-label="状态 Message 的 Data Part"><code>missing-input</code> 与待补信息说明</td>
 </tr>
 <tr>
-<td>需要人工登录或验证</td>
-<td><code>FAILED</code></td>
-<td><code>login-required</code> 与必要操作指引</td>
+<td data-label="情况">需要人工登录或验证</td>
+<td data-label="标准 Task 状态"><code>FAILED</code></td>
+<td data-label="状态 Message 的 Data Part"><code>login-required</code> 与必要操作指引</td>
 </tr>
 <tr>
-<td>重启发现未完成任务</td>
-<td><code>FAILED</code></td>
-<td><code>interrupted-unknown</code>，外部操作可能已发生；单独见场景六</td>
+<td data-label="情况">重启发现未完成任务</td>
+<td data-label="标准 Task 状态"><code>FAILED</code></td>
+<td data-label="状态 Message 的 Data Part"><code>interrupted-unknown</code>，外部操作可能已发生；单独见场景六</td>
 </tr>
 </tbody></table>
 <p>**结果：**停止后续步骤，排空并保存失败终态，再释放容量并交付。Task 一次执行到终态，不使用 <code>INPUT_REQUIRED</code>／<code>AUTH_REQUIRED</code> 挂起恢复。用户补齐输入或在专用 Chrome 完成验证后，经 Console 发起新 Task；标准终态均不可重新启动。</p>
@@ -485,28 +801,28 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </tr>
 </thead>
 <tbody><tr>
-<td><code>messageId</code></td>
-<td>首次任务消息的稳定身份与持久幂等键；替代原私有 <code>callId</code></td>
+<td data-label="对象"><code>messageId</code></td>
+<td data-label="本项目含义">首次任务消息的稳定身份与持久幂等键；替代原私有 <code>callId</code></td>
 </tr>
 <tr>
-<td>JSON-RPC <code>id</code></td>
-<td>一次请求与响应／流的关联；可随重投变化，不决定是否重新执行</td>
+<td data-label="对象">JSON-RPC <code>id</code></td>
+<td data-label="本项目含义">一次请求与响应／流的关联；可随重投变化，不决定是否重新执行</td>
 </tr>
 <tr>
-<td><code>taskId</code></td>
-<td>桌面 A2A Server 创建的 Task 身份，供查询、订阅、取消与交付确认使用</td>
+<td data-label="对象"><code>taskId</code></td>
+<td data-label="本项目含义">桌面 A2A Server 创建的 Task 身份，供查询、订阅、取消与交付确认使用</td>
 </tr>
 <tr>
-<td><code>contextId</code></td>
-<td>只关联业务中的多个 Task，不等同于本地 thread，不自动继承聊天、图状态或页面现场</td>
+<td data-label="对象"><code>contextId</code></td>
+<td data-label="本项目含义">只关联业务中的多个 Task，不等同于本地 thread，不自动继承聊天、图状态或页面现场</td>
 </tr>
 <tr>
-<td><code>threadId</code>／<code>runId</code>／<code>graphThreadId</code></td>
-<td>本地会话、单次执行与图身份；每个已受理 Task 独立创建，拒绝 Task 没有这些执行资源</td>
+<td data-label="对象"><code>threadId</code>／<code>runId</code>／<code>graphThreadId</code></td>
+<td data-label="本项目含义">本地会话、单次执行与图身份；每个已受理 Task 独立创建，拒绝 Task 没有这些执行资源</td>
 </tr>
 <tr>
-<td><code>tenant</code></td>
-<td>所选 AgentCard 接口提供的标准路由值，固定映射到一个官方 <code>agentId + contentId</code>；不是客户端自报权限</td>
+<td data-label="对象"><code>tenant</code></td>
+<td data-label="本项目含义">所选 AgentCard 接口提供的标准路由值，固定映射到一个官方 <code>agentId + contentId</code>；不是客户端自报权限</td>
 </tr>
 </tbody></table>
 <p>每个受理 Task 绑定独立的 Chrome 页面；多个页面共享专用 profile，因此可以复用登录态，但不隔离账号或站点资源。页面丢失不回退到别的页面。终态后保留页面供运维查看；重启恢复记录不重建页面，也不恢复旧任务。</p>
@@ -1866,34 +2182,34 @@ description: 在指定运维平台内完成其职责范围内的查询与变更�
 </tr>
 </thead>
 <tbody><tr>
-<td>身份与权限</td>
-<td>复用现有登录、Token、组织及设备身份，返回可执行操作</td>
-<td>维护登录与连接等基础状态，按身份和权限请求</td>
+<td data-label="能力">身份与权限</td>
+<td data-label="服务端提供">复用现有登录、Token、组织及设备身份，返回可执行操作</td>
+<td data-label="客户端负责">维护登录与连接等基础状态，按身份和权限请求</td>
 </tr>
 <tr>
-<td>官方物料</td>
-<td>Agent／Skill 版本清单、确定装配、完整包下载</td>
-<td>后台校验、按需缓存、固定运行快照；运维按权限查看</td>
+<td data-label="能力">官方物料</td>
+<td data-label="服务端提供">Agent／Skill 版本清单、确定装配、完整包下载</td>
+<td data-label="客户端负责">后台校验、按需缓存、固定运行快照；运维按权限查看</td>
 </tr>
 <tr>
-<td>草稿与发布</td>
-<td>保存完整修订，校验标签，原子发布关联资源</td>
-<td>运维在调试桌面编辑与实验，提交明确修订和手填标签</td>
+<td data-label="能力">草稿与发布</td>
+<td data-label="服务端提供">保存完整修订，校验标签，原子发布关联资源</td>
+<td data-label="客户端负责">运维在调试桌面编辑与实验，提交明确修订和手填标签</td>
 </tr>
 <tr>
-<td>远端任务</td>
-<td>服务端 Agent 经 A2A 调用／取消，WSS 仅传输，持久接收结果并确认，供 Console 展示</td>
-<td>后台并发执行，按 thread 固定浏览器页面，结果落盘与补传；完整过程仅供运维调试</td>
+<td data-label="能力">远端任务</td>
+<td data-label="服务端提供">服务端 Agent 经 A2A 调用／取消，WSS 仅传输，持久接收结果并确认，供 Console 展示</td>
+<td data-label="客户端负责">后台并发执行，按 thread 固定浏览器页面，结果落盘与补传；完整过程仅供运维调试</td>
 </tr>
 <tr>
-<td>桌面更新</td>
-<td>静态 <code>latest.json</code> 和已签名整包</td>
-<td>用户确认下载与安装，空闲时更新</td>
+<td data-label="能力">桌面更新</td>
+<td data-label="服务端提供">静态 <code>latest.json</code> 和已签名整包</td>
+<td data-label="客户端负责">用户确认下载与安装，空闲时更新</td>
 </tr>
 <tr>
-<td>故障诊断</td>
-<td>接收指定 thread 的包、回执、只读检索及附件</td>
-<td>在运维诊断入口从本地 SQLite 导出 checkpoint，经有权用户预览同意后上传</td>
+<td data-label="能力">故障诊断</td>
+<td data-label="服务端提供">接收指定 thread 的包、回执、只读检索及附件</td>
+<td data-label="客户端负责">在运维诊断入口从本地 SQLite 导出 checkpoint，经有权用户预览同意后上传</td>
 </tr>
 </tbody></table>
 <p>HTTPS 传输物料、发布请求和诊断包；WSS 承载标准 A2A 任务操作与结果，不传 Skill 文件包，也不持续上报每条模型输出。Playwright 与外部 Google Chrome 运行在客户端，服务端不远程暴露浏览器 CDP 端口或接收浏览器 profile。</p>
@@ -1918,34 +2234,34 @@ description: 在指定运维平台内完成其职责范围内的查询与变更�
 </tr>
 </thead>
 <tbody><tr>
-<td><code>400</code>／<code>422</code></td>
-<td><code>invalid-request</code>、<code>unsupported-schema</code>、<code>invalid-tag</code>、<code>invalid-package</code></td>
-<td>修正内容，不原样无限重试</td>
+<td data-label="HTTP 状态"><code>400</code>／<code>422</code></td>
+<td data-label="稳定错误类别示例"><code>invalid-request</code>、<code>unsupported-schema</code>、<code>invalid-tag</code>、<code>invalid-package</code></td>
+<td data-label="客户端处理">修正内容，不原样无限重试</td>
 </tr>
 <tr>
-<td><code>401</code>／<code>403</code></td>
-<td><code>unauthenticated</code>、<code>forbidden</code></td>
-<td>恢复登录或显示权限不足，不宣称已保存</td>
+<td data-label="HTTP 状态"><code>401</code>／<code>403</code></td>
+<td data-label="稳定错误类别示例"><code>unauthenticated</code>、<code>forbidden</code></td>
+<td data-label="客户端处理">恢复登录或显示权限不足，不宣称已保存</td>
 </tr>
 <tr>
-<td><code>404</code></td>
-<td><code>not-found</code></td>
-<td>明确指定资源不可取得，不换成其他版本</td>
+<td data-label="HTTP 状态"><code>404</code></td>
+<td data-label="稳定错误类别示例"><code>not-found</code></td>
+<td data-label="客户端处理">明确指定资源不可取得，不换成其他版本</td>
 </tr>
 <tr>
-<td><code>409</code></td>
-<td><code>revision-conflict</code>、<code>tag-conflict</code>、<code>idempotency-conflict</code></td>
-<td>保留本地内容，重新核对</td>
+<td data-label="HTTP 状态"><code>409</code></td>
+<td data-label="稳定错误类别示例"><code>revision-conflict</code>、<code>tag-conflict</code>、<code>idempotency-conflict</code></td>
+<td data-label="客户端处理">保留本地内容，重新核对</td>
 </tr>
 <tr>
-<td><code>413</code>／<code>429</code></td>
-<td><code>payload-too-large</code>、<code>rate-limited</code></td>
-<td>展示限制；限流遵循 <code>Retry-After</code></td>
+<td data-label="HTTP 状态"><code>413</code>／<code>429</code></td>
+<td data-label="稳定错误类别示例"><code>payload-too-large</code>、<code>rate-limited</code></td>
+<td data-label="客户端处理">展示限制；限流遵循 <code>Retry-After</code></td>
 </tr>
 <tr>
-<td><code>5xx</code></td>
-<td><code>temporarily-unavailable</code></td>
-<td>保留请求身份与本地材料，有界退避重试或主动重试</td>
+<td data-label="HTTP 状态"><code>5xx</code></td>
+<td data-label="稳定错误类别示例"><code>temporarily-unavailable</code></td>
+<td data-label="客户端处理">保留请求身份与本地材料，有界退避重试或主动重试</td>
 </tr>
 </tbody></table>
 <h3 id="10-server-api-身份字段不要混用">身份字段不要混用</h3>
@@ -1957,28 +2273,28 @@ description: 在指定运维平台内完成其职责范围内的查询与变更�
 </tr>
 </thead>
 <tbody><tr>
-<td><code>skillId</code>／<code>agentId</code></td>
-<td>官方目录中的稳定资源身份；本地私有资源 ID 不自动成为官方身份</td>
+<td data-label="字段"><code>skillId</code>／<code>agentId</code></td>
+<td data-label="含义">官方目录中的稳定资源身份；本地私有资源 ID 不自动成为官方身份</td>
 </tr>
 <tr>
-<td><code>contentId</code></td>
-<td>完整 Skill 包或确定 Agent 装配的不可变内容摘要；文档中的“新 Agent ID”指新的装配内容身份，A2A 调用由所选 AgentCard 逻辑入口绑定资源身份与内容摘要</td>
+<td data-label="字段"><code>contentId</code></td>
+<td data-label="含义">完整 Skill 包或确定 Agent 装配的不可变内容摘要；文档中的“新 Agent ID”指新的装配内容身份，A2A 调用由所选 AgentCard 逻辑入口绑定资源身份与内容摘要</td>
 </tr>
 <tr>
-<td><code>draftRevisionId</code></td>
-<td>一次已保存的完整草稿修订；不等于内容摘要或正式标签</td>
+<td data-label="字段"><code>draftRevisionId</code></td>
+<td data-label="含义">一次已保存的完整草稿修订；不等于内容摘要或正式标签</td>
 </tr>
 <tr>
-<td><code>releaseTag</code></td>
-<td>运维手填的 <code>v.1.0.0</code> 形式标签，同一资源内不得重用、覆盖或改指向</td>
+<td data-label="字段"><code>releaseTag</code></td>
+<td data-label="含义">运维手填的 <code>v.1.0.0</code> 形式标签，同一资源内不得重用、覆盖或改指向</td>
 </tr>
 <tr>
-<td><code>messageId</code>／<code>taskId</code></td>
-<td>首次 A2A 任务消息的持久幂等身份／桌面创建的 Task 身份；显式重新执行使用新消息 ID</td>
+<td data-label="字段"><code>messageId</code>／<code>taskId</code></td>
+<td data-label="含义">首次 A2A 任务消息的持久幂等身份／桌面创建的 Task 身份；显式重新执行使用新消息 ID</td>
 </tr>
 <tr>
-<td><code>threadId</code>／<code>runId</code></td>
-<td>客户端业务会话与一次执行的身份；与图 <code>thread_id</code> 的映射见第 09 章</td>
+<td data-label="字段"><code>threadId</code>／<code>runId</code></td>
+<td data-label="含义">客户端业务会话与一次执行的身份；与图 <code>thread_id</code> 的映射见第 09 章</td>
 </tr>
 </tbody></table>
 <p>本表是服务端接入时统一的命名约定，不表示当前本地 runtime 已具备远端版本注册表。模型和推理参数属于运行条件，不进入 Agent 发布内容 ID；凭据值不进入内容摘要、发布清单或运行快照。</p>
@@ -1992,9 +2308,9 @@ description: 在指定运维平台内完成其职责范围内的查询与变更�
 </tr>
 </thead>
 <tbody><tr>
-<td><code>GET /api/session</code></td>
-<td>当前有效登录凭据；设备标识使用现有绑定机制</td>
-<td>用户／组织标识、官方资源读取与维护权限、诊断读取范围、已验证的设备身份；只有身份核验成功才返回</td>
+<td data-label="接口"><code>GET /api/session</code></td>
+<td data-label="输入">当前有效登录凭据；设备标识使用现有绑定机制</td>
+<td data-label="输出与成功边界">用户／组织标识、官方资源读取与维护权限、诊断读取范围、已验证的设备身份；只有身份核验成功才返回</td>
 </tr>
 </tbody></table>
 <p>现有平台负责登录、续期和退出；本章不新增另一套密码或 Token 签发接口。客户端按返回权限显示操作，所有写入和下载请求仍单独鉴权。MCP 凭据通过既有运行时凭据来源解析，不能借此接口返回所有 MCP 密钥。</p>
@@ -2008,39 +2324,39 @@ description: 在指定运维平台内完成其职责范围内的查询与变更�
 </tr>
 </thead>
 <tbody><tr>
-<td><code>GET /api/agents</code></td>
-<td>分页参数，可按名称筛选</td>
-<td>官方 Agent 目录，含资源 ID、名称、可选版本摘要与标签；返回可读取的确定版本</td>
+<td data-label="接口"><code>GET /api/agents</code></td>
+<td data-label="输入">分页参数，可按名称筛选</td>
+<td data-label="输出与成功边界">官方 Agent 目录，含资源 ID、名称、可选版本摘要与标签；返回可读取的确定版本</td>
 </tr>
 <tr>
-<td><code>GET /api/agents/{agentId}/versions</code></td>
-<td>分页参数</td>
-<td>已发布版本及标签，不包含客户端私有 Agent 或未授权草稿</td>
+<td data-label="接口"><code>GET /api/agents/{agentId}/versions</code></td>
+<td data-label="输入">分页参数</td>
+<td data-label="输出与成功边界">已发布版本及标签，不包含客户端私有 Agent 或未授权草稿</td>
 </tr>
 <tr>
-<td><code>GET /api/agents/{agentId}/versions/{contentId}</code></td>
-<td>精确的官方装配身份</td>
-<td>Agent 完整包的两项文件清单、内容摘要及受限下载地址，关联所需 Skill 清单；不存在即失败，不解析为“最新版”</td>
+<td data-label="接口"><code>GET /api/agents/{agentId}/versions/{contentId}</code></td>
+<td data-label="输入">精确的官方装配身份</td>
+<td data-label="输出与成功边界">Agent 完整包的两项文件清单、内容摘要及受限下载地址，关联所需 Skill 清单；不存在即失败，不解析为“最新版”</td>
 </tr>
 <tr>
-<td><code>GET /api/skills</code></td>
-<td>分页参数，可按名称筛选</td>
-<td>官方 Skill 目录与摘要</td>
+<td data-label="接口"><code>GET /api/skills</code></td>
+<td data-label="输入">分页参数，可按名称筛选</td>
+<td data-label="输出与成功边界">官方 Skill 目录与摘要</td>
 </tr>
 <tr>
-<td><code>GET /api/skills/{skillId}/versions</code></td>
-<td>分页参数</td>
-<td>已发布 <code>contentId</code>、标签与发布日期；不要求下载全部历史</td>
+<td data-label="接口"><code>GET /api/skills/{skillId}/versions</code></td>
+<td data-label="输入">分页参数</td>
+<td data-label="输出与成功边界">已发布 <code>contentId</code>、标签与发布日期；不要求下载全部历史</td>
 </tr>
 <tr>
-<td><code>GET /api/skills/{skillId}/versions/{contentId}</code></td>
-<td>精确包身份</td>
-<td>包清单、内容摘要、传输包大小／SHA-256、受权下载地址及必要的到期时间</td>
+<td data-label="接口"><code>GET /api/skills/{skillId}/versions/{contentId}</code></td>
+<td data-label="输入">精确包身份</td>
+<td data-label="输出与成功边界">包清单、内容摘要、传输包大小／SHA-256、受权下载地址及必要的到期时间</td>
 </tr>
 <tr>
-<td><code>GET /api/skills/{skillId}/versions/{contentId}/package</code></td>
-<td>精确包身份及读取权限</td>
-<td>完整文件包的原始字节与目录结构；等效的受限下载地址可替代此路由</td>
+<td data-label="接口"><code>GET /api/skills/{skillId}/versions/{contentId}/package</code></td>
+<td data-label="输入">精确包身份及读取权限</td>
+<td data-label="输出与成功边界">完整文件包的原始字节与目录结构；等效的受限下载地址可替代此路由</td>
 </tr>
 </tbody></table>
 <p>Agent 完整包严格由 <code>prompt.md</code> 与 <code>agent.json</code> 组成：前者保存系统提示词；后者保存 <code>schemaVersion</code>、名称与描述、<code>promptFile</code>、<code>skills[{skillId, contentId, mountPath}]</code>、<code>toolIds</code> 和完整非敏感 <code>mcpServers</code>（包含可选凭据引用）。MCP 不再通过可变全局 ID 解析连接配置；服务实现和实时工具行为不因此冻结，也不另设本项目 MCP 发布版本。展示用发布标签在包外版本清单中返回。</p>
@@ -2058,29 +2374,29 @@ description: 在指定运维平台内完成其职责范围内的查询与变更�
 </tr>
 </thead>
 <tbody><tr>
-<td><code>POST /api/skills</code>、<code>POST /api/agents</code></td>
-<td>运维权限、目录名称等元数据、幂等键</td>
-<td>新的官方资源身份，尚无正式版本；本地新建不调用它</td>
+<td data-label="接口"><code>POST /api/skills</code>、<code>POST /api/agents</code></td>
+<td data-label="输入">运维权限、目录名称等元数据、幂等键</td>
+<td data-label="输出与成功边界">新的官方资源身份，尚无正式版本；本地新建不调用它</td>
 </tr>
 <tr>
-<td><code>POST /api/skills/{skillId}/drafts</code></td>
-<td>完整文件包、包摘要、<code>expectedRevision</code>（首次为空）、幂等键</td>
-<td><code>draftRevisionId</code>、<code>contentId</code>、保存时间与新的草稿头；完整包持久保存后才成功</td>
+<td data-label="接口"><code>POST /api/skills/{skillId}/drafts</code></td>
+<td data-label="输入">完整文件包、包摘要、<code>expectedRevision</code>（首次为空）、幂等键</td>
+<td data-label="输出与成功边界"><code>draftRevisionId</code>、<code>contentId</code>、保存时间与新的草稿头；完整包持久保存后才成功</td>
 </tr>
 <tr>
-<td><code>POST /api/agents/{agentId}/drafts</code></td>
-<td>完整 Agent 包的原始文件字节、包摘要、<code>expectedRevision</code>（首次为空）、幂等键</td>
-<td>新 <code>draftRevisionId</code>、包 <code>contentId</code> 及新的草稿头；校验引用、配置及包摘要后保存</td>
+<td data-label="接口"><code>POST /api/agents/{agentId}/drafts</code></td>
+<td data-label="输入">完整 Agent 包的原始文件字节、包摘要、<code>expectedRevision</code>（首次为空）、幂等键</td>
+<td data-label="输出与成功边界">新 <code>draftRevisionId</code>、包 <code>contentId</code> 及新的草稿头；校验引用、配置及包摘要后保存</td>
 </tr>
 <tr>
-<td><code>GET /api/{skills|agents}/{resourceId}/drafts</code></td>
-<td>运维权限、分页参数</td>
-<td>已保存修订的 ID、摘要、保存时间与当前草稿头；这里表示两组同形路由</td>
+<td data-label="接口"><code>GET /api/{skills|agents}/{resourceId}/drafts</code></td>
+<td data-label="输入">运维权限、分页参数</td>
+<td data-label="输出与成功边界">已保存修订的 ID、摘要、保存时间与当前草稿头；这里表示两组同形路由</td>
 </tr>
 <tr>
-<td><code>GET /api/{skills|agents}/{resourceId}/drafts/{draftRevisionId}</code></td>
-<td>运维权限、确定修订</td>
-<td>Agent 或 Skill 完整包的文件清单、摘要与受限下载地址，保留原始字节</td>
+<td data-label="接口"><code>GET /api/{skills|agents}/{resourceId}/drafts/{draftRevisionId}</code></td>
+<td data-label="输入">运维权限、确定修订</td>
+<td data-label="输出与成功边界">Agent 或 Skill 完整包的文件清单、摘要与受限下载地址，保留原始字节</td>
 </tr>
 </tbody></table>
 <p>Skill 服务端修订存于 <code>skills/drafts/&lt;skillId&gt;/revisions/&lt;draftRevisionId&gt;/</code>；Agent 修订存于 <code>agents/drafts/&lt;agentId&gt;/revisions/&lt;draftRevisionId&gt;/</code>，包含完整 <code>agent.json</code> 和 <code>prompt.md</code> 原始字节。客户端下载修订采用相同相对目录，未同步工作副本在对应资源的 <code>working/</code>，上传前固定完整内容。客户端上传期间继续编辑，不改变已经提交的修订；服务端失败时保留本地副本。</p>
@@ -2095,25 +2411,26 @@ description: 在指定运维平台内完成其职责范围内的查询与变更�
 </tr>
 </thead>
 <tbody><tr>
-<td><code>POST /api/skills/{skillId}/publish-preview</code></td>
-<td>确定的 <code>draftRevisionId</code></td>
-<td>Skill 摘要、受影响官方 Agent 身份及其当前内容 ID、可提交的基线；只读预览，不创建发布</td>
+<td data-label="接口"><code>POST /api/skills/{skillId}/publish-preview</code></td>
+<td data-label="输入">确定的 <code>draftRevisionId</code></td>
+<td data-label="输出与成功边界">Skill 摘要、受影响官方 Agent 身份及其当前内容 ID、可提交的基线；只读预览，不创建发布</td>
 </tr>
 <tr>
-<td><code>POST /api/skills/{skillId}/releases</code></td>
-<td>修订 ID、Skill 新标签、完整受影响 Agent 的 <code>{agentId, expectedContentId, releaseTag}</code>、预览基线、幂等键</td>
-<td>发布编号、Skill 内容 ID／标签、全部新 Agent 内容 ID／标签；全部提交且可读取才成功</td>
+<td data-label="接口"><code>POST /api/skills/{skillId}/releases</code></td>
+<td data-label="输入">修订 ID、Skill 新标签、完整受影响 Agent 的 <code>{agentId, expectedContentId, releaseTag}</code>、预览基线、幂等键</td>
+<td data-label="输出与成功边界">发布编号、Skill 内容 ID／标签、全部新 Agent 内容 ID／标签；全部提交且可读取才成功</td>
 </tr>
 <tr>
-<td><code>POST /api/agents/{agentId}/releases</code></td>
-<td>确定草稿修订、手填新标签、<code>expectedContentId</code>、幂等键</td>
-<td>单独发布的 Agent 内容 ID、标签与发布编号；用于提示词等装配变化</td>
+<td data-label="接口"><code>POST /api/agents/{agentId}/releases</code></td>
+<td data-label="输入">确定草稿修订、手填新标签、<code>expectedContentId</code>、幂等键</td>
+<td data-label="输出与成功边界">单独发布的 Agent 内容 ID、标签与发布编号；用于提示词等装配变化</td>
 </tr>
 </tbody></table>
 <p>受影响 Agent 由服务端依据当前官方引用关系计算，客户端不能自行省略。提交时重新校验引用关系、草稿修订、所有基线与标签；预览后有并发发布或缺少任一标签，整个请求返回冲突，客户端重新取得清单并确认输入。</p>
 <p>联动发布先校验和暂存所有完整物料，再一次提交 Skill 正式标签、受影响 Agent 的固定引用、新内容 ID 与人工标签。只有所有版本都已可取得，才对列表公布本次发布；不能先显示 Skill 成功，再补写 Agent。失败保留旧版本及草稿，暂存内容不作为正式版本出现。</p>
 <p>发布请求提交即表示运维确认，不加审批或强制实验门槛。旧标签和历史装配保持不可变；仅修改模型参数不发布 Agent。发布超时使用原幂等键重试获取同一发布结果，不能因重试再生成一轮标签或新发布。</p>
 <h2 id="10-server-api-a2a-任务通道wss-只负责传输">A2A 任务通道：WSS 只负责传输</h2>
+<p>API／网关／worker 拆分、跨机器 Compose 与文件持久化见<a href="#core-server-deployment">核心 · 服务端部署与持久化</a>，均为外部服务端待实施方案。</p>
 <p>线上运行顺序和异常场景集中见<a href="#core-ws">核心 · A2A 任务执行与恢复</a>。本节规定客户端依赖的协议契约，<strong>仍待实现</strong>。使用 <a href="https://a2a-protocol.org/v1.0.0/specification/">A2A 1.0.0</a>，协商版本为 <code>1.0</code>，不沿用原私有任务消息体系。</p>
 <h3 id="10-server-api-wss-传输绑定">WSS 传输绑定</h3>
 <p>后台客户端以现有身份主动连接 <code>WSS /api/clients/connect</code>。握手核验用户、组织与安装身份，凭据不放 URL 查询串；版本与扩展按绑定明确协商。业务上的 A2A Client 是服务端 Agent，A2A Server 是桌面 Agent。断线仅清理连接与订阅，不取消或重启 Task。</p>
@@ -2129,32 +2446,32 @@ description: 在指定运维平台内完成其职责范围内的查询与变更�
 </tr>
 </thead>
 <tbody><tr>
-<td><code>SendMessage</code></td>
-<td>以标准 Message 发起一次任务，受理提交后返回 Task；需要实时事件时再订阅</td>
+<td data-label="A2A 操作"><code>SendMessage</code></td>
+<td data-label="本项目行为">以标准 Message 发起一次任务，受理提交后返回 Task；需要实时事件时再订阅</td>
 </tr>
 <tr>
-<td><code>SendStreamingMessage</code></td>
-<td>发起任务并取得事件流，首条为当前 Task；后续只提供任务级状态及最终 Artifact</td>
+<td data-label="A2A 操作"><code>SendStreamingMessage</code></td>
+<td data-label="本项目行为">发起任务并取得事件流，首条为当前 Task；后续只提供任务级状态及最终 Artifact</td>
 </tr>
 <tr>
-<td><code>GetTask</code></td>
-<td>返回已授权 Task 当前状态与最终 Artifact；包括拒绝、失败、取消和重启后的记录</td>
+<td data-label="A2A 操作"><code>GetTask</code></td>
+<td data-label="本项目行为">返回已授权 Task 当前状态与最终 Artifact；包括拒绝、失败、取消和重启后的记录</td>
 </tr>
 <tr>
-<td><code>SubscribeToTask</code></td>
-<td>订阅非终态 Task，首条为当前快照；任务已终态或订阅时发生终态竞争则改用 <code>GetTask</code></td>
+<td data-label="A2A 操作"><code>SubscribeToTask</code></td>
+<td data-label="本项目行为">订阅非终态 Task，首条为当前快照；任务已终态或订阅时发生终态竞争则改用 <code>GetTask</code></td>
 </tr>
 <tr>
-<td><code>ListTasks</code></td>
-<td>在所选逻辑入口与授权范围内按标准过滤、游标分页查询；用于核对已知任务，不触发运行</td>
+<td data-label="A2A 操作"><code>ListTasks</code></td>
+<td data-label="本项目行为">在所选逻辑入口与授权范围内按标准过滤、游标分页查询；用于核对已知任务，不触发运行</td>
 </tr>
 <tr>
-<td><code>CancelTask</code></td>
-<td>尝试停止指定 Task；返回更新后的 Task，不将收到请求当成已经取消</td>
+<td data-label="A2A 操作"><code>CancelTask</code></td>
+<td data-label="本项目行为">尝试停止指定 Task；返回更新后的 Task，不将收到请求当成已经取消</td>
 </tr>
 <tr>
-<td><code>GetExtendedAgentCard</code></td>
-<td>仅在 AgentCard 声明支持时提供；不借此下发密钥或完整运行材料</td>
+<td data-label="A2A 操作"><code>GetExtendedAgentCard</code></td>
+<td data-label="本项目行为">仅在 AgentCard 声明支持时提供；不借此下发密钥或完整运行材料</td>
 </tr>
 </tbody></table>
 <p>AgentCard 声明 <code>streaming: true</code>，普通任务流不包含逐条模型 token、完整工具过程或 checkpoint。首版不启用 webhook 推送，<code>pushNotifications: false</code>；相关标准操作返回标准不支持错误，不另做一套推送系统。官方目录提供标准 AgentCard，卡片中的能力描述不等于仓库 Skill 文件包。</p>
@@ -2173,29 +2490,29 @@ description: 在指定运维平台内完成其职责范围内的查询与变更�
 </tr>
 </thead>
 <tbody><tr>
-<td>合法但容量已满</td>
-<td>持久 <code>REJECTED</code> Task，状态 Message 的 Data Part 包含 <code>busy</code></td>
-<td>不创建 thread、run、页面，不排队</td>
+<td data-label="情况">合法但容量已满</td>
+<td data-label="协议结果">持久 <code>REJECTED</code> Task，状态 Message 的 Data Part 包含 <code>busy</code></td>
+<td data-label="执行资源">不创建 thread、run、页面，不排队</td>
 </tr>
 <tr>
-<td>同一 <code>messageId</code> 重投</td>
-<td>原 Task，包括原拒绝 Task</td>
-<td>不创建第二套资源</td>
+<td data-label="情况">同一 <code>messageId</code> 重投</td>
+<td data-label="协议结果">原 Task，包括原拒绝 Task</td>
+<td data-label="执行资源">不创建第二套资源</td>
 </tr>
 <tr>
-<td>格式或鉴权错误</td>
-<td>标准协议错误</td>
-<td>不创建 Task</td>
+<td data-label="情况">格式或鉴权错误</td>
+<td data-label="协议结果">标准协议错误</td>
+<td data-label="执行资源">不创建 Task</td>
 </tr>
 <tr>
-<td>同 ID 不同内容</td>
-<td>协议错误，说明消息内容冲突</td>
-<td>不改写原 Task</td>
+<td data-label="情况">同 ID 不同内容</td>
+<td data-label="协议结果">协议错误，说明消息内容冲突</td>
+<td data-label="执行资源">不改写原 Task</td>
 </tr>
 <tr>
-<td>材料／模型／工具准备失败</td>
-<td>已受理 Task 进入 <code>FAILED</code>，附安全业务原因</td>
-<td>清理本轮已占资源，不静默降级</td>
+<td data-label="情况">材料／模型／工具准备失败</td>
+<td data-label="协议结果">已受理 Task 进入 <code>FAILED</code>，附安全业务原因</td>
+<td data-label="执行资源">清理本轮已占资源，不静默降级</td>
 </tr>
 </tbody></table>
 <p>服务端决定再次执行时使用新 <code>messageId</code>，不能通过重投原拒绝或终态消息重新运行。相同消息并发到达时也只能形成一个持久受理决定。</p>
@@ -2209,39 +2526,39 @@ description: 在指定运维平台内完成其职责范围内的查询与变更�
 </tr>
 </thead>
 <tbody><tr>
-<td>完成</td>
-<td><code>TASK_STATE_COMPLETED</code></td>
-<td>最终 Artifact 提供业务结果与必要的非敏感运行摘要</td>
+<td data-label="结果">完成</td>
+<td data-label="A2A 状态（JSON 中使用完整枚举名）"><code>TASK_STATE_COMPLETED</code></td>
+<td data-label="业务说明">最终 Artifact 提供业务结果与必要的非敏感运行摘要</td>
 </tr>
 <tr>
-<td>已取消</td>
-<td><code>TASK_STATE_CANCELED</code></td>
-<td>已停止后续步骤、排空并落盘，不回滚外部操作</td>
+<td data-label="结果">已取消</td>
+<td data-label="A2A 状态（JSON 中使用完整枚举名）"><code>TASK_STATE_CANCELED</code></td>
+<td data-label="业务说明">已停止后续步骤、排空并落盘，不回滚外部操作</td>
 </tr>
 <tr>
-<td>忙时拒绝</td>
-<td><code>TASK_STATE_REJECTED</code></td>
-<td>原因 <code>busy</code>，没有执行资源</td>
+<td data-label="结果">忙时拒绝</td>
+<td data-label="A2A 状态（JSON 中使用完整枚举名）"><code>TASK_STATE_REJECTED</code></td>
+<td data-label="业务说明">原因 <code>busy</code>，没有执行资源</td>
 </tr>
 <tr>
-<td>超时</td>
-<td><code>TASK_STATE_FAILED</code></td>
-<td><code>timed-out</code></td>
+<td data-label="结果">超时</td>
+<td data-label="A2A 状态（JSON 中使用完整枚举名）"><code>TASK_STATE_FAILED</code></td>
+<td data-label="业务说明"><code>timed-out</code></td>
 </tr>
 <tr>
-<td>缺输入</td>
-<td><code>TASK_STATE_FAILED</code></td>
-<td><code>missing-input</code></td>
+<td data-label="结果">缺输入</td>
+<td data-label="A2A 状态（JSON 中使用完整枚举名）"><code>TASK_STATE_FAILED</code></td>
+<td data-label="业务说明"><code>missing-input</code></td>
 </tr>
 <tr>
-<td>需要登录或验证</td>
-<td><code>TASK_STATE_FAILED</code></td>
-<td><code>login-required</code></td>
+<td data-label="结果">需要登录或验证</td>
+<td data-label="A2A 状态（JSON 中使用完整枚举名）"><code>TASK_STATE_FAILED</code></td>
+<td data-label="业务说明"><code>login-required</code></td>
 </tr>
 <tr>
-<td>重启时未完成</td>
-<td><code>TASK_STATE_FAILED</code></td>
-<td><code>interrupted-unknown</code>，明确外部操作可能已经发生，结果未知</td>
+<td data-label="结果">重启时未完成</td>
+<td data-label="A2A 状态（JSON 中使用完整枚举名）"><code>TASK_STATE_FAILED</code></td>
+<td data-label="业务说明"><code>interrupted-unknown</code>，明确外部操作可能已经发生，结果未知</td>
 </tr>
 </tbody></table>
 <p>失败原因使用标准 <code>TaskStatus.message</code> 的结构化 Data Part（业务字段 <code>reasonCode</code>、<code>safeMessage</code>），同时提供安全文本说明；这些是业务结果 schema，不新增 A2A 方法、状态或错误码体系。协议格式、认证、权限、未找到任务和不可取消等问题使用标准协议错误，不能冒充业务 Task 已失败。</p>
@@ -2265,36 +2582,36 @@ description: 在指定运维平台内完成其职责范围内的查询与变更�
 </tr>
 </thead>
 <tbody><tr>
-<td>输入</td>
-<td>所选接口的标准 <code>tenant</code>、<code>taskId</code>、<code>resultSha256</code>、服务端 <code>receivedAt</code></td>
+<td data-label="项目">输入</td>
+<td data-label="契约">所选接口的标准 <code>tenant</code>、<code>taskId</code>、<code>resultSha256</code>、服务端 <code>receivedAt</code></td>
 </tr>
 <tr>
-<td>确认对象</td>
-<td>原终态 Task 的公开结果投影 <code>{id, contextId, status, artifacts}</code>；缺省 <code>artifacts</code> 规范为 <code>[]</code>，运行摘要在 Artifact 内</td>
+<td data-label="项目">确认对象</td>
+<td data-label="契约">原终态 Task 的公开结果投影 <code>{id, contextId, status, artifacts}</code>；缺省 <code>artifacts</code> 规范为 <code>[]</code>，运行摘要在 Artifact 内</td>
 </tr>
 <tr>
-<td>摘要</td>
-<td>投影按 RFC 8785 规范化后计算 SHA-256；不包含 history、交付状态或摘要字段自身。终态内容先落盘再计算／发送，后续不重写时间戳或结果</td>
+<td data-label="项目">摘要</td>
+<td data-label="契约">投影按 RFC 8785 规范化后计算 SHA-256；不包含 history、交付状态或摘要字段自身。终态内容先落盘再计算／发送，后续不重写时间戳或结果</td>
 </tr>
 <tr>
-<td>摘要公布</td>
-<td>终态 Task 和终态状态事件的标准 <code>metadata</code> 均在扩展 URI 命名空间内提供 <code>resultSha256</code>；查询同一终态得到相同摘要</td>
+<td data-label="项目">摘要公布</td>
+<td data-label="契约">终态 Task 和终态状态事件的标准 <code>metadata</code> 均在扩展 URI 命名空间内提供 <code>resultSha256</code>；查询同一终态得到相同摘要</td>
 </tr>
 <tr>
-<td>成功输出</td>
-<td>匹配的 <code>taskId</code> 与 <code>resultSha256</code>；桌面已持久保存交付确认后才响应成功</td>
+<td data-label="项目">成功输出</td>
+<td data-label="契约">匹配的 <code>taskId</code> 与 <code>resultSha256</code>；桌面已持久保存交付确认后才响应成功</td>
 </tr>
 <tr>
-<td>重复确认</td>
-<td>同 Task 同摘要返回相同成功结果；不同摘要或未终态返回安全协议错误，不改写原执行结果</td>
+<td data-label="项目">重复确认</td>
+<td data-label="契约">同 Task 同摘要返回相同成功结果；不同摘要或未终态返回安全协议错误，不改写原执行结果</td>
 </tr>
 <tr>
-<td>服务端义务</td>
-<td>原结果与索引持久提交后才确认；重复收到结果不重复推进后续编排，具体服务端内部实现不在本仓交付范围</td>
+<td data-label="项目">服务端义务</td>
+<td data-label="契约">原结果与索引持久提交后才确认；重复收到结果不重复推进后续编排，具体服务端内部实现不在本仓交付范围</td>
 </tr>
 <tr>
-<td>桌面义务</td>
-<td>确认前保留终态结果；断线、重启或确认响应丢失后继续交付／确认，不重新执行 Task</td>
+<td data-label="项目">桌面义务</td>
+<td data-label="契约">确认前保留终态结果；断线、重启或确认响应丢失后继续交付／确认，不重新执行 Task</td>
 </tr>
 </tbody></table>
 <p>扩展只处理交付，不占运行容量，不改写 TaskState，不另增 <code>callId</code>、<code>resultId</code> 或新的恢复消息。拒绝、失败和取消 Task 同样通过其不可变终态投影完成确认。确认持久化失败必须返回错误并保留待确认状态，不能伪造已交付。</p>
@@ -2331,34 +2648,34 @@ description: 在指定运维平台内完成其职责范围内的查询与变更�
 </tr>
 </thead>
 <tbody><tr>
-<td><code>GET /api/diagnostics/limits</code></td>
-<td>当前有效身份</td>
-<td>允许的格式版本、压缩包字节数、展开字节数与文件数上限；客户端准备材料前读取，提交时服务端再次校验</td>
+<td data-label="接口"><code>GET /api/diagnostics/limits</code></td>
+<td data-label="输入">当前有效身份</td>
+<td data-label="输出与成功边界">允许的格式版本、压缩包字节数、展开字节数与文件数上限；客户端准备材料前读取，提交时服务端再次校验</td>
 </tr>
 <tr>
-<td><code>PUT /api/diagnostics/thread-uploads/{uploadId}</code></td>
-<td>已鉴权请求、单个 thread 诊断 ZIP、包 SHA-256；包内含 manifest</td>
-<td>包校验完成、持久保存且索引提交后返回回执；<code>202</code> 只表示处理中</td>
+<td data-label="接口"><code>PUT /api/diagnostics/thread-uploads/{uploadId}</code></td>
+<td data-label="输入">已鉴权请求、单个 thread 诊断 ZIP、包 SHA-256；包内含 manifest</td>
+<td data-label="输出与成功边界">包校验完成、持久保存且索引提交后返回回执；<code>202</code> 只表示处理中</td>
 </tr>
 <tr>
-<td><code>GET /api/diagnostics/thread-uploads/{uploadId}</code></td>
-<td>同一授权范围的上传 ID</td>
-<td>未接收、处理中、失败或已接收回执；请求超时后据此核对</td>
+<td data-label="接口"><code>GET /api/diagnostics/thread-uploads/{uploadId}</code></td>
+<td data-label="输入">同一授权范围的上传 ID</td>
+<td data-label="输出与成功边界">未接收、处理中、失败或已接收回执；请求超时后据此核对</td>
 </tr>
 <tr>
-<td><code>GET /api/diagnostics</code></td>
-<td>有权限的来源设备／thread／run／状态筛选及分页参数</td>
-<td>可访问的诊断摘要列表，失败或未完成暂存不伪装成已接收</td>
+<td data-label="接口"><code>GET /api/diagnostics</code></td>
+<td data-label="输入">有权限的来源设备／thread／run／状态筛选及分页参数</td>
+<td data-label="输出与成功边界">可访问的诊断摘要列表，失败或未完成暂存不伪装成已接收</td>
 </tr>
 <tr>
-<td><code>GET /api/diagnostics/{diagnosticId}</code></td>
-<td>有权限的诊断 ID</td>
-<td>只读摘要、run／checkpoint 时间线、完整性与缺失项、附件索引</td>
+<td data-label="接口"><code>GET /api/diagnostics/{diagnosticId}</code></td>
+<td data-label="输入">有权限的诊断 ID</td>
+<td data-label="输出与成功边界">只读摘要、run／checkpoint 时间线、完整性与缺失项、附件索引</td>
 </tr>
 <tr>
-<td><code>GET /api/diagnostics/{diagnosticId}/attachments/{attachmentId}</code></td>
-<td>有权限的附件 ID，不能传任意磁盘路径</td>
-<td>校验归属后返回附件字节或短时受限下载地址；浏览器下载不执行附件代码</td>
+<td data-label="接口"><code>GET /api/diagnostics/{diagnosticId}/attachments/{attachmentId}</code></td>
+<td data-label="输入">有权限的附件 ID，不能传任意磁盘路径</td>
+<td data-label="输出与成功边界">校验归属后返回附件字节或短时受限下载地址；浏览器下载不执行附件代码</td>
 </tr>
 </tbody></table>
 <p>幂等身份沿用 <code>uploadId</code>，绑定来源安装、thread 与包摘要；同 ID 同包返回同一回执，不同包返回冲突。回执至少有 <code>uploadId</code>、<code>diagnosticId</code>、<code>threadId</code>、<code>bundleSha256</code>、<code>receivedAt</code>、完整性和缺失清单。没有包及可查询索引的持久提交，不能返回“已接收”。</p>
@@ -2561,7 +2878,7 @@ description: 在指定运维平台内完成其职责范围内的查询与变更�
 <h2 id="11-provider-服务端配合">服务端配合</h2>
 <p>首版 Provider 配置和凭据由运维在客户端本地预配置与管理，无需本项目服务端提供配置下发、凭据托管、模型发现或模型请求转发接口。接入地址可以指向既有内部网关，网关按自身约定提供 OpenAI 兼容服务。</p>
 <p>已有服务端契约见 <a href="#10-server-api">10 · 服务端 API</a>。线上用户通过 Console 发起业务，服务端 Agent 调用后台客户端时复用本机配置并固定快照；任务正文不能携带密钥或覆盖 Provider／模型选择，配置缺失或不可用时返回明确失败。</p>
-<footer><span class="footer-label">客户端 MVP 设计 · 2026-10-22</span><a href="#preface-versioning">回到：Agent 版本管理</a></footer></article></div></main><script>const chapters=[["preface-versioning","前置-Agent版本管理.md","Agent 版本管理"],["00-overview","00-总体架构.md","客户端需求与职责"],["core-ws","核心-服务端通过WS调用客户端.md","A2A 任务执行与恢复"],["core-skill-system","核心-Skill模板与迭代.md","Skill 模板与迭代"],["01-skill","01-SKILL.md","SKILL"],["02-mcp","02-MCP.md","MCP"],["03-builtintool","03-buildintool.md","builtinTool"],["04-agent","04-agent.md","Agent"],["05-updater","05-桌面端更新.md","桌面端更新"],["06-sync","06-同步与装配.md","同步与装配"],["07-execution","07-任务执行与恢复.md","任务执行与恢复"],["08-frontend","08-前端现状与缺口.md","前端现状与缺口"],["09-operations","09-运维与诊断上传.md","运维与诊断上传"],["10-server-api","10-服务端API.md","服务端 API"],["11-provider","11-Provider.md","Provider"]];
+<footer><span class="footer-label">客户端 MVP 设计 · 2026-10-22</span><a href="#core-server-deployment">回到：服务端部署与持久化</a></footer></article></div></main><script>const chapters=[["core-server-deployment","核心-服务端部署与持久化.md","服务端部署与持久化"],["preface-versioning","前置-Agent版本管理.md","Agent 版本管理"],["00-overview","00-总体架构.md","客户端需求与职责"],["core-ws","核心-服务端通过WS调用客户端.md","A2A 任务执行与恢复"],["core-skill-system","核心-Skill模板与迭代.md","Skill 模板与迭代"],["01-skill","01-SKILL.md","SKILL"],["02-mcp","02-MCP.md","MCP"],["03-builtintool","03-buildintool.md","builtinTool"],["04-agent","04-agent.md","Agent"],["05-updater","05-桌面端更新.md","桌面端更新"],["06-sync","06-同步与装配.md","同步与装配"],["07-execution","07-任务执行与恢复.md","任务执行与恢复"],["08-frontend","08-前端现状与缺口.md","前端现状与缺口"],["09-operations","09-运维与诊断上传.md","运维与诊断上传"],["10-server-api","10-服务端API.md","服务端 API"],["11-provider","11-Provider.md","Provider"]];
 const navLinks=[...document.querySelectorAll('.chapter-nav a')];
 const articles=[...document.querySelectorAll('article')];
 let current=-1;

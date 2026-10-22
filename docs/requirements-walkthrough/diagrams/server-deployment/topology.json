@@ -1,0 +1,159 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "目标部署 · 多机 Compose，当前 Nginx 仍为单点",
+    "locale": "zh-CN",
+    "output": "docs/requirements-walkthrough/diagrams/server-deployment/topology.html",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "entry-users",
+      "type": "external",
+      "label": "Console／桌面",
+      "sublabel": "HTTPS／主动 WSS",
+      "pos": [
+        40,
+        260
+      ],
+      "size": [
+        180,
+        80
+      ]
+    },
+    {
+      "id": "single-nginx",
+      "type": "backend",
+      "label": "现有 Nginx",
+      "sublabel": "单机入口；HA 待补齐",
+      "pos": [
+        350,
+        260
+      ],
+      "size": [
+        180,
+        80
+      ]
+    },
+    {
+      "id": "host-a",
+      "type": "backend",
+      "label": "机器 A · Compose",
+      "sublabel": "API／网关／worker × 2",
+      "pos": [
+        670,
+        60
+      ],
+      "size": [
+        240,
+        100
+      ]
+    },
+    {
+      "id": "host-b",
+      "type": "backend",
+      "label": "机器 B · Compose",
+      "sublabel": "API／网关／worker × 1",
+      "pos": [
+        670,
+        460
+      ],
+      "size": [
+        240,
+        100
+      ]
+    },
+    {
+      "id": "shared-state",
+      "type": "database",
+      "label": "PostgreSQL／Redis",
+      "sublabel": "共享记录／队列与唤醒（已有）",
+      "pos": [
+        670,
+        260
+      ],
+      "size": [
+        240,
+        100
+      ]
+    },
+    {
+      "id": "shared-files",
+      "type": "database",
+      "label": "共享 NAS／NFSv4.1",
+      "sublabel": "版本／工作目录／产物（推荐新增）",
+      "pos": [
+        1060,
+        260
+      ],
+      "size": [
+        260,
+        100
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "entry-users",
+      "to": "single-nginx",
+      "label": "HTTPS／WSS"
+    },
+    {
+      "from": "single-nginx",
+      "to": "host-a",
+      "label": "API／WSS"
+    },
+    {
+      "from": "single-nginx",
+      "to": "host-b",
+      "label": "API／WSS"
+    },
+    {
+      "from": "host-a",
+      "to": "shared-state",
+      "label": "读写／队列"
+    },
+    {
+      "from": "host-b",
+      "to": "shared-state",
+      "label": "读写／队列"
+    },
+    {
+      "from": "host-a",
+      "to": "shared-files",
+      "label": "共享文件"
+    },
+    {
+      "from": "host-b",
+      "to": "shared-files",
+      "label": "共享文件"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "角色分离，同一镜像",
+      "items": [
+        "每机 API 与网关各 1 个，worker 总数保持 3",
+        "WS 传输、A2A 处理与图执行仍为独立职责"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "共享依赖位于应用 Compose 之外",
+      "items": [
+        "第二台机器连接同一套状态、队列与 NFS 导出",
+        "API／网关加入 Nginx upstream；worker 加入原队列"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "多应用节点不等于全链路 HA",
+      "items": [
+        "单机 Nginx 仍是入口单点；存储 HA 尚需核实",
+        "NAS 是目标选型；本图不是已上线部署证据"
+      ]
+    }
+  ]
+}

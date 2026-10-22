@@ -1,0 +1,37 @@
+{
+  "method": "native Viewer SVG export",
+  "normalization": "HTML blank-line whitespace normalized before verified publication; SVG trailing whitespace removed and one final LF retained",
+  "currentDiagramReceipts": "See each diagram.finalizeReceipt",
+  "diagrams": [
+    {
+      "slug": "topology",
+      "finalizeReceipt": "topology.finalize-summary.json",
+      "artifactSha256": "6130acc52df42df9940252dc84c0ba37699f955b433fd246dceee004f55c7163",
+      "svgSha256": "6f7bb9b4b2156fba79c0e65ec6fd94ebbb3f6af40c24b970229f74c2c72c5a9a"
+    },
+    {
+      "slug": "handoff",
+      "finalizeReceipt": "handoff.finalize-summary.json",
+      "artifactSha256": "222293ac032b074da79fa27cb4fe23bd1d24b0812e900ec0c33054f3f7fed431",
+      "svgSha256": "457e25d97d803adce1eb813f07001920abe672fe0fce0bfc4575801a1b9cb8bd"
+    },
+    {
+      "slug": "gateway-reconnect",
+      "finalizeReceipt": "review-2/gateway-reconnect.finalize-summary.json",
+      "artifactSha256": "e45f10dc755340fac8cbbf703305fe773cfdbfa27047e6941898c068f8e7ecca",
+      "svgSha256": "a5c1b72b50083e60d3e5b98ca4470d08f4ab52794faa0553acb744a17d4bae85"
+    },
+    {
+      "slug": "files",
+      "finalizeReceipt": "files.finalize-summary.json",
+      "artifactSha256": "cb359fcc7657aa7b8c6e3c62f8cdcd9efc085c7e7518ed2056e2f6a10d85f3a4",
+      "svgSha256": "9c4465cd0469d2ec58859b3e67dc0d65ea4cc80771120070edb5b81f3995b4af"
+    },
+    {
+      "slug": "filesystem",
+      "finalizeReceipt": "filesystem.finalize-summary.json",
+      "artifactSha256": "b016c6ffea51b8f8afd1128126e1a6cdd92df992032e6b7f554f24a3a34fd5a7",
+      "svgSha256": "e8802607440663041135c2e449f5bab96a2c7014373d455f1d278b22f899418c"
+    }
+  ]
+}

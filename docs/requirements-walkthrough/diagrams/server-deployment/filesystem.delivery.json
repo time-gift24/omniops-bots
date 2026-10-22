@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "be89d6bd-b88f-4206-b6be-748798a4d99b",
+  "status": "current",
+  "command": "deliver",
+  "type": "tree",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/server-deployment/filesystem.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/server-deployment/filesystem.html",
+  "specification": {
+    "sha256": "d7fb1ff8c8fea56bdbd8fefc5be0676d5fbf61acd54aba42e67fed1786fadaee",
+    "bytes": 3500
+  },
+  "artifact": {
+    "sha256": "b016c6ffea51b8f8afd1128126e1a6cdd92df992032e6b7f554f24a3a34fd5a7",
+    "bytes": 832581
+  }
+}

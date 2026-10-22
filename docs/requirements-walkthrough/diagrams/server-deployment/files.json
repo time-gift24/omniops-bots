@@ -1,0 +1,190 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "目标顺序 · 版本、工作目录与跨 worker 文件访问",
+    "locale": "zh-CN",
+    "output": "docs/requirements-walkthrough/diagrams/server-deployment/files.html",
+    "quality_profile": "showcase"
+  },
+  "participants": [
+    {
+      "id": "operator",
+      "type": "external",
+      "label": "运维／Console",
+      "sublabel": "已有身份"
+    },
+    {
+      "id": "file-api",
+      "type": "backend",
+      "label": "API 文件模块",
+      "sublabel": "鉴权／索引"
+    },
+    {
+      "id": "nfs",
+      "type": "database",
+      "label": "共享 NFS",
+      "sublabel": "文件与工作目录"
+    },
+    {
+      "id": "pg",
+      "type": "database",
+      "label": "PostgreSQL",
+      "sublabel": "权限／修订"
+    },
+    {
+      "id": "wa",
+      "type": "backend",
+      "label": "worker A",
+      "sublabel": "当前写者"
+    },
+    {
+      "id": "wb",
+      "type": "backend",
+      "label": "worker B",
+      "sublabel": "后续获准运行"
+    }
+  ],
+  "messages": [
+    {
+      "id": "files-1",
+      "from": "operator",
+      "to": "file-api",
+      "y": 175,
+      "label": "提交版本物料"
+    },
+    {
+      "id": "files-2",
+      "from": "file-api",
+      "to": "nfs",
+      "y": 219,
+      "label": "暂存、校验并公布完整包",
+      "note": "完成必要 close／flush 后原子重命名；不暴露半包"
+    },
+    {
+      "id": "files-3",
+      "from": "file-api",
+      "to": "pg",
+      "y": 309,
+      "label": "提交发布索引与文件修订"
+    },
+    {
+      "id": "files-4",
+      "from": "pg",
+      "to": "file-api",
+      "y": 353,
+      "label": "提交成功",
+      "variant": "return"
+    },
+    {
+      "id": "files-5",
+      "from": "file-api",
+      "to": "operator",
+      "y": 397,
+      "label": "返回已发布版本",
+      "variant": "return"
+    },
+    {
+      "id": "files-6",
+      "from": "wa",
+      "to": "pg",
+      "y": 441,
+      "label": "取得固定版本与授权 workspaceId"
+    },
+    {
+      "id": "files-7",
+      "from": "wa",
+      "to": "nfs",
+      "y": 485,
+      "label": "读取版本并写工作目录",
+      "note": "版本只读；工作区由当前获准运行单写"
+    },
+    {
+      "id": "files-8",
+      "from": "nfs",
+      "to": "wa",
+      "y": 575,
+      "label": "按存储契约完成文件写入",
+      "variant": "return"
+    },
+    {
+      "id": "files-9",
+      "from": "wa",
+      "to": "pg",
+      "y": 619,
+      "label": "提交文件修订与产物索引",
+      "note": "文件与 checkpoint 不具备跨系统原子回滚"
+    },
+    {
+      "id": "files-10",
+      "from": "wb",
+      "to": "pg",
+      "y": 709,
+      "label": "后续运行取得工作区写入权",
+      "note": "先确认旧写者停止；无法确认时禁止接管写入"
+    },
+    {
+      "id": "files-11",
+      "from": "wb",
+      "to": "nfs",
+      "y": 799,
+      "label": "重新打开同一授权工作目录"
+    },
+    {
+      "id": "files-12",
+      "from": "nfs",
+      "to": "wb",
+      "y": 843,
+      "label": "返回持久文件",
+      "variant": "return",
+      "note": "不依赖 worker A 的容器层或本机 volume"
+    },
+    {
+      "id": "files-13",
+      "from": "operator",
+      "to": "file-api",
+      "y": 933,
+      "label": "请求授权产物"
+    },
+    {
+      "id": "files-14",
+      "from": "file-api",
+      "to": "pg",
+      "y": 977,
+      "label": "核验权限与确定文件修订"
+    },
+    {
+      "id": "files-15",
+      "from": "file-api",
+      "to": "nfs",
+      "y": 1021,
+      "label": "读取已提交文件"
+    },
+    {
+      "id": "files-16",
+      "from": "file-api",
+      "to": "operator",
+      "y": 1065,
+      "label": "流式返回文件内容",
+      "variant": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "同一份共享文件",
+      "items": [
+        "版本物料、可修改工作目录与产物按目录隔离",
+        "两台机器挂同一 NFS 导出；本机缓存随时可丢弃"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "文件完成先于业务公布",
+      "items": [
+        "先写完整文件，再提交 PostgreSQL 索引",
+        "NFS 锁不自动提供分区 fencing；失联时停止新写入"
+      ]
+    }
+  ]
+}

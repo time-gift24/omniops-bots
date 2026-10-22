@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "9ad12c75-580d-4b66-8ffa-5efaa2e162be",
+  "status": "current",
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/server-deployment/handoff.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/server-deployment/handoff.html",
+  "specification": {
+    "sha256": "34f658d6618ec058921deabb5f032c7060058339ecceac066f7bdddbf5a4c8f4",
+    "bytes": 4402
+  },
+  "artifact": {
+    "sha256": "222293ac032b074da79fa27cb4fe23bd1d24b0812e900ec0c33054f3f7fed431",
+    "bytes": 819487
+  }
+}

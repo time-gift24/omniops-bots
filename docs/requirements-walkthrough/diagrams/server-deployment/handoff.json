@@ -1,0 +1,193 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "目标顺序 · Console 接入与持久结果交接",
+    "locale": "zh-CN",
+    "output": "docs/requirements-walkthrough/diagrams/server-deployment/handoff.html",
+    "quality_profile": "showcase"
+  },
+  "participants": [
+    {
+      "id": "console",
+      "type": "frontend",
+      "label": "Console",
+      "sublabel": "现有前端"
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "API",
+      "sublabel": "任意实例"
+    },
+    {
+      "id": "pg",
+      "type": "database",
+      "label": "PostgreSQL",
+      "sublabel": "持久记录"
+    },
+    {
+      "id": "redis",
+      "type": "messagebus",
+      "label": "Redis",
+      "sublabel": "队列／唤醒"
+    },
+    {
+      "id": "pool",
+      "type": "backend",
+      "label": "worker 池",
+      "sublabel": "原运行机制"
+    },
+    {
+      "id": "a2a",
+      "type": "backend",
+      "label": "接入 A2A 层",
+      "sublabel": "网关进程内"
+    }
+  ],
+  "messages": [
+    {
+      "id": "handoff-1",
+      "from": "console",
+      "to": "api",
+      "y": 175,
+      "label": "发起业务运行"
+    },
+    {
+      "id": "handoff-2",
+      "from": "api",
+      "to": "pg",
+      "y": 219,
+      "label": "提交 run 与待调度记录"
+    },
+    {
+      "id": "handoff-3",
+      "from": "pg",
+      "to": "api",
+      "y": 263,
+      "label": "持久提交成功",
+      "variant": "return"
+    },
+    {
+      "id": "handoff-4",
+      "from": "api",
+      "to": "console",
+      "y": 307,
+      "label": "返回 run 身份",
+      "variant": "return"
+    },
+    {
+      "id": "handoff-5",
+      "from": "api",
+      "to": "redis",
+      "y": 351,
+      "label": "通知原运行队列",
+      "variant": "dashed"
+    },
+    {
+      "id": "handoff-6",
+      "from": "pool",
+      "to": "redis",
+      "y": 395,
+      "label": "worker 1 领取运行"
+    },
+    {
+      "id": "handoff-7",
+      "from": "pool",
+      "to": "pg",
+      "y": 439,
+      "label": "保存稳定桌面调用身份",
+      "note": "关联服务端 run、messageId 和目标安装；先落盘再发送"
+    },
+    {
+      "id": "handoff-8",
+      "from": "pool",
+      "to": "redis",
+      "y": 529,
+      "label": "唤醒持有连接的网关",
+      "variant": "dashed"
+    },
+    {
+      "id": "handoff-9",
+      "from": "redis",
+      "to": "a2a",
+      "y": 573,
+      "label": "收到调用通知",
+      "variant": "dashed",
+      "note": "经 WS 发送 A2A；桌面受理与执行详见下一章"
+    },
+    {
+      "id": "handoff-10",
+      "from": "a2a",
+      "to": "pg",
+      "y": 663,
+      "label": "保存终态结果与待推进记录",
+      "note": "同一事务；此时原 worker 即使退出，也不阻塞接收"
+    },
+    {
+      "id": "handoff-11",
+      "from": "pg",
+      "to": "a2a",
+      "y": 753,
+      "label": "结果与索引已提交",
+      "variant": "return",
+      "note": "提交后才向桌面发送既有交付确认扩展"
+    },
+    {
+      "id": "handoff-12",
+      "from": "a2a",
+      "to": "redis",
+      "y": 843,
+      "label": "通知后续推进",
+      "variant": "dashed"
+    },
+    {
+      "id": "handoff-13",
+      "from": "pool",
+      "to": "redis",
+      "y": 887,
+      "label": "worker 2 领取后续工作"
+    },
+    {
+      "id": "handoff-14",
+      "from": "pool",
+      "to": "pg",
+      "y": 931,
+      "label": "按原 run 读取结果并幂等推进",
+      "note": "仅按既有运行策略取得推进权；不自动重跑桌面 Task"
+    },
+    {
+      "id": "handoff-15",
+      "from": "api",
+      "to": "pg",
+      "y": 1021,
+      "label": "读取同一 run 当前状态"
+    },
+    {
+      "id": "handoff-16",
+      "from": "api",
+      "to": "console",
+      "y": 1065,
+      "label": "返回持久状态／结果",
+      "variant": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "结果不依赖原 worker 存活",
+      "items": [
+        "待调度、桌面调用身份和待推进记录先持久保存",
+        "Console 可由其他 API 实例读取同一 run"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "通知允许重发，推进必须幂等",
+      "items": [
+        "PostgreSQL 与 Redis 不是跨系统原子事务",
+        "核对未完成记录补通知；复用既有队列与运行互斥"
+      ]
+    }
+  ]
+}

@@ -4,6 +4,8 @@
 
 以下图示是本次确认的**目标设计**，不是已实现链路。远端 A2A、WSS 绑定、持久去重与交付确认仍待接入。协议以 [A2A 1.0.0](https://a2a-protocol.org/v1.0.0/specification/) 为基线，协商版本为 `1.0`；WebSocket 使用明确声明的自定义绑定，不宣称它是标准 HTTP JSON-RPC 绑定。
 
+部署前提见[核心 · 服务端部署与持久化](./核心-服务端部署与持久化.md)：Console API、网关和图 worker 分开运行，多台 Compose 共享 PostgreSQL、Redis 与文件存储；当前单机 Nginx 仍是入口单点。本章只规定跨端任务行为，不把容器重启解释为桌面任务恢复。
+
 ## 三层职责：网络、协议、执行
 
 ![网络、A2A 与 Agent 执行分开](./assets/a2a/layers.svg)

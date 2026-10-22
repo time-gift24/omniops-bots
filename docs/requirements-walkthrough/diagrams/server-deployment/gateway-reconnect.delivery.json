@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "e3af7448-1900-40ca-b3dd-81a3d2a8d87a",
+  "status": "current",
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/server-deployment/gateway-reconnect.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/server-deployment/gateway-reconnect.html",
+  "specification": {
+    "sha256": "d40959345fbd3f3cd1d4a7d0e075c7abab0707f811b27e5782b7fe8dfddeb740",
+    "bytes": 4109
+  },
+  "artifact": {
+    "sha256": "e45f10dc755340fac8cbbf703305fe773cfdbfa27047e6941898c068f8e7ecca",
+    "bytes": 816532
+  }
+}

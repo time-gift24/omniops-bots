@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "diagram_type": "tree",
+  "meta": {
+    "title": "目标目录 · Skill、Agent 提示词与运行文件",
+    "locale": "zh-CN",
+    "output": "docs/requirements-walkthrough/diagrams/server-deployment/filesystem.html",
+    "quality_profile": "showcase"
+  },
+  "layout": {
+    "direction": "right",
+    "nodeW": 180,
+    "nodeMaxW": 260,
+    "gapX": 60,
+    "gapY": 25
+  },
+  "nodes": [
+    {
+      "id": "shared-root",
+      "label": "/srv/omniops-data/",
+      "sublabel": "共享 NAS／NFS 根目录"
+    },
+    {
+      "id": "agent-releases",
+      "parent": "shared-root",
+      "label": "agents/releases/<agentId>/",
+      "sublabel": "官方 Agent 版本"
+    },
+    {
+      "id": "agent-version",
+      "parent": "agent-releases",
+      "label": "<contentId>/",
+      "sublabel": "不可变 Agent 完整包"
+    },
+    {
+      "id": "agent-prompt",
+      "parent": "agent-version",
+      "label": "prompt.md",
+      "sublabel": "完整系统提示词"
+    },
+    {
+      "id": "agent-manifest",
+      "parent": "agent-version",
+      "label": "agent.json",
+      "sublabel": "固定 Skill 引用、tool 与 MCP"
+    },
+    {
+      "id": "agent-tags",
+      "parent": "agent-releases",
+      "label": "tags.json",
+      "sublabel": "人工标签映射的读取投影"
+    },
+    {
+      "id": "skill-releases",
+      "parent": "shared-root",
+      "label": "skills/releases/<skillId>/",
+      "sublabel": "官方 Skill 版本"
+    },
+    {
+      "id": "skill-version",
+      "parent": "skill-releases",
+      "label": "<contentId>/",
+      "sublabel": "不可变 Skill 完整包"
+    },
+    {
+      "id": "skill-entry",
+      "parent": "skill-version",
+      "label": "SKILL.md",
+      "sublabel": "Skill 入口与操作说明"
+    },
+    {
+      "id": "skill-scripts",
+      "parent": "skill-version",
+      "label": "scripts/",
+      "sublabel": "可选脚本"
+    },
+    {
+      "id": "skill-references",
+      "parent": "skill-version",
+      "label": "references/",
+      "sublabel": "可选参考文件"
+    },
+    {
+      "id": "skill-assets",
+      "parent": "skill-version",
+      "label": "assets/",
+      "sublabel": "可选资源；完整包保留原结构"
+    },
+    {
+      "id": "skill-tags",
+      "parent": "skill-releases",
+      "label": "tags.json",
+      "sublabel": "人工标签映射的读取投影"
+    },
+    {
+      "id": "workspaces",
+      "parent": "shared-root",
+      "label": "workspaces/<组织>/<workspaceId>/",
+      "sublabel": "可写工作目录；获准运行单写"
+    },
+    {
+      "id": "artifacts",
+      "parent": "shared-root",
+      "label": "artifacts/<组织>/<serverRunId>/",
+      "sublabel": "截图、报告等确定运行产物"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Prompt 跟随 Agent 发布",
+      "items": [
+        "prompt.md 与 agent.json 一起决定 Agent contentId",
+        "agent.json 固定 skillId、Skill contentId 和挂载路径"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Skill 是独立完整包",
+      "items": [
+        "SKILL.md、脚本、参考文件与资源一起固定版本",
+        "图中只展开正式物料与运行目录；草稿修订另存 drafts/"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "从物料版本走到 A2A",
+      "items": [
+        "版本管理说明如何固定组合与生成运行指纹",
+        "A2A 选择 agentId＋contentId 入口；每个桌面 Task 独立执行"
+      ]
+    }
+  ]
+}

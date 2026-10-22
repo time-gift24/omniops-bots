@@ -1,0 +1,171 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "目标顺序 · 网关故障后恢复原 Task",
+    "locale": "zh-CN",
+    "output": "docs/requirements-walkthrough/diagrams/server-deployment/gateway-reconnect.html",
+    "quality_profile": "showcase"
+  },
+  "participants": [
+    {
+      "id": "desktop",
+      "type": "external",
+      "label": "桌面客户端",
+      "sublabel": "进程仍在"
+    },
+    {
+      "id": "nginx",
+      "type": "backend",
+      "label": "Nginx",
+      "sublabel": "入口仍可用"
+    },
+    {
+      "id": "ga",
+      "type": "backend",
+      "label": "网关 A",
+      "sublabel": "原连接／A2A"
+    },
+    {
+      "id": "gb",
+      "type": "backend",
+      "label": "网关 B",
+      "sublabel": "新连接／A2A"
+    },
+    {
+      "id": "pg",
+      "type": "database",
+      "label": "PostgreSQL",
+      "sublabel": "调用／结果"
+    }
+  ],
+  "messages": [
+    {
+      "id": "gateway-reconnect-1",
+      "from": "desktop",
+      "to": "nginx",
+      "y": 175,
+      "label": "主动建立 WSS"
+    },
+    {
+      "id": "gateway-reconnect-2",
+      "from": "nginx",
+      "to": "ga",
+      "y": 219,
+      "label": "升级连接并鉴权"
+    },
+    {
+      "id": "gateway-reconnect-3",
+      "from": "ga",
+      "to": "desktop",
+      "y": 263,
+      "label": "发送 A2A 首次任务",
+      "variant": "emphasis"
+    },
+    {
+      "from": "desktop",
+      "to": "ga",
+      "y": 307,
+      "label": "返回已受理的原 Task",
+      "variant": "return",
+      "note": "桌面独立执行；网关 A 随后退出，原连接断开",
+      "id": "gateway-reconnect-4"
+    },
+    {
+      "id": "gateway-reconnect-5",
+      "from": "desktop",
+      "to": "nginx",
+      "y": 397,
+      "label": "退避后重新连接",
+      "note": "Nginx 自身若故障，本场景无法接入；单机入口仍是单点"
+    },
+    {
+      "id": "gateway-reconnect-6",
+      "from": "nginx",
+      "to": "gb",
+      "y": 487,
+      "label": "连接到健康网关并鉴权"
+    },
+    {
+      "id": "gateway-reconnect-7",
+      "from": "gb",
+      "to": "pg",
+      "y": 531,
+      "label": "核对原调用与 Task 身份"
+    },
+    {
+      "id": "gateway-reconnect-8",
+      "from": "pg",
+      "to": "gb",
+      "y": 575,
+      "label": "返回原 messageId／taskId",
+      "variant": "return"
+    },
+    {
+      "id": "gateway-reconnect-9",
+      "from": "gb",
+      "to": "desktop",
+      "y": 619,
+      "label": "查询或订阅原 Task",
+      "note": "未终态 SubscribeToTask；终态 GetTask；无 taskId 用原 messageId 重投"
+    },
+    {
+      "id": "gateway-reconnect-10",
+      "from": "desktop",
+      "to": "gb",
+      "y": 709,
+      "label": "返回当前状态／最终 Artifact",
+      "variant": "return",
+      "note": "这里示例 Task 已完成；不补播历史事件"
+    },
+    {
+      "id": "gateway-reconnect-11",
+      "from": "gb",
+      "to": "pg",
+      "y": 799,
+      "label": "提交原结果与待推进记录"
+    },
+    {
+      "id": "gateway-reconnect-12",
+      "from": "pg",
+      "to": "gb",
+      "y": 843,
+      "label": "持久提交成功",
+      "variant": "return"
+    },
+    {
+      "id": "gateway-reconnect-13",
+      "from": "gb",
+      "to": "desktop",
+      "y": 887,
+      "label": "交付确认（既有扩展）",
+      "note": "沿用已声明扩展，不以 socket 发送成功代替交付"
+    },
+    {
+      "id": "gateway-reconnect-14",
+      "from": "desktop",
+      "to": "gb",
+      "y": 977,
+      "label": "持久确认成功",
+      "variant": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "连接更换，执行身份保留",
+      "items": [
+        "桌面继续运行；新网关恢复原 Task 的当前状态",
+        "既有 A2A 查询／订阅与持久交付确认保持不变"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "这不是入口故障切换图",
+      "items": [
+        "Nginx 与共享依赖仍须可用",
+        "入口完整 HA 需另补云 LB 或适用网络中的双机 VIP"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+# Target contract only: the external server image and these entrypoints are not implemented here.
+# Its ENTRYPOINT must accept api / gateway / worker and read the *_FILE settings.
+x-application: &application
+  image: ${SERVER_IMAGE:?Set a versioned server image implementing this contract}
+  init: true
+  restart: unless-stopped
+  stop_grace_period: 60s
+  environment: &environment
+    DATABASE_URL_FILE: /run/secrets/database_url
+    REDIS_URL_FILE: /run/secrets/redis_url
+    DEPLOYMENT_ENV: ${DEPLOYMENT_ENV:?Set the shared environment}
+    QUEUE_NAMESPACE: ${QUEUE_NAMESPACE:?Set the shared queue namespace}
+    NODE_ID: ${NODE_ID:?Set the unique host identifier}
+    DATA_ROOT: /srv/omniops-data
+  secrets:
+    - database_url
+    - redis_url
+
+services:
+  api:
+    <<: *application
+    command: [api]
+    environment:
+      <<: *environment
+      SESSION_KEY_FILE: /run/secrets/session_key
+    secrets:
+      - database_url
+      - redis_url
+      - session_key
+    ports:
+      - "${BIND_ADDRESS:?Set a private host address}:${API_PORT:-8080}:8080"
+    volumes:
+      - agent-data:/srv/omniops-data
+
+  gateway:
+    <<: *application
+    command: [gateway]
+    environment:
+      <<: *environment
+      SESSION_KEY_FILE: /run/secrets/session_key
+    secrets:
+      - database_url
+      - redis_url
+      - session_key
+    ports:
+      - "${BIND_ADDRESS:?Set a private host address}:${GATEWAY_PORT:-8081}:8081"
+
+  worker:
+    <<: *application
+    command: [worker]
+    volumes:
+      - agent-data:/srv/omniops-data
+
+secrets:
+  database_url:
+    file: ${DATABASE_URL_FILE:?Set a restricted local credential file}
+  redis_url:
+    file: ${REDIS_URL_FILE:?Set a restricted local credential file}
+  session_key:
+    file: ${SESSION_KEY_FILE:?Set the shared session key file}
+
+volumes:
+  agent-data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: "addr=${NFS_HOST:?Set the shared NFS server},nfsvers=4.1,rw,hard"
+      device: ":${NFS_EXPORT:?Set the shared export path}"

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "4823c917-55c4-4bea-8414-4c2f4f6e3391",
+  "status": "current",
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/server-deployment/files.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/server-deployment/files.html",
+  "specification": {
+    "sha256": "76d54cf998aeb0746d30f340e0a1166f107ede1c3c265e231e16aa94df2a4adc",
+    "bytes": 4352
+  },
+  "artifact": {
+    "sha256": "cb359fcc7657aa7b8c6e3c62f8cdcd9efc085c7e7518ed2056e2f6a10d85f3a4",
+    "bytes": 819123
+  }
+}
