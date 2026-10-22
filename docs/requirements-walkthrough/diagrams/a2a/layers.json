@@ -1,0 +1,180 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "components": [
+    {
+      "id": "server",
+      "type": "external",
+      "label": "服务端 Agent",
+      "sublabel": "A2A Client／Console 业务",
+      "pos": [
+        40,
+        90
+      ],
+      "size": [
+        150,
+        80
+      ]
+    },
+    {
+      "id": "wire",
+      "type": "messagebus",
+      "label": "WSS 传输",
+      "sublabel": "主动连接／鉴权／心跳／重连",
+      "pos": [
+        300,
+        90
+      ],
+      "size": [
+        190,
+        80
+      ]
+    },
+    {
+      "id": "a2a",
+      "type": "backend",
+      "label": "A2A 任务处理",
+      "sublabel": "路由／去重／状态／交付",
+      "pos": [
+        620,
+        90
+      ],
+      "size": [
+        190,
+        80
+      ]
+    },
+    {
+      "id": "exec",
+      "type": "backend",
+      "label": "Agent 执行",
+      "sublabel": "装配／LangGraph／取消清理",
+      "pos": [
+        930,
+        90
+      ],
+      "size": [
+        190,
+        80
+      ]
+    },
+    {
+      "id": "chrome",
+      "type": "external",
+      "label": "专用 Chrome",
+      "sublabel": "每个 Task 独立页面",
+      "pos": [
+        1230,
+        90
+      ],
+      "size": [
+        160,
+        80
+      ]
+    },
+    {
+      "id": "tasks",
+      "type": "database",
+      "label": "任务持久记录",
+      "sublabel": "messageId／Task／待确认结果",
+      "pos": [
+        620,
+        330
+      ],
+      "size": [
+        190,
+        80
+      ]
+    },
+    {
+      "id": "runs",
+      "type": "database",
+      "label": "本地执行证据",
+      "sublabel": "快照／历史／SQLite checkpoint",
+      "pos": [
+        930,
+        330
+      ],
+      "size": [
+        190,
+        80
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "客户端 Node.js runtime（职责边界，不新增独立进程）",
+      "wraps": [
+        "wire",
+        "a2a",
+        "exec",
+        "tasks",
+        "runs"
+      ],
+      "pad": 26
+    }
+  ],
+  "connections": [
+    {
+      "id": "connect",
+      "from": "wire",
+      "to": "server",
+      "label": "主动建立 WSS"
+    },
+    {
+      "id": "protocol",
+      "from": "wire",
+      "to": "a2a",
+      "label": "原生 A2A 消息"
+    },
+    {
+      "id": "invoke",
+      "from": "a2a",
+      "to": "exec",
+      "label": "执行／取消"
+    },
+    {
+      "id": "browser",
+      "from": "exec",
+      "to": "chrome",
+      "label": "Playwright"
+    },
+    {
+      "id": "task-write",
+      "from": "a2a",
+      "to": "tasks",
+      "label": "持久提交"
+    },
+    {
+      "id": "run-write",
+      "from": "exec",
+      "to": "runs",
+      "label": "执行证据"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "标准协议优先",
+      "items": [
+        "AgentCard 绑定确定版本；tenant 选择逻辑入口",
+        "Message、Task、Artifact 与查询／订阅／取消沿用 A2A"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "必要补充与实现边界",
+      "items": [
+        "WSS 显式声明自定义传输绑定；业务只扩展持久交付确认",
+        "远端链路仍待实现；本图表示已确认的目标设计"
+      ]
+    }
+  ],
+  "meta": {
+    "title": "目标设计 · 网络、A2A 与执行分开",
+    "locale": "zh-CN",
+    "output": "docs/requirements-walkthrough/diagrams/a2a/layers.html",
+    "quality_profile": "showcase"
+  }
+}

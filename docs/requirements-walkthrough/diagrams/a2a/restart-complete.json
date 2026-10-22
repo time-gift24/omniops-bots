@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "participants": [
+    {
+      "id": "server",
+      "label": "服务端 Agent",
+      "type": "external",
+      "sublabel": "A2A Client"
+    },
+    {
+      "id": "a2a",
+      "label": "A2A 任务层",
+      "type": "backend",
+      "sublabel": "桌面 A2A Server"
+    },
+    {
+      "id": "disk",
+      "label": "本地记录",
+      "type": "database",
+      "sublabel": "Task／去重／交付"
+    }
+  ],
+  "messages": [
+    {
+      "id": "restart-complete-m1",
+      "from": "a2a",
+      "to": "disk",
+      "y": 175,
+      "label": "启动读取未确认的终态 Task"
+    },
+    {
+      "id": "restart-complete-m2",
+      "from": "disk",
+      "to": "a2a",
+      "y": 221,
+      "label": "原 Task、Artifact 与摘要"
+    },
+    {
+      "id": "restart-complete-m3",
+      "from": "server",
+      "to": "a2a",
+      "y": 267,
+      "label": "重新鉴权后 GetTask"
+    },
+    {
+      "id": "restart-complete-m4",
+      "from": "a2a",
+      "to": "server",
+      "y": 313,
+      "label": "返回原终态与 Artifact"
+    },
+    {
+      "id": "restart-complete-m5",
+      "from": "server",
+      "to": "a2a",
+      "y": 359,
+      "label": "结果持久保存后确认"
+    },
+    {
+      "id": "restart-complete-m6",
+      "from": "a2a",
+      "to": "disk",
+      "y": 405,
+      "label": "幂等保存已交付状态"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "已有终态保持不变",
+      "items": [
+        "不重新装配 Agent，不创建 run，不打开任务页面",
+        "复用原 Task 与结果摘要；重复确认得到相同结果"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "图示范围",
+      "items": [
+        "本图只表示结果已经持久完成的重启场景",
+        "跨端 A2A 查询和确认仍经重新鉴权的 WSS"
+      ]
+    }
+  ],
+  "meta": {
+    "title": "目标顺序 · 重启后交付已完成结果",
+    "locale": "zh-CN",
+    "output": "docs/requirements-walkthrough/diagrams/a2a/restart-complete.html",
+    "quality_profile": "showcase"
+  }
+}

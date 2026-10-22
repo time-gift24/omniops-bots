@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "d39ae4e7-365e-4bbe-98a3-a69ce0a5f6bb",
+  "status": "current",
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/a2a/cancel.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/a2a/cancel.html",
+  "specification": {
+    "sha256": "e88dc2bb790724ab373859b0528019a7f8c34498f56ce534d2224591908616a5",
+    "bytes": 2858
+  },
+  "artifact": {
+    "sha256": "36373af35a7000f70a5408bed2b73d622add031ac0e5456340dae952219bd102",
+    "bytes": 811264
+  }
+}

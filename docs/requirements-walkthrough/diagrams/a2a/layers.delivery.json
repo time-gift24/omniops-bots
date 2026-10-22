@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "d440ce83-98f8-4ae2-8c6d-b1015fb5c950",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/a2a/layers.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/a2a/layers.html",
+  "specification": {
+    "sha256": "eb9e44712f49e4a017ae79c3b7317a6d1d66ccfe337794b6df1252803fba4c0c",
+    "bytes": 3468
+  },
+  "artifact": {
+    "sha256": "264427fb493453a3979842319a8e6a1812b6c33280a93d2924771e56f073f1e2",
+    "bytes": 819976
+  }
+}

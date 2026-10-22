@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "participants": [
+    {
+      "id": "server",
+      "label": "服务端 Agent",
+      "type": "external",
+      "sublabel": "A2A Client"
+    },
+    {
+      "id": "a2a",
+      "label": "A2A 任务层",
+      "type": "backend",
+      "sublabel": "桌面 A2A Server"
+    },
+    {
+      "id": "exec",
+      "label": "Agent 执行",
+      "type": "backend",
+      "sublabel": "现有 Node runtime"
+    },
+    {
+      "id": "disk",
+      "label": "本地记录",
+      "type": "database",
+      "sublabel": "Task／去重／交付"
+    }
+  ],
+  "messages": [
+    {
+      "id": "disconnect-m1",
+      "from": "a2a",
+      "to": "exec",
+      "y": 175,
+      "label": "断线后维持当前 run",
+      "note": "进程仍在运行；传输断开不触发取消"
+    },
+    {
+      "id": "disconnect-m2",
+      "from": "exec",
+      "to": "disk",
+      "y": 251,
+      "label": "保存本轮执行证据"
+    },
+    {
+      "id": "disconnect-m3",
+      "from": "exec",
+      "to": "a2a",
+      "y": 297,
+      "label": "本例执行完成，提交结果"
+    },
+    {
+      "id": "disconnect-m4",
+      "from": "a2a",
+      "to": "disk",
+      "y": 343,
+      "label": "保存终态与待交付结果"
+    },
+    {
+      "id": "disconnect-m5",
+      "from": "a2a",
+      "to": "exec",
+      "y": 389,
+      "label": "结算完成，释放运行容量"
+    },
+    {
+      "id": "disconnect-m6",
+      "from": "server",
+      "to": "a2a",
+      "y": 435,
+      "label": "重连鉴权后 GetTask"
+    },
+    {
+      "id": "disconnect-m7",
+      "from": "a2a",
+      "to": "disk",
+      "y": 481,
+      "label": "读取持久终态与 Artifact"
+    },
+    {
+      "id": "disconnect-m8",
+      "from": "disk",
+      "to": "a2a",
+      "y": 527,
+      "label": "返回原结果"
+    },
+    {
+      "id": "disconnect-m9",
+      "from": "a2a",
+      "to": "server",
+      "y": 573,
+      "label": "返回当前 Task 与结果"
+    },
+    {
+      "id": "disconnect-m10",
+      "from": "server",
+      "to": "a2a",
+      "y": 619,
+      "label": "持久保存后确认交付"
+    },
+    {
+      "id": "disconnect-m11",
+      "from": "a2a",
+      "to": "disk",
+      "y": 665,
+      "label": "标记原结果已交付"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "本图前提",
+      "items": [
+        "本例在重连前已完成，因此使用 GetTask",
+        "若仍未终态则 SubscribeToTask；首条为当前快照"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "恢复交付，不恢复执行",
+      "items": [
+        "订阅时若已终态，转为 GetTask；不回放历史事件",
+        "省略 WSS 重连细节；不新增私有恢复消息"
+      ]
+    }
+  ],
+  "meta": {
+    "title": "目标顺序 · 断线继续执行，重连恢复当前状态",
+    "locale": "zh-CN",
+    "output": "docs/requirements-walkthrough/diagrams/a2a/disconnect.html",
+    "quality_profile": "showcase"
+  }
+}

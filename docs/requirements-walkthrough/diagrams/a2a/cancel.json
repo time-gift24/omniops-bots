@@ -1,0 +1,128 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "participants": [
+    {
+      "id": "server",
+      "label": "服务端 Agent",
+      "type": "external",
+      "sublabel": "A2A Client"
+    },
+    {
+      "id": "a2a",
+      "label": "A2A 任务层",
+      "type": "backend",
+      "sublabel": "桌面 A2A Server"
+    },
+    {
+      "id": "exec",
+      "label": "Agent 执行",
+      "type": "backend",
+      "sublabel": "现有 Node runtime"
+    },
+    {
+      "id": "disk",
+      "label": "本地记录",
+      "type": "database",
+      "sublabel": "Task／去重／交付"
+    }
+  ],
+  "messages": [
+    {
+      "id": "cancel-m1",
+      "from": "server",
+      "to": "a2a",
+      "y": 175,
+      "label": "CancelTask(taskId)"
+    },
+    {
+      "id": "cancel-m2",
+      "from": "a2a",
+      "to": "exec",
+      "y": 221,
+      "label": "请求停止该 run"
+    },
+    {
+      "id": "cancel-m3",
+      "from": "a2a",
+      "to": "server",
+      "y": 267,
+      "label": "返回 WORKING Task",
+      "note": "用标准 TaskStatus.message 提示正在停止"
+    },
+    {
+      "id": "cancel-m4",
+      "from": "exec",
+      "to": "disk",
+      "y": 343,
+      "label": "排空操作并保存执行证据",
+      "note": "停止后续步骤；已发生的外部操作不回滚"
+    },
+    {
+      "id": "cancel-m5",
+      "from": "exec",
+      "to": "a2a",
+      "y": 419,
+      "label": "已排空，提交取消结果"
+    },
+    {
+      "id": "cancel-m6",
+      "from": "a2a",
+      "to": "disk",
+      "y": 465,
+      "label": "持久保存 CANCELED Task"
+    },
+    {
+      "id": "cancel-m7",
+      "from": "a2a",
+      "to": "exec",
+      "y": 511,
+      "label": "结算完成，释放运行容量"
+    },
+    {
+      "id": "cancel-m8",
+      "from": "a2a",
+      "to": "server",
+      "y": 557,
+      "label": "订阅发布取消终态"
+    },
+    {
+      "id": "cancel-m9",
+      "from": "server",
+      "to": "a2a",
+      "y": 603,
+      "label": "持久保存后确认"
+    },
+    {
+      "id": "cancel-m10",
+      "from": "a2a",
+      "to": "disk",
+      "y": 649,
+      "label": "保存交付确认"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": "取消是一次尝试",
+      "items": [
+        "本图只表示取消在结果冻结前生效的场景",
+        "结果已固定或已终态：TaskNotCancelableError；GetTask 查询原结果"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "生命周期",
+      "items": [
+        "排空期间仍占运行容量；WSS 断开不撤销取消",
+        "重复请求不改变既有终态；不再定义私有取消回执"
+      ]
+    }
+  ],
+  "meta": {
+    "title": "目标顺序 · 请求取消，排空后确认终态",
+    "locale": "zh-CN",
+    "output": "docs/requirements-walkthrough/diagrams/a2a/cancel.html",
+    "quality_profile": "showcase"
+  }
+}

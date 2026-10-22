@@ -1,0 +1,52 @@
+{
+  "method": "native Viewer SVG export",
+  "normalization": "HTML blank-line whitespace normalized before verified publication; SVG trailing whitespace removed and one final LF retained",
+  "currentDiagramReceipts": "hygiene-review/<slug>.finalize-summary.json",
+  "diagrams": [
+    {
+      "slug": "layers",
+      "artifactSha256": "264427fb493453a3979842319a8e6a1812b6c33280a93d2924771e56f073f1e2",
+      "svgSha256": "65712406bd0cf21157747b913a7680f1c6b2c6726ee81030031cba26a4a39d91"
+    },
+    {
+      "slug": "run",
+      "artifactSha256": "b36edaa701b9c64b8d3108424e008aabe60ef112a3541920f1957715001f8437",
+      "svgSha256": "b2e210f0dddf30d85b1d2393a01ec7cbfa6985b0137d3ef1a4d0f873c36092e7"
+    },
+    {
+      "slug": "duplicate",
+      "artifactSha256": "0134619e872a9fc460efb52e0f731ca5f06ff01f583223b7266d5c8228c76d8d",
+      "svgSha256": "6d41df003293fe883e920d29bfea61df9926bb8b2ff024780dc478f13e39dcb0"
+    },
+    {
+      "slug": "busy",
+      "artifactSha256": "4c5ae4e0101e0447a494a87ab98ff6a1f8e18cb389193e1e6cafc8575c02c6f2",
+      "svgSha256": "cae32f20b7dc5a3eda165df6c189484b4528119e5ae75eec83a91614b54bd7c7"
+    },
+    {
+      "slug": "disconnect",
+      "artifactSha256": "173ec9dcac7db09de504fb6c118b72f6c01b252e3fb6bcc17d92033afab31dd5",
+      "svgSha256": "979cd89b48fe92b32ad9c79df9469b981102a223ccfb9f7363fe93a5b3c7912d"
+    },
+    {
+      "slug": "restart-complete",
+      "artifactSha256": "7ff57b39e3fb257676df3545a1ca20be1fc69f7764301bcbb6c9380db1b989ee",
+      "svgSha256": "9098daeea5e6482d531a8f1cb83a145cecacdaf503d29b06694244153bad8b3e"
+    },
+    {
+      "slug": "restart-unknown",
+      "artifactSha256": "910da546a0497390572e845255ba965238a030969022548e4e47bacfc004bedb",
+      "svgSha256": "ef411d95c59e519569147dfc9512a3ff036354713f9ae23b1c7a03bfbaddda2a"
+    },
+    {
+      "slug": "cancel",
+      "artifactSha256": "36373af35a7000f70a5408bed2b73d622add031ac0e5456340dae952219bd102",
+      "svgSha256": "bef7f3e101ff73e498fdd81f3372f97b3f185d4176db9d511c37006dc13df574"
+    },
+    {
+      "slug": "failure",
+      "artifactSha256": "d9cc3e482cdcaff15a83440779ea239b78be67559563226da9f969f2a12128c5",
+      "svgSha256": "dace0d30dc4fa7c4d4a17d578885fcc839e13ba855ce5d3629ce8072f89c1a51"
+    }
+  ]
+}

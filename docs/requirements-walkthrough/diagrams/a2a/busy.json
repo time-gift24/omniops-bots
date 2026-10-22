@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "participants": [
+    {
+      "id": "server",
+      "label": "服务端 Agent",
+      "type": "external",
+      "sublabel": "A2A Client"
+    },
+    {
+      "id": "a2a",
+      "label": "A2A 任务层",
+      "type": "backend",
+      "sublabel": "桌面 A2A Server"
+    },
+    {
+      "id": "exec",
+      "label": "Agent 执行",
+      "type": "backend",
+      "sublabel": "现有 Node runtime"
+    },
+    {
+      "id": "disk",
+      "label": "本地记录",
+      "type": "database",
+      "sublabel": "Task／去重／交付"
+    }
+  ],
+  "messages": [
+    {
+      "id": "busy-m1",
+      "from": "server",
+      "to": "a2a",
+      "y": 175,
+      "label": "发送新的任务消息"
+    },
+    {
+      "id": "busy-m2",
+      "from": "a2a",
+      "to": "disk",
+      "y": 221,
+      "label": "查询 messageId"
+    },
+    {
+      "id": "busy-m3",
+      "from": "disk",
+      "to": "a2a",
+      "y": 267,
+      "label": "首次请求"
+    },
+    {
+      "id": "busy-m4",
+      "from": "a2a",
+      "to": "exec",
+      "y": 313,
+      "label": "检查运行容量"
+    },
+    {
+      "id": "busy-m5",
+      "from": "exec",
+      "to": "a2a",
+      "y": 359,
+      "label": "容量已满"
+    },
+    {
+      "id": "busy-m6",
+      "from": "a2a",
+      "to": "disk",
+      "y": 405,
+      "label": "保存 REJECTED Task 与 busy"
+    },
+    {
+      "id": "busy-m7",
+      "from": "disk",
+      "to": "a2a",
+      "y": 451,
+      "label": "拒绝结果已提交"
+    },
+    {
+      "id": "busy-m8",
+      "from": "a2a",
+      "to": "server",
+      "y": 497,
+      "label": "返回可查询的拒绝 Task"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": "业务拒绝也可追踪",
+      "items": [
+        "不创建 thread、run、Chrome 页面；不进入本地队列",
+        "重投原 messageId 仍返回原拒绝；重新执行使用新 ID"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "边界",
+      "items": [
+        "格式或鉴权错误返回协议错误，不创建 Task",
+        "省略 WSS 箭头；本图只表示忙时拒绝这一种场景"
+      ]
+    }
+  ],
+  "meta": {
+    "title": "目标顺序 · 容量不足时持久拒绝",
+    "locale": "zh-CN",
+    "output": "docs/requirements-walkthrough/diagrams/a2a/busy.html",
+    "quality_profile": "showcase"
+  }
+}

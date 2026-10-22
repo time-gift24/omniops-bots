@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "participants": [
+    {
+      "id": "server",
+      "label": "服务端 Agent",
+      "type": "external",
+      "sublabel": "A2A Client"
+    },
+    {
+      "id": "a2a",
+      "label": "A2A 任务层",
+      "type": "backend",
+      "sublabel": "桌面 A2A Server"
+    },
+    {
+      "id": "disk",
+      "label": "本地记录",
+      "type": "database",
+      "sublabel": "Task／去重／交付"
+    }
+  ],
+  "messages": [
+    {
+      "id": "duplicate-m1",
+      "from": "server",
+      "to": "a2a",
+      "y": 175,
+      "label": "重投原 messageId"
+    },
+    {
+      "id": "duplicate-m2",
+      "from": "a2a",
+      "to": "disk",
+      "y": 221,
+      "label": "在鉴权范围查询去重记录"
+    },
+    {
+      "id": "duplicate-m3",
+      "from": "disk",
+      "to": "a2a",
+      "y": 267,
+      "label": "返回原内容摘要与 Task"
+    },
+    {
+      "id": "duplicate-m4",
+      "from": "a2a",
+      "to": "server",
+      "y": 313,
+      "label": "返回原 Task 当前状态",
+      "note": "同 ID 不同调用内容返回冲突；不修改原 Task"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "先去重，再检查容量",
+      "items": [
+        "重投不创建 thread、run 或页面，不再次调用模型和工具",
+        "原 Task 可以正在执行、已终态或已被拒绝"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "图示范围",
+      "items": [
+        "省略纯传输 WSS 箭头，跨端消息仍经同一 WSS",
+        "RPC id 关联一次往返；messageId 标识稳定任务消息"
+      ]
+    }
+  ],
+  "meta": {
+    "title": "目标顺序 · 重投只返回原 Task",
+    "locale": "zh-CN",
+    "output": "docs/requirements-walkthrough/diagrams/a2a/duplicate.html",
+    "quality_profile": "showcase"
+  }
+}

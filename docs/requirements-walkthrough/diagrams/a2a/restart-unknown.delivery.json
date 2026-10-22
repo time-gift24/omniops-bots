@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "935759a7-4f79-4ca3-a352-58686dd95f2f",
+  "status": "current",
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/a2a/restart-unknown.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/a2a/restart-unknown.html",
+  "specification": {
+    "sha256": "114f9632b6910b9309ae69ea06650b63dd4667a44fed0e3d33fd9ccb06c77403",
+    "bytes": 2473
+  },
+  "artifact": {
+    "sha256": "910da546a0497390572e845255ba965238a030969022548e4e47bacfc004bedb",
+    "bytes": 807915
+  }
+}

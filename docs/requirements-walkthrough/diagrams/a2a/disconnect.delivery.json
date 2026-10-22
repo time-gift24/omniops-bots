@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "4fe3785d-91c5-47e0-8559-da6a07e2bc0f",
+  "status": "current",
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/a2a/disconnect.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/a2a/disconnect.html",
+  "specification": {
+    "sha256": "add6ae0eef276029081e8089c7ae2697c493909df4384a5fba840a114761f6c3",
+    "bytes": 2983
+  },
+  "artifact": {
+    "sha256": "173ec9dcac7db09de504fb6c118b72f6c01b252e3fb6bcc17d92033afab31dd5",
+    "bytes": 811943
+  }
+}

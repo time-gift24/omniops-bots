@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "d933533a-43f0-44c7-93ff-434734bcca7a",
+  "status": "current",
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/a2a/duplicate.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/a2a/duplicate.html",
+  "specification": {
+    "sha256": "f85c0fecfc63bf6193c21089099040c55f22a7c30bdbe771de60ad853da8c807",
+    "bytes": 1848
+  },
+  "artifact": {
+    "sha256": "0134619e872a9fc460efb52e0f731ca5f06ff01f583223b7266d5c8228c76d8d",
+    "bytes": 804931
+  }
+}

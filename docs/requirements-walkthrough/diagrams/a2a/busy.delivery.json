@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "fbe2a5d5-67b7-4898-9000-42b301b9b7d2",
+  "status": "current",
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/a2a/busy.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/a2a/busy.html",
+  "specification": {
+    "sha256": "4895430bf4c6e7dcef576c4bbed5cc2b1ca658955d3e76caf57739324478db69",
+    "bytes": 2368
+  },
+  "artifact": {
+    "sha256": "4c5ae4e0101e0447a494a87ab98ff6a1f8e18cb389193e1e6cafc8575c02c6f2",
+    "bytes": 809283
+  }
+}

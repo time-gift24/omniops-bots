@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "participants": [
+    {
+      "id": "server",
+      "label": "服务端 Agent",
+      "type": "external",
+      "sublabel": "A2A Client"
+    },
+    {
+      "id": "a2a",
+      "label": "A2A 任务层",
+      "type": "backend",
+      "sublabel": "桌面 A2A Server"
+    },
+    {
+      "id": "disk",
+      "label": "本地记录",
+      "type": "database",
+      "sublabel": "Task／去重／交付"
+    }
+  ],
+  "messages": [
+    {
+      "id": "restart-unknown-m1",
+      "from": "a2a",
+      "to": "disk",
+      "y": 175,
+      "label": "启动扫描遗留的非终态 Task"
+    },
+    {
+      "id": "restart-unknown-m2",
+      "from": "disk",
+      "to": "a2a",
+      "y": 221,
+      "label": "发现上次未完成任务"
+    },
+    {
+      "id": "restart-unknown-m3",
+      "from": "a2a",
+      "to": "disk",
+      "y": 267,
+      "label": "保存 FAILED 与中断原因",
+      "note": "Data Part：interrupted-unknown；外部操作可能已发生"
+    },
+    {
+      "id": "restart-unknown-m4",
+      "from": "disk",
+      "to": "a2a",
+      "y": 343,
+      "label": "失败终态已提交"
+    },
+    {
+      "id": "restart-unknown-m5",
+      "from": "server",
+      "to": "a2a",
+      "y": 389,
+      "label": "重连后 GetTask"
+    },
+    {
+      "id": "restart-unknown-m6",
+      "from": "a2a",
+      "to": "server",
+      "y": 435,
+      "label": "返回 FAILED 与安全原因"
+    },
+    {
+      "id": "restart-unknown-m7",
+      "from": "server",
+      "to": "a2a",
+      "y": 481,
+      "label": "持久保存后确认交付"
+    },
+    {
+      "id": "restart-unknown-m8",
+      "from": "a2a",
+      "to": "disk",
+      "y": 527,
+      "label": "保存交付确认"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "中断结果未知",
+      "items": [
+        "不能解释为从未执行；Chrome 的外部副作用可能已发生",
+        "checkpoint 只保留证据，不触发 invoke、resume 或重跑"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "后续业务",
+      "items": [
+        "服务端决定后续处理；显式新消息创建新 Task",
+        "省略 WSS 箭头；没有自动重试或挂起恢复"
+      ]
+    }
+  ],
+  "meta": {
+    "title": "目标顺序 · 重启将未完成 Task 收敛为失败",
+    "locale": "zh-CN",
+    "output": "docs/requirements-walkthrough/diagrams/a2a/restart-unknown.html",
+    "quality_profile": "showcase"
+  }
+}

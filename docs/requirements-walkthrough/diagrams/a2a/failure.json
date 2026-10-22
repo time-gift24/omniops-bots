@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "participants": [
+    {
+      "id": "server",
+      "label": "服务端 Agent",
+      "type": "external",
+      "sublabel": "A2A Client"
+    },
+    {
+      "id": "a2a",
+      "label": "A2A 任务层",
+      "type": "backend",
+      "sublabel": "桌面 A2A Server"
+    },
+    {
+      "id": "exec",
+      "label": "Agent 执行",
+      "type": "backend",
+      "sublabel": "现有 Node runtime"
+    },
+    {
+      "id": "disk",
+      "label": "本地记录",
+      "type": "database",
+      "sublabel": "Task／去重／交付"
+    }
+  ],
+  "messages": [
+    {
+      "id": "failure-m1",
+      "from": "a2a",
+      "to": "exec",
+      "y": 175,
+      "label": "执行已受理的 Task"
+    },
+    {
+      "id": "failure-m2",
+      "from": "exec",
+      "to": "disk",
+      "y": 221,
+      "label": "停止后续步骤并保存证据",
+      "note": "本例发生一种失败：超时、缺输入或需要登录"
+    },
+    {
+      "id": "failure-m3",
+      "from": "exec",
+      "to": "a2a",
+      "y": 297,
+      "label": "提交失败结算结果"
+    },
+    {
+      "id": "failure-m4",
+      "from": "a2a",
+      "to": "disk",
+      "y": 343,
+      "label": "保存 FAILED 与安全原因"
+    },
+    {
+      "id": "failure-m5",
+      "from": "a2a",
+      "to": "exec",
+      "y": 389,
+      "label": "结算完成，释放运行容量"
+    },
+    {
+      "id": "failure-m6",
+      "from": "a2a",
+      "to": "server",
+      "y": 435,
+      "label": "发布 FAILED Task",
+      "note": "TaskStatus.message 的 Data Part 提供业务原因码"
+    },
+    {
+      "id": "failure-m7",
+      "from": "server",
+      "to": "a2a",
+      "y": 511,
+      "label": "结果持久保存后确认"
+    },
+    {
+      "id": "failure-m8",
+      "from": "a2a",
+      "to": "disk",
+      "y": 557,
+      "label": "保存交付确认"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "同一流程的独立原因",
+      "items": [
+        "timed-out、missing-input、login-required 都映射为 FAILED",
+        "本图一次只发生一种原因；中断重启另见专图"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "显式新任务",
+      "items": [
+        "完成登录或补齐输入后，以新 messageId 发起新 Task",
+        "省略 WSS 箭头；原 Task 不挂起、不恢复、不自动重试"
+      ]
+    }
+  ],
+  "meta": {
+    "title": "目标顺序 · 业务失败统一进入 FAILED",
+    "locale": "zh-CN",
+    "output": "docs/requirements-walkthrough/diagrams/a2a/failure.html",
+    "quality_profile": "showcase"
+  }
+}

@@ -1,0 +1,212 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "participants": [
+    {
+      "id": "server",
+      "label": "服务端 Agent",
+      "type": "external",
+      "sublabel": "A2A Client"
+    },
+    {
+      "id": "wire",
+      "label": "WSS 传输",
+      "type": "messagebus",
+      "sublabel": "连接／鉴权／收发"
+    },
+    {
+      "id": "a2a",
+      "label": "A2A 任务层",
+      "type": "backend",
+      "sublabel": "桌面 A2A Server"
+    },
+    {
+      "id": "exec",
+      "label": "Agent 执行",
+      "type": "backend",
+      "sublabel": "现有 Node runtime"
+    },
+    {
+      "id": "disk",
+      "label": "本地记录",
+      "type": "database",
+      "sublabel": "Task／去重／交付"
+    }
+  ],
+  "messages": [
+    {
+      "id": "run-m1",
+      "from": "server",
+      "to": "wire",
+      "y": 175,
+      "label": "SendStreamingMessage"
+    },
+    {
+      "id": "run-m2",
+      "from": "wire",
+      "to": "a2a",
+      "y": 221,
+      "label": "转交 Message 与 tenant"
+    },
+    {
+      "id": "run-m3",
+      "from": "a2a",
+      "to": "disk",
+      "y": 267,
+      "label": "查询 messageId 去重记录"
+    },
+    {
+      "id": "run-m4",
+      "from": "disk",
+      "to": "a2a",
+      "y": 313,
+      "label": "首次请求"
+    },
+    {
+      "id": "run-m5",
+      "from": "a2a",
+      "to": "exec",
+      "y": 359,
+      "label": "预留运行容量"
+    },
+    {
+      "id": "run-m6",
+      "from": "exec",
+      "to": "a2a",
+      "y": 405,
+      "label": "准入通过"
+    },
+    {
+      "id": "run-m7",
+      "from": "a2a",
+      "to": "disk",
+      "y": 451,
+      "label": "保存 SUBMITTED 与去重映射",
+      "note": "落盘失败释放预留；不启动执行"
+    },
+    {
+      "id": "run-m8",
+      "from": "disk",
+      "to": "a2a",
+      "y": 527,
+      "label": "受理已持久提交"
+    },
+    {
+      "id": "run-m9",
+      "from": "a2a",
+      "to": "wire",
+      "y": 573,
+      "label": "首条 Task 快照"
+    },
+    {
+      "id": "run-m10",
+      "from": "wire",
+      "to": "server",
+      "y": 619,
+      "label": "返回 SUBMITTED Task"
+    },
+    {
+      "id": "run-m11",
+      "from": "a2a",
+      "to": "exec",
+      "y": 665,
+      "label": "按固定版本开始独立 run",
+      "note": "新 thread、run、页面；内部可有多次模型与工具调用"
+    },
+    {
+      "id": "run-m12",
+      "from": "exec",
+      "to": "disk",
+      "y": 741,
+      "label": "保存执行记录与证据"
+    },
+    {
+      "id": "run-m13",
+      "from": "exec",
+      "to": "a2a",
+      "y": 787,
+      "label": "提交唯一执行结果"
+    },
+    {
+      "id": "run-m14",
+      "from": "a2a",
+      "to": "disk",
+      "y": 833,
+      "label": "保存终态 Task 与 Artifact"
+    },
+    {
+      "id": "run-m15",
+      "from": "disk",
+      "to": "a2a",
+      "y": 879,
+      "label": "结果已持久保存"
+    },
+    {
+      "id": "run-m16",
+      "from": "a2a",
+      "to": "exec",
+      "y": 925,
+      "label": "结算完成，释放运行容量"
+    },
+    {
+      "id": "run-m17",
+      "from": "a2a",
+      "to": "wire",
+      "y": 971,
+      "label": "最终 Artifact 与终态事件"
+    },
+    {
+      "id": "run-m18",
+      "from": "wire",
+      "to": "server",
+      "y": 1017,
+      "label": "交付终态与业务结果",
+      "note": "服务端持久保存结果与索引；幂等推进后续业务"
+    },
+    {
+      "id": "run-m19",
+      "from": "server",
+      "to": "wire",
+      "y": 1093,
+      "label": "交付确认扩展"
+    },
+    {
+      "id": "run-m20",
+      "from": "wire",
+      "to": "a2a",
+      "y": 1139,
+      "label": "转交确认请求"
+    },
+    {
+      "id": "run-m21",
+      "from": "a2a",
+      "to": "disk",
+      "y": 1185,
+      "label": "核对摘要并保存已交付"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "执行与交付是两个边界",
+      "items": [
+        "执行结算结束释放容量；交付确认不占运行容量",
+        "服务端落盘后才确认；WSS 发送成功不代表已交付"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "标准任务流",
+      "items": [
+        "使用 SendStreamingMessage 省去额外订阅往返",
+        "也可 SendMessage 后 SubscribeToTask；执行不依赖订阅存在"
+      ]
+    }
+  ],
+  "meta": {
+    "title": "目标顺序 · 受理、执行与持久交付",
+    "locale": "zh-CN",
+    "output": "docs/requirements-walkthrough/diagrams/a2a/run.html",
+    "quality_profile": "showcase"
+  }
+}

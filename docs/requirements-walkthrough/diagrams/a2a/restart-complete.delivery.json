@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "7ae4c76f-e561-453d-9224-859e420eab7e",
+  "status": "current",
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/a2a/restart-complete.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/a2a/restart-complete.html",
+  "specification": {
+    "sha256": "7d589b4a9c200f350f4c1fb6ec9aa46211a37d2967465e6e84e68b7a6cb49efd",
+    "bytes": 2105
+  },
+  "artifact": {
+    "sha256": "7ff57b39e3fb257676df3545a1ca20be1fc69f7764301bcbb6c9380db1b989ee",
+    "bytes": 806251
+  }
+}
