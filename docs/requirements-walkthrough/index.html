@@ -630,6 +630,76 @@ docker compose --env-file node-b.env -f compose.yaml up -d --scale worker=1
 <summary>客户端与外部服务的结构关系</summary><figure class="diagram"><a href="./diagrams/00-overview.html" target="_blank" rel="noopener" aria-label="打开交互图：客户端与外部服务的结构关系"><img src="./assets/00-overview.svg" alt="客户端与外部服务的结构关系"></a><figcaption>客户端与外部服务的结构关系 · 点击查看可缩放交互图</figcaption></figure>
 <p><a href="./diagrams/00-overview.html">打开结构关系图</a></p>
 </details><h2 id="00-overview-客户端">客户端</h2>
+<h3 id="00-overview-安装包包含什么">安装包包含什么</h3>
+<p><strong>客户端整包交付运行底座、本地执行代码和运维界面；正式业务能力按确定 Agent／Skill 版本同步。</strong> 服务端复杂 graph 的节点、路由和业务状态留在服务端应用中，通过 A2A 调用桌面；客户端随包带有自己的本地执行图与工具实现，接到任务后装配所选版本并执行。</p>
+<table>
+<thead>
+<tr>
+<th>随安装包交付</th>
+<th>具体内容</th>
+<th>更新方式</th>
+</tr>
+</thead>
+<tbody><tr>
+<td data-label="随安装包交付">桌面壳与前端</td>
+<td data-label="具体内容">Tauri 原生程序、已构建的 React 页面、IPC 与系统能力、Node 子进程及浏览器进程生命周期管理</td>
+<td data-label="更新方式">随客户端整包更新；终端用户不需要安装 Rust 或前端开发环境</td>
+</tr>
+<tr>
+<td data-label="随安装包交付">私有 Node.js 与业务 runtime</td>
+<td data-label="具体内容">固定 Node.js <code>26.11.1</code> 可执行文件、<code>desktop/runtime/</code> 的生产模块；包括装配、本地 LangGraph 执行图、builtinTool、模型／MCP 调用、Chrome 管理和本地持久化代码</td>
+<td data-label="更新方式">随客户端整包更新；使用随包 Node，无须用户另装 Node／npm</td>
+</tr>
+<tr>
+<td data-label="随安装包交付">生产依赖与原生组件</td>
+<td data-label="具体内容">LangGraph.js、Deep Agents、LangChain、MCP SDK、<code>playwright-core</code>、SQLite checkpoint 依赖及匹配平台的原生 SQLite addon</td>
+<td data-label="更新方式">按锁文件构建并随包交付，不在用户机器上现场安装依赖；runtime 源码排除本仓测试、fixture 与开发桥接</td>
+</tr>
+<tr>
+<td data-label="随安装包交付">内嵌运维浏览器</td>
+<td data-label="具体内容">CEF 运行库、资源、语言文件及对应平台的 helper／启动组件</td>
+<td data-label="更新方式">随客户端整包更新；供手动运维浏览器使用，Agent 自动化使用外部 Chrome</td>
+</tr>
+<tr>
+<td data-label="随安装包交付">交付清单与许可</td>
+<td data-label="具体内容"><code>runtime-manifest.json</code>、第三方许可与声明，记录随包 runtime 的版本、目标平台和校验信息</td>
+<td data-label="更新方式">与本次整包一致，不代替 Agent／Skill 的业务内容版本</td>
+</tr>
+</tbody></table>
+<p>当前打包入口覆盖 macOS arm64 的 <code>.app</code>／<code>.dmg</code> 和 Windows x64 的 NSIS 安装器。包内本地执行图和 builtinTool 属于应用代码，修改这些实现需要发布客户端；它们不作为 Agent／Skill 资产发布。WSS 网络模块与 A2A 任务处理接入后也随 Node runtime 交付，共用一个 runtime；<strong>这些远端模块仍待实现，现有打包配置不表示 A2A 链路已经上线。</strong></p>
+<h3 id="00-overview-安装包之外的版本物料与本机数据">安装包之外的版本物料与本机数据</h3>
+<table>
+<thead>
+<tr>
+<th>内容</th>
+<th>来源与保存位置</th>
+<th>与安装包的边界</th>
+</tr>
+</thead>
+<tbody><tr>
+<td data-label="内容">官方 Agent／Skill 版本物料</td>
+<td data-label="来源与保存位置">通过既有 HTTPS 同步契约按 <code>agentId／skillId + contentId</code> 取得并校验，在本机缓存；Agent 包包含 <code>agent.json</code> 与 <code>prompt.md</code>，Skill 包包含 <code>SKILL.md</code>、脚本、参考资料和资源文件</td>
+<td data-label="与安装包的边界">不把全部官方版本烘焙进安装包；业务 Prompt 不复制进图代码。已有确定版本可复用，无法取得或校验失败时明确准备失败，不换旧版代跑；正式同步与版本加载仍按第 06、10 章的待接入契约实施</td>
+</tr>
+<tr>
+<td data-label="内容">本机运行数据</td>
+<td data-label="来源与保存位置">安装包外的应用数据目录、资源目录及选定工作目录：本地草稿、已下载版本、运行快照、工作文件、脚本、Artifact、会话历史与 SQLite checkpoint</td>
+<td data-label="与安装包的边界">执行时生成或保存，不写回只读安装资源；整包升级保留，不能据此自动续跑中断任务</td>
+</tr>
+<tr>
+<td data-label="内容">Google Chrome 与登录态</td>
+<td data-label="来源与保存位置">用户单独安装 Chrome；应用按需管理专用 profile 和每个 Task 的页面，Cookie／网站登录态留在本机</td>
+<td data-label="与安装包的边界">Chrome 不进入客户端安装包，由 Chrome 自身更新；专用 profile 不随版本物料或普通 Task 结果上传</td>
+</tr>
+<tr>
+<td data-label="内容">模型、MCP 服务与凭据</td>
+<td data-label="来源与保存位置">runtime 使用配置的外部模型和 MCP 服务；Provider／模型配置在本机维护，凭据使用系统凭据库，普通配置只保存引用</td>
+<td data-label="与安装包的边界">包内包含调用 SDK，不包含模型权重、远端服务实现或真实密钥；服务端复杂 graph、PostgreSQL、Redis 和共享文件服务也不安装到客户端</td>
+</tr>
+</tbody></table>
+<p>当前代码会在首次读取本地“浏览器助手”时生成默认配置与基础指令，执行图还包含通用工具约束；它们是本地初始化与运行底座，<strong>不等于已经内置一套正式官方 Agent 发布包或全部业务 Skill</strong>。业务 Prompt／Skill 的正式修改走版本发布与同步；只有需要新的本地工具或图实现时，才要求同时升级客户端。具体物料位置见<a href="#preface-versioning">Agent 版本管理</a>与<a href="#core-server-deployment">服务端部署与持久化</a>，整包升级边界见<a href="#05-updater">第 05 章</a>。</p>
+<p>当前打包依据：<a href="../../crates/omniops-bots-desktop/tauri.conf.json">Tauri 整包配置</a>、<a href="../../desktop/scripts/prepare.mjs">runtime 准备脚本</a>、<a href="../../desktop/scripts/stage-macos.py">macOS CEF 装配</a>和 <a href="../../desktop/scripts/build-native-windows.mjs">Windows 安装器构建</a>；初始化与执行依据：<a href="../../desktop/runtime/assembly.ts">本地 Agent 装配</a>、<a href="../../desktop/runtime/graphs/browser-agent.ts">本地执行图</a>与 <a href="../../desktop/runtime/main.mjs">runtime 入口</a>。本节只说明交付和数据职责，不修改打包流程，也不新增日志、span 或指标。</p>
+<h3 id="00-overview-客户端运行职责">客户端运行职责</h3>
 <ul>
 <li>面向线上用户展示连接状态等基础信息，日常作为后台进程运行；复用已有 Token 连接服务端，WebSocket 断线后退避重连。任务接收、执行与交付不依赖打开调试桌面。</li>
 <li>运维调试桌面展示身份与权限，提供 Skill 文件编辑与上传、Agent 提示词及装配调整、选 Agent 实验的连贯入口；未上传内容也能反复实验，官方已发布配置只读。</li>
@@ -640,6 +710,45 @@ docker compose --env-file node-b.env -f compose.yaml up -d --scale worker=1
 <li>后台保存结果并补传，正常任务交付只向服务端发送 Task 状态、最终结果和非敏感运行摘要；线上用户在 Console 查看任务状态和结果，逐条过程保留在本地供运维调试查看。</li>
 <li>需要排查时另行按指定 thread，通过 HTTPS 上传脱敏后的 SQLite checkpoint、过程与关联材料。服务端确认接收后展示诊断编号，具体见<a href="#09-operations">运维与诊断上传</a>。</li>
 </ul>
+<h3 id="00-overview-展望录制模式将一次告警处理沉淀为-skill">展望：录制模式，将一次告警处理沉淀为 Skill</h3>
+<p><strong>后续方向，本期不实现。</strong> 运维人员在客户端主动开启录制模式，选择应用管理的外部 Google Chrome 页面，人工完成一次告警排查与处理。客户端按操作顺序记录导航、点击、输入、选择等动作及关键页面结果，保存为本次告警的本地录制草稿；运维可补充告警背景、每一步的目的、判断依据和最终处理结果，让一次真实操作成为可整理、可复用的 Skill 素材。</p>
+<p><strong>预期闭环：开始录制 → 人工处理告警 → 停止并保存 → 预览整理 → 回传到目标 Skill 草稿 → 确认发布新版本。</strong></p>
+<table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>客户端预留的能力</th>
+<th>形成的材料</th>
+</tr>
+</thead>
+<tbody><tr>
+<td data-label="阶段">开始录制</td>
+<td data-label="客户端预留的能力">显式选择本次 Chrome 页面和关联告警，显示录制状态；只记录本次选择的范围</td>
+<td data-label="形成的材料">一次独立录制的业务背景与操作范围，不混入其他 Task 或手动 CEF 的操作</td>
+</tr>
+<tr>
+<td data-label="阶段">人工处理与保存</td>
+<td data-label="客户端预留的能力">保存有顺序的操作步骤与关键结果，允许补充说明、停止或放弃；人工操作与 Agent 自动执行分开使用</td>
+<td data-label="形成的材料">本地录制草稿；是否处理成功由实际验证结果说明，录制完成本身不代表告警解决</td>
+</tr>
+<tr>
+<td data-label="阶段">预览与整理</td>
+<td data-label="客户端预留的能力">上传前查看、删减和脱敏；密码、Token、Cookie 不进入回传材料，业务输入按需改成参数占位</td>
+<td data-label="形成的材料">可复用的步骤、前置条件、判断与验证方法；保留必要来源，去掉与复用无关的数据</td>
+</tr>
+<tr>
+<td data-label="阶段">回传到 Skill</td>
+<td data-label="客户端预留的能力">选择已有 Skill 的可编辑草稿，或创建新的 Skill 草稿，复用既有完整草稿修订上传流程</td>
+<td data-label="形成的材料">在 <code>references/</code> 中沉淀告警处理实践，并由 <code>SKILL.md</code> 索引；稳定步骤按需提炼为 <code>scripts/</code>，不自动把原始录制当作可执行脚本</td>
+</tr>
+<tr>
+<td data-label="阶段">确认发布与使用</td>
+<td data-label="客户端预留的能力">运维继续编辑、按需实验，确认后按原流程发布完整 Skill 新版本，更新受影响 Agent 的固定引用</td>
+<td data-label="形成的材料">后续任务复用已确认的方法；已发布包和正在执行的只读快照保持原版本</td>
+</tr>
+</tbody></table>
+<p>录制草稿独立保存在安装包外，回传属于运维主动维护 Skill 的流程，不随普通 A2A Task 结果自动上传，也不直接覆盖已发布 Skill。已有本地副本在回传失败时保留，便于修正后继续上传；原始记录只作为候选素材，正式内容沿用本人确认发布的规则。录制不自动重放告警处置，也不恢复或重跑已经终态的 Task。</p>
+<p>本节只预留产品方向，录制实现、文件格式与观测设计留待落地时细化；不新增录制 API、A2A 私有消息、日志、span 或指标。素材的整理方式衔接<a href="#core-skill-system-如何从任务反馈迭代到正式版本">核心 · Skill 模板与迭代</a>，草稿与正式发布沿用<a href="#01-skill">第 01 章</a>。</p>
 <h2 id="00-overview-详细设计">详细设计</h2>
 <p>以下运行模型按消息发生顺序描述客户端行为；各图是独立场景。准备失败、忙或执行中断的路径分别见同步与执行章节。</p>
 <h3 id="00-overview-场景一线上客户端后台接收服务端-agent-任务">场景一：线上客户端后台接收服务端 Agent 任务</h3>
@@ -704,6 +813,15 @@ docker compose --env-file node-b.env -f compose.yaml up -d --scale worker=1
 </tbody></table>
 <p>这些是职责边界，共用一个 Node runtime，不要求新增独立服务、通用容器或每个 Agent 一条连接。Rust 继续承担原生宿主与系统能力。</p>
 <p>服务端 Agent 是 <strong>A2A Client</strong>，桌面 Agent 是 <strong>A2A Server</strong>；这与桌面主动建立 WSS 的网络方向不同。每个官方 <code>agentId + contentId</code> 对应一个逻辑入口和标准 AgentCard，复用官方目录；多个入口共享同一 WSS。请求携带所选 AgentCard 接口的标准 <code>tenant</code> 路由值，由 A2A 适配层解析；真实组织、用户与安装权限来自已鉴权连接，不由 <code>tenant</code> 自行声明。</p>
+<h2 id="core-ws-完整链路服务端-graph-节点调用确定版本的桌面-agent">完整链路：服务端 graph 节点调用确定版本的桌面 Agent</h2>
+<p>服务端复杂 graph 的远端调用节点通过 A2A Client 调用桌面能力，将节点输入与所需业务上下文映射为标准 Message 的 Data Part。节点绑定官方 <code>agentId + contentId</code> 和目标安装，从官方目录取得该确定版本的 AgentCard；若配置使用发布标签，先解析并固定为 <code>contentId</code>，后续发送、重投和结果处理均沿用原版本。不存在、未授权或不兼容时明确失败，不自动替换为最新版。</p>
+<p><strong>前提：</strong> 桌面已经主动建立并鉴权 WSS，双方完成协议、绑定与必需扩展协商。下图展示一次成功调用的目标完整链路；泳道表示职责，服务端 A2A 层和 WSS 网络模块可以共处网关进程。</p>
+<figure class="diagram"><a href="./diagrams/a2a/full-chain/invoke.html" target="_blank" rel="noopener" aria-label="打开交互图：服务端 graph 节点选择确定版本、经 A2A 执行并持久交付结果"><img src="./assets/a2a/full-chain/invoke.svg" alt="服务端 graph 节点选择确定版本、经 A2A 执行并持久交付结果"></a><figcaption>服务端 graph 节点选择确定版本、经 A2A 执行并持久交付结果 · 点击查看可缩放交互图</figcaption></figure>
+<p><a href="./diagrams/a2a/full-chain/invoke.html">打开服务端 graph 到桌面 Agent 的完整顺序图</a></p>
+<p><strong>调用先落盘。</strong> 节点把服务端 run／步骤、目标安装、确定版本、稳定 <code>messageId</code> 和不可变输入关联到共享 PostgreSQL，再通知网关发送。桌面生成 <code>taskId</code>，服务端收到首条受理 Task 后保存映射。调用意图与结果都不依赖原 worker 中等待响应的 Promise；通知漏发由持久待处理记录对账补齐。换 worker 或网关仍使用原消息身份，不能把重投变成新一次执行。</p>
+<p><strong>桌面独立装配和执行。</strong> 桌面 A2A 层检查入口授权、持久去重与容量，受理落盘后才调用执行层。执行层为该 Task 创建独立 thread、run、graphThreadId 和 Chrome 页面，校验确定版本的 <code>agent.json</code>、<code>prompt.md</code> 及其引用的完整 Skill 包，再将准备好的 Agent 能力交给本地执行图节点。物料从已验缓存或既有版本同步取得，桌面不挂载服务端 NFS。服务端 graph 不包含业务 Prompt 副本，A2A 消息不传运行时对象、模型凭据或隐式会话现场；装配关系见<a href="#preface-versioning-装配关系版本物料在图外能力交给图节点">Agent 版本管理</a>。</p>
+<p><strong>结果落盘后交付，原图幂等推进。</strong> 桌面先保存唯一终态、最终 Artifact 和执行记录，结算并释放容量，再发送结果。服务端校验协议对象与结果摘要；引用附件时先持久接收文件并建立授权索引，再在同一 PostgreSQL 事务中保存原 Task／结果索引与待推进记录，提交后调用唯一业务扩展 <code>omniops/ConfirmTaskDelivery</code>。桌面持久保存匹配原 Task 与摘要的确认后才响应成功。后续节点校验业务结果 schema、从已保存结果映射输入，复用原运行队列、运行互斥与幂等推进；交付确认和后续推进各自重试，不要求确认往返成功后才能消费已持久结果，也不依赖最初 worker 仍存活。</p>
+<p>复杂 graph 的代码仍由应用发布管理，不进入 Agent 资产内容版本。上图以 <code>COMPLETED</code> 为正常路径；<code>REJECTED</code>、<code>FAILED</code>、<code>CANCELED</code> 同样保存并交付原终态，由服务端图走既有业务分支。业务结果 schema 校验失败也由服务端节点处理，不改写桌面终态或自动重跑 Task。缺输入或登录失败后的显式再次执行使用新 <code>messageId</code>；断线恢复沿用原 Task 的查询／订阅与交付确认，详细边界见下列场景。</p>
 <h2 id="core-ws-场景一受理执行保存与交付">场景一：受理、执行、保存与交付</h2>
 <p>**前提：**连接已鉴权，目标版本与扩展已协商，新消息可以受理。用户从 Console 发起业务，服务端选择确定版本的 AgentCard，以标准消息的 Data Part 显式传入业务输入和所需上下文。</p>
 <figure class="diagram"><a href="./diagrams/a2a/run.html" target="_blank" rel="noopener" aria-label="打开交互图：A2A 任务从受理到持久交付的运行顺序"><img src="./assets/a2a/run.svg" alt="A2A 任务从受理到持久交付的运行顺序"></a><figcaption>A2A 任务从受理到持久交付的运行顺序 · 点击查看可缩放交互图</figcaption></figure>
@@ -2882,7 +3000,7 @@ function show(){
  document.getElementById('chapter-select').value=id;
  document.getElementById('source').href=file;
  const diagram=document.getElementById('diagram');
- const runtimeLink=article.querySelector('a[href*="diagrams/a2a/run.html"]')||article.querySelector('a[href*="diagrams/runtime/"]')||article.querySelector('figure.diagram a');
+ const runtimeLink=article.querySelector('a[href*="diagrams/a2a/full-chain/invoke.html"]')||article.querySelector('a[href*="diagrams/a2a/run.html"]')||article.querySelector('a[href*="diagrams/runtime/"]')||article.querySelector('figure.diagram a');
  diagram.hidden=!runtimeLink;
  diagram.classList.toggle('empty-diagram',!runtimeLink);
  diagram.href=runtimeLink?.getAttribute('href')||'#'+id;

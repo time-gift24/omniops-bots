@@ -58,13 +58,13 @@ test('document comments work across chapters, reloads, narrow screens, and stora
     await page.locator('[id="00-overview"]').waitFor({ state: 'visible' });
     await page.getByRole('button', { name: '下一章', exact: true }).click();
     await page.locator('#core-ws').waitFor({ state: 'visible' });
-    assert.equal(await page.locator('#core-ws figure.diagram').count(), 9);
+    assert.equal(await page.locator('#core-ws figure.diagram').count(), 10);
     await page.waitForFunction(() => [...document.querySelectorAll('#core-ws figure.diagram img')].every(image => image.complete && image.naturalWidth > 0));
     assert.match(await page.locator('#core-ws').textContent(), /SendStreamingMessage/);
     assert.match(await page.locator('#core-ws').textContent(), /TaskNotCancelableError/);
     assert.doesNotMatch(await page.locator('#core-ws').textContent(), /task\.(call|result-ack|cancelled-receipt)/);
     assert.equal(await page.locator('#source').getAttribute('href'), '核心-服务端通过WS调用客户端.md');
-    assert.equal(await page.locator('#diagram').getAttribute('href'), './diagrams/a2a/run.html');
+    assert.equal(await page.locator('#diagram').getAttribute('href'), './diagrams/a2a/full-chain/invoke.html');
     assert.deepEqual(await page.locator('#nav-core a').evaluateAll(links => links.map(link => link.getAttribute('href'))), ['#preface-versioning', '#core-server-deployment', '#00-overview', '#core-ws', '#core-skill-system']);
     assert.equal(await page.locator('#nav-details').getAttribute('open'), null);
     await page.getByRole('button', { name: '下一章', exact: true }).click();

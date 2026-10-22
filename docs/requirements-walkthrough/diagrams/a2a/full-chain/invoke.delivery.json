@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "8faa92d6-80fb-4a1f-a0e4-c12602b35032",
+  "status": "current",
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/a2a/full-chain/invoke.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/a2a/full-chain/invoke.html",
+  "specification": {
+    "sha256": "665c762f5d7c22b72da4083a57fad7c730ddc7d2036f055d21796b8f279f9ca4",
+    "bytes": 10403
+  },
+  "artifact": {
+    "sha256": "8bd3af4be042f867989b75624439b66cb49cac0f12cb90ebfb3144762c296093",
+    "bytes": 845403
+  }
+}

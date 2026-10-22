@@ -1,0 +1,402 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "目标完整链路 · 服务端 graph 节点经 A2A 调用桌面 Agent",
+    "locale": "zh-CN",
+    "output": "docs/requirements-walkthrough/diagrams/a2a/full-chain/invoke.html",
+    "quality_profile": "showcase"
+  },
+  "participants": [
+    {
+      "id": "graph",
+      "type": "backend",
+      "label": "服务端图节点",
+      "sublabel": "graph worker"
+    },
+    {
+      "id": "catalog",
+      "type": "database",
+      "label": "官方目录",
+      "sublabel": "确定版本／AgentCard"
+    },
+    {
+      "id": "pg",
+      "type": "database",
+      "label": "共享 PostgreSQL",
+      "sublabel": "调用／结果／待推进"
+    },
+    {
+      "id": "client",
+      "type": "backend",
+      "label": "服务端 A2A 层",
+      "sublabel": "网关接入进程"
+    },
+    {
+      "id": "wire",
+      "type": "messagebus",
+      "label": "WSS 网络层",
+      "sublabel": "Nginx／网关／桌面"
+    },
+    {
+      "id": "task",
+      "type": "backend",
+      "label": "桌面 A2A 层",
+      "sublabel": "校验／去重／交付"
+    },
+    {
+      "id": "runtime",
+      "type": "backend",
+      "label": "桌面执行层",
+      "sublabel": "装配／图／Chrome"
+    },
+    {
+      "id": "local",
+      "type": "database",
+      "label": "桌面持久层",
+      "sublabel": "任务记录／版本缓存"
+    }
+  ],
+  "segments": [
+    {
+      "from": 145,
+      "to": 580,
+      "label": "① 固定版本并持久记录调用"
+    },
+    {
+      "from": 585,
+      "to": 1595,
+      "label": "② 标准 A2A 受理与独立执行"
+    },
+    {
+      "from": 1605,
+      "to": 2385,
+      "label": "③ 持久保存结果与明确确认交付"
+    },
+    {
+      "from": 2400,
+      "to": 2720,
+      "label": "④ 持久结果驱动原服务端图"
+    }
+  ],
+  "messages": [
+    {
+      "id": "chain-1",
+      "from": "graph",
+      "to": "catalog",
+      "y": 175,
+      "label": "选择 agentId＋contentId",
+      "note": "固定目标安装与授权入口；调用期间不跟随浮动最新版"
+    },
+    {
+      "id": "chain-2",
+      "from": "catalog",
+      "to": "graph",
+      "y": 265,
+      "label": "返回标准 AgentCard",
+      "note": "取 supportedInterfaces 的 tenant、绑定与协议版本",
+      "variant": "return"
+    },
+    {
+      "id": "chain-3",
+      "from": "graph",
+      "to": "pg",
+      "y": 355,
+      "label": "持久保存本次调用意图",
+      "note": "serverRunId／步骤、安装、确定版本、messageId、显式输入与上下文"
+    },
+    {
+      "id": "chain-4",
+      "from": "pg",
+      "to": "graph",
+      "y": 445,
+      "label": "调用意图提交成功",
+      "variant": "return"
+    },
+    {
+      "id": "chain-5",
+      "from": "graph",
+      "to": "client",
+      "y": 489,
+      "label": "唤醒待发送调用",
+      "note": "Redis 只作通知；漏发从 PG 待发送记录对账补齐"
+    },
+    {
+      "id": "chain-6",
+      "from": "client",
+      "to": "pg",
+      "y": 615,
+      "label": "读取原调用意图"
+    },
+    {
+      "id": "chain-7",
+      "from": "pg",
+      "to": "client",
+      "y": 659,
+      "label": "返回原版本与 messageId",
+      "variant": "return"
+    },
+    {
+      "id": "chain-8",
+      "from": "client",
+      "to": "wire",
+      "y": 703,
+      "label": "SendStreamingMessage",
+      "note": "标准 Message 的 Data Part 携带输入；contextId 只关联业务"
+    },
+    {
+      "id": "chain-9",
+      "from": "wire",
+      "to": "task",
+      "y": 793,
+      "label": "转交原 JSON-RPC",
+      "note": "按 tenant 校验确定入口与授权；WSS 不处理任务语义"
+    },
+    {
+      "id": "chain-10",
+      "from": "task",
+      "to": "local",
+      "y": 883,
+      "label": "提交 SUBMITTED 与去重映射",
+      "note": "原子预留容量，执行前落盘；同消息返回原 Task，不再次执行"
+    },
+    {
+      "id": "chain-11",
+      "from": "local",
+      "to": "task",
+      "y": 973,
+      "label": "受理已持久提交",
+      "variant": "return"
+    },
+    {
+      "id": "chain-12",
+      "from": "task",
+      "to": "wire",
+      "y": 1017,
+      "label": "首条 Task（含 taskId）",
+      "variant": "return"
+    },
+    {
+      "id": "chain-13",
+      "from": "wire",
+      "to": "client",
+      "y": 1061,
+      "label": "转交已受理 Task",
+      "variant": "return"
+    },
+    {
+      "id": "chain-14",
+      "from": "client",
+      "to": "pg",
+      "y": 1105,
+      "label": "绑定 messageId → taskId"
+    },
+    {
+      "id": "chain-15",
+      "from": "task",
+      "to": "runtime",
+      "y": 1149,
+      "label": "启动确定版本与本轮输入",
+      "note": "独立创建 thread、run、graphThreadId 和 Chrome 页面；profile 复用登录态"
+    },
+    {
+      "id": "chain-16",
+      "from": "runtime",
+      "to": "local",
+      "y": 1239,
+      "label": "读取确定 Agent／Skill 包",
+      "note": "校验 agent.json、prompt.md 与明确引用的完整 Skill 包"
+    },
+    {
+      "id": "chain-17",
+      "from": "local",
+      "to": "runtime",
+      "y": 1329,
+      "label": "返回固定物料快照",
+      "note": "装配本机模型、工具／MCP；Prompt 与只读 Skill 交给执行图节点",
+      "variant": "return"
+    },
+    {
+      "id": "chain-18",
+      "from": "task",
+      "to": "wire",
+      "y": 1419,
+      "label": "Task 状态事件：WORKING"
+    },
+    {
+      "id": "chain-19",
+      "from": "wire",
+      "to": "client",
+      "y": 1463,
+      "label": "转交当前状态",
+      "variant": "return"
+    },
+    {
+      "id": "chain-20",
+      "from": "runtime",
+      "to": "task",
+      "y": 1507,
+      "label": "完成执行并排空资源",
+      "note": "模型、MCP、Chrome 由执行层调用；一次执行到终态，证据留本地",
+      "variant": "return"
+    },
+    {
+      "id": "chain-21",
+      "from": "task",
+      "to": "local",
+      "y": 1635,
+      "label": "提交终态 Task／Artifact／记录",
+      "note": "固定公开结果及 resultSha256，保存待交付状态"
+    },
+    {
+      "id": "chain-22",
+      "from": "local",
+      "to": "task",
+      "y": 1725,
+      "label": "终态已落盘，完成结算",
+      "note": "此时释放运行容量；等待交付确认不再占用运行槽",
+      "variant": "return"
+    },
+    {
+      "id": "chain-23",
+      "from": "task",
+      "to": "wire",
+      "y": 1815,
+      "label": "最终 Artifact → COMPLETED",
+      "variant": "return"
+    },
+    {
+      "id": "chain-24",
+      "from": "wire",
+      "to": "client",
+      "y": 1859,
+      "label": "转交不可变终态与摘要",
+      "variant": "return"
+    },
+    {
+      "id": "chain-25",
+      "from": "client",
+      "to": "pg",
+      "y": 1903,
+      "label": "事务保存结果与待推进记录",
+      "note": "保存原 Task／结果索引；附件先持久接收并建立授权索引"
+    },
+    {
+      "id": "chain-26",
+      "from": "pg",
+      "to": "client",
+      "y": 1993,
+      "label": "事务已持久提交",
+      "variant": "return"
+    },
+    {
+      "id": "chain-27",
+      "from": "client",
+      "to": "wire",
+      "y": 2037,
+      "label": "确认交付（唯一业务扩展）",
+      "note": "omniops/ConfirmTaskDelivery：tenant、taskId、resultSha256、receivedAt"
+    },
+    {
+      "id": "chain-28",
+      "from": "wire",
+      "to": "task",
+      "y": 2127,
+      "label": "转交确认请求"
+    },
+    {
+      "id": "chain-29",
+      "from": "task",
+      "to": "local",
+      "y": 2171,
+      "label": "校验摘要并持久标记已交付"
+    },
+    {
+      "id": "chain-30",
+      "from": "local",
+      "to": "task",
+      "y": 2215,
+      "label": "确认记录提交成功",
+      "variant": "return"
+    },
+    {
+      "id": "chain-31",
+      "from": "task",
+      "to": "wire",
+      "y": 2259,
+      "label": "交付确认成功",
+      "variant": "return"
+    },
+    {
+      "id": "chain-32",
+      "from": "wire",
+      "to": "client",
+      "y": 2303,
+      "label": "转交确认结果",
+      "variant": "return"
+    },
+    {
+      "id": "chain-33",
+      "from": "client",
+      "to": "graph",
+      "y": 2435,
+      "label": "原运行队列唤醒后续步骤",
+      "note": "确认与推进独立重试；漏通知可对账，不依赖原 worker 的内存 Promise"
+    },
+    {
+      "id": "chain-34",
+      "from": "graph",
+      "to": "pg",
+      "y": 2525,
+      "label": "领取待推进记录并幂等提交",
+      "note": "复用现有运行互斥／条件更新；重复结果不重复推进"
+    },
+    {
+      "id": "chain-35",
+      "from": "pg",
+      "to": "graph",
+      "y": 2615,
+      "label": "取得已保存的业务结果",
+      "note": "校验结果 schema，映射 Artifact 到下一节点输入；失败走既有图分支",
+      "variant": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "连接与调用方向不同",
+      "items": [
+        "前提：桌面主动建立并鉴权 WSS，协商 A2A 1.0 与必需扩展。",
+        "业务调用从服务端 A2A Client 发往桌面 A2A Server。",
+        "图中是职责泳道；A2A 与网络模块可共处网关进程。"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "版本与装配分开",
+      "items": [
+        "复杂 graph 是应用代码；节点只绑定确定 agentId＋contentId。",
+        "业务 Prompt 在版本包内，消息不能覆盖模型／Provider 或携带密钥。",
+        "桌面从已验缓存／按既有同步取得的包装配，不挂载服务端 NFS。"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "结果持久后才确认",
+      "items": [
+        "COMPLETED 为正常路径；FAILED／REJECTED／CANCELED 也交付原终态。",
+        "服务端结果与待推进记录先提交；桌面确认记录落盘才响应成功。",
+        "socket.send 成功不表示交付；确认与后续图推进各自幂等。"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "中断沿用原身份",
+      "items": [
+        "首次受理响应丢失：原 messageId 重投取得原 Task。",
+        "已知非终态 SubscribeToTask，终态 GetTask；不补播历史。",
+        "断线继续执行；桌面重启不续跑，未完成转 FAILED／interrupted-unknown。"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "method": "native Viewer SVG export",
+  "normalization": "HTML blank-line whitespace normalized before verified publication; SVG trailing whitespace removed and one final LF retained",
+  "currentDiagramReceipts": "See each diagram.finalizeReceipt",
+  "diagrams": [
+    {
+      "slug": "invoke",
+      "finalizeReceipt": "invoke.finalize-summary.json",
+      "artifactSha256": "8bd3af4be042f867989b75624439b66cb49cac0f12cb90ebfb3144762c296093",
+      "svgSha256": "a9297e0deaa5cc59a5d0c89930f254d59a19f6f727653386118c6a679d3083e5"
+    }
+  ]
+}
