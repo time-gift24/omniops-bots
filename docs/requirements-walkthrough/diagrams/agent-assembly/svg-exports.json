@@ -1,0 +1,19 @@
+{
+  "method": "native Viewer SVG export",
+  "normalization": "HTML blank-line whitespace normalized before verified publication; SVG trailing whitespace removed and one final LF retained",
+  "currentDiagramReceipts": "See each diagram.finalizeReceipt",
+  "diagrams": [
+    {
+      "slug": "relations",
+      "finalizeReceipt": "relations.finalize-summary.json",
+      "artifactSha256": "eaf119aaf45ce452ce5bb20651c63996bf2ef212043f10a8d0008042bde07ac5",
+      "svgSha256": "c644111317bd8bb9199faa765cc027108f650a0a248c40a33ab559255e2c41c7"
+    },
+    {
+      "slug": "loading",
+      "finalizeReceipt": "loading.finalize-summary.json",
+      "artifactSha256": "99f1607f24097bcfd227df47444f3a73017a07fce4a5ff3e1e618d3070351e36",
+      "svgSha256": "a9cd9663e8ed561cb428253a4537c4da0ebe7f2a05757d7849a576b72d0f81bb"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "43cbe9f3-4459-42d9-b691-180df6a32b8c",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/agent-assembly/relations.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/agent-assembly/relations.html",
+  "specification": {
+    "sha256": "09445378e25d02cc83215ce981521c2c62118a4c8b27a30762c4c3ca4ea45e05",
+    "bytes": 4549
+  },
+  "artifact": {
+    "sha256": "eaf119aaf45ce452ce5bb20651c63996bf2ef212043f10a8d0008042bde07ac5",
+    "bytes": 824900
+  }
+}

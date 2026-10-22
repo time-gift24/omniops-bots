@@ -46,6 +46,22 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <p><strong>复杂 graph 的编排不参与本章的 Agent／Skill 资产版本管理。</strong> 节点、连线、条件分支、状态流转和并发控制属于运行实现，随服务端或桌面应用代码交付，沿用源码与应用发布管理；不另建 graph 的资产标签、历史图选择或编排回退体系。仅修改编排不会自动发布新的 Agent／Skill 版本，也不将编排代码纳入 Agent 内容 ID 或本章定义的运行指纹。</p>
 <p><strong>业务提示词不写在 graph 中。</strong> 完整系统提示词保存在确定 Agent 版本的 <code>prompt.md</code>，与 <code>agent.json</code> 一起固定；运行时先解析版本、读取提示词和 Skill 包，再把装配好的指令／Agent 传给图节点。节点、路由函数和图定义不内嵌或另存一份可独立修改的业务 Prompt 正文，修改提示词必须走原有 Agent 发布流程。</p>
 <p>复杂图中的不同节点可以调用不同 Agent，但每个调用都显式使用确定的 Agent／Skill 版本，复用各自版本包中的提示词。图负责“何时调用、如何衔接”，版本物料负责“调用哪套能力”；任务输入和所需上下文继续显式传入，不靠改写图内提示词或读取浮动最新版来切换能力。</p>
+<h3 id="preface-versioning-装配关系版本物料在图外能力交给图节点">装配关系：版本物料在图外，能力交给图节点</h3>
+<figure class="diagram"><a href="./diagrams/agent-assembly/relations.html" target="_blank" rel="noopener" aria-label="打开交互图：复杂 graph、Agent 版本、提示词与 Skill 的装配关系"><img src="./assets/agent-assembly/relations.svg" alt="复杂 graph、Agent 版本、提示词与 Skill 的装配关系"></a><figcaption>复杂 graph、Agent 版本、提示词与 Skill 的装配关系 · 点击查看可缩放交互图</figcaption></figure>
+<p><a href="./diagrams/agent-assembly/relations.html">打开装配关系图</a></p>
+<p><strong>图示为目标装配契约，不表示正式版本加载已接入。</strong> Agent 版本包只有 <code>agent.json</code> 与 <code>prompt.md</code>：前者固定 Skill 内容引用及工具／MCP 配置，后者保存业务系统提示词；Skill 完整包独立存放。运行时根据本次明确选择的版本读取物料，验证并固定快照，再结合实际模型与允许的能力构造 Agent，交给复杂 graph 中对应节点。</p>
+<p>图中 <code>nodeKey → agentId + contentId</code> 仅示意“哪个节点使用哪个确定 Agent 版本”的内部绑定，不新增 A2A 字段、消息封套、graph 资产协议或通用依赖注入容器。装配映射和 Agent 实例属于运行上下文；graph 代码只定义调用顺序、分支和状态衔接，不拥有第二份 Prompt 正文。不同节点可绑定不同 Agent，明确选择同一版本的节点也可以使用本次已固定的装配结果。</p>
+<h3 id="preface-versioning-加载顺序校验固定快照再开始节点执行">加载顺序：校验、固定快照，再开始节点执行</h3>
+<figure class="diagram"><a href="./diagrams/agent-assembly/loading.html" target="_blank" rel="noopener" aria-label="打开交互图：运行时加载版本文件并将装配结果交给 graph 节点的顺序"><img src="./assets/agent-assembly/loading.svg" alt="运行时加载版本文件并将装配结果交给 graph 节点的顺序"></a><figcaption>运行时加载版本文件并将装配结果交给 graph 节点的顺序 · 点击查看可缩放交互图</figcaption></figure>
+<p><a href="./diagrams/agent-assembly/loading.html">打开运行时加载顺序图</a></p>
+<p>顺序图只展开其中一个 Agent 的成功装配与调用；不同节点使用不同 Agent 时，各份装配分别固定版本并生成自己的 Agent 运行指纹，不把整张复杂 graph 包装成另一个 Agent 资产版本。</p>
+<p>一次准备按以下边界完成：</p>
+<ol>
+<li><strong>明确输入</strong>：运行入口提供已交付的 graph、节点所用确定 Agent 版本及本轮任务／上下文；运行时读取对应 <code>agent.json</code>、<code>prompt.md</code>，按 <code>skills[]</code> 取得确定 Skill 包，不在节点执行时改读“最新版”。</li>
+<li><strong>固定能力</strong>：校验原始内容、路径、挂载与资源可用性，固定本次指令和完整 Skill 快照；准备实际模型与所选工具／MCP。缺包、摘要不匹配或必要能力不可用时失败，不调用节点，也不静默更换版本。装配完成后按本章规则生成运行指纹，再开始图执行。</li>
+<li><strong>注入并调用</strong>：graph 调度节点，节点按内部绑定调用已装配 Agent，并显式传入任务与上下文。Skill 通过只读 <code>backend</code>／<code>skills</code> 挂载按需读取 <code>SKILL.md</code> 及引用文件，不把所有 Skill 正文拼进系统提示词，也不因包里存在脚本就自动执行。</li>
+</ol>
+<p>服务端装配从共享物料根读取，桌面装配从本地已验证缓存读取同版本字节，桌面不直接挂载服务端 NFS。当前本地完整 Skill 快照、只读挂载和按需读取已有实现基础；正式 <code>releases/</code> 目录中的 Agent 包读取及本章运行指纹仍待接入，现有本地 Agent 还是单文件配置，详见<a href="../skill-storage-and-loading.md">Skill 存储与运行加载</a>。运行引擎的通用工具约束继续随应用代码交付，不作为另一份可发布的业务 Prompt。</p>
 <h2 id="preface-versioning-自动生成-agent-运行指纹">自动生成 Agent 运行指纹</h2>
 <p><strong>运行指纹 = 对“固定 Skill 版本集合 + 指定 Agent 系统提示词版本 + 实际模型选择”规范化后计算的内容摘要。</strong> 同一组合生成相同指纹；任一 Skill 版本、Prompt 版本或模型选择发生变化，生成不同指纹。指纹由客户端在装配成功、执行开始前自动生成，无需人工填写。</p>
 <figure class="diagram"><a href="./diagrams/preface-fingerprint.html" target="_blank" rel="noopener" aria-label="打开交互图：版本组合如何生成 Agent 运行指纹"><img src="./assets/preface-fingerprint.svg" alt="版本组合如何生成 Agent 运行指纹"></a><figcaption>版本组合如何生成 Agent 运行指纹 · 点击查看可缩放交互图</figcaption></figure>

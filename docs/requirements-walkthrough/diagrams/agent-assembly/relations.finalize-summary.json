@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/agent-assembly/relations.json",
+    "sha256": "09445378e25d02cc83215ce981521c2c62118a4c8b27a30762c4c3ca4ea45e05",
+    "bytes": 4549
+  },
+  "artifact": {
+    "path": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/agent-assembly/relations.html",
+    "sha256": "eaf119aaf45ce452ce5bb20651c63996bf2ef212043f10a8d0008042bde07ac5",
+    "bytes": 824900
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/agent-assembly/relations.finalize.json",
+    "summaryReceipt": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/agent-assembly/relations.finalize-summary.json",
+    "browserCheckReceipt": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/agent-assembly/relations.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-22T05:23:36.164Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 1902,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}

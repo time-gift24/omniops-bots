@@ -1,0 +1,204 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "目标加载顺序 · 校验版本、固定快照、构造 Agent、交给图节点",
+    "locale": "zh-CN",
+    "output": "docs/requirements-walkthrough/diagrams/agent-assembly/loading.html",
+    "quality_profile": "showcase"
+  },
+  "participants": [
+    {
+      "id": "entry",
+      "type": "external",
+      "label": "任务入口",
+      "sublabel": "已受理的运行"
+    },
+    {
+      "id": "runtime",
+      "type": "backend",
+      "label": "运行时装配",
+      "sublabel": "固定版本／能力"
+    },
+    {
+      "id": "assets",
+      "type": "database",
+      "label": "物料根／缓存",
+      "sublabel": "运行端文件"
+    },
+    {
+      "id": "snapshot",
+      "type": "database",
+      "label": "固定运行快照",
+      "sublabel": "指令／完整 Skill"
+    },
+    {
+      "id": "graph",
+      "type": "backend",
+      "label": "复杂 graph",
+      "sublabel": "调度与节点"
+    },
+    {
+      "id": "agent",
+      "type": "backend",
+      "label": "Agent 实例",
+      "sublabel": "模型与所选工具"
+    }
+  ],
+  "messages": [
+    {
+      "id": "loading-1",
+      "from": "entry",
+      "to": "runtime",
+      "y": 175,
+      "label": "传入节点绑定与显式输入",
+      "note": "已交付 graph＋确定 Agent 版本；不是 Prompt 正文写进图定义"
+    },
+    {
+      "id": "loading-2",
+      "from": "runtime",
+      "to": "assets",
+      "y": 265,
+      "label": "读取 agent.json 与 prompt.md"
+    },
+    {
+      "id": "loading-3",
+      "from": "assets",
+      "to": "runtime",
+      "y": 309,
+      "label": "返回指定版本原始文件",
+      "variant": "return",
+      "note": "校验 Agent 内容摘要、路径与引用；不解析为浮动最新版"
+    },
+    {
+      "id": "loading-4",
+      "from": "runtime",
+      "to": "assets",
+      "y": 399,
+      "label": "读取明确引用的完整 Skill 包"
+    },
+    {
+      "id": "loading-5",
+      "from": "assets",
+      "to": "runtime",
+      "y": 443,
+      "label": "返回入口、脚本及参考文件",
+      "variant": "return",
+      "note": "按 skillId＋contentId 校验完整包，不只固定 SKILL.md"
+    },
+    {
+      "id": "loading-6",
+      "from": "runtime",
+      "to": "snapshot",
+      "y": 533,
+      "label": "固定指令、配置与 Skill 快照",
+      "note": "准备实际模型与允许的工具／MCP；失败则停止准备，不调用节点"
+    },
+    {
+      "id": "loading-7",
+      "from": "snapshot",
+      "to": "runtime",
+      "y": 623,
+      "label": "返回只读挂载与固定身份",
+      "variant": "return"
+    },
+    {
+      "id": "loading-8",
+      "from": "runtime",
+      "to": "agent",
+      "y": 667,
+      "label": "构造本次 Agent 能力",
+      "note": "使用版本 Prompt、Skill 挂载、实际模型与所选工具"
+    },
+    {
+      "id": "loading-9",
+      "from": "agent",
+      "to": "runtime",
+      "y": 757,
+      "label": "返回可调用 Agent",
+      "variant": "return"
+    },
+    {
+      "id": "loading-10",
+      "from": "runtime",
+      "to": "graph",
+      "y": 801,
+      "label": "传入装配映射并开始调度",
+      "note": "按本章规则生成运行指纹；graph 代码不进入该资产指纹"
+    },
+    {
+      "id": "loading-11",
+      "from": "graph",
+      "to": "agent",
+      "y": 891,
+      "label": "节点调用对应 Agent",
+      "note": "传入本轮任务与显式上下文；不同节点可绑定不同 Agent 版本"
+    },
+    {
+      "id": "loading-12",
+      "from": "agent",
+      "to": "snapshot",
+      "y": 981,
+      "label": "按需读取所选 Skill 文件",
+      "note": "只访问固定挂载；不将所有 Skill 正文拼接进系统提示词"
+    },
+    {
+      "id": "loading-13",
+      "from": "snapshot",
+      "to": "agent",
+      "y": 1071,
+      "label": "返回本次固定内容",
+      "variant": "return"
+    },
+    {
+      "id": "loading-14",
+      "from": "agent",
+      "to": "graph",
+      "y": 1115,
+      "label": "返回节点结果",
+      "variant": "return"
+    },
+    {
+      "id": "loading-15",
+      "from": "graph",
+      "to": "runtime",
+      "y": 1159,
+      "label": "返回本轮图执行结果",
+      "variant": "return"
+    },
+    {
+      "id": "loading-16",
+      "from": "runtime",
+      "to": "entry",
+      "y": 1203,
+      "label": "完成本轮结算与结果返回",
+      "variant": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "只展示一次成功装配与调用",
+      "items": [
+        "读版本物料、校验、固定快照，均发生在节点执行之前",
+        "缺包、摘要不匹配、模型或工具不可用时失败，不降级换版本"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "graph 和 Prompt 分工",
+      "items": [
+        "graph 决定节点顺序与分支；运行时准备可调用的 Agent",
+        "节点接收装配映射，不读取全局可变 Prompt 或所有历史 Skill"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "目标设计与已有实现区分",
+      "items": [
+        "本地完整 Skill 快照与按需文件读取已有实现基础",
+        "正式 release 目录读取与运行指纹仍待接入"
+      ]
+    }
+  ]
+}

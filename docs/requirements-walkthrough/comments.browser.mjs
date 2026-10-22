@@ -31,9 +31,9 @@ test('document comments work across chapters, reloads, narrow screens, and stora
     await page.goto(`http://127.0.0.1:${server.address().port}/index.html`);
     assert.equal(await page.locator('#preface-versioning').isVisible(), true);
     const prefaceDiagrams = page.locator('#preface-versioning figure.diagram');
-    assert.equal(await prefaceDiagrams.count(), 2);
+    assert.equal(await prefaceDiagrams.count(), 4);
     await page.waitForFunction(() => [...document.querySelectorAll('#preface-versioning figure.diagram img')].every(image => image.complete && image.naturalWidth > 0));
-    assert.deepEqual(await prefaceDiagrams.locator('a').evaluateAll(links => links.map(link => link.getAttribute('href'))), ['./diagrams/preface-fingerprint.html', './diagrams/preface-evaluation-rollback.html']);
+    assert.deepEqual(await prefaceDiagrams.locator('a').evaluateAll(links => links.map(link => link.getAttribute('href'))), ['./diagrams/agent-assembly/relations.html', './diagrams/agent-assembly/loading.html', './diagrams/preface-fingerprint.html', './diagrams/preface-evaluation-rollback.html']);
     assert.equal(await page.locator('#progress').textContent(), '1 / 16');
     assert.equal(await page.locator('.rail a[aria-label="需求串讲首页"]').getAttribute('href'), '#preface-versioning');
     assert.equal(await page.locator('#nav-core').getAttribute('open'), '');

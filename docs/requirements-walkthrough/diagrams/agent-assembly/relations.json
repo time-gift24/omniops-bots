@@ -1,0 +1,217 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "目标装配关系 · 版本物料在图外，运行时装配后注入节点",
+    "locale": "zh-CN",
+    "output": "docs/requirements-walkthrough/diagrams/agent-assembly/relations.html",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "prompt-file",
+      "type": "database",
+      "label": "prompt.md",
+      "sublabel": "完整业务系统提示词",
+      "pos": [
+        40,
+        90
+      ],
+      "size": [
+        220,
+        80
+      ]
+    },
+    {
+      "id": "manifest-file",
+      "type": "database",
+      "label": "agent.json",
+      "sublabel": "固定 Skill 引用／工具配置",
+      "pos": [
+        40,
+        330
+      ],
+      "size": [
+        220,
+        80
+      ]
+    },
+    {
+      "id": "skill-package",
+      "type": "database",
+      "label": "Skill 完整版本包",
+      "sublabel": "SKILL.md／脚本／参考文件",
+      "pos": [
+        40,
+        600
+      ],
+      "size": [
+        280,
+        80
+      ]
+    },
+    {
+      "id": "node-bindings",
+      "type": "external",
+      "label": "本次节点绑定",
+      "sublabel": "nodeKey → agentId＋contentId",
+      "pos": [
+        600,
+        90
+      ],
+      "size": [
+        230,
+        80
+      ]
+    },
+    {
+      "id": "assembler",
+      "type": "backend",
+      "label": "运行时装配",
+      "sublabel": "校验／固定快照／模型与工具",
+      "pos": [
+        600,
+        330
+      ],
+      "size": [
+        230,
+        80
+      ]
+    },
+    {
+      "id": "prepared-agent",
+      "type": "backend",
+      "label": "装配好的 Agent",
+      "sublabel": "固定指令／只读 Skill／所选能力",
+      "pos": [
+        1030,
+        330
+      ],
+      "size": [
+        245,
+        80
+      ]
+    },
+    {
+      "id": "business-node",
+      "type": "backend",
+      "label": "业务图节点",
+      "sublabel": "接收装配映射与显式输入",
+      "pos": [
+        600,
+        600
+      ],
+      "size": [
+        230,
+        80
+      ]
+    },
+    {
+      "id": "graph-code",
+      "type": "backend",
+      "label": "graph 编排代码",
+      "sublabel": "节点顺序／路由／状态衔接",
+      "pos": [
+        1030,
+        600
+      ],
+      "size": [
+        245,
+        80
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Agent 正式版本包 · agentId＋contentId",
+      "wraps": [
+        "prompt-file",
+        "manifest-file"
+      ],
+      "pad": 24
+    },
+    {
+      "kind": "region",
+      "label": "复杂 graph · 随应用代码交付，不内嵌业务 Prompt",
+      "wraps": [
+        "business-node",
+        "graph-code"
+      ],
+      "pad": 24
+    }
+  ],
+  "connections": [
+    {
+      "from": "node-bindings",
+      "to": "assembler",
+      "label": "确定版本"
+    },
+    {
+      "from": "assembler",
+      "to": "manifest-file",
+      "label": "读取清单"
+    },
+    {
+      "from": "assembler",
+      "to": "prompt-file",
+      "label": "读取正文"
+    },
+    {
+      "from": "manifest-file",
+      "to": "skill-package",
+      "label": "固定内容引用"
+    },
+    {
+      "from": "assembler",
+      "to": "skill-package",
+      "label": "校验完整包"
+    },
+    {
+      "from": "assembler",
+      "to": "prepared-agent",
+      "label": "构造 Agent"
+    },
+    {
+      "from": "assembler",
+      "to": "business-node",
+      "label": "注入装配映射"
+    },
+    {
+      "from": "graph-code",
+      "to": "business-node",
+      "label": "调度节点"
+    },
+    {
+      "from": "business-node",
+      "to": "prepared-agent",
+      "label": "调用能力"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "资产版本与代码分开",
+      "items": [
+        "prompt.md 与 agent.json 一起决定 Agent 内容版本",
+        "graph 不参与资产版本选择、内容 ID 或运行指纹"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "运行时读取并装配",
+      "items": [
+        "按确定版本读取原始文件，校验后固定指令与完整 Skill 快照",
+        "结合实际模型、工具与 MCP 接入，构造本次可调用能力"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "节点调用，不接管物料管理",
+      "items": [
+        "图按 nodeKey 使用注入的 Agent，显式传入任务和上下文",
+        "正式包加载与运行指纹是目标契约；图中职责不代表独立服务"
+      ]
+    }
+  ]
+}

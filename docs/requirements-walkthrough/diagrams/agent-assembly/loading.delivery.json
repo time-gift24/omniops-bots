@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "0c0a18e1-bd58-45d6-b640-ca6b1702e0ac",
+  "status": "current",
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/agent-assembly/loading.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/agent-assembly/loading.html",
+  "specification": {
+    "sha256": "7cdcd24a2ad8788ac44078da1c825d8fd2529a499a06dd653b301857ca9b4455",
+    "bytes": 5314
+  },
+  "artifact": {
+    "sha256": "99f1607f24097bcfd227df47444f3a73017a07fce4a5ff3e1e618d3070351e36",
+    "bytes": 820835
+  }
+}
