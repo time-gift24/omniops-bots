@@ -1,0 +1,218 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "运维 Skill 从任务反馈到正式版本的迭代",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "docs/requirements-walkthrough/diagrams/skill-evolution/skill-evolution.html"
+  },
+  "lanes": [
+    {
+      "id": "feedback",
+      "label": "任务反馈与人工整理"
+    },
+    {
+      "id": "maintenance",
+      "label": "确认方法并维护内容"
+    },
+    {
+      "id": "release",
+      "label": "验证、发布与新任务"
+    },
+    {
+      "id": "future",
+      "label": "后续上传与建议链路 · 本期不做"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "task-evidence",
+      "lane": "feedback",
+      "col": 0,
+      "type": "database",
+      "label": "任务与探索依据",
+      "sublabel": "来源任务、适用条件与验证结果"
+    },
+    {
+      "id": "operator-triage",
+      "lane": "feedback",
+      "col": 1,
+      "type": "frontend",
+      "label": "运维整理",
+      "sublabel": "定位路由、实践或脚本问题"
+    },
+    {
+      "id": "operator-confirm",
+      "lane": "maintenance",
+      "col": 1,
+      "type": "security",
+      "label": "运维确认方法",
+      "sublabel": "未经验证不记为最佳实践"
+    },
+    {
+      "id": "reference-improvement",
+      "lane": "maintenance",
+      "col": 2,
+      "type": "database",
+      "label": "更新 references",
+      "sublabel": "平台实践或路由与组合"
+    },
+    {
+      "id": "script-extraction",
+      "lane": "maintenance",
+      "col": 3,
+      "type": "backend",
+      "label": "提炼 scripts",
+      "sublabel": "仅稳定重复步骤"
+    },
+    {
+      "id": "local-validation",
+      "lane": "release",
+      "col": 2,
+      "type": "backend",
+      "label": "按需实验与修正",
+      "sublabel": "不新增强制实验门槛"
+    },
+    {
+      "id": "operator-release",
+      "lane": "release",
+      "col": 3,
+      "type": "security",
+      "label": "本人确认发布",
+      "sublabel": "完整包新版本；联动 Agent"
+    },
+    {
+      "id": "new-session-use",
+      "lane": "release",
+      "col": 4,
+      "type": "backend",
+      "label": "新会话使用",
+      "sublabel": "旧版本与旧会话保留"
+    },
+    {
+      "id": "future-upload",
+      "lane": "future",
+      "col": 0,
+      "type": "database",
+      "label": "上传服务端文件系统",
+      "sublabel": "来源任务与探索依据",
+      "tag": "本期不做"
+    },
+    {
+      "id": "future-advice",
+      "lane": "future",
+      "col": 1,
+      "type": "backend",
+      "label": "定时 Agent 汇总建议",
+      "sublabel": "不自动改写或发布",
+      "tag": "本期不做"
+    }
+  ],
+  "edges": [
+    {
+      "id": "evidence-to-triage",
+      "from": "task-evidence",
+      "to": "operator-triage",
+      "label": "人工整理",
+      "role": "main"
+    },
+    {
+      "id": "triage-to-confirm",
+      "from": "operator-triage",
+      "to": "operator-confirm",
+      "label": "核对依据",
+      "role": "main"
+    },
+    {
+      "id": "confirm-to-reference",
+      "from": "operator-confirm",
+      "to": "reference-improvement",
+      "label": "确认后沉淀",
+      "role": "main"
+    },
+    {
+      "id": "reference-to-script",
+      "from": "reference-improvement",
+      "to": "script-extraction",
+      "label": "稳定重复时",
+      "role": "main"
+    },
+    {
+      "id": "reference-to-validation",
+      "from": "reference-improvement",
+      "to": "local-validation",
+      "label": "按需验证",
+      "role": "main"
+    },
+    {
+      "id": "script-to-validation",
+      "from": "script-extraction",
+      "to": "local-validation",
+      "label": "脚本随包验证",
+      "role": "branch"
+    },
+    {
+      "id": "validation-to-release",
+      "from": "local-validation",
+      "to": "operator-release",
+      "label": "本人确认",
+      "role": "main"
+    },
+    {
+      "id": "release-to-new-use",
+      "from": "operator-release",
+      "to": "new-session-use",
+      "label": "新版本生效",
+      "role": "main"
+    },
+    {
+      "id": "future-evidence-upload",
+      "from": "task-evidence",
+      "to": "future-upload",
+      "label": "后续上传 · 本期不做",
+      "role": "branch"
+    },
+    {
+      "id": "upload-to-advice",
+      "from": "future-upload",
+      "to": "future-advice",
+      "label": "后续收集",
+      "role": "branch"
+    },
+    {
+      "id": "advice-to-confirm",
+      "from": "future-advice",
+      "to": "operator-confirm",
+      "label": "后续建议仍须运维确认",
+      "role": "branch"
+    }
+  ],
+  "mainPath": [
+    "task-evidence",
+    "operator-triage",
+    "operator-confirm",
+    "reference-improvement",
+    "local-validation",
+    "operator-release",
+    "new-session-use"
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "按周发布已确认改进",
+      "items": [
+        "探索材料不自动写回只读 Skill",
+        "发布不覆盖历史，也不改变进行中的任务"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "后续范围",
+      "items": [
+        "上传与定时汇总仅为后续方向；图中不是已上线流程",
+        "按具体 Skill 构建测试集和自动评估，本期也不做"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "workflow",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/preface-fingerprint.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/preface-fingerprint.html",
+  "specification": {
+    "sha256": "cef05facfc363a66b98bd167ab0138eb597271a05e87e941628ce6805b4dd956",
+    "bytes": 3089
+  },
+  "artifact": {
+    "sha256": "b53bca930fa36035e68a92d7a88775fb32913a9f54ca67bbe2183cc9653a84f1",
+    "bytes": 707481
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

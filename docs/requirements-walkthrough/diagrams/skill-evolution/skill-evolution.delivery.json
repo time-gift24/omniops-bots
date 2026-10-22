@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "1b2e06f1-ae32-4e43-b3ab-70481345f35e",
+  "status": "postprocessed",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/skill-evolution/candidate.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/skill-evolution/skill-evolution.html",
+  "specification": {
+    "sha256": "300406fdf7c4d60006042bafc5ed60f1018fd99450de4b8edd31f2f25a53da20",
+    "bytes": 5313
+  },
+  "artifact": {
+    "sha256": "78f1dae5d0db188f7e6b0326848995d837ffa096b35743af1f5049759cee6157",
+    "bytes": 827576
+  },
+  "repositoryNormalization": {
+    "record": "docs/requirements-walkthrough/evidence/repository-format-normalization.json",
+    "artifact": {
+      "sha256": "2adaa8e3862d31de537f01bf45d466b72c06c936b3157725a97beea0fcdea3fc",
+      "bytes": 827486
+    },
+    "note": "Original delivery checks apply to the original artifact hash, before repository whitespace cleanup."
+  }
+}

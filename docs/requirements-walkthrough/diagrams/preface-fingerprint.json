@@ -1,0 +1,140 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "版本组合如何生成 Agent 运行指纹",
+    "locale": "zh-CN",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    {
+      "id": "assets",
+      "label": "固定版本"
+    },
+    {
+      "id": "assembly",
+      "label": "装配与身份"
+    },
+    {
+      "id": "model",
+      "label": "运行条件"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "skill-release",
+      "lane": "assets",
+      "col": 0,
+      "type": "database",
+      "label": "Skill 完整包",
+      "sublabel": "{SKILL}.{Version}",
+      "width": 190
+    },
+    {
+      "id": "prompt-release",
+      "lane": "assets",
+      "col": 1,
+      "type": "database",
+      "label": "Agent 系统提示词",
+      "sublabel": "{AgentName}.{Version}",
+      "width": 190
+    },
+    {
+      "id": "agent-content",
+      "lane": "assembly",
+      "col": 1,
+      "type": "backend",
+      "label": "Agent 发布内容 ID",
+      "sublabel": "系统提示词与固定装配",
+      "width": 190
+    },
+    {
+      "id": "canonical-input",
+      "lane": "assembly",
+      "col": 2,
+      "type": "backend",
+      "label": "规范化组合",
+      "sublabel": "固定版本 + 实际模型",
+      "width": 190
+    },
+    {
+      "id": "runtime-fingerprint",
+      "lane": "assembly",
+      "col": 3,
+      "type": "security",
+      "label": "运行指纹",
+      "sublabel": "SHA-256 + 组成清单",
+      "width": 190
+    },
+    {
+      "id": "model-selection",
+      "lane": "model",
+      "col": 2,
+      "type": "external",
+      "label": "实际模型选择",
+      "sublabel": "Provider、模型与推理参数",
+      "width": 190
+    }
+  ],
+  "edges": [
+    {
+      "id": "skill-binding",
+      "from": "skill-release",
+      "to": "agent-content",
+      "label": "固定引用",
+      "role": "main"
+    },
+    {
+      "id": "prompt-binding",
+      "from": "prompt-release",
+      "to": "agent-content",
+      "label": "完整正文",
+      "role": "branch"
+    },
+    {
+      "id": "asset-identity",
+      "from": "agent-content",
+      "to": "canonical-input",
+      "label": "版本身份",
+      "role": "main"
+    },
+    {
+      "id": "model-identity",
+      "from": "model-selection",
+      "to": "canonical-input",
+      "label": "有效配置",
+      "role": "branch"
+    },
+    {
+      "id": "digest-combination",
+      "from": "canonical-input",
+      "to": "runtime-fingerprint",
+      "label": "计算摘要",
+      "role": "main"
+    }
+  ],
+  "mainPath": [
+    "skill-release",
+    "agent-content",
+    "canonical-input",
+    "runtime-fingerprint"
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "同组合 · 同指纹",
+      "items": [
+        "Skill、Prompt、模型或参数改变，指纹随之改变",
+        "模型不进入 Agent 发布内容 ID"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "工具实现 · 正向优化",
+      "items": [
+        "MCP 与 builtinTool 不提供历史实现切换",
+        "工具选择和 MCP 装配仍参与 Agent 内容 ID"
+      ]
+    }
+  ]
+}

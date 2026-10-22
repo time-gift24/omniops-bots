@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "workflow",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/preface-evaluation-rollback.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/preface-evaluation-rollback.html",
+  "specification": {
+    "sha256": "2471aa222513f7a02e50ad23106719ee90da7e4807cd403d9e28dffd3028b9c6",
+    "bytes": 4056
+  },
+  "artifact": {
+    "sha256": "95e44824108bba01805ace1a5342b64bc096b474a0858c56af40af6d0aa44a2e",
+    "bytes": 711751
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

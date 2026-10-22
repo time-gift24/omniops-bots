@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "8e44c0e9-0c25-453d-9e90-3e9e544ce1e8",
+  "status": "postprocessed",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/skill-collaboration/candidate.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/skill-collaboration/skill-collaboration.html",
+  "specification": {
+    "sha256": "e135847120b0903311c9662d9e59ea51e36087901c8b76d0af21633b703948f7",
+    "bytes": 4878
+  },
+  "artifact": {
+    "sha256": "9f6e448f57adf256e308465af248004c2dc6c778c7b1434df0d815d1a5da6bf4",
+    "bytes": 824424
+  },
+  "repositoryNormalization": {
+    "record": "docs/requirements-walkthrough/evidence/repository-format-normalization.json",
+    "artifact": {
+      "sha256": "b38353fe46217ef9edf78c9b8d84eb800bf097eed7218a87212f089838fe9d23",
+      "bytes": 824334
+    },
+    "note": "Original delivery checks apply to the original artifact hash, before repository whitespace cleanup."
+  }
+}

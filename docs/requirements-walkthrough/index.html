@@ -1,14 +1,116 @@
 <!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OmniOps 客户端需求串讲</title><style>@import url('./assets/fonts/fonts.css');
 :root{color-scheme:light;--background:oklch(.991 .001 106.4);--surface:#fff;--foreground:oklch(.196 0 89.9);--muted:oklch(.970 .003 106.4);--muted-foreground:oklch(.439 0 89.9);--primary:oklch(.51 .105 164);--primary-hover:oklch(.45 .11 163);--accent:oklch(.952 .014 160);--border:oklch(.930 .003 106.5);--border-strong:oklch(.854 .004 106.5);--ring:oklch(.57 .11 166);--rail:56px;--sidebar:248px;--header:64px;--radius:8px;--sticky:20}
 :root.dark{color-scheme:dark;--background:oklch(.196 0 89.9);--surface:oklch(.217 .002 106.6);--foreground:oklch(.970 0 89.9);--muted:oklch(.243 .004 106.7);--muted-foreground:oklch(.715 0 89.9);--primary:oklch(.72 .115 170);--primary-hover:oklch(.65 .115 168);--accent:oklch(.28 .025 164);--border:oklch(1 0 0 / 9%);--border-strong:oklch(1 0 0 / 18%);--ring:oklch(.72 .115 170)}
-*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:16px}body{margin:0;background:var(--background);color:var(--foreground);font-family:'Geist Variable','MiSans VF','PingFang SC','Microsoft YaHei',sans-serif;font-size:16px;line-height:1.8;-webkit-font-smoothing:antialiased}::selection{color:var(--foreground);background:var(--accent)}a{color:var(--primary);text-underline-offset:4px;text-decoration-thickness:1px}a:hover{color:var(--primary-hover)}button,select{font:inherit;caret-color:var(--primary)}a,button,select{-webkit-tap-highlight-color:transparent}button:focus-visible,a:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--ring);outline-offset:4px}button{cursor:pointer}button:disabled{color:var(--muted-foreground);opacity:.5;cursor:default}svg.icon{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}a.skip{position:fixed;top:8px;left:12px;z-index:100;background:var(--surface);padding:8px 16px;transform:translateY(-150%)}a.skip:focus{transform:none}.rail{position:fixed;inset:0 auto 0 0;width:var(--rail);background:var(--muted);border-right:1px solid var(--border);display:flex;align-items:center;flex-direction:column;gap:16px;padding:24px 0;z-index:var(--sticky)}.icon-control{width:36px;height:36px;border:0;border-radius:50%;background:transparent;color:var(--muted-foreground);display:inline-flex;align-items:center;justify-content:center;text-decoration:none}.icon-control:hover{background:var(--accent);color:var(--foreground)}.rail a:first-child{color:var(--foreground)}.rail .theme-toggle{margin-top:auto}.sidebar{position:fixed;inset:0 auto 0 var(--rail);width:var(--sidebar);padding:24px 16px;display:flex;flex-direction:column;background:var(--muted);border-right:1px solid var(--border);overflow-y:auto}.wordmark{font-size:18px;line-height:1.4;font-weight:600;margin:0 12px 26px}.wordmark small{display:block;font-size:13px;font-weight:400;color:var(--muted-foreground);margin-top:8px}.chapter-nav{display:grid;gap:5px}.chapter-nav a{display:flex;gap:12px;align-items:baseline;color:var(--muted-foreground);text-decoration:none;font-size:14px;padding:9px 12px;border-radius:var(--radius);line-height:1.65}.chapter-nav a:hover{background:var(--surface);color:var(--foreground)}.chapter-nav a[aria-current=page]{background:var(--accent);color:var(--foreground);font-weight:600}.chapter-nav .num{font-size:12px;font-variant-numeric:tabular-nums;min-width:18px;font-weight:400}.chapter-nav a[href="#08-frontend"]{margin-top:20px}.sidebar-foot{margin-top:auto;padding:32px 12px 0;font-size:12px;line-height:1.8;color:var(--muted-foreground)}.sidebar-foot a{display:inline-block;margin-top:8px}.main{margin-left:calc(var(--rail) + var(--sidebar));min-width:0}.header{min-height:var(--header);position:sticky;top:0;z-index:var(--sticky);background:var(--background);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:20px;padding:12px 32px}.breadcrumbs{display:flex;align-items:center;gap:10px;font-size:13px;min-width:0;line-height:1.5}.breadcrumbs a{color:var(--muted-foreground);text-decoration:none;white-space:nowrap}.breadcrumbs span[aria-hidden]{color:var(--muted-foreground)}#current-title{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.actions{display:flex;align-items:center;gap:8px;flex:none}.text-control{height:32px;display:inline-flex;align-items:center;gap:6px;padding:0 12px;border:1px solid var(--border-strong);border-radius:100px;background:transparent;color:var(--foreground);font-size:12px;text-decoration:none;white-space:nowrap}.text-control:hover{background:var(--muted);color:var(--foreground);text-decoration:none}.actions .pagination{display:flex;gap:2px;align-items:center;margin-left:8px}.progress{font-size:12px;color:var(--muted-foreground);font-variant-numeric:tabular-nums;min-width:42px;text-align:center}.reading{max-width:1184px;margin:0 auto;padding:0 48px 64px}.section-links{display:flex;flex-wrap:wrap;gap:24px;padding:22px 0 16px;font-size:12px}.section-links a{color:var(--muted-foreground);text-decoration:none}.section-links a:hover{color:var(--foreground)}article{padding-top:16px}article[hidden]{display:none}h1,h2,h3{font-weight:600;line-height:1.4;letter-spacing:-.015em;text-wrap:balance}article h1{font-size:30px;margin:0 0 18px}article h2{font-size:20px;margin:48px 0 18px;scroll-margin-top:88px}article h3{font-size:16px;margin:26px 0 14px}article>p,article>ul,article>ol,article>blockquote,article>h1,article>h2,article>h3{max-width:44rem}p{margin:14px 0}li{margin:8px 0}ul,ol{padding-left:24px}strong{font-weight:600}blockquote{margin:0 0 20px;padding:0;color:var(--muted-foreground);font-size:14px}blockquote p{margin:0}figure{margin:22px 0 26px}figure img{display:block;width:100%;height:auto;border:1px solid var(--border-strong);border-radius:var(--radius);background:#fff}.screenshot-link{display:block;border-radius:var(--radius)}.screenshot-link:hover{outline:2px solid var(--border-strong);outline-offset:3px}figcaption{font-size:12px;line-height:1.7;color:var(--muted-foreground);margin-top:10px}.diagram img{padding:10px}.diagram figcaption{text-align:right}table{border-collapse:collapse;width:100%;margin:24px 0;font-size:13px;line-height:1.8}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--border);padding:14px 16px 14px 0}th{font-weight:500;color:var(--muted-foreground);border-bottom-color:var(--border-strong)}td:first-child,th:first-child{min-width:85px}tr td:last-child,tr th:last-child{padding-right:0}code{font-family:'Geist Mono Variable',ui-monospace,monospace;font-size:.86em;padding:2px 4px;border-radius:4px;background:var(--muted);overflow-wrap:anywhere}details{margin:24px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:14px 0;font-size:14px}summary{cursor:pointer;color:var(--primary);font-size:13px}details>ul{padding-left:22px}article footer{display:flex;align-items:center;justify-content:space-between;gap:20px;border-top:1px solid var(--border);margin-top:48px;padding-top:20px;font-size:13px;color:var(--muted-foreground)}.footer-label{font-size:12px}.mobile-nav{display:none}.empty-diagram{display:none!important}.sr-only{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:16px}body{margin:0;background:var(--background);color:var(--foreground);font-family:'Geist Variable','MiSans VF','PingFang SC','Microsoft YaHei',sans-serif;font-size:16px;line-height:1.8;-webkit-font-smoothing:antialiased}::selection{color:var(--foreground);background:var(--accent)}a{color:var(--primary);text-underline-offset:4px;text-decoration-thickness:1px}a:hover{color:var(--primary-hover)}button,select{font:inherit;caret-color:var(--primary)}a,button,select{-webkit-tap-highlight-color:transparent}button:focus-visible,a:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--ring);outline-offset:4px}button{cursor:pointer}button:disabled{color:var(--muted-foreground);opacity:.5;cursor:default}svg.icon{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}a.skip{position:fixed;top:8px;left:12px;z-index:100;background:var(--surface);padding:8px 16px;transform:translateY(-150%)}a.skip:focus{transform:none}.rail{position:fixed;inset:0 auto 0 0;width:var(--rail);background:var(--muted);border-right:1px solid var(--border);display:flex;align-items:center;flex-direction:column;gap:16px;padding:24px 0;z-index:var(--sticky)}.icon-control{width:36px;height:36px;border:0;border-radius:50%;background:transparent;color:var(--muted-foreground);display:inline-flex;align-items:center;justify-content:center;text-decoration:none}.icon-control:hover{background:var(--accent);color:var(--foreground)}.rail a:first-child{color:var(--foreground)}.rail .theme-toggle{margin-top:auto}.sidebar{position:fixed;inset:0 auto 0 var(--rail);width:var(--sidebar);padding:24px 16px;display:flex;flex-direction:column;background:var(--muted);border-right:1px solid var(--border);overflow-y:auto}.wordmark{font-size:18px;line-height:1.4;font-weight:600;margin:0 12px 26px}.wordmark small{display:block;font-size:13px;font-weight:400;color:var(--muted-foreground);margin-top:8px}.chapter-nav{display:grid;gap:16px}.chapter-nav a{display:flex;gap:12px;align-items:baseline;color:var(--muted-foreground);text-decoration:none;font-size:14px;padding:9px 12px;border-radius:var(--radius);line-height:1.65}.chapter-nav a:hover{background:var(--surface);color:var(--foreground)}.chapter-nav a[aria-current=page]{background:var(--accent);color:var(--foreground);font-weight:600}.chapter-nav .num{font-size:12px;font-variant-numeric:tabular-nums;min-width:18px;font-weight:400}.chapter-nav .chapter-group{margin:0;border:0;padding:0}.chapter-group summary{min-height:44px;padding:10px 12px;color:var(--foreground);font-size:14px;font-weight:600;line-height:24px;border-radius:var(--radius)}.chapter-group summary:hover{background:var(--surface)}.chapter-group summary::marker{color:var(--muted-foreground)}.chapter-group-links{display:grid;gap:4px;padding-top:4px}.sidebar-foot{margin-top:auto;padding:32px 12px 0;font-size:12px;line-height:1.8;color:var(--muted-foreground)}.sidebar-foot a{display:inline-block;margin-top:8px}.main{margin-left:calc(var(--rail) + var(--sidebar));min-width:0}.header{min-height:var(--header);position:sticky;top:0;z-index:var(--sticky);background:var(--background);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:20px;padding:12px 32px}.breadcrumbs{display:flex;align-items:center;gap:10px;font-size:13px;min-width:0;line-height:1.5}.breadcrumbs a{color:var(--muted-foreground);text-decoration:none;white-space:nowrap}.breadcrumbs span[aria-hidden]{color:var(--muted-foreground)}#current-title{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.actions{display:flex;align-items:center;gap:8px;flex:none}.text-control{height:32px;display:inline-flex;align-items:center;gap:6px;padding:0 12px;border:1px solid var(--border-strong);border-radius:100px;background:transparent;color:var(--foreground);font-size:12px;text-decoration:none;white-space:nowrap}.text-control:hover{background:var(--muted);color:var(--foreground);text-decoration:none}.actions .pagination{display:flex;gap:2px;align-items:center;margin-left:8px}.progress{font-size:12px;color:var(--muted-foreground);font-variant-numeric:tabular-nums;min-width:42px;text-align:center}.reading{max-width:1184px;margin:0 auto;padding:0 48px 64px}.section-links{display:flex;flex-wrap:wrap;gap:24px;padding:22px 0 16px;font-size:12px}.section-links a{color:var(--muted-foreground);text-decoration:none}.section-links a:hover{color:var(--foreground)}article{padding-top:16px}article[hidden]{display:none}h1,h2,h3{font-weight:600;line-height:1.4;letter-spacing:-.015em}article h1{font-size:30px;margin:0 0 18px}article h2{font-size:20px;margin:48px 0 18px;scroll-margin-top:88px}article h3{font-size:16px;margin:26px 0 14px}p{margin:14px 0}li{margin:8px 0}ul,ol{padding-left:24px}strong{font-weight:600}blockquote{margin:0 0 20px;padding:0;color:var(--muted-foreground);font-size:14px}blockquote p{margin:0}figure{margin:22px 0 26px}figure img{display:block;width:100%;height:auto;border:1px solid var(--border-strong);border-radius:var(--radius);background:#fff}.screenshot-link{display:block;border-radius:var(--radius)}.screenshot-link:hover{outline:2px solid var(--border-strong);outline-offset:3px}figcaption{font-size:12px;line-height:1.7;color:var(--muted-foreground);margin-top:10px}.diagram img{padding:10px}.diagram figcaption{text-align:right}table{border-collapse:collapse;width:100%;margin:24px 0;font-size:13px;line-height:1.8}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--border);padding:14px 16px 14px 0}th{font-weight:500;color:var(--muted-foreground);border-bottom-color:var(--border-strong)}td:first-child,th:first-child{min-width:85px}tr td:last-child,tr th:last-child{padding-right:0}code{font-family:'Geist Mono Variable',ui-monospace,monospace;font-size:.86em;padding:2px 4px;border-radius:4px;background:var(--muted);overflow-wrap:anywhere}details{margin:24px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:14px 0;font-size:14px}summary{cursor:pointer;color:var(--primary);font-size:13px}details>ul{padding-left:22px}article footer{display:flex;align-items:center;justify-content:space-between;gap:20px;border-top:1px solid var(--border);margin-top:48px;padding-top:20px;font-size:13px;color:var(--muted-foreground)}.footer-label{font-size:12px}.mobile-nav{display:none}.empty-diagram{display:none!important}.sr-only{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 @media(min-width:1800px){.reading{max-width:1328px;padding-inline:64px}article h1{font-size:32px}}
 @media(max-width:1100px){:root{--sidebar:210px}.reading{padding-inline:28px}.header{padding-inline:24px}.source-control{display:none}.section-links{gap:18px}.wordmark{font-size:16px}}
 @media(max-width:760px){.rail,.sidebar{display:none}.main{margin-left:0}.header{position:relative;padding:18px 20px 12px;flex-wrap:wrap;gap:12px}.breadcrumbs{width:100%}.actions{width:100%;justify-content:space-between}.text-control{height:36px}.actions .pagination{margin:0}.mobile-nav{display:flex;gap:12px;align-items:center;padding:16px 20px 0}.mobile-nav label{font-size:13px;color:var(--muted-foreground)}.mobile-nav select{min-width:0;flex:1;border:1px solid var(--border-strong);border-radius:var(--radius);background:var(--surface);color:var(--foreground);padding:8px 10px;font-size:14px}.mobile-nav .theme-toggle{flex:none}.reading{padding:0 20px 40px}.section-links{gap:16px;padding:20px 0 10px}article{padding-top:18px}article h1{font-size:24px}article h2{font-size:18px;margin-top:36px}article h3{font-size:14px}body{font-size:14px;line-height:1.85}blockquote{font-size:14px}figure{margin:20px -4px 22px}figure img{border-radius:6px}.diagram img{padding:4px}table{font-size:13px}thead{display:none}tbody,tr,td{display:block}tr{border-bottom:1px solid var(--border);padding:12px 0}td{display:grid;grid-template-columns:86px minmax(0,1fr);gap:12px;padding:6px 0;border:0;min-width:0;overflow-wrap:anywhere}td:before{content:attr(data-label);color:var(--muted-foreground);font-size:12px}article footer{align-items:flex-start}.footer-label{max-width:55%}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{scroll-behavior:auto!important}}
 @media print{.rail,.sidebar,.header,.section-links,.mobile-nav,article footer{display:none}.main,.reading{margin:0;padding:0}body{background:white;color:black}article,article[hidden]{display:block;break-before:page;padding:20px}article:first-of-type{break-before:auto}h2,h3,figure{break-inside:avoid}}
 article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);border-radius:var(--radius);font-size:13px;line-height:1.6}article pre code{padding:0;background:transparent;font-size:inherit}
-</style><link rel="stylesheet" href="comments.css"></head><body><a class="skip" href="#content">跳到正文</a><div class="rail" aria-label="文档工具"><a class="icon-control" href="#00-overview" aria-label="客户端总体设计" title="客户端总体设计"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6a2 2 0 0 1 2 2v14a3 3 0 0 0-3-2H4zM20 4h-6a2 2 0 0 0-2 2v14a3 3 0 0 1 3-2h5z"/></svg></a><a class="icon-control" href="#08-frontend" aria-label="前端现状与缺口" title="前端现状与缺口"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg></a><button type="button" class="icon-control theme-toggle" aria-label="切换为深色"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.7A8.4 8.4 0 0 1 8.3 4 8.5 8.5 0 1 0 20 15.7Z"/></svg></button></div><aside class="sidebar"><p class="wordmark">omniops-bots<small>客户端需求串讲</small></p><nav class="chapter-nav" aria-label="串讲章节"><a href="#00-overview"><span class="num">00</span><span>客户端总体设计</span></a><a href="#01-skill"><span class="num">01</span><span>SKILL</span></a><a href="#02-mcp"><span class="num">02</span><span>MCP</span></a><a href="#03-builtintool"><span class="num">03</span><span>builtinTool</span></a><a href="#04-agent"><span class="num">04</span><span>Agent</span></a><a href="#05-updater"><span class="num">05</span><span>桌面端更新</span></a><a href="#06-sync"><span class="num">06</span><span>同步与装配</span></a><a href="#07-execution"><span class="num">07</span><span>任务执行与恢复</span></a><a href="#08-frontend"><span class="num">08</span><span>前端现状与缺口</span></a><a href="#09-operations"><span class="num">09</span><span>运维与诊断上传</span></a><a href="#10-server-api"><span class="num">10</span><span>服务端 API</span></a><a href="#11-provider"><span class="num">11</span><span>Provider</span></a></nav><div class="sidebar-foot">11 章需求与接口设计 · 1 章完成情况<br>桌面运行实拍 · 资源页演示图<br><a href="README.md">Markdown 目录</a><br><a href="https://github.com/time-gift24/omniops-bots/issues/3" target="_blank" rel="noopener">已确认规格</a></div></aside><main class="main" id="content" tabindex="-1"><header class="header"><nav class="breadcrumbs" aria-label="面包屑"><a href="#00-overview">客户端设计</a><span aria-hidden="true">/</span><span id="current-title" aria-current="page"></span></nav><div class="actions"><a class="text-control source-control" id="source" href="00-总体架构.md">Markdown</a><a class="text-control" id="diagram" href="diagrams/00-overview.html" target="_blank" rel="noopener">打开运行模型<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-8 8M10 20H4v-6M4 20l8-8"/></svg></a><div class="pagination"><button type="button" id="prev" class="icon-control" aria-label="上一章"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button><span class="progress" id="progress"></span><button type="button" id="next" class="icon-control" aria-label="下一章"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button></div></div></header><div class="mobile-nav"><label for="chapter-select">章节</label><select id="chapter-select"><option value="00-overview">00 客户端总体设计</option><option value="01-skill">01 SKILL</option><option value="02-mcp">02 MCP</option><option value="03-builtintool">03 builtinTool</option><option value="04-agent">04 Agent</option><option value="05-updater">05 桌面端更新</option><option value="06-sync">06 同步与装配</option><option value="07-execution">07 任务执行与恢复</option><option value="08-frontend">08 前端现状与缺口</option><option value="09-operations">09 运维与诊断上传</option><option value="10-server-api">10 服务端 API</option><option value="11-provider">11 Provider</option></select><button type="button" class="icon-control theme-toggle" aria-label="切换为深色"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.7A8.4 8.4 0 0 1 8.3 4 8.5 8.5 0 1 0 20 15.7Z"/></svg></button></div><div class="reading"><nav class="section-links" id="sections" aria-label="本章目录"></nav><article id="00-overview" data-file="00-总体架构.md" hidden><h1>00 客户端总体设计</h1>
+</style><link rel="stylesheet" href="comments.css"></head><body><a class="skip" href="#content">跳到正文</a><div class="rail" aria-label="文档工具"><a class="icon-control" href="#preface-versioning" aria-label="需求串讲首页" title="需求串讲首页"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6a2 2 0 0 1 2 2v14a3 3 0 0 0-3-2H4zM20 4h-6a2 2 0 0 0-2 2v14a3 3 0 0 1 3-2h5z"/></svg></a><a class="icon-control" href="#08-frontend" aria-label="前端现状与缺口" title="前端现状与缺口"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg></a><button type="button" class="icon-control theme-toggle" aria-label="切换为深色"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.7A8.4 8.4 0 0 1 8.3 4 8.5 8.5 0 1 0 20 15.7Z"/></svg></button></div><aside class="sidebar"><p class="wordmark">omniops-bots<small>客户端需求串讲</small></p><nav class="chapter-nav" aria-label="串讲章节"><details class="chapter-group" id="nav-core" open><summary>核心</summary><div class="chapter-group-links"><a href="#preface-versioning"><span class="num">序</span><span>Agent 版本管理</span></a><a href="#00-overview"><span class="num">00</span><span>客户端需求与职责</span></a><a href="#core-skill-system"><span class="num">SK</span><span>Skill 模板与迭代</span></a><a href="#core-ws"><span class="num">WS</span><span>服务端调用客户端</span></a></div></details><details class="chapter-group" id="nav-details"><summary>细节</summary><div class="chapter-group-links"><a href="#01-skill"><span class="num">01</span><span>SKILL</span></a><a href="#02-mcp"><span class="num">02</span><span>MCP</span></a><a href="#03-builtintool"><span class="num">03</span><span>builtinTool</span></a><a href="#04-agent"><span class="num">04</span><span>Agent</span></a><a href="#05-updater"><span class="num">05</span><span>桌面端更新</span></a><a href="#06-sync"><span class="num">06</span><span>同步与装配</span></a><a href="#07-execution"><span class="num">07</span><span>任务执行与恢复</span></a><a href="#08-frontend"><span class="num">08</span><span>前端现状与缺口</span></a><a href="#09-operations"><span class="num">09</span><span>运维与诊断上传</span></a><a href="#10-server-api"><span class="num">10</span><span>服务端 API</span></a><a href="#11-provider"><span class="num">11</span><span>Provider</span></a></div></details></nav><div class="sidebar-foot">核心主线 · 客户端操作细节<br>桌面运行实拍 · 资源页演示图<br><a href="README.md">Markdown 目录</a><br><a href="https://github.com/time-gift24/omniops-bots/issues/3" target="_blank" rel="noopener">已确认规格</a></div></aside><main class="main" id="content" tabindex="-1"><header class="header"><nav class="breadcrumbs" aria-label="面包屑"><a href="#preface-versioning">需求串讲</a><span aria-hidden="true">/</span><span id="current-title" aria-current="page"></span></nav><div class="actions"><a class="text-control source-control" id="source" href="00-总体架构.md">Markdown</a><a class="text-control" id="diagram" href="diagrams/00-overview.html" target="_blank" rel="noopener">打开运行模型<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-8 8M10 20H4v-6M4 20l8-8"/></svg></a><div class="pagination"><button type="button" id="prev" class="icon-control" aria-label="上一章"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button><span class="progress" id="progress"></span><button type="button" id="next" class="icon-control" aria-label="下一章"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button></div></div></header><div class="mobile-nav"><label for="chapter-select">章节</label><select id="chapter-select"><optgroup label="核心"><option value="preface-versioning">前置 Agent 版本管理</option><option value="00-overview">00 客户端需求与职责</option><option value="core-skill-system">SK Skill 模板与迭代</option><option value="core-ws">WS 服务端通过 WS 调用客户端</option></optgroup><optgroup label="细节"><option value="01-skill">01 SKILL</option><option value="02-mcp">02 MCP</option><option value="03-builtintool">03 builtinTool</option><option value="04-agent">04 Agent</option><option value="05-updater">05 桌面端更新</option><option value="06-sync">06 同步与装配</option><option value="07-execution">07 任务执行与恢复</option><option value="08-frontend">08 前端现状与缺口</option><option value="09-operations">09 运维与诊断上传</option><option value="10-server-api">10 服务端 API</option><option value="11-provider">11 Provider</option></optgroup></select><button type="button" class="icon-control theme-toggle" aria-label="切换为深色"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.7A8.4 8.4 0 0 1 8.3 4 8.5 8.5 0 1 0 20 15.7Z"/></svg></button></div><div class="reading"><nav class="section-links" id="sections" aria-label="本章目录"></nav><article id="preface-versioning" data-file="前置-Agent版本管理.md" hidden><h1>前置 · Agent 版本管理：评估与回退的基础</h1>
+<p><strong>Agent 的能力由 Skill、系统提示词和模型共同决定。我们需要管理 Skill 的版本、Prompt 的版本，并在运行前根据确定的版本组合与模型选择，自动生成唯一的 Agent 运行指纹。</strong> 这样每次评估、每次线上执行都能回答“用的是哪套能力”，效果变差时也能明确回到哪套组合。</p>
+<p>本章是后续资源管理、装配与执行设计的前提；这里的运行指纹是新增需求，不代表当前客户端已实现，也不改变既有 Agent 发布内容 ID 的定义。</p>
+<h2 id="preface-versioning-为什么必须管理版本">为什么必须管理版本</h2>
+<p>同一个 Agent 名称不代表相同的执行能力。修改 Skill 的操作步骤、调整系统提示词，或换用另一个模型，都可能改变任务完成率、输出质量、耗时和成本。如果只记录名称或“最新版”，评估结果就无法归属到确定组合，出现退化也无法选择已验证的历史组合。</p>
+<p>版本管理要保留不可变的历史资产；运行指纹要把实际使用的组合与评估结果关联起来。团队才能先比较、再发布，发现退化后显式切回已验证组合，后续仍可继续优化。</p>
+<h2 id="preface-versioning-管理哪些版本">管理哪些版本</h2>
+<table>
+<thead>
+<tr>
+<th>对象</th>
+<th>人可读的指定方式</th>
+<th>实际固定的内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Skill</td>
+<td><code>{SKILL}.{Version}</code>，例如 <code>巡检规范.v.1.0.0</code></td>
+<td>Skill 的稳定身份、不可变完整包内容 ID；包括 <code>SKILL.md</code>、脚本及参考文件，不只固定入口文本</td>
+</tr>
+<tr>
+<td>Agent 系统提示词（Prompt）</td>
+<td><code>{AgentName}.{Version}</code>，例如 <code>巡检Agent.v.1.0.0</code></td>
+<td>指定 Agent 版本中的完整系统提示词；沿用 Agent 发布标签与内容 ID，不另建独立 Prompt 标签体系</td>
+</tr>
+<tr>
+<td>模型</td>
+<td>确定的 Provider 接入身份与模型 ID；服务商支持时指定模型快照／修订</td>
+<td>本次实际选择的模型及有效推理参数；接入地址使用非敏感身份表示，不包含密钥</td>
+</tr>
+</tbody></table>
+<p>名称与版本写法便于阅读，实际装配必须解析到稳定资源身份与内容 ID，不能仅按名称匹配，也不能在执行时重新解释为“最新版”。一个 Agent 可以引用多个 Skill，每个引用均固定版本及挂载路径。</p>
+<p>提示词随 Agent 版本管理：只改 Prompt 就发布新的 Agent 版本；改 Skill 就发布新的完整包，并联动更新受影响 Agent 的固定引用与版本。已发布标签与内容不可覆盖；草稿实验没有正式标签，仍须固定当次完整内容快照，才能与其他实验比较。</p>
+<h2 id="preface-versioning-自动生成 Agent 运行指纹">自动生成 Agent 运行指纹</h2>
+<p><strong>运行指纹 = 对“固定 Skill 版本集合 + 指定 Agent 系统提示词版本 + 实际模型选择”规范化后计算的内容摘要。</strong> 同一组合生成相同指纹；任一 Skill 版本、Prompt 版本或模型选择发生变化，生成不同指纹。指纹由客户端在装配成功、执行开始前自动生成，无需人工填写。</p>
+<figure class="diagram"><a href="./diagrams/preface-fingerprint.html" target="_blank" rel="noopener" aria-label="打开交互图：版本组合如何生成 Agent 运行指纹"><img src="./assets/preface-fingerprint.svg" alt="版本组合如何生成 Agent 运行指纹"></a><figcaption>版本组合如何生成 Agent 运行指纹 · 点击查看可缩放交互图</figcaption></figure>
+<table>
+<thead>
+<tr>
+<th>指纹输入</th>
+<th>固定规则</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Agent 版本</td>
+<td>使用稳定 Agent ID 与正式内容 ID；内容 ID 已覆盖系统提示词和装配配置。草稿实验使用本次不可变内容快照摘要</td>
+</tr>
+<tr>
+<td>Skill 版本集合</td>
+<td>逐项包含 Skill ID、内容 ID 和挂载路径，按固定字段顺序排序；本地编辑内容先捕获完整快照，不使用浮动引用</td>
+</tr>
+<tr>
+<td>模型选择</td>
+<td>包含 Provider 的非敏感接入身份、模型 ID、可取得的模型快照／修订，以及实际生效的推理参数；仅改变本机展示名或轮换密钥不改变指纹</td>
+</tr>
+<tr>
+<td>摘要规则</td>
+<td>固定指纹格式版本，使用规范化 JSON 与 SHA-256；对象键排序，Skill 集合按固定顺序排列，明确参数默认值，保留完整摘要作为身份</td>
+</tr>
+</tbody></table>
+<p>例如，<code>巡检规范.v.1.0.0 + 巡检Agent.v.1.0.0 + 模型A</code> 对应指纹 F1；只把 Skill 换为 <code>v.1.1.0</code> 后产生 F2；在 F2 的资产组合上换成模型 B，又产生 F3。每个指纹都保留其组成清单，界面可展示缩写，不能仅保存一个无法解释的哈希。</p>
+<p>必须区分以下三个对象：</p>
+<ul>
+<li><strong>Agent 发布内容 ID</strong>：标识不可变的 Agent 包，沿用现有算法；模型不进入发布包，改模型无需重新发布 Agent。</li>
+<li><strong>Agent 运行指纹</strong>：在确定 Agent／Skill 版本后，再结合实际模型与参数生成，用于评估分组和选择回退组合。</li>
+<li><strong>运行快照与执行记录</strong>：快照保留实际工具、MCP、桌面版本等运行条件；每次执行仍有独立 runId。同一指纹可以执行多次，输入、输出和执行 ID 不进入该指纹。</li>
+</ul>
+<p>指纹标识确定的配置组合，不保证模型每次输出一致。模型别名若由服务商更新且无可固定修订，或远端 MCP 实现发生变化，即使指纹相同，行为仍可能变化；评估时须同时核对运行快照与评估时间，不能宣称完整环境可重现。</p>
+<h2 id="preface-versioning-如何支持评估与回退">如何支持评估与回退</h2>
+<p>后续将根据具体 Skill 的任务目标、操作场景与输出要求，分别构建测试集，覆盖典型任务、边界情况和失败场景，并明确输入、预期结果与判定口径，用于比较不同版本组合的效果和回归验证。测试集建设不在本次范围内，本次仅明确后续方向，不制作测试集或实现自动化评估。</p>
+<figure class="diagram"><a href="./diagrams/preface-evaluation-rollback.html" target="_blank" rel="noopener" aria-label="打开交互图：从版本评估到显式回退"><img src="./assets/preface-evaluation-rollback.svg" alt="从版本评估到显式回退"></a><figcaption>从版本评估到显式回退 · 点击查看可缩放交互图</figcaption></figure>
+
+<ol>
+<li><strong>准备评估</strong>：固定评估用例、输入与判定口径，为每个候选组合生成指纹；尽量每次只改变一个因素，区分 Skill、Prompt 或模型带来的影响。</li>
+<li><strong>记录结果</strong>：每次评估及正式执行关联运行指纹与组成清单；评估结果按指纹归集，结合运行快照对照完成率、质量、耗时和成本，缺失数据不补零。</li>
+<li><strong>选择发布组合</strong>：运维根据评估与业务反馈选择明确版本和模型，保留历史组合与评估依据；发布新版本不覆盖旧包，也不改变已有会话快照。</li>
+<li><strong>显式回退</strong>：发现退化后，选择已验证指纹对应的 Agent／Skill 历史版本及模型参数，为新会话或新任务恢复该组合。先检查物料可取得、模型可用及当前工具兼容；无法恢复时明确失败，不静默替换模型或版本。</li>
+</ol>
+<p>回退不改写历史标签，不改变正在运行的任务，不自动重跑失败或取消的请求；需要再次执行时显式创建新 Run。回退范围是上述资产与模型组合，不承诺撤销业务操作或恢复旧 MCP／旧桌面工具实现。</p>
+<h2 id="preface-versioning-MCP 与 builtinTool：只做正向优化">MCP 与 builtinTool：只做正向优化</h2>
+<p><strong>本项目将 MCP 与 builtinTool 视为持续做正向优化的基础能力，不为其实现建立与 Skill／Prompt 相同的多版本选择、评估回退体系。</strong> 正向优化指在保持既有调用契约兼容的前提下修复问题、提高稳定性与效率；这是维护要求，不是对每次变更一定提升效果的保证。</p>
+<table>
+<thead>
+<tr>
+<th>基础能力</th>
+<th>演进方式</th>
+<th>与 Agent 指纹的关系</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>MCP</td>
+<td>由远端服务持续维护实现，不纳入本项目发布版本，不提供历史实现切换</td>
+<td>Agent 选择的完整非敏感连接配置仍参与 Agent 发布内容 ID；远端实现升级本身不生成新的 Agent 运行指纹，实际能力清单记录于运行快照</td>
+</tr>
+<tr>
+<td>builtinTool</td>
+<td>实现随桌面应用更新交付，不另设独立工具版本仓库、安装或回退入口</td>
+<td>所选工具 ID 仍参与 Agent 发布内容 ID；仅实现随桌面升级不生成新的 Agent 运行指纹，实际桌面版本与工具清单记录于运行快照</td>
+</tr>
+</tbody></table>
+<p>正向优化不能静默删除既有能力或破坏参数、返回值与错误语义。发生不兼容变化时，应先完成兼容处理或明确调整 Agent 装配并重新验证；工具缺失、连接失败仍按现有边界明确失败。选择哪些工具、连接哪个 MCP 属于 Agent 装配，修改这些选择仍形成新的 Agent 内容 ID，并改变运行指纹。</p>
+<p>本章仅补充需求和职责边界，不新增日志、span 或指标；运行指纹的保存、评估结果关联与回退入口仍待实现。资产发布和装配见 <a href="#01-skill">01 · SKILL</a>、<a href="#04-agent">04 · Agent</a>，工具边界见 <a href="#02-mcp">02 · MCP</a>、<a href="#03-builtintool">03 · builtinTool</a>，本机模型选择见 <a href="#11-provider">11 · Provider</a>。</p>
+<footer><span class="footer-label">客户端 MVP 设计 · 2026-10-22</span><a href="#00-overview">继续阅读客户端总体设计</a></footer></article><article id="00-overview" data-file="00-总体架构.md" hidden><h1>00 客户端总体设计</h1>
 <p><strong>客户端是运行在用户本机的后台 Agent 执行端，由服务端 Agent 以任务的形式调用。线上用户的主体操作在服务端 Console 完成。</strong> 用户在 Console 发起业务请求、查看任务状态和结果；服务端 Agent 负责业务编排，将需要本机能力的任务交给客户端 Agent，客户端在本机执行并回传结果，供服务端 Agent 继续处理并在 Console 呈现。</p>
 <p><strong>线上日常使用主线是：用户操作 Console → 服务端 Agent 编排并下发任务 → 客户端 Agent 后台执行 → 结果回传服务端 → Console 展示。</strong> 客户端通常作为后台进程运行，线上用户只看到连接状态等基础信息，不展示会话、资源编辑、执行过程和浏览器工作台组成的调试桌面；任务执行不以打开该调试桌面为前提。</p>
 <p><strong>运维调试与物料迭代是另一条工作主线：发现问题 → 在调试桌面编辑 → 本地实验与修正 → 运维本人确认 → 上传发布版本 → 新任务使用并反馈。</strong> 运维人员在调试桌面修改 Skill、补充文件、调整 Agent 提示词与装配，直接选择 Agent 本地试跑并检查过程，自己确认可用后上传发布。未上传的编辑也能实验，上传保存草稿与正式发布是两个动作，发布提交即表示运维本人已经确认。</p>
@@ -268,7 +370,355 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <li><strong>诊断接收</strong>：接收用户指定 thread 的诊断包，校验并持久保存后返回回执，支持运维按编号只读查看；不会因此恢复或重新执行任务。</li>
 </ul>
 <p>服务端高可用和内部编排实现另行定义；客户端依赖的 HTTPS API、WebSocket 消息和接收确认契约统一见 <a href="#10-server-api">10 · 服务端 API</a>。</p>
-<footer><span class="footer-label">客户端 MVP 设计 · 2026-10-20</span><a href="#01-skill">下一章：SKILL</a></footer></article><article id="01-skill" data-file="01-SKILL.md" hidden><h1>01 · SKILL</h1>
+<footer><span class="footer-label">客户端 MVP 设计 · 2026-10-20</span><a href="#01-skill">下一章：SKILL</a></footer></article><article id="core-skill-system" data-file="核心-Skill模板与迭代.md" hidden><h1>核心 · 运维 Skill 体系、模板与迭代</h1>
+<p><strong>本系统是运维操作系统。核心资产是持续维护的运维 Skill：<code>find-ops-capability</code> 决定去哪一个平台或平台组合，平台 Skill 提供具体操作与最佳实践，<code>playwright-skill</code> 提供浏览器操作和兜底探索。</strong> Agent 既能复用已验证的方法与脚本，也能在实践未覆盖时依据真实页面尝试完成原任务。</p>
+<p>本章定义内容模板与维护方式，不代表已经交付这些业务 Skill 或 CDAS 的真实操作实践。本次提供可复制的模板与文档说明，不实现探索草稿上传、定时 Agent 汇总或测试集建设。客户端定位与职责见 <a href="#00-overview">00 · 客户端总体设计</a>，远端调用见<a href="#core-ws">服务端通过 WS 调用客户端</a>。</p>
+<h2 id="core-skill-system-三层职责与协作">三层职责与协作</h2>
+<figure class="diagram"><a href="./diagrams/skill-collaboration/skill-collaboration.html" target="_blank" rel="noopener" aria-label="打开交互图：运维 Skill 的路由、平台实践与浏览器协作"><img src="./assets/skill-collaboration.svg" alt="运维 Skill 的路由、平台实践与浏览器协作"></a><figcaption>路由确定平台和交接；平台 Skill 选择实践、脚本或探索，统一使用浏览器能力。 点击查看可缩放交互图。</figcaption></figure>
+<table>
+<thead>
+<tr>
+<th>层次</th>
+<th>维护什么</th>
+<th>执行时负责什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>find-ops-capability</code></td>
+<td>平台能力目录、场景路由、跨平台组合实践</td>
+<td>选择平台、组织顺序与依赖，定义交接字段和成功判据；不复制平台内页面步骤</td>
+</tr>
+<tr>
+<td><code>ops-cdas</code> 等平台 Skill</td>
+<td>平台定位、与周边平台的关系、权限和前置条件、<code>references/</code> 场景实践、<code>scripts/</code> 加速脚本</td>
+<td>在指定平台内完成具体操作，核实业务结果，交付下游需要的信息</td>
+</tr>
+<tr>
+<td><code>playwright-skill</code></td>
+<td>浏览器操作方式与探索方法</td>
+<td>为平台操作提供实际页面读取、导航和操作能力，兜底探索仍遵守平台 Skill 的边界</td>
+</tr>
+</tbody></table>
+<p>新任务先由路由 Skill 判断目标与平台，再按需读取所选平台 Skill 及相关实践。已有单平台能力足够时不组织额外平台；没有现成组合实践时，允许根据已登记平台的定位、能力和关系组织新组合。依赖或目标不清楚时返回缺失信息，不猜测执行。</p>
+<p>这是 Agent 使用内容资产的分工，不要求新增通用调度器或子 Agent，也不等于通过 Markdown 自动获得工具权限。所需 Skill、Playwright 工具及版本必须已在当前 Agent 中装配；包内引用不会自动安装依赖。<code>playwright-skill</code> 在这里是产品约定的基础 Skill，本章不将当前浏览器工具等同于它已完成交付。</p>
+<h2 id="core-skill-system-一个 Skill 包怎样组织">一个 Skill 包怎样组织</h2>
+<pre><code class="language-text">find-ops-capability/
+  SKILL.md
+  references/
+    platforms.md            平台目录与关系
+    combinations.md         已验证组合的索引与实践
+
+ops-cdas/                   平台 Skill 示例命名，真实内容由运维填写
+  SKILL.md
+  references/
+    场景实践.md              具体任务的快速操作方法与验证
+  scripts/
+    稳定操作.mjs             有实际稳定步骤时才添加
+
+playwright-skill/
+  SKILL.md                  浏览器操作与兜底探索约定
+</code></pre>
+<p><code>SKILL.md</code> 保留定位、关键边界、决策规则和索引；具体场景按需读取 <code>references/</code>，稳定重复的步骤才提炼为 <code>scripts/</code>。不创建空脚本或不适用的目录。完整包一起版本化，模板不额外发明 <code>version</code> frontmatter 字段；标签、完整包摘要与 Agent 固定引用沿用<a href="#preface-versioning">前置 · Agent 版本管理</a>。</p>
+<p>平台 Skill 的 <code>SKILL.md</code> 必须说明平台具体定位、支持对象和环境、能力边界、与周边平台的关系、权限与前置条件、禁止事项、实践索引和结果交接。真实能力未确认时保留为待整理内容，不能把模板或 <code>ops-cdas</code> 示例名称当成已验证操作。</p>
+<h2 id="core-skill-system-路由 Skill 的 SKILL.md 模板">路由 Skill 的 SKILL.md 模板</h2>
+<p><a href="./templates/find-ops-capability/SKILL.md">复制路由模板文件</a>。配套提供<a href="./templates/find-ops-capability/references/platforms.md">平台目录填写约定</a>和<a href="./templates/find-ops-capability/references/combinations.md">组合实践填写约定</a>。模板包中的引用说明不是已经登记的平台能力，部署前须按真实平台填写。</p>
+<pre><code class="language-markdown">---
+name: find-ops-capability
+description: 根据运维任务选择已登记的平台操作 Skill，组织单平台或跨平台操作的执行顺序、依赖与交接信息。用于判断去哪个平台、如何组合平台；具体平台内操作交给相应平台 Skill。
+---
+
+# 运维能力路由
+
+## 职责与入口
+
+将任务目标转换为可执行的平台选择与组合计划。读取 [平台能力目录](references/platforms.md)，有跨平台需要时再读取 [组合实践](references/combinations.md) 中的相关场景；按需读取选中平台 Skill，不一次加载全部平台实践。
+
+只在当前 Agent 固定装配中实际可取得的平台 Skill 中选择。目录中的名称用于定位能力，具体版本以本次装配为准；缺少所需 Skill 时明确失败，不擅自切换“最新版”或调用未登记平台。
+
+## 选择平台与组织顺序
+
+1. 确定任务目标、环境、目标对象、操作范围和结果要求。优先从任务上下文及已有证据取得；必要信息缺失时返回缺失项，不猜测对象或环境。
+2. 根据平台定位、能力与周边关系选择平台。单平台能完成时使用单平台；需要组合时说明各平台承担的步骤及选择依据。
+3. 优先采用适用的组合实践。没有适用实践时，允许根据已登记平台的能力与关系组织新组合；每一步仍须满足对应平台 Skill 的边界。目标或依赖关系无法确定时停止。
+4. 执行前明确步骤顺序、依赖、输入、交接信息及成功判据。把具体平台内操作交给平台 Skill，避免在路由文档中复制页面步骤和选择器。
+
+## 每一步的计划
+
+用表格或等价结构表达下列字段，不要求新增协议或调度器：
+
+| 字段 | 要表达的内容 |
+| --- | --- |
+| 步骤与平台 Skill | 稳定步骤名、平台及所用 Skill |
+| 操作目标 | 本步要完成的业务目标和允许的操作范围 |
+| 前置依赖 | 依赖哪些步骤，以及依赖步骤必须取得的结果 |
+| 输入 | 来自任务或前序步骤的字段、来源和目标对象；区分名称与稳定 ID |
+| 交接信息 | 下一步需要的对象标识、状态、环境和证据引用；不传凭据或浏览器登录态 |
+| 成功判据 | 如何核实本步结果和交接信息有效，而非仅确认点击或脚本返回 |
+| 失败处理 | 停止哪些依赖步骤；独立步骤是否明确允许继续及继续条件 |
+
+任务指令与平台 Skill 的权限、前置条件、禁止事项共同限定操作；路由选择不会扩大授权。不得把计划写成已执行结果。
+
+## 执行与失败处理
+
+- 平台 Skill 负责匹配 `references/` 实践、选择适用脚本、调用 Playwright 和验证结果；本 Skill 负责核对步骤依赖及交接，不绕开平台约束直接操作。
+- 前一步失败或无法验证，停止依赖它的后续步骤。独立步骤只有在计划中明确标注可继续且其前置条件仍满足时，才继续执行。
+- 不自动回滚已发生的变更。不因脚本失败就换一种方式重复提交；先核实副作用，状态不明时明确失败。
+- 遇到权限不足、人工登录／验证或必需能力不可取得时，返回明确失败；不暂停等待登录后自动续跑。
+
+## 结果与改进材料
+
+返回整体结果、每步状态、已完成步骤、实际交接信息、已发生的变更、验证依据、失败原因和未执行步骤；尚未核实的事实明确标记。每步状态可用“已验证完成／失败／未执行”表达，不能以计划步骤冒充执行记录。
+
+新组合或探索路径保留适用条件、操作依据和验证结果，供运维整理。执行中不修改只读 Skill、不自动改写或发布正式版本。探索草稿上传服务端文件系统、定时 Agent 收集并提出建议均为后续方向，本期不执行这条链路。
+</code></pre>
+<h2 id="core-skill-system-平台操作 Skill 的 SKILL.md 模板">平台操作 Skill 的 SKILL.md 模板</h2>
+<p><a href="./templates/ops-platform/SKILL.md">复制平台模板文件</a>，配套提供<a href="./templates/ops-platform/references/practice-template.md">场景实践模板</a>。复制为 <code>ops-cdas</code> 时替换 <code>name</code>、<code>description</code> 和平台事实，完成实践索引后再用于装配；不在模板中猜测 CDAS 的真实页面、功能或上下游关系。</p>
+<pre><code class="language-markdown">---
+name: ops-platform
+description: 在指定运维平台内完成其职责范围内的查询与变更操作，优先使用场景实践和适用脚本，并通过 playwright-skill 探索未覆盖场景。复制模板时须改为真实平台名称、能力和触发场景。
+---
+
+# 平台操作 Skill
+
+## 平台说明
+
+维护者在发布前填写本节并替换 `name` 和 `description`。例如复制为 `ops-cdas` 时，填写 CDAS 的真实平台信息；未填写的模板不得作为可执行正式 Skill 发布。
+
+| 项目 | 必须填写的事实 |
+| --- | --- |
+| 平台名称与定位 | 平台负责的业务环节、对象和目标；哪些事项不由它负责 |
+| 环境与入口 | 支持环境、受控入口地址及环境识别方式；不保存凭据或登录态 |
+| 能力范围 | 可查询和可变更的对象、目标定位方式及平台限制 |
+| 周边平台关系 | 上下游平台、职责分界、什么场景需要交接 |
+| 输入与输出 | 任务需要的对象 ID、环境和参数；可交接的结果字段及其语义 |
+
+跨平台选择、顺序和交接由 `find-ops-capability` 组织；本 Skill 负责平台内具体操作及结果验证。
+
+## 权限、前置条件与禁止事项
+
+维护者按平台实际约束填写以下内容，不用“按需处理”代替：
+
+- 所需账号角色、可访问环境和对象范围，以及如何核实当前身份与环境。
+- 查询、变更各自需要的业务前置状态、目标参数和任务授权范围。
+- 平台特有的禁止操作、禁止对象，以及不能由探索绕过的限制。
+- 变更的影响范围、如何确认目标、成功判据，以及状态无法核实时的停止条件。
+
+执行前检查这些约束；任务输入不能扩大平台权限。缺少必要信息时返回缺失项；权限不足或需人工登录／验证时明确失败，不绕过限制或自动等待续跑。
+
+## 实践索引与按需读取
+
+参考 [场景实践模板](references/practice-template.md) 编写实际实践。该文件只说明填写结构，不是可以直接执行的业务实践。
+
+维护者为每个真实场景登记：场景名称、触发条件、适用环境与对象、对应的 `references/` 文件，以及可用的 `scripts/` 文件。只读取匹配场景所需的实践；不要将整个资料目录一次载入上下文。
+
+## 执行优先级
+
+1. 先匹配 `references/` 中的实践，核对当前目标、环境和前置条件。只因关键词相似不能认定适用。
+2. 实践有适用脚本时优先使用脚本；没有适用脚本时，按实践通过 Playwright 操作并验证结果。
+3. 没有适用实践，或页面变化使既有实践不适用时，使用 `playwright-skill` 读取实际页面、导航和探索，尝试完成原任务，包括任务范围内的变更操作。
+4. 探索同样遵守本 Skill 的权限、前置条件和禁止事项。不扩大任务目标；无法判断操作影响或验证结果时，明确失败并说明依据。
+
+`playwright-skill` 必须在当前固定装配中可取得，并遵守其操作方式与当前宿主工具契约；本模板不假定它已有具体实现。缺失时明确报告能力缺失，不临时安装或替换另一套浏览器执行环境。
+
+## 脚本使用约定
+
+- 运行前核对脚本用途、适用页面与环境、输入参数、读写性质、影响范围、前置条件、成功判据，以及能否重复执行。不以文件名代替契约检查。
+- 脚本基于当前宿主提供的 Playwright 页面执行；复用任务绑定页面，不自行创建浏览器、页面或 context，不切到其他会话，也不启动 shell 或安装依赖。
+- 沿用实际宿主的脚本读取、保存与执行入口，执行前核对源文件摘要。包内脚本复用需遵守宿主契约，不假定存在直接执行任意 Skill 路径的工具。
+- 参数须按实践定义校验，不将任务内容直接拼接成可执行代码；产物写入允许的任务工作目录，不写回只读 Skill 包，不输出凭据。
+- 脚本应返回可核对的业务结果、变更情况和验证依据；脚本返回、页面跳转或按钮点击本身不代表业务成功。
+- 脚本失败后先核实是否已产生变更。不能直接改用手动点击或另一脚本重复提交；状态不明时明确失败。只有确认尚未产生变更、原操作仍适用且符合重复执行约束时，才可继续。
+
+## 结果与交接
+
+返回目标对象、环境、实际操作、已发生变更、最终业务状态及验证依据；说明采用既有实践、脚本还是探索。失败时列出已完成内容、失败原因和未完成内容，不自动回滚。
+
+向下一平台交接对象稳定 ID、环境、状态和必要证据引用，不传密码、Token、Cookie 或完整会话。不能确认的交接信息明确标记，不能作为后续依赖步骤的成功输入。
+
+## 探索成果与维护
+
+保留有复用价值的探索路径、适用条件、来源任务和验证依据，作为运维整理材料；没有验证成功的路径不得记成最佳实践。材料不写回当前只读 Skill、不自动修改或发布正式版本。
+
+运维确认后将方法沉淀到 `references/`；稳定、重复的步骤再提炼为 `scripts/`，按完整 Skill 包发布新版本。探索草稿上传服务端文件系统、定时 Agent 收集并建议、按 Skill 建测试集均为后续能力，本期不执行。
+</code></pre>
+<h2 id="core-skill-system-场景实践与脚本怎样配合">场景实践与脚本怎样配合</h2>
+<p>每个实践必须能回答“什么场景适用、需要哪些输入、怎样操作、如何证明成功、失败后怎样核实”。平台入口、页面变化、业务前提或验证方式改变时，修订对应实践；不要把一次成功操作直接推广为所有环境的通用方法。</p>
+<table>
+<thead>
+<tr>
+<th>实践部分</th>
+<th>必须表达的内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>适用范围</td>
+<td>场景、环境、对象、前置条件、权限、不适用情况与验证来源</td>
+</tr>
+<tr>
+<td>输入</td>
+<td>字段、类型、来源、限制，以及目标对象和环境的核实方式</td>
+</tr>
+<tr>
+<td>操作步骤</td>
+<td>有意义的页面入口、目标识别、动作、观察点；所引用脚本的用途与调用条件</td>
+</tr>
+<tr>
+<td>结果与交接</td>
+<td>业务成功判据、状态和对象稳定 ID、证据引用及下游字段语义</td>
+</tr>
+<tr>
+<td>失败处理</td>
+<td>已发生变更的核实方法、停止条件、重复执行约束及未完成步骤</td>
+</tr>
+</tbody></table>
+<p>执行优先级统一为：<strong>匹配实践并核对适用条件 → 有适用脚本则优先使用，否则按实践操作 → 没有适用实践或实践失效时，用 Playwright 探索。</strong> 探索可以完成原任务中的变更，但不能绕过权限、前置条件和禁止事项；影响无法判断或结果无法验证时明确失败。</p>
+<p>脚本失败先检查是否已产生变更；状态不明就失败，不换另一脚本或手动方式重复提交。跨平台前一步失败或无法验证时，停止依赖它的后续操作；独立步骤只有明确标注可继续且前置条件仍满足时才继续。返回已完成步骤、实际变更和失败依据，不自动回滚。</p>
+<p>平台脚本沿用当前宿主的 Playwright 约束：复用任务绑定页面，脚本产物写入允许的工作目录，不自行创建页面或浏览器。当前宿主实际提供 <code>inspect_browser</code>、<code>read_playwright_script</code>、<code>write_playwright_script</code> 和 <code>run_playwright_script</code> 等入口，保存后按源文件 SHA-256 执行；导出函数接收宿主提供的 <code>page</code>、<code>context</code>、<code>browser</code>、<code>playwright</code>、<code>artifactsDir</code>、<code>parameters</code> 和 <code>assert</code>，返回可验证的 JSON 证据。包内脚本怎样进入执行入口必须遵守实际契约，不能假设存在任意 Skill 文件路径执行能力；详见<a href="../../desktop/runtime/graphs/browser-agent.ts">当前图装配入口</a>。本章不新增执行 API 或脚本实现。</p>
+<h2 id="core-skill-system-如何从任务反馈迭代到正式版本">如何从任务反馈迭代到正式版本</h2>
+<figure class="diagram"><a href="./diagrams/skill-evolution/skill-evolution.html" target="_blank" rel="noopener" aria-label="打开交互图：运维 Skill 从任务反馈到正式版本的迭代"><img src="./assets/skill-evolution.svg" alt="运维 Skill 从任务反馈到正式版本的迭代"></a><figcaption>上传与定时 Agent 建议链路为后续方向，本期不做；正式版本始终由运维本人确认发布。 点击查看可缩放交互图。</figcaption></figure>
+<table>
+<thead>
+<tr>
+<th>环节</th>
+<th>运维维护什么</th>
+<th>结果与边界</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>发现问题</td>
+<td>比较任务目标、实际执行和验证结果，判断是路由、平台实践还是脚本问题</td>
+<td>定位应修改的内容；失败或未验证路径不能当成最佳实践</td>
+</tr>
+<tr>
+<td>整理依据</td>
+<td>保留来源任务、探索路径、适用条件、验证依据与已知局限</td>
+<td>沿用本地任务记录供运维人工整理，不自动写回只读 Skill</td>
+</tr>
+<tr>
+<td>沉淀实践</td>
+<td>运维确认后修订平台 <code>references/</code>；跨平台选择或交接变化则修订路由目录与组合实践</td>
+<td>先形成可解释的操作方法，避免只存一段无前提脚本</td>
+</tr>
+<tr>
+<td>提炼脚本</td>
+<td>将稳定重复的步骤提炼到 <code>scripts/</code>，补齐参数、影响范围、校验及失败后的状态核实</td>
+<td>实践仍是选择与验证依据，脚本负责加速</td>
+</tr>
+<tr>
+<td>本地验证与修正</td>
+<td>运维按需使用草稿实验，核对结果、副作用和适用条件</td>
+<td>未上传的内容也能验证；沿用本人确认发布，不新增审核人或强制实验门槛</td>
+</tr>
+<tr>
+<td>发布与使用</td>
+<td>按周汇总已确认内容，发布完整 Skill 新版本，联动更新受影响 Agent 固定引用与版本</td>
+<td>旧包与旧会话保留；新会话使用确定版本，结合前置章节的运行指纹需求追溯效果</td>
+</tr>
+</tbody></table>
+<p>编辑、保存、实验、上传草稿和正式发布是不同动作。无确认变更时不创建空版本；运维提交发布表示本人确认，不要求执行中的 Agent 自行发布。正式发布同步仍按现有待接入契约实施，不能把本章的内容模板视为发布链路已经完成，详见 <a href="#01-skill">01 · SKILL</a>。</p>
+<h2 id="core-skill-system-后续方向与本期范围">后续方向与本期范围</h2>
+<p><strong>后续方向：客户端整理探索草稿 → 上传服务端文件系统，附来源任务与探索依据 → 定时任务 Agent 收集材料并提出改进建议 → 运维确认 → 更新 references 或 scripts → 发布正式 Skill。</strong> 定时 Agent 负责建议，不能自动改写或发布正式版本；未验证的探索只能作为候选材料。这里的服务端属于外部接入方，不在本仓增加服务端文件系统或调度器实现。</p>
+<p>这条探索草稿上传链路及配套定时收集、建议能力本期不做；本章不定义上传 API、调度配置或假成功入口。它与既有“运维主动上传官方草稿修订”需求不同，不能互相冒充已实现。</p>
+<p>后续还将按具体 Skill 的场景、输入和成功判据构建测试集，用于版本比较与回归验证；本次不制作测试集或实现自动化评估。当前提供的是模板和维护约定，不表示上述业务 Skill 已接入运行。</p>
+<p>本次不改变业务执行路径，不新增日志、span 或指标；模板要求的结果和探索依据沿用既有任务证据边界，不将提示词、回复正文、凭据或完整错误来源链写入遥测。</p>
+<footer><span class="footer-label">客户端 MVP 设计 · 2026-10-22</span><a href="#core-ws">继续阅读服务端通过 WS 调用客户端</a></footer></article><article id="core-ws" data-file="核心-服务端通过WS调用客户端.md" hidden><h1>核心 · 服务端通过 WebSocket 调用客户端</h1>
+<p><strong>用户在服务端 Console 发起业务；服务端 Agent 经 WebSocket 调用确定版本的客户端 Agent；客户端在本机后台执行并回传结果，服务端确认接收后继续业务。</strong> 客户端主动连接服务端，任务不依赖打开本地调试桌面。</p>
+<p>本章集中说明线上调用主链路，沿用 <a href="./10-%E6%9C%8D%E5%8A%A1%E7%AB%AFAPI.md">10 · 服务端 API</a> 的既有契约。WebSocket 通道及远端任务接入仍待实现，本地调试能力已具备不代表线上链路已经完成。</p>
+<h2 id="core-ws-谁负责什么">谁负责什么</h2>
+<table>
+<thead>
+<tr>
+<th>参与者</th>
+<th>职责</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>线上用户与 Console</td>
+<td>发起业务、查看状态和结果；需要人工登录时按提示处理，再显式发起新任务</td>
+</tr>
+<tr>
+<td>服务端 Agent</td>
+<td>编排业务，选择目标客户端与官方 Agent 确定版本，下发调用或取消，消费最终结果</td>
+</tr>
+<tr>
+<td>客户端 Node.js runtime</td>
+<td>维护连接，校验和去重调用，准备固定物料与运行快照，执行图、模型、MCP 和 Chrome 操作，持久保存结果并补传</td>
+</tr>
+<tr>
+<td>运维调试桌面</td>
+<td>编辑与发布资产、本地实验、预配置模型、查看过程和诊断；这些操作服务于主链路</td>
+</tr>
+</tbody></table>
+<p>客户端由 Tauri 提供原生宿主，业务执行由 Node.js／LangGraph 承担，Playwright 操作应用管理的外部 Google Chrome。运维手动使用的内嵌 CEF 与 Agent 页面分开管理。</p>
+<h2 id="core-ws-一次调用怎样完成">一次调用怎样完成</h2>
+<ol>
+<li><strong>连接与鉴权</strong>：后台客户端以现有身份主动建立 <code>WSS /api/clients/connect</code> 长连接。服务端校验用户、组织和安装身份，协商协议版本、桌面版本与可用工具；确认连接可用后才投递任务。凭据不放 URL 查询串。</li>
+<li><strong>下发调用</strong>：用户在 Console 发起业务，服务端 Agent 发送 <code>task.call</code>，包含唯一 <code>callId</code>、目标客户端、官方 <code>agentId</code> 与 <code>agentContentId</code>、业务 <code>input</code>、<code>context</code> 和调用有效期。任务正文不传密钥，也不覆盖本机 Provider／模型选择。</li>
+<li><strong>去重与受理</strong>：客户端先查持久去重记录，再检查权限、有效期及并发容量；新调用受理记录落盘后返回 <code>task.accepted</code>，给出 <code>threadId</code>、<code>runId</code>。受理只表示接下任务，不能作为业务完成凭据。</li>
+<li><strong>准备与执行</strong>：后台按指定版本经 HTTPS 补齐缺失 Agent／Skill 包，固定快照，检查 MCP 和内置工具，使用本机预配置模型执行。每次调用创建独立会话与 Chrome 页面；按准备、执行、停止阶段回传 <code>task.status</code>。运行指纹按前置章节的新增需求生成，尚待实现。</li>
+<li><strong>保存并发送结果</strong>：执行结束后，客户端先持久保存终态和结果，再发送 <code>task.result</code>，携带原 <code>callId</code>、稳定 <code>resultId</code>、结果摘要、业务结果或安全错误、起止时间与运行快照。</li>
+<li><strong>确认交付与继续业务</strong>：服务端幂等持久保存结果及索引后，返回匹配 ID 和摘要的 <code>task.result-ack</code>。客户端校验后才标记已交付；服务端 Agent 消费结果、继续业务，Console 展示状态与结果。</li>
+</ol>
+<p><strong>连接成功、任务已受理、任务执行结束、结果已交付是四个不同边界。</strong> WebSocket 发送成功或心跳正常不能代替结果 ACK；最终结果也不能由一条模型输出结束来判定。</p>
+<h2 id="core-ws-WebSocket 与 HTTPS 各传什么">WebSocket 与 HTTPS 各传什么</h2>
+<table>
+<thead>
+<tr>
+<th>通道</th>
+<th>承载内容</th>
+<th>详细契约</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>WebSocket</td>
+<td>调用、受理、任务级状态、取消及其回执、最终结果与结果 ACK</td>
+<td><a href="./10-%E6%9C%8D%E5%8A%A1%E7%AB%AFAPI.md#WebSocket%E8%B0%83%E7%94%A8%E5%8F%96%E6%B6%88%E7%BB%93%E6%9E%9C%E5%92%8C%E7%A1%AE%E8%AE%A4">10 · 服务端 API：WebSocket</a></td>
+</tr>
+<tr>
+<td>HTTPS</td>
+<td>官方版本清单、完整物料包、草稿发布、桌面更新及显式诊断上传</td>
+<td><a href="./10-%E6%9C%8D%E5%8A%A1%E7%AB%AFAPI.md">10 · 服务端 API</a></td>
+</tr>
+</tbody></table>
+<p>正常任务通道不持续上传逐条模型正文、完整工具过程或 checkpoint，也不传 Skill 文件包、浏览器 profile 或 CDP 端口。完整过程留在本地供运维查看；需要诊断时按 <a href="./09-%E8%BF%90%E7%BB%B4%E4%B8%8E%E8%AF%8A%E6%96%AD%E4%B8%8A%E4%BC%A0.md">09 · 运维与诊断上传</a> 显式准备和上传。</p>
+<h2 id="core-ws-异常时仍守住哪些边界">异常时仍守住哪些边界</h2>
+<table>
+<thead>
+<tr>
+<th>情况</th>
+<th>处理结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>重复投递同一个 <code>callId</code></td>
+<td>返回已知受理状态或原结果，不重复开始模型、MCP 或 Chrome 操作；同 ID 不同调用内容拒绝为冲突</td>
+</tr>
+<tr>
+<td>客户端忙或调用不可受理</td>
+<td>返回明确拒绝，不进入本地队列；服务端决定再次执行时使用新 <code>callId</code></td>
+</tr>
+<tr>
+<td>网络断开但进程仍在</td>
+<td>当前任务继续，客户端有界退避重连；重新鉴权后补传未 ACK 的原结果，不重新执行</td>
+</tr>
+<tr>
+<td>客户端重启</td>
+<td>已完成结果继续交付；未完成任务记为 <code>interrupted-unknown</code>，不根据 checkpoint 自动续跑</td>
+</tr>
+<tr>
+<td>取消或超时</td>
+<td>停止后续步骤，等待已发起操作排空并保存终态；取消回执不表示已经停止，已发生的外部操作不回滚</td>
+</tr>
+<tr>
+<td>所需版本、模型、工具不可用或需要人工登录</td>
+<td>明确失败并回传原因；不静默换版本、换模型或削减能力，处理后显式发起新任务</td>
+</tr>
+</tbody></table>
+<p>执行结束与交付确认分开保存；服务端重复收到相同结果返回同一 ACK，不重复驱动后续业务。调用去重不等于承诺外部系统的副作用恰好发生一次。</p>
+<h2 id="core-ws-核心讲完后再看实现细节">核心讲完后再看实现细节</h2>
+<p>先用<a href="./%E5%89%8D%E7%BD%AE-Agent%E7%89%88%E6%9C%AC%E7%AE%A1%E7%90%86.md">前置 · Agent 版本管理</a>确定评估与回退对象，再用 <a href="./00-%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84.md">00 · 客户端总体设计</a>确定产品范围，本章串起服务端到客户端的调用闭环。资源编辑、同步装配、运行恢复、诊断和具体 API 字段在侧栏「细节」中按需展开。</p>
+<p>本次仅重组需求说明与阅读入口，不改变执行路径，不新增日志、span 或指标。</p>
+<footer><span class="footer-label">客户端 MVP 设计 · 2026-10-22</span><a href="#01-skill">展开客户端操作细节</a></footer></article><article id="01-skill" data-file="01-SKILL.md" hidden><h1>01 · SKILL</h1>
 <blockquote>
 <p>串讲重点：线上用户在服务端 Console 发起业务，服务端 Agent 以任务调用客户端 Agent，客户端在后台按固定 Skill 包执行；Skill 文件管理、草稿实验与发布属于客户端运维调试工作台。</p>
 </blockquote>
@@ -286,6 +736,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 </ol>
 <figure class="usecase"><a class="screenshot-link" href="./assets/01-skill-usecase.svg" target="_blank" rel="noopener" aria-label="放大用例图"><img src="./assets/01-skill-usecase.svg" alt="Skill 用例图：编辑、实验、发布与使用"></a><figcaption>用例图 · 角色与行为关系</figcaption></figure>
 <h2 id="01-skill-简要设计">简要设计</h2>
+<p>Skill 的内容结构、路由与平台操作分工、两类 <code>SKILL.md</code> 模板及迭代方式见<a href="#core-skill-system">核心 · 运维 Skill 体系、模板与迭代</a>。本章说明文件管理、实验、版本与发布操作。</p>
 <p>客户端后台按服务端任务指定的 Agent 版本准备并使用 Skill，结果回到服务端 Console。运维调试工作台围绕“编辑 → 实验 → 上传或发布”组织 Skill 操作；本地资源仍可自由编辑、保存，不设发布标签；在页面勾选现有 Agent，就能运行尚未上传的草稿。实验前固定完整快照，日志、截图等实验产物另存。</p>
 <p>客户端按<strong>整个文件包</strong>保存和装配 Skill，包括说明、脚本、引用资料和随包资源。官方发布包只读，普通用户可同步、查看和使用；运维人员可上传草稿修订、发布新版本。服务端配合集中保存这些官方物料，客户端保留未同步编辑、下载缓存和已下载的历史版本。</p>
 <h3>调试页面方案：Skill 列表 → 包内文件管理</h3>
@@ -421,6 +872,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <h2 id="02-mcp-简要设计">简要设计</h2>
 <p>运维调试时，在客户端的 Agent 能力区选择 MCP、查看能力清单；线上任务由服务端 Agent 从 Console 业务流程中发起，客户端在后台运行 Agent 时，按装配配置连接对应的远端 MCP 并调用工具。MCP 可以来自内部服务，也可以来自其他已配置的远端地址。</p>
 <p>官方 Agent 所需的 MCP 连接配置或引用随 Agent 一并同步，客户端保持只读；本地 Agent 使用自己的配置。配置选择参与 Agent 内容 ID，更改官方装配需要形成新的 Agent 版本。<strong>外部 MCP 服务实现本身不进入本项目的版本与发布体系</strong>，不固定其工具行为或发布周期。</p>
+<p>MCP 实现按“只做兼容性正向优化”的基础能力维护，不提供本项目的历史实现选择或回退；这不保证每次升级必然改善任务效果。连接配置变化仍形成新的 Agent 内容 ID，远端实现升级本身不改变 Agent 运行指纹，评估时结合运行快照核对实际能力，详见<a href="./%E5%89%8D%E7%BD%AE-Agent%E7%89%88%E6%9C%AC%E7%AE%A1%E7%90%86.md">前置 · Agent 版本管理</a>。</p>
 <h2 id="02-mcp-客户端">客户端</h2>
 <ul>
 <li>随官方 Agent 同步所需 MCP 连接配置，按当次装配建立远端连接并使用工具。</li>
@@ -465,6 +917,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <h2 id="03-builtintool-简要设计">简要设计</h2>
 <p>运维调试工作台在 Agent 的“工具”页签展示可选 builtinTool，保存选定的工具清单；官方装配写入仍须运维权限，本地 Agent 可自由编辑。线上由服务端 Agent 以任务调用客户端，客户端在后台执行。每次运行前，对照已安装桌面版本提供的工具检查装配是否齐全；缺失就结束本次任务，向服务端回传缺失原因供 Console 提示，并通过客户端基础更新入口处理更新。</p>
 <p>builtinTool 的实现随桌面应用版本交付，不建立独立工具包发布与同步系统。<strong>Agent 版本固定工具选择；桌面端版本说明实际实现。</strong> 所选 builtinTool 参与 Agent 内容 ID；客户端运行快照记录实际桌面版本和工具清单，不另设工具发布标签。</p>
+<p>builtinTool 实现按“只做兼容性正向优化”的基础能力维护，不建立独立的多版本选择或回退体系；这不保证每次升级必然改善任务效果。工具选择变化仍形成新的 Agent 内容 ID，仅实现随桌面升级不改变 Agent 运行指纹，评估时结合实际桌面版本判断，详见<a href="./%E5%89%8D%E7%BD%AE-Agent%E7%89%88%E6%9C%AC%E7%AE%A1%E7%90%86.md">前置 · Agent 版本管理</a>。</p>
 <h2 id="03-builtintool-客户端">客户端</h2>
 <ul>
 <li>根据已安装桌面版本提供可用内置工具，执行前检查 Agent 所需工具是否齐全。</li>
@@ -511,6 +964,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <p>线上主链路是用户在服务端 Console 发起业务，服务端 Agent 以任务调用确定版本的官方客户端 Agent；客户端在后台固定装配、执行并回传结果，用户在 Console 继续业务操作。客户端运维调试工作台另提供本地 Agent 编辑和官方 Agent 调试两条路径，入口定位不改变既有资源读写权限。本地 Agent 可以随时编辑、保存，不设发布标签，服务端不会调用它。调试时同步官方 Agent 后，可以查看只读配置并主动发起手动会话；运维人员在客户端维护官方草稿并发布新版本，由服务端配合保存和分发。</p>
 <p>客户端开始会话时固定 Agent 与 Skill 快照，并按装配执行。运维调试时主动发起的手动会话允许正常输入；接到服务端 Agent 调用时，客户端使用传入的上下文新建独立任务会话，后台执行并向服务端回传结果。该会话在本地调试工作台只供查看过程和结果，不接受追加指令；线上用户通过 Console 查看结果，不需要打开调试桌面。</p>
 <p>Agent 的内容 ID 根据系统提示词、固定 Skill 版本、所选 builtinTool 和 MCP 装配配置生成。正式发布时手填 <code>v.1.0.0</code> 形式的标签，已发布内容和标签指向不可变。Provider、模型和推理参数属于运行条件，不参与内容 ID；Provider 的非敏感接入身份、实际模型与参数记录于运行快照。</p>
+<p>在发布内容 ID 之外，新增需求是在运行前结合固定 Agent／Skill 版本、实际模型与推理参数，自动生成 Agent 运行指纹，用于评估分组与显式回退。<code>{AgentName}.{Version}</code> 指定该 Agent 版本的系统提示词，Prompt 随 Agent 版本管理；改模型不重新发布 Agent，但改变运行指纹。该指纹及评估回退尚待实现，规则见<a href="./%E5%89%8D%E7%BD%AE-Agent%E7%89%88%E6%9C%AC%E7%AE%A1%E7%90%86.md">前置 · Agent 版本管理</a>。</p>
 <h3>装配清单里保存什么</h3>
 <table>
 <thead>
@@ -1934,7 +2388,7 @@ article pre{max-width:100%;overflow-x:auto;padding:16px;background:var(--muted);
 <h2 id="11-provider-服务端配合">服务端配合</h2>
 <p>首版 Provider 配置和凭据由运维在客户端本地预配置与管理，无需本项目服务端提供配置下发、凭据托管、模型发现或模型请求转发接口。接入地址可以指向既有内部网关，网关按自身约定提供 OpenAI 兼容服务。</p>
 <p>已有服务端契约见 <a href="#10-server-api">10 · 服务端 API</a>。线上用户通过 Console 发起业务，服务端 Agent 调用后台客户端时复用本机配置并固定快照；任务正文不能携带密钥或覆盖 Provider／模型选择，配置缺失或不可用时返回明确失败。</p>
-<footer><span class="footer-label">客户端 MVP 设计 · 2026-10-20</span><a href="#00-overview">回到客户端总体设计</a></footer></article></div></main><script>const chapters=[["00-overview","00-总体架构.md","客户端总体设计"],["01-skill","01-SKILL.md","SKILL"],["02-mcp","02-MCP.md","MCP"],["03-builtintool","03-buildintool.md","builtinTool"],["04-agent","04-agent.md","Agent"],["05-updater","05-桌面端更新.md","桌面端更新"],["06-sync","06-同步与装配.md","同步与装配"],["07-execution","07-任务执行与恢复.md","任务执行与恢复"],["08-frontend","08-前端现状与缺口.md","前端现状与缺口"],["09-operations","09-运维与诊断上传.md","运维与诊断上传"],["10-server-api","10-服务端API.md","服务端 API"],["11-provider","11-Provider.md","Provider"]];
+<footer><span class="footer-label">客户端 MVP 设计 · 2026-10-20</span><a href="#00-overview">回到客户端总体设计</a></footer></article></div></main><script>const chapters=[["preface-versioning","前置-Agent版本管理.md","Agent 版本管理"],["00-overview","00-总体架构.md","客户端需求与职责"],["core-skill-system","核心-Skill模板与迭代.md","Skill 模板与迭代"],["core-ws","核心-服务端通过WS调用客户端.md","服务端通过 WS 调用客户端"],["01-skill","01-SKILL.md","SKILL"],["02-mcp","02-MCP.md","MCP"],["03-builtintool","03-buildintool.md","builtinTool"],["04-agent","04-agent.md","Agent"],["05-updater","05-桌面端更新.md","桌面端更新"],["06-sync","06-同步与装配.md","同步与装配"],["07-execution","07-任务执行与恢复.md","任务执行与恢复"],["08-frontend","08-前端现状与缺口.md","前端现状与缺口"],["09-operations","09-运维与诊断上传.md","运维与诊断上传"],["10-server-api","10-服务端API.md","服务端 API"],["11-provider","11-Provider.md","Provider"]];
 const navLinks=[...document.querySelectorAll('.chapter-nav a')];
 const articles=[...document.querySelectorAll('article')];
 let current=-1;
@@ -1946,6 +2400,7 @@ function show(){
  const changed=next!==current; current=next;
  const [id,file,title]=chapters[current]; const article=articles[current];
  articles.forEach((a,i)=>a.hidden=i!==current);
+ if(changed)navLinks[current].closest('details').open=true;
  navLinks.forEach((a,i)=>{if(i===current)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
  document.getElementById('current-title').textContent=title;
  document.getElementById('progress').textContent=(current+1)+' / '+chapters.length;

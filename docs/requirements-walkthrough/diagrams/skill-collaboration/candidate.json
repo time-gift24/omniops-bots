@@ -1,0 +1,197 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "运维 Skill 的路由、平台实践与浏览器协作",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "docs/requirements-walkthrough/diagrams/skill-collaboration/skill-collaboration.html"
+  },
+  "lanes": [
+    {
+      "id": "routing",
+      "label": "路由与平台职责"
+    },
+    {
+      "id": "practice",
+      "label": "优先复用已验证实践"
+    },
+    {
+      "id": "exploration",
+      "label": "实践缺失或失效时探索"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "task-intent",
+      "lane": "routing",
+      "col": 0,
+      "type": "external",
+      "label": "运维任务",
+      "sublabel": "目标、环境、对象与范围"
+    },
+    {
+      "id": "capability-routing",
+      "lane": "routing",
+      "col": 1,
+      "type": "backend",
+      "label": "find-ops-capability",
+      "sublabel": "平台选择、顺序与交接"
+    },
+    {
+      "id": "platform-operation",
+      "lane": "routing",
+      "col": 2,
+      "type": "backend",
+      "label": "平台 SKILL",
+      "sublabel": "如 ops-cdas；核对权限与前提"
+    },
+    {
+      "id": "matching-practice",
+      "lane": "practice",
+      "col": 2,
+      "type": "database",
+      "label": "references",
+      "sublabel": "匹配适用场景与成功判据"
+    },
+    {
+      "id": "reusable-script",
+      "lane": "practice",
+      "col": 3,
+      "type": "backend",
+      "label": "scripts",
+      "sublabel": "适用脚本优先"
+    },
+    {
+      "id": "browser-capability",
+      "lane": "practice",
+      "col": 4,
+      "type": "backend",
+      "label": "playwright-skill",
+      "sublabel": "按实践操作或执行脚本"
+    },
+    {
+      "id": "verified-outcome",
+      "lane": "practice",
+      "col": 5,
+      "type": "security",
+      "label": "验证与交接",
+      "sublabel": "业务状态、变更与依据"
+    },
+    {
+      "id": "bounded-exploration",
+      "lane": "exploration",
+      "col": 2,
+      "type": "backend",
+      "label": "Playwright 探索",
+      "sublabel": "原任务内可含变更；遵守平台边界"
+    },
+    {
+      "id": "uncertain-side-effect",
+      "lane": "exploration",
+      "col": 5,
+      "type": "security",
+      "label": "失败并停止依赖步骤",
+      "sublabel": "影响或状态不明；不重复提交"
+    }
+  ],
+  "edges": [
+    {
+      "id": "intent-to-route",
+      "from": "task-intent",
+      "to": "capability-routing",
+      "label": "识别目标",
+      "role": "main"
+    },
+    {
+      "id": "route-to-platform",
+      "from": "capability-routing",
+      "to": "platform-operation",
+      "label": "平台与依赖",
+      "role": "main"
+    },
+    {
+      "id": "platform-to-practice",
+      "from": "platform-operation",
+      "to": "matching-practice",
+      "label": "查找实践",
+      "role": "main"
+    },
+    {
+      "id": "practice-to-script",
+      "from": "matching-practice",
+      "to": "reusable-script",
+      "label": "有适用脚本",
+      "role": "main"
+    },
+    {
+      "id": "script-to-browser",
+      "from": "reusable-script",
+      "to": "browser-capability",
+      "label": "复用绑定页面",
+      "role": "main"
+    },
+    {
+      "id": "browser-to-evidence",
+      "from": "browser-capability",
+      "to": "verified-outcome",
+      "label": "验证成功",
+      "role": "main"
+    },
+    {
+      "id": "practice-direct-browser",
+      "from": "matching-practice",
+      "to": "browser-capability",
+      "label": "无适用脚本则按实践操作",
+      "role": "branch"
+    },
+    {
+      "id": "practice-to-exploration",
+      "from": "matching-practice",
+      "to": "bounded-exploration",
+      "label": "无适用实践或已失效",
+      "role": "branch"
+    },
+    {
+      "id": "exploration-browser-use",
+      "from": "bounded-exploration",
+      "to": "browser-capability",
+      "label": "使用同一浏览器能力",
+      "role": "branch"
+    },
+    {
+      "id": "uncertain-outcome-stop",
+      "from": "browser-capability",
+      "to": "uncertain-side-effect",
+      "label": "无法判断影响或验证结果",
+      "role": "error"
+    }
+  ],
+  "mainPath": [
+    "task-intent",
+    "capability-routing",
+    "platform-operation",
+    "matching-practice",
+    "reusable-script",
+    "browser-capability",
+    "verified-outcome"
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "三层分工",
+      "items": [
+        "路由组织平台组合；平台 Skill 负责具体操作",
+        "playwright-skill 为实践、脚本和探索提供浏览器能力"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "探索不扩大边界",
+      "items": [
+        "脚本失败先核实变更，状态不明就失败",
+        "不自动回滚；独立步骤仅明确标注可继续时继续"
+      ]
+    }
+  ]
+}

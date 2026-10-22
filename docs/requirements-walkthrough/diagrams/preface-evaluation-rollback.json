@@ -1,0 +1,173 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "从版本评估到显式回退",
+    "locale": "zh-CN",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    {
+      "id": "candidate",
+      "label": "候选与评估"
+    },
+    {
+      "id": "production",
+      "label": "发布与使用"
+    },
+    {
+      "id": "rollback",
+      "label": "退化后显式回退"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "candidate-combination",
+      "lane": "candidate",
+      "col": 0,
+      "type": "database",
+      "label": "固定候选组合",
+      "sublabel": "Skill / Prompt / 模型",
+      "width": 190
+    },
+    {
+      "id": "comparison-evaluation",
+      "lane": "candidate",
+      "col": 1,
+      "type": "backend",
+      "label": "按指纹评估",
+      "sublabel": "同用例、同判定口径",
+      "width": 190
+    },
+    {
+      "id": "confirmed-combination",
+      "lane": "production",
+      "col": 1,
+      "type": "security",
+      "label": "选择发布组合",
+      "sublabel": "运维根据评估确认",
+      "width": 190
+    },
+    {
+      "id": "new-production-runs",
+      "lane": "production",
+      "col": 2,
+      "type": "backend",
+      "label": "新任务使用",
+      "sublabel": "保留版本与运行快照",
+      "width": 190
+    },
+    {
+      "id": "regression-feedback",
+      "lane": "production",
+      "col": 3,
+      "type": "frontend",
+      "label": "效果反馈",
+      "sublabel": "核对结果与运行条件",
+      "width": 190
+    },
+    {
+      "id": "historical-selection",
+      "lane": "rollback",
+      "col": 3,
+      "type": "database",
+      "label": "选择历史指纹",
+      "sublabel": "恢复已验证版本组合",
+      "width": 190
+    },
+    {
+      "id": "compatibility-check",
+      "lane": "rollback",
+      "col": 2,
+      "type": "security",
+      "label": "检查恢复条件",
+      "sublabel": "物料、模型和工具兼容",
+      "width": 190
+    },
+    {
+      "id": "explicit-new-run",
+      "lane": "rollback",
+      "col": 1,
+      "type": "backend",
+      "label": "显式创建新 Run",
+      "sublabel": "恢复组合用于新任务",
+      "width": 190
+    }
+  ],
+  "edges": [
+    {
+      "id": "candidate-test",
+      "from": "candidate-combination",
+      "to": "comparison-evaluation",
+      "label": "对照评估",
+      "role": "main"
+    },
+    {
+      "id": "evaluation-confirm",
+      "from": "comparison-evaluation",
+      "to": "confirmed-combination",
+      "label": "选择可用组合",
+      "role": "main"
+    },
+    {
+      "id": "release-new-work",
+      "from": "confirmed-combination",
+      "to": "new-production-runs",
+      "label": "新会话生效",
+      "role": "main"
+    },
+    {
+      "id": "observe-effect",
+      "from": "new-production-runs",
+      "to": "regression-feedback",
+      "label": "业务反馈",
+      "role": "main"
+    },
+    {
+      "id": "select-known-good",
+      "from": "regression-feedback",
+      "to": "historical-selection",
+      "label": "发现退化",
+      "role": "branch"
+    },
+    {
+      "id": "check-selected-history",
+      "from": "historical-selection",
+      "to": "compatibility-check",
+      "label": "恢复前检查",
+      "role": "branch"
+    },
+    {
+      "id": "start-explicit-run",
+      "from": "compatibility-check",
+      "to": "explicit-new-run",
+      "label": "条件满足",
+      "role": "branch"
+    }
+  ],
+  "mainPath": [
+    "candidate-combination",
+    "comparison-evaluation",
+    "confirmed-combination",
+    "new-production-runs",
+    "regression-feedback"
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "保留可比较的历史",
+      "items": [
+        "每次评估与执行关联指纹和组成清单",
+        "历史发布不可覆盖；已有会话快照保持固定"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "回退边界",
+      "items": [
+        "恢复条件不满足时明确失败，不静默替换",
+        "不自动重跑，不撤销已发生的外部操作"
+      ]
+    }
+  ]
+}

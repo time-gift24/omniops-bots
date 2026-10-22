@@ -1,0 +1,10 @@
+{
+  "data-last-export-format": "svg",
+  "data-last-export-bytes": "175397",
+  "data-last-export-canonical": "true",
+  "postprocess": {
+    "operation": "append trailing newline for repository file hygiene",
+    "bytes": 175398,
+    "sha256": "226704e4f62f00a76415295182cfeed9c03b441061d9a93c729e26a937386196"
+  }
+}

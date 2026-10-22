@@ -1,0 +1,68 @@
+{
+  "diagrams": [
+    {
+      "diagram_type": "workflow",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/preface-fingerprint.html",
+      "specification": {
+        "sha256": "cef05facfc363a66b98bd167ab0138eb597271a05e87e941628ce6805b4dd956",
+        "bytes": 3089
+      },
+      "artifact": {
+        "sha256": "b53bca930fa36035e68a92d7a88775fb32913a9f54ca67bbe2183cc9653a84f1",
+        "bytes": 707481
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "browser_receipt": "../diagrams/preface-fingerprint.visual-check.json",
+      "visual_review": "passed",
+      "reviewed_images": [
+        "../diagrams/preface-fingerprint.visual-check.2048x1320.light.png",
+        "../diagrams/preface-fingerprint.visual-check.1440x900.dark.png"
+      ],
+      "review_notes": [
+        "已查看大屏浅色和笔记本深色截图，节点及标签可读，连线未遮挡无关节点。",
+        "主图与结论卡片完整呈现，无页面溢出；图中流程均为需求说明，不表示运行指纹已实现。"
+      ],
+      "correction_rounds": 0
+    },
+    {
+      "diagram_type": "workflow",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/preface-evaluation-rollback.html",
+      "specification": {
+        "sha256": "2471aa222513f7a02e50ad23106719ee90da7e4807cd403d9e28dffd3028b9c6",
+        "bytes": 4056
+      },
+      "artifact": {
+        "sha256": "95e44824108bba01805ace1a5342b64bc096b474a0858c56af40af6d0aa44a2e",
+        "bytes": 711751
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "browser_receipt": "../diagrams/preface-evaluation-rollback.visual-check.json",
+      "visual_review": "passed",
+      "reviewed_images": [
+        "../diagrams/preface-evaluation-rollback.visual-check.2048x1320.light.png",
+        "../diagrams/preface-evaluation-rollback.visual-check.1440x900.dark.png"
+      ],
+      "review_notes": [
+        "已查看大屏浅色和笔记本深色截图，节点及标签可读，连线未遮挡无关节点。",
+        "主图与结论卡片完整呈现，无页面溢出；图中流程均为需求说明，不表示运行指纹已实现。"
+      ],
+      "correction_rounds": 0
+    }
+  ]
+}

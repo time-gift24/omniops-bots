@@ -1,0 +1,46 @@
+{
+  "diagrams": [
+    {
+      "diagram_type": "workflow",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/skill-collaboration/skill-collaboration.html",
+      "artifact": {
+        "path": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/skill-collaboration/skill-collaboration.html",
+        "sha256": "9f6e448f57adf256e308465af248004c2dc6c778c7b1434df0d815d1a5da6bf4",
+        "bytes": 824424
+      },
+      "finalize_receipt": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/skill-collaboration/skill-collaboration.finalize-summary.json",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "inspected_screenshots": [
+        "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/skill-collaboration/visual-check/skill-collaboration.visual-check.1440x900.light.png",
+        "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/skill-collaboration/visual-check/skill-collaboration.visual-check.2048x1320.dark.png"
+      ],
+      "notes": [
+        "已查看浅色笔记本与深色大屏截图；节点与关系标签可读，分支未穿过无关节点。",
+        "这是需求与维护约定；上传、定时汇总和测试集并未实现。"
+      ],
+      "svg_sha256": "226704e4f62f00a76415295182cfeed9c03b441061d9a93c729e26a937386196"
+    },
+    {
+      "diagram_type": "workflow",
+      "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/skill-evolution/skill-evolution.html",
+      "artifact": {
+        "path": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/skill-evolution/skill-evolution.html",
+        "sha256": "78f1dae5d0db188f7e6b0326848995d837ffa096b35743af1f5049759cee6157",
+        "bytes": 827576
+      },
+      "finalize_receipt": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/skill-evolution/review-2/skill-evolution.finalize-summary.json",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "inspected_screenshots": [
+        "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/skill-evolution/visual-check/skill-evolution.visual-check.1440x900.light.png",
+        "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/skill-evolution/visual-check/skill-evolution.visual-check.2048x1320.dark.png"
+      ],
+      "notes": [
+        "已查看浅色笔记本与深色大屏截图；节点与关系标签可读，分支未穿过无关节点。",
+        "这是需求与维护约定；上传、定时汇总和测试集并未实现。"
+      ],
+      "svg_sha256": "0479f231a6a74f39c35f8ef2378923d1218c59678a3f272b166ef84e63553236"
+    }
+  ]
+}

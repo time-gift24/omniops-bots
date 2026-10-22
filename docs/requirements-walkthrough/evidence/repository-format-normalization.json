@@ -1,0 +1,72 @@
+{
+  "operation": "Remove trailing whitespace and add EOF newline; no content or behavior changes.",
+  "evidence_scope": "Generated delivery/browser receipts and screenshot reviews attest the pre-normalization bytes. Their original hashes are preserved, not reissued as checks of formatted files. This record binds those bytes to the committed format-only derivatives.",
+  "files": [
+    {
+      "path": "docs/requirements-walkthrough/assets/preface-evaluation-rollback.svg",
+      "before": {
+        "sha256": "8d9f10e31cc8cb017c6a54ae84866212739219bd1c7abdf4b4125a99c4309a59",
+        "bytes": 55461
+      },
+      "after": {
+        "sha256": "c7a23184f3d8df354c4de6195f5d183e95c8b3a4ee705e5460240a3c3bfc1009",
+        "bytes": 55441
+      }
+    },
+    {
+      "path": "docs/requirements-walkthrough/assets/preface-fingerprint.svg",
+      "before": {
+        "sha256": "c7c55a694baa1443f5dede53d978302f8a4bf537b0554bc6d4f55bd80ddde53e",
+        "bytes": 51299
+      },
+      "after": {
+        "sha256": "b8719510fd60417145383e2382d51425290f176aa9d60aa3584b153cf81be443",
+        "bytes": 51279
+      }
+    },
+    {
+      "path": "docs/requirements-walkthrough/assets/skill-collaboration.svg",
+      "before": {
+        "sha256": "226704e4f62f00a76415295182cfeed9c03b441061d9a93c729e26a937386196",
+        "bytes": 175398
+      },
+      "after": {
+        "sha256": "529f6fc8cd1e32e9b58078f1f0e6bbbc8a886c671e2c88fca68d7dff3135edec",
+        "bytes": 175349
+      }
+    },
+    {
+      "path": "docs/requirements-walkthrough/assets/skill-evolution.svg",
+      "before": {
+        "sha256": "0479f231a6a74f39c35f8ef2378923d1218c59678a3f272b166ef84e63553236",
+        "bytes": 179530
+      },
+      "after": {
+        "sha256": "97f8b5f96409e00dffb72f477d0c3af9cfa3ec1c45df65dcec5352ec9b28d9d3",
+        "bytes": 179478
+      }
+    },
+    {
+      "path": "docs/requirements-walkthrough/diagrams/skill-collaboration/skill-collaboration.html",
+      "before": {
+        "sha256": "9f6e448f57adf256e308465af248004c2dc6c778c7b1434df0d815d1a5da6bf4",
+        "bytes": 824424
+      },
+      "after": {
+        "sha256": "b38353fe46217ef9edf78c9b8d84eb800bf097eed7218a87212f089838fe9d23",
+        "bytes": 824334
+      }
+    },
+    {
+      "path": "docs/requirements-walkthrough/diagrams/skill-evolution/skill-evolution.html",
+      "before": {
+        "sha256": "78f1dae5d0db188f7e6b0326848995d837ffa096b35743af1f5049759cee6157",
+        "bytes": 827576
+      },
+      "after": {
+        "sha256": "2adaa8e3862d31de537f01bf45d466b72c06c936b3157725a97beea0fcdea3fc",
+        "bytes": 827486
+      }
+    }
+  ]
+}

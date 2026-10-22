@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "workflow",
+  "quality": "showcase",
+  "specification": {
+    "path": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/skill-evolution/candidate.json",
+    "sha256": "ab6c797b039a4ca828cd6813a8eb192127c475d8e01535552ffa4d55a29cb235",
+    "bytes": 5132
+  },
+  "artifact": {
+    "path": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/skill-evolution/skill-evolution.html",
+    "sha256": "6e25748058f20b121184744cd4d428c2ff5ef0cc3ffe7477a2a8326a0cb173b3",
+    "bytes": 826611
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/skill-evolution/skill-evolution.finalize.json",
+    "summaryReceipt": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/skill-evolution/skill-evolution.finalize-summary.json",
+    "browserCheckReceipt": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/skill-evolution/skill-evolution.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-22T05:23:36.164Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2196,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}
