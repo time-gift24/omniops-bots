@@ -1,0 +1,181 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "改造后 · 同机 Compose 分离 API、网关与图执行",
+    "locale": "zh-CN",
+    "output": "docs/requirements-walkthrough/diagrams/server-deployment/single-host/compose.html",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "new-users",
+      "type": "external",
+      "label": "Console／桌面",
+      "sublabel": "HTTPS／主动 WSS",
+      "pos": [
+        40,
+        330
+      ],
+      "size": [
+        165,
+        80
+      ]
+    },
+    {
+      "id": "kept-nginx",
+      "type": "backend",
+      "label": "Nginx",
+      "sublabel": "沿用单机入口",
+      "pos": [
+        325,
+        330
+      ],
+      "size": [
+        160,
+        80
+      ]
+    },
+    {
+      "id": "api-container",
+      "type": "backend",
+      "label": "API × 1",
+      "sublabel": "Console／资源／文件入口",
+      "pos": [
+        620,
+        90
+      ],
+      "size": [
+        200,
+        80
+      ],
+      "tag": "同机容器"
+    },
+    {
+      "id": "gateway-container",
+      "type": "backend",
+      "label": "网关 × 1",
+      "sublabel": "WS 传输／独立 A2A 模块",
+      "pos": [
+        620,
+        570
+      ],
+      "size": [
+        200,
+        80
+      ],
+      "tag": "同机容器"
+    },
+    {
+      "id": "workers-container",
+      "type": "backend",
+      "label": "图 worker × 3",
+      "sublabel": "只执行允许的图任务",
+      "pos": [
+        990,
+        330
+      ],
+      "size": [
+        230,
+        80
+      ],
+      "tag": "同机容器"
+    },
+    {
+      "id": "shared-records",
+      "type": "database",
+      "label": "PostgreSQL／Redis",
+      "sublabel": "复用状态／队列／调用记录",
+      "pos": [
+        620,
+        330
+      ],
+      "size": [
+        200,
+        80
+      ]
+    },
+    {
+      "id": "shared-files",
+      "type": "database",
+      "label": "NAS／NFSv4.1",
+      "sublabel": "新增推荐：版本／工作区／产物",
+      "pos": [
+        990,
+        90
+      ],
+      "size": [
+        230,
+        80
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "new-users",
+      "to": "kept-nginx",
+      "label": "HTTPS／WSS"
+    },
+    {
+      "from": "kept-nginx",
+      "to": "api-container",
+      "label": "Console API"
+    },
+    {
+      "from": "kept-nginx",
+      "to": "gateway-container",
+      "label": "桌面 WSS"
+    },
+    {
+      "from": "api-container",
+      "to": "shared-records",
+      "label": "保存／调度"
+    },
+    {
+      "from": "gateway-container",
+      "to": "shared-records",
+      "label": "调用／结果"
+    },
+    {
+      "from": "workers-container",
+      "to": "shared-records",
+      "label": "领取／状态"
+    },
+    {
+      "from": "api-container",
+      "to": "shared-files",
+      "label": "文件访问"
+    },
+    {
+      "from": "workers-container",
+      "to": "shared-files",
+      "label": "物料／工作区"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "先在一台应用机器验证",
+      "items": [
+        "API × 1、网关 × 1、worker × 3 分别作为容器运行",
+        "同一镜像选不同入口；Make 可保留为 Compose 薄封装"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "独立职责与持久交接",
+      "items": [
+        "API 不执行图；WS 模块只传输，A2A 模块持久处理任务",
+        "原 worker 总数仍为 3，状态和文件不依赖某个进程"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "容器化不等于整机容错",
+      "items": [
+        "应用容器同机共享 CPU、内存和网络；机器故障仍受影响",
+        "依赖节点位置仅表达访问关系，不断言存储也在同一宿主机"
+      ]
+    }
+  ]
+}

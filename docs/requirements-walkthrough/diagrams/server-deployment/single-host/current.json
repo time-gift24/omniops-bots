@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "改造前 · Make 启动，Console 与图执行共用 worker",
+    "locale": "zh-CN",
+    "output": "docs/requirements-walkthrough/diagrams/server-deployment/single-host/current.html",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "old-console",
+      "type": "external",
+      "label": "Console",
+      "sublabel": "现有前端",
+      "pos": [
+        40,
+        90
+      ],
+      "size": [
+        155,
+        80
+      ]
+    },
+    {
+      "id": "old-nginx",
+      "type": "backend",
+      "label": "Nginx",
+      "sublabel": "现有单机入口",
+      "pos": [
+        325,
+        90
+      ],
+      "size": [
+        160,
+        80
+      ]
+    },
+    {
+      "id": "mixed-workers",
+      "type": "backend",
+      "label": "混合 worker × 3",
+      "sublabel": "Console 交互＋不同图执行",
+      "pos": [
+        630,
+        90
+      ],
+      "size": [
+        220,
+        80
+      ]
+    },
+    {
+      "id": "old-shared",
+      "type": "database",
+      "label": "PostgreSQL／Redis",
+      "sublabel": "已有共享状态与消息队列",
+      "pos": [
+        1000,
+        90
+      ],
+      "size": [
+        230,
+        80
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "old-console",
+      "to": "old-nginx",
+      "label": "Console 请求"
+    },
+    {
+      "from": "old-nginx",
+      "to": "mixed-workers",
+      "label": "负载均衡"
+    },
+    {
+      "from": "mixed-workers",
+      "to": "old-shared",
+      "label": "状态／队列"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "当前应用形态",
+      "items": [
+        "Make 启动 3 个 worker；每个同时处理前端交互和图",
+        "同一 worker 进程同时承载请求处理与执行负载"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "已知与待明确",
+      "items": [
+        "PostgreSQL、Redis 已共享；文件共享方式待明确",
+        "桌面 WSS／A2A 接入仍待实现，图中不画成已有能力"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "现有故障边界",
+      "items": [
+        "单机 Nginx 仍是入口单点",
+        "某种图若只有一个可执行 worker，缺少替代实例"
+      ]
+    }
+  ]
+}

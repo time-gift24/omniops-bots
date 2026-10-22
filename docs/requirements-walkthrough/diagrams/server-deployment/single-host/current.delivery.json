@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "37067ad1-6a53-468f-b022-6f33bb8427b6",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/server-deployment/single-host/current.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/server-deployment/single-host/current.html",
+  "specification": {
+    "sha256": "891eef10a2ea5fd4406530270c28d30d235fdb84077e2aa88c4645546cf026ed",
+    "bytes": 2320
+  },
+  "artifact": {
+    "sha256": "efbbe64f26d0c62a0bd482cfd712d9bea486768b712c1364727c9c858484d006",
+    "bytes": 811057
+  }
+}

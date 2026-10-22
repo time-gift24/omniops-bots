@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "413a09b0-a4ff-42e9-b0d2-2eb8db694bcc",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/server-deployment/single-host/compose.json",
+  "output": "/Users/wanyaozhong/Projects/omniops-bots/docs/requirements-walkthrough/diagrams/server-deployment/single-host/compose.html",
+  "specification": {
+    "sha256": "8488b960fc29314625f6d9bee83ba4625b28aec5c628b986947a7847a47a5157",
+    "bytes": 3822
+  },
+  "artifact": {
+    "sha256": "20f672e4f87e00d038d10dd29c62c2c5c0987821edbd9257c4524b203a1f428f",
+    "bytes": 820550
+  }
+}

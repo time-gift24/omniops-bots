@@ -32,6 +32,18 @@
       "finalizeReceipt": "filesystem.finalize-summary.json",
       "artifactSha256": "b016c6ffea51b8f8afd1128126e1a6cdd92df992032e6b7f554f24a3a34fd5a7",
       "svgSha256": "e8802607440663041135c2e449f5bab96a2c7014373d455f1d278b22f899418c"
+    },
+    {
+      "slug": "single-host/current",
+      "finalizeReceipt": "single-host/current.finalize-summary.json",
+      "artifactSha256": "efbbe64f26d0c62a0bd482cfd712d9bea486768b712c1364727c9c858484d006",
+      "svgSha256": "e318da9b7aec17f3f3d6f6f9f1a282047bc069d55dcd1429d2033182a2d16d6c"
+    },
+    {
+      "slug": "single-host/compose",
+      "finalizeReceipt": "single-host/compose.finalize-summary.json",
+      "artifactSha256": "20f672e4f87e00d038d10dd29c62c2c5c0987821edbd9257c4524b203a1f428f",
+      "svgSha256": "bc8f74214085e851f7941a04a60b0a1748da01c65c7e945b2bfe59e325e81db5"
     }
   ]
 }
