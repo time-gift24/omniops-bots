@@ -1,0 +1,232 @@
+{
+  "schema_version": 1,
+  "diagram_type": "class",
+  "meta": {
+    "title": "A2AService 关键类型 · 公开契约",
+    "locale": "zh-CN",
+    "output": "docs/requirements-walkthrough/diagrams/a2a/module-contract/module-contract.html",
+    "quality_profile": "showcase"
+  },
+  "layout": {
+    "mode": "grid",
+    "gapX": 85,
+    "gapY": 75,
+    "typeW": 220,
+    "typeMaxW": 290
+  },
+  "types": [
+    {
+      "id": "sdk_handler",
+      "label": "A2ARequestHandler",
+      "kind": "interface",
+      "sublabel": "SDK 标准操作 · 选列成员",
+      "row": 0,
+      "col": 0,
+      "methods": [
+        {
+          "name": "sendMessage",
+          "returns": "Promise<Message | Task>"
+        },
+        {
+          "name": "sendMessageStream"
+        },
+        {
+          "name": "getTask"
+        },
+        {
+          "name": "cancelTask"
+        }
+      ]
+    },
+    {
+      "id": "a2a_service",
+      "label": "A2AService",
+      "kind": "interface",
+      "sublabel": "项目唯一模块边界",
+      "row": 0,
+      "col": 1,
+      "methods": [
+        {
+          "name": "protocolFor",
+          "returns": "Promise<A2ARequestHandler>"
+        },
+        {
+          "name": "confirmTaskDelivery",
+          "returns": "Promise<DeliveryConfirmation>"
+        },
+        {
+          "name": "close",
+          "returns": "Promise<void>"
+        }
+      ]
+    },
+    {
+      "id": "runtime_admission",
+      "label": "RemoteRunAdmission",
+      "kind": "interface",
+      "sublabel": "借入既有 runtime · 共享名额",
+      "row": 0,
+      "col": 2,
+      "methods": [
+        {
+          "name": "reserveRun",
+          "returns": "RunReservation"
+        }
+      ]
+    },
+    {
+      "id": "sdk_default",
+      "label": "DefaultRequestHandler",
+      "kind": "class",
+      "sublabel": "SDK 复用 · 查询与订阅等",
+      "row": 1,
+      "col": 0,
+      "methods": [
+        {
+          "name": "getTask"
+        },
+        {
+          "name": "listTasks"
+        },
+        {
+          "name": "resubscribe"
+        }
+      ]
+    },
+    {
+      "id": "sdk_store",
+      "label": "TaskStore",
+      "kind": "interface",
+      "sublabel": "SDK 内部依赖 · 项目不导出",
+      "row": 1,
+      "col": 1,
+      "methods": [
+        {
+          "name": "save"
+        },
+        {
+          "name": "load"
+        },
+        {
+          "name": "list"
+        }
+      ]
+    },
+    {
+      "id": "run_reservation",
+      "label": "RunReservation",
+      "kind": "interface",
+      "sublabel": "执行／真实停止／容量释放",
+      "row": 1,
+      "col": 2,
+      "methods": [
+        {
+          "name": "execute",
+          "returns": "Promise<ExecutionOutcome<JsonValue>>"
+        },
+        {
+          "name": "requestStop",
+          "returns": "requested | result-fixed"
+        },
+        {
+          "name": "release",
+          "returns": "void"
+        }
+      ]
+    },
+    {
+      "id": "sdk_database",
+      "label": "DatabaseTaskStore",
+      "kind": "class",
+      "sublabel": "SDK SQLite · 复用事务 trx",
+      "row": 2,
+      "col": 1,
+      "methods": [
+        {
+          "name": "save"
+        },
+        {
+          "name": "load"
+        },
+        {
+          "name": "list"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "service_returns_handler",
+      "from": "a2a_service",
+      "to": "sdk_handler",
+      "kind": "dependency",
+      "label": "返回"
+    },
+    {
+      "id": "service_borrows_runtime",
+      "from": "a2a_service",
+      "to": "runtime_admission",
+      "kind": "dependency",
+      "label": "借入"
+    },
+    {
+      "id": "default_realizes_handler",
+      "from": "sdk_default",
+      "to": "sdk_handler",
+      "kind": "realization"
+    },
+    {
+      "id": "default_reads_store",
+      "from": "sdk_default",
+      "to": "sdk_store",
+      "kind": "dependency",
+      "label": "读写"
+    },
+    {
+      "id": "service_guards_store",
+      "from": "a2a_service",
+      "to": "sdk_store",
+      "kind": "dependency",
+      "label": "事务守卫"
+    },
+    {
+      "id": "admission_returns_reservation",
+      "from": "runtime_admission",
+      "to": "run_reservation",
+      "kind": "dependency",
+      "label": "返回预留"
+    },
+    {
+      "id": "database_realizes_store",
+      "from": "sdk_database",
+      "to": "sdk_store",
+      "kind": "realization"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "先验证模块，再作为黑盒接入",
+      "items": [
+        "独立外部 Agent → SDK 标准 HTTP JSON-RPC／SSE → 本模块 → 真实 runtime；WSS 后接。",
+        "本图表示已实现的模块公开契约，省略参数与非关键成员；完整定义见 OpenSpec contract.md。"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "复用 SDK 实现，只补已确认差异",
+      "items": [
+        "发送两方法及取消做适配；其余标准操作沿用 DefaultRequestHandler，薄桥接使用 SDK AgentExecutor。",
+        "事件合并用 ResultManager；受控 TaskStore 写入调用 DatabaseTaskStore(trx)，SDK Task 表加一张项目扩展表。"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "业务 JSON 与生命周期留在明确边界",
+      "items": [
+        "execute 输入：threadId／runId、固定 agentId／contentId、JSON 对象；输出：ExecutionOutcome<JsonValue>。",
+        "A2AService → runtime 是同进程函数；Task／Message／socket 不传入执行。只结束等待不取消 Task。"
+      ]
+    }
+  ]
+}

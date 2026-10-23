@@ -3,8 +3,8 @@ import { DynamicStructuredTool } from '@langchain/core/tools';
 import { ToolMessage } from '@langchain/core/messages';
 import { createMiddleware } from 'langchain';
 import { z } from 'zod';
-import { invalid } from '../errors.mjs';
-import type { GraphScope } from '../execution/index.ts';
+import { invalid } from '../errors.ts';
+import { ExecutionError, type GraphScope } from '../execution/index.ts';
 
 const browserSchemas = {
   inspect_browser: z.object({ url: z.string().optional() }),
@@ -71,7 +71,7 @@ export function createBrowserAgent({ model, scope, workspace, browser, snapshot,
           operationSignal.throwIfAborted();
           const result = { error: redact(error instanceof Error ? error.message : '工具执行失败。') };
           onTool({ type: 'end', ...call, result, error: result.error });
-          if ((error as { kind?: string }).kind === 'human-required') scope.fail(error);
+          if ((error as { kind?: string }).kind === 'human-required') scope.fail(new ExecutionError('login-required', error));
           return [JSON.stringify(result), { value: result, executedArgs: call.args }];
         }
       }),

@@ -3,8 +3,8 @@ import { mkdtemp, mkdir, readFile, readdir, rm, symlink, writeFile } from 'node:
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
-import { createSkillLibrary, defaultSkillRoot } from './skill-library.mjs';
-import { createResources } from './resources.mjs';
+import { createSkillLibrary, defaultSkillRoot } from './skill-library.ts';
+import { createResources } from './resources.ts';
 
 async function fixture(run) {
   const directory = await mkdtemp(path.join(tmpdir(), 'omnimind-skills-'));

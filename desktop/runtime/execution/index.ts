@@ -14,13 +14,15 @@ export type NativeGraph<I, O> = Pick<CompiledGraphType<{ input: I; output: O }>,
 };
 export type RunIdentity = Readonly<{ threadId: string; runId: string; graphThreadId: string }>;
 export type ExecutionErrorKind = 'invalid-request' | 'busy' | 'duplicate-run' | 'closed' |
-  'cancelled' | 'timed-out' | 'graph' | 'checkpoint' | 'storage' | 'adapter' | 'scope';
+  'cancelled' | 'timed-out' | 'graph' | 'checkpoint' | 'storage' | 'adapter' | 'scope' | 'missing-input' | 'login-required' | 'invalid-output';
 
 const messages: Record<ExecutionErrorKind, string> = {
   'invalid-request': '执行参数无效。', busy: '已有任务正在执行。', 'duplicate-run': '执行编号已存在。',
   closed: '执行模块已关闭。', cancelled: '任务已停止。', 'timed-out': '任务执行超时。',
   graph: '本地执行失败，请检查配置或重试。', checkpoint: '执行状态保存失败，请检查本地存储。',
   storage: '执行记录保存失败，请检查本地存储。', adapter: '执行结果处理失败。', scope: '当前执行范围不允许此操作。',
+  'missing-input': '任务缺少必要输入。', 'login-required': '任务需要人工登录。',
+  'invalid-output': '任务输出不是有效的 JSON 数据。',
 };
 export class ExecutionError extends Error {
   readonly kind: ExecutionErrorKind;
@@ -62,6 +64,7 @@ export interface ExecuteRequest<I, O> {
 export interface Execution {
   readonly records: RunRecords;
   isBusy(threadId?: string): boolean;
+  requestStop(runId: string): 'requested' | 'result-fixed';
   execute<I, O>(request: ExecuteRequest<I, O>): Promise<ExecutionOutcome<O>>;
   close(): Promise<void>;
 }
@@ -79,10 +82,10 @@ export async function createExecution(options: { recordsDirectory: string; check
   try { records = await createRunRecords(options.recordsDirectory); }
   catch (error) { throw new ExecutionError('storage', error); }
   let closed = false;
-  const active = new Map<string, { stop: () => void; done: Promise<unknown> }>();
+  const active = new Map<string, { stop: () => 'requested' | 'result-fixed'; done: Promise<unknown> }>();
   const busyThreads = new Set<string>();
 
-  async function run<I, O>(request: ExecuteRequest<I, O>, controller: AbortController): Promise<ExecutionOutcome<O>> {
+  async function run<I, O>(request: ExecuteRequest<I, O>, controller: AbortController, fixResult: () => void): Promise<ExecutionOutcome<O>> {
     const leases = new AsyncLocalStorage<{ lease: { tail: Promise<unknown>; closed: boolean }; action?: true }>();
     const identity: RunIdentity = { threadId: request.threadId, runId: request.runId, graphThreadId: randomUUID() };
     const record: RunRecord = { ...identity, status: 'preparing', startedAt: new Date().toISOString() };
@@ -259,6 +262,7 @@ export async function createExecution(options: { recordsDirectory: string; check
       clearTimeout(timeout);
       request.signal?.removeEventListener('abort', externalAbort);
       controller.signal.removeEventListener('abort', hostAbort);
+      fixResult();
       try { await request.settle?.(outcome()); }
       catch (error) { fail(error instanceof ExecutionError ? error.kind : 'adapter', error); }
       await writes;
@@ -282,6 +286,10 @@ export async function createExecution(options: { recordsDirectory: string; check
       },
     },
     isBusy: threadId => threadId === undefined ? active.size > 0 : busyThreads.has(threadId),
+    requestStop(runId) {
+      if (!validId(runId)) throw new ExecutionError('invalid-request');
+      return active.get(runId)?.stop() ?? 'result-fixed';
+    },
     execute<I, O>(request: ExecuteRequest<I, O>): Promise<ExecutionOutcome<O>> {
       let rejected: ExecutionErrorKind | undefined;
       if (closed) rejected = 'closed';
@@ -294,10 +302,15 @@ export async function createExecution(options: { recordsDirectory: string; check
       if (rejected) return Promise.resolve({ ok: false, error: new ExecutionError(rejected) });
       const controller = new AbortController();
       // Reserve synchronously, before record initialization or async graph preparation.
-      const entry = { stop: () => controller.abort(new ExecutionError('cancelled')), done: Promise.resolve() as Promise<unknown> };
+      let resultFixed = false;
+      const entry = { stop: (): 'requested' | 'result-fixed' => {
+        if (resultFixed) return 'result-fixed';
+        controller.abort(new ExecutionError('cancelled'));
+        return 'requested';
+      }, done: Promise.resolve() as Promise<unknown> };
       active.set(request.runId, entry);
       busyThreads.add(request.threadId);
-      const done = run(request, controller).finally(() => {
+      const done = run(request, controller, () => { resultFixed = true; }).finally(() => {
         active.delete(request.runId);
         busyThreads.delete(request.threadId);
       });

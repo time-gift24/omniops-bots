@@ -567,7 +567,7 @@ docker compose --env-file node-b.env -f compose.yaml up -d --scale worker=1
 <p>页面检查、脚本保存与执行都在本机完成。脚本执行时保存源码快照并核对内容摘要，产物关联执行记录；脚本始终沿用该轮绑定的 Chrome 页面。工作台的浏览器入口相互独立，运维 CEF 导航和输入不占用 Agent 的任务页面；Agent 工具调用不会切走当前运维标签或清除地址草稿。对 Agent 当前 Chrome 页面的人为操作需由使用者协调，应用不将任务锁扩展到外部 Chrome 的原生输入。遇到人工登录或验证，本轮结束；用户处理后显式发起新一轮。停止不回滚外部操作，也不自动续跑。</p>
 <p><strong>脚本截图来自本轮绑定的外部 Chrome 页面。</strong> <code>run_playwright_script</code> 在结束时尝试保存当前视口为 <code>screenshot.png</code>，普通脚本报错也会尝试保存；取消、超时或浏览器崩溃可能导致截图缺失。截图关联该次脚本产物，不改拍运维 CEF，也不作为未发生操作的证据。</p>
 <p>专用 profile 与用户日常浏览器隔离，网站 Cookie、登录态及本地 CDP 地址不作为服务端任务材料上传。故障时按第 09 章导出指定 thread 的脱敏证据，不上传整个浏览器 profile。</p>
-<p>当前本地链路的代码依据：<a href="../../desktop/runtime/browser/browser.mjs">浏览器连接</a>、<a href="../../desktop/runtime/browser/browser-target.mjs">页面匹配</a>、<a href="../../desktop/runtime/browser/script-workspace.mjs">脚本执行</a>、<a href="../../crates/omniops-bots-desktop/src/native_browser.rs">macOS 原生视图</a>与 <a href="../../crates/omniops-bots-desktop/src/native_browser_windows.rs">Windows 原生视图</a>。服务端远端调用仍为待接入能力，接口汇总见<a href="#10-server-api">服务端 API</a>。</p>
+<p>当前本地链路的代码依据：<a href="../../desktop/runtime/browser/browser.ts">浏览器连接</a>、<a href="../../desktop/runtime/browser/browser-target.ts">页面匹配</a>、<a href="../../desktop/runtime/browser/script-workspace.ts">脚本执行</a>、<a href="../../crates/omniops-bots-desktop/src/native_browser.rs">macOS 原生视图</a>与 <a href="../../crates/omniops-bots-desktop/src/native_browser_windows.rs">Windows 原生视图</a>。服务端远端调用仍为待接入能力，接口汇总见<a href="#10-server-api">服务端 API</a>。</p>
 <h3 id="00-overview-核心资产如何积累与演进">核心资产如何积累与演进</h3>
 <table>
 <thead>
@@ -666,7 +666,7 @@ docker compose --env-file node-b.env -f compose.yaml up -d --scale worker=1
 <td data-label="更新方式">与本次整包一致，不代替 Agent／Skill 的业务内容版本</td>
 </tr>
 </tbody></table>
-<p>当前打包入口覆盖 macOS arm64 的 <code>.app</code>／<code>.dmg</code> 和 Windows x64 的 NSIS 安装器。包内本地执行图和 builtinTool 属于应用代码，修改这些实现需要发布客户端；它们不作为 Agent／Skill 资产发布。WSS 网络模块与 A2A 任务处理接入后也随 Node runtime 交付，共用一个 runtime；<strong>这些远端模块仍待实现，现有打包配置不表示 A2A 链路已经上线。</strong></p>
+<p>当前打包入口覆盖 macOS arm64 的 <code>.app</code>／<code>.dmg</code> 和 Windows x64 的 NSIS 安装器。包内本地执行图和 builtinTool 属于应用代码，修改这些实现需要发布客户端；它们不作为 Agent／Skill 资产发布。A2AService 已随 Node runtime 提供并完成独立模块验证，共用同一 runtime；<strong>生产 WSS 与桌面入口组装待接入，现有打包配置不表示 A2A 链路已经上线。</strong></p>
 <h3 id="00-overview-安装包之外的版本物料与本机数据">安装包之外的版本物料与本机数据</h3>
 <table>
 <thead>
@@ -698,7 +698,7 @@ docker compose --env-file node-b.env -f compose.yaml up -d --scale worker=1
 </tr>
 </tbody></table>
 <p>当前代码会在首次读取本地“浏览器助手”时生成默认配置与基础指令，执行图还包含通用工具约束；它们是本地初始化与运行底座，<strong>不等于已经内置一套正式官方 Agent 发布包或全部业务 Skill</strong>。业务 Prompt／Skill 的正式修改走版本发布与同步；只有需要新的本地工具或图实现时，才要求同时升级客户端。具体物料位置见<a href="#preface-versioning">Agent 版本管理</a>与<a href="#core-server-deployment">服务端部署与持久化</a>，整包升级边界见<a href="#05-updater">第 05 章</a>。</p>
-<p>当前打包依据：<a href="../../crates/omniops-bots-desktop/tauri.conf.json">Tauri 整包配置</a>、<a href="../../desktop/scripts/prepare.mjs">runtime 准备脚本</a>、<a href="../../desktop/scripts/stage-macos.py">macOS CEF 装配</a>和 <a href="../../desktop/scripts/build-native-windows.mjs">Windows 安装器构建</a>；初始化与执行依据：<a href="../../desktop/runtime/assembly.ts">本地 Agent 装配</a>、<a href="../../desktop/runtime/graphs/browser-agent.ts">本地执行图</a>与 <a href="../../desktop/runtime/main.mjs">runtime 入口</a>。本节只说明交付和数据职责，不修改打包流程，也不新增日志、span 或指标。</p>
+<p>当前打包依据：<a href="../../crates/omniops-bots-desktop/tauri.conf.json">Tauri 整包配置</a>、<a href="../../desktop/scripts/prepare.mjs">runtime 准备脚本</a>、<a href="../../desktop/scripts/stage-macos.py">macOS CEF 装配</a>和 <a href="../../desktop/scripts/build-native-windows.mjs">Windows 安装器构建</a>；初始化与执行依据：<a href="../../desktop/runtime/assembly.ts">本地 Agent 装配</a>、<a href="../../desktop/runtime/graphs/browser-agent.ts">本地执行图</a>与 <a href="../../desktop/runtime/main.ts">runtime 入口</a>。本节只说明交付和数据职责，不修改打包流程，也不新增日志、span 或指标。</p>
 <h3 id="00-overview-客户端运行职责">客户端运行职责</h3>
 <ul>
 <li>面向线上用户展示连接状态等基础信息，日常作为后台进程运行；复用已有 Token 连接服务端，WebSocket 断线后退避重连。任务接收、执行与交付不依赖打开调试桌面。</li>
@@ -781,8 +781,83 @@ docker compose --env-file node-b.env -f compose.yaml up -d --scale worker=1
 </ul>
 <p>应用角色拆分、跨机器 Compose、网关多实例与共享文件存储见<a href="#core-server-deployment">核心 · 服务端部署与持久化</a>；当前单机 Nginx 仍是入口单点，服务端方案待实施。客户端依赖的 HTTPS API、A2A 操作、WSS 绑定和接收确认契约统一见 <a href="#10-server-api">10 · 服务端 API</a>。</p>
 <footer><span class="footer-label">客户端 MVP 设计 · 2026-10-22</span><a href="#core-ws">下一章：A2A 任务执行与恢复</a></footer></article><article id="core-ws" data-file="核心-服务端通过WS调用客户端.md" hidden><h1>核心 · A2A 任务执行与恢复</h1>
-<p><strong>客户端主动建立一条 WSS，服务端 Agent 通过 A2A 调用确定版本的客户端 Agent。WebSocket 负责网络传输，A2A 负责任务语义，现有 Node.js runtime 负责 Agent 执行。</strong> 线上用户仍在 Console 发起业务、查看状态和结果；运维调试桌面用于编辑、实验和排障。</p>
-<p>以下图示是本次确认的<strong>目标设计</strong>，不是已实现链路。远端 A2A、WSS 绑定、持久去重与交付确认仍待接入。协议以 <a href="https://a2a-protocol.org/v1.0.0/specification/">A2A 1.0.0</a> 为基线，协商版本为 <code>1.0</code>；WebSocket 使用明确声明的自定义绑定，不宣称它是标准 HTTP JSON-RPC 绑定。</p>
+<p><strong>先让外部 Agent 通过标准 A2A 接口调用桌面 Agent，独立验证 A2AService 的任务闭环，再接 WSS。</strong> 外部 Agent 是 A2A Client，桌面 Agent 是 A2A Server；调用方只交业务 JSON、查询 Task、请求取消并接收最终 Artifact，不进入 runtime、LangGraph、数据库或浏览器内部。</p>
+<p><strong>当前状态：A2AService 已实现，并通过独立外部 Agent 的标准 A2A 验收；WSS 尚未接入。</strong> 本阶段已完成模块独立验证，WSS 连接、网关、心跳、重连和 Upgrade 协商均放到后续。标准协议基线为 <a href="https://a2a-protocol.org/v1.0.0/specification/">A2A 1.0.0</a>，直接复用官方 <code>@a2a-js/sdk</code>，先不 fork；业务 input 为 JSON 对象，output 为任意 JSON 值，不绑定某个具体业务 Agent。</p>
+<h2 id="core-ws-当前主线外部-agent-直接调用-a2a">当前主线：外部 Agent 直接调用 A2A</h2>
+<p>本阶段独立验证使用 SDK 的标准 <strong>JSON-RPC over HTTP，流响应为 SSE</strong>；卡片声明 <code>protocolBinding: &quot;JSONRPC&quot;</code>、<code>protocolVersion: &quot;1.0&quot;</code> 和确定版本的 <code>tenant</code>。外部 Agent 在独立进程中使用 SDK <code>ClientFactory</code> 读取 AgentCard 并发起调用，不需要 Console、服务端 graph、WSS 或自定义 transport。这里的“直接”指调用公开 A2A 协议，不能用同进程调用内部函数代替外部验收。</p>
+<p>验证宿主只在本机 loopback 临时启动，复用 SDK <code>agentCardHandler</code>／<code>jsonRpcHandler</code>，不自写 HTTP/SSE 协议栈，也不把临时宿主变成桌面常驻公网服务。SDK Express peer 仅为验证宿主按需采用；不进入 A2AService 核心依赖，仅宿主使用开发依赖。宿主提供测试身份与独立请求上下文，服务仍逐次授权；不使用匿名上下文冒充鉴权通过。生产认证与远端可达方式留给后续接入。</p>
+<table>
+<thead>
+<tr>
+<th>外部 Agent 做什么</th>
+<th>A2AService 保证什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td data-label="外部 Agent 做什么">读取确定版本 AgentCard，发送带稳定 messageId 的 JSON Data Part</td>
+<td data-label="A2AService 保证什么">授权、去重、共享容量准入；受理落盘后才执行，返回标准 Task</td>
+</tr>
+<tr>
+<td data-label="外部 Agent 做什么">SendMessage 默认等待终态；要先取 taskId 时显式 returnImmediately=true；也可 SendStreamingMessage</td>
+<td data-label="A2AService 保证什么">初始 Task、任务级状态和最终 Artifact；不转发模型 token 或工具轨迹</td>
+</tr>
+<tr>
+<td data-label="外部 Agent 做什么">GetTask／ListTasks／SubscribeToTask</td>
+<td data-label="A2AService 保证什么">只读自己授权入口的已提交状态；中断等待不停止任务，重新查询不重跑</td>
+</tr>
+<tr>
+<td data-label="外部 Agent 做什么">CancelTask</td>
+<td data-label="A2AService 保证什么">可取消时先请求停止，排空期间 WORKING；真实排空并保存后才 CANCELED；固定结果不可改写</td>
+</tr>
+<tr>
+<td data-label="外部 Agent 做什么">保存原结果及索引，再调用 omniops/ConfirmTaskDelivery</td>
+<td data-label="A2AService 保证什么">唯一项目业务扩展；校验结果摘要并持久确认，重复确认不执行任务</td>
+</tr>
+</tbody></table>
+<p>标准 A2A 操作不要求调用者安装项目 client 包。交付确认是单独声明的扩展，SDK 没有该自定义方法的高层 client；验证端只补这一条 JSON-RPC 调用，复用标准请求／错误对象，不另造整套客户端。</p>
+<h2 id="core-ws-关键类图公开边界与-sdk-复用">关键类图：公开边界与 SDK 复用</h2>
+<figure class="diagram"><a href="./diagrams/a2a/module-contract/module-contract.html" target="_blank" rel="noopener" aria-label="打开交互图：A2AService 目标契约：SDK handler、共享执行预留与 SDK Task 存储"><img src="./assets/a2a/module-contract.svg" alt="A2AService 目标契约：SDK handler、共享执行预留与 SDK Task 存储"></a><figcaption>A2AService 目标契约：SDK handler、共享执行预留与 SDK Task 存储 · 点击查看可缩放交互图</figcaption></figure>
+<p><a href="./diagrams/a2a/module-contract/module-contract.html">打开 A2AService 关键类图</a></p>
+<p>图中是<strong>已实现模块的公开类型关系</strong>，仅列关键成员；完整签名、构造校验、错误和关闭见 <a href="../../openspec/changes/define-desktop-a2a-interface/contract.md">A2AService 契约</a>。<code>A2AService</code> 是一个 Node 模块，不是新进程；对标准操作返回 SDK <code>A2ARequestHandler</code>，只适配两条发送路径与取消，查询／订阅等继续复用 <code>DefaultRequestHandler</code>。图中的 TaskStore 是内部依赖，不向外导出；受控写入继续调用 SDK <code>DatabaseTaskStore(trx)</code>，只加一张项目扩展表，不手写 Task CRUD 或分页。</p>
+<p>A2AService 与 runtime 之间是<strong>同进程函数调用</strong>：<code>reserveRun()</code> 后得到 <code>RunReservation</code>，<code>execute({threadId, runId, agent:{agentId, contentId}, input})</code> 返回现有 <code>ExecutionOutcome&lt;JsonValue&gt;</code>，<code>requestStop()</code> 报告 requested／result-fixed，<code>release()</code> 归还名额。图／模型／MCP／浏览器准备与实际清理由 runtime 负责；Message／Artifact 映射、终态和交付由 A2AService 负责。SDK <code>AgentExecutor</code> 只做内部薄桥接，不再创建执行服务。</p>
+<h2 id="core-ws-验证通过后才把模块当黑盒">验证通过后，才把模块当黑盒</h2>
+<p>下面是本阶段的验收门槛，模块、真实 runtime 和独立外部调用均已执行；完整命令、通过范围与限制见 <a href="../../openspec/changes/define-desktop-a2a-interface/verification.md">验收记录</a>。先用小型 runtime fake 精确验证竞争与故障；再由独立外部 Agent 经过真实 SDK HTTP 入口，连到真实 runtime／LangGraph，以本地确定性模型 fixture 跑完任务。涉及浏览器的用例使用本地测试站点和受管理 Chrome，不用真实密钥或付费模型，也不预建某个业务 Agent。</p>
+<table>
+<thead>
+<tr>
+<th>必验行为</th>
+<th>从公开入口观察的通过条件</th>
+</tr>
+</thead>
+<tbody><tr>
+<td data-label="必验行为">成功闭环</td>
+<td data-label="从公开入口观察的通过条件">外部 Agent 提交 JSON、取得唯一 Task、收到最终 Artifact；0／false／null 不丢失，随后 GetTask 返回同一结果</td>
+</tr>
+<tr>
+<td data-label="必验行为">重投与容量</td>
+<td data-label="从公开入口观察的通过条件">同 messageId 并发只执行一次；同 ID 不同内容报错；busy 保存可查询的 REJECTED，且不创建运行资源</td>
+</tr>
+<tr>
+<td data-label="必验行为">查询、隔离与协议</td>
+<td data-label="从公开入口观察的通过条件">另一个主体／安装／入口不能读取原 Task；分页、版本、扩展、不支持能力与错误形状符合所声明契约</td>
+</tr>
+<tr>
+<td data-label="必验行为">取消与等待结束</td>
+<td data-label="从公开入口观察的通过条件">取消先 WORKING 后 CANCELED；固定结果拒绝取消；外部调用者断开／放弃流后任务仍结算，可重新查询</td>
+</tr>
+<tr>
+<td data-label="必验行为">持久化与进程重启</td>
+<td data-label="从公开入口观察的通过条件">真实 SQLite 验证两表原子提交、终态冻结和回执；重启保留原终态，遗留未完成转 FAILED/interrupted-unknown，均不重跑</td>
+</tr>
+<tr>
+<td data-label="必验行为">故障与关闭</td>
+<td data-label="从公开入口观察的通过条件">受理写失败不执行、终态写失败不伪造完成、回执失败不改结果；有界等待／订阅、取消清理和同一预算关闭可验证</td>
+</tr>
+</tbody></table>
+<p>“黑盒”意味着后续 adapter 只使用 <code>createA2AService</code>、<code>protocolFor</code> 返回的 SDK handler、<code>confirmTaskDelivery</code> 与本地 <code>close</code>；外部 Agent 只使用 AgentCard、标准 A2A 操作和明确的回执扩展。换成 WSS 时只验传输、身份注入和兼容接入，沿用同一组任务契约回归，不能把去重、状态、取消或持久化搬到 adapter。</p>
+<p>验收记录须分别标明模块／真实 runtime／外部协议互操作已通过什么；没有外部调用和真实持久化证据，不能仅凭 fake、文档校验或 SDK 示例宣称模块验证完毕。WSS 与生产平台认证仍另行验收。</p>
+<h2 id="core-ws-后续部署wss-接入与现有运行场景">后续部署：WSS 接入与现有运行场景</h2>
+<p>以下保留整体部署职责和既有场景图，说明模块后续如何接进服务端；<strong>WSS 是后续传输方案，不是本阶段模块验证的前置条件</strong>。外部标准 HTTP client 可以验证本模块，但不能直接连接自定义 WSS binding。</p>
 <p>部署前提见<a href="#core-server-deployment">核心 · 服务端部署与持久化</a>：Console API、网关和图 worker 分开运行，多台 Compose 共享 PostgreSQL、Redis 与文件存储；当前单机 Nginx 仍是入口单点。本章只规定跨端任务行为，不把容器重启解释为桌面任务恢复。</p>
 <h2 id="core-ws-三层职责网络协议执行">三层职责：网络、协议、执行</h2>
 <figure class="diagram"><a href="./diagrams/a2a/layers.html" target="_blank" rel="noopener" aria-label="打开交互图：网络、A2A 与 Agent 执行分开"><img src="./assets/a2a/layers.svg" alt="网络、A2A 与 Agent 执行分开"></a><figcaption>网络、A2A 与 Agent 执行分开 · 点击查看可缩放交互图</figcaption></figure>
@@ -812,7 +887,7 @@ docker compose --env-file node-b.env -f compose.yaml up -d --scale worker=1
 </tr>
 </tbody></table>
 <p>这些是职责边界，共用一个 Node runtime，不要求新增独立服务、通用容器或每个 Agent 一条连接。Rust 继续承担原生宿主与系统能力。</p>
-<p>服务端 Agent 是 <strong>A2A Client</strong>，桌面 Agent 是 <strong>A2A Server</strong>；这与桌面主动建立 WSS 的网络方向不同。每个官方 <code>agentId + contentId</code> 对应一个逻辑入口和标准 AgentCard，复用官方目录；多个入口共享同一 WSS。请求携带所选 AgentCard 接口的标准 <code>tenant</code> 路由值，由 A2A 适配层解析；真实组织、用户与安装权限来自已鉴权连接，不由 <code>tenant</code> 自行声明。</p>
+<p>服务端 Agent 是 <strong>A2A Client</strong>，桌面 Agent 是 <strong>A2A Server</strong>；这与桌面主动建立 WSS 的网络方向不同。每个官方 <code>agentId + contentId</code> 对应一个逻辑入口和标准 AgentCard，复用官方目录；多个入口共享同一 WSS。请求携带所选 AgentCard 接口的标准 <code>tenant</code> 路由值，由 A2A 适配层解析；真实组织、用户与安装权限来自可信接入上下文（WSS 阶段由已鉴权连接提供），不由 <code>tenant</code> 自行声明。</p>
 <h2 id="core-ws-完整链路服务端-graph-节点调用确定版本的桌面-agent">完整链路：服务端 graph 节点调用确定版本的桌面 Agent</h2>
 <p>服务端复杂 graph 的远端调用节点通过 A2A Client 调用桌面能力，将节点输入与所需业务上下文映射为标准 Message 的 Data Part。节点绑定官方 <code>agentId + contentId</code> 和目标安装，从官方目录取得该确定版本的 AgentCard；若配置使用发布标签，先解析并固定为 <code>contentId</code>，后续发送、重投和结果处理均沿用原版本。不存在、未授权或不兼容时明确失败，不自动替换为最新版。</p>
 <p><strong>前提：</strong> 桌面已经主动建立并鉴权 WSS，双方完成协议、绑定与必需扩展协商。下图展示一次成功调用的目标完整链路；泳道表示职责，服务端 A2A 层和 WSS 网络模块可以共处网关进程。</p>
@@ -936,7 +1011,8 @@ docker compose --env-file node-b.env -f compose.yaml up -d --scale worker=1
 <li><a href="#10-server-api">10 · 服务端 API</a>：WSS 绑定、标准 A2A 操作、失败边界与唯一交付确认扩展。</li>
 <li><a href="#core-skill-system">核心 · Skill 模板与迭代</a>：核心章节的最后一章，讲解运维能力如何积累与发布。</li>
 </ul>
-<p>本次只修订目标设计与串讲材料，沿用本地执行记录和既有观测边界，不新增日志、span 或指标。A2A 原始 Message、Artifact、提示词和完整错误来源链不作为遥测输出。</p>
+<p>本阶段已实现并验证模块，沿用本地执行记录和既有观测边界，不新增日志、span 或指标。A2A 原始 Message、Artifact、提示词和完整错误来源链不作为遥测输出。</p>
+<p>官方 TS SDK 1.3.0 的高层 client 会把 data:null 解码为缺失，本阶段没有 fork 或 monkey-patch。存储适配在 SDK 公开读取边界保留 null，外部验收另以标准线上报文核对 null；0／false 可直接经高层 client 读取。此上游限制、临时 HTTP 宿主与未覆盖平台均在验收记录中单独列明，不宣称生产 WSS 或所有 client 已兼容。</p>
 <footer><span class="footer-label">客户端 MVP 设计 · 2026-10-22</span><a href="#core-skill-system">下一章：Skill 模板与迭代</a></footer></article><article id="core-skill-system" data-file="核心-Skill模板与迭代.md" hidden><h1>核心 · 运维 Skill 体系、模板与迭代</h1>
 <p><strong>本系统是运维操作系统。核心资产是持续维护的运维 Skill：<code>find-ops-capability</code> 决定去哪一个平台或平台组合，平台 Skill 提供具体操作与最佳实践，<code>playwright-skill</code> 提供浏览器操作和兜底探索。</strong> Agent 既能复用已验证的方法与脚本，也能在实践未覆盖时依据真实页面尝试完成原任务。</p>
 <p>本章定义内容模板与维护方式，不代表已经交付这些业务 Skill 或 CDAS 的真实操作实践。本次提供可复制的模板与文档说明，不实现探索草稿上传、定时 Agent 汇总或测试集建设。客户端定位与职责见 <a href="#00-overview">00 · 客户端总体设计</a>，远端调用见<a href="#core-ws">服务端通过 WS 调用客户端</a>。</p>
@@ -2024,12 +2100,12 @@ description: 在指定运维平台内完成其职责范围内的查询与变更�
 <summary>查看前端源证据</summary><ul>
 <li>启动与数据来源：<a href="../../web/src/main.tsx">main.tsx</a>、<a href="../../web/src/adapters/demo.ts">演示适配器</a>、<a href="../../web/src/adapters/tauri/index.ts">Tauri 适配器</a>。</li>
 <li>现有布局与 Agent 调试入口：<a href="../../web/src/App.tsx">App.tsx</a>、<a href="../../web/src/components/workbench/workbench.tsx">工作台调试会话</a>。</li>
-<li>Skill 文件操作：<a href="../../web/src/components/skills/skill-library-screen.tsx">Skill 管理页</a>、<a href="../../web/src/skills/library.ts">SkillLibrary 接口与本地行为</a>、<a href="../../web/src/adapters/browser-skill-library.ts">浏览器 IndexedDB</a>、<a href="../../web/src/adapters/tauri/skills.ts">Tauri 适配器</a>、<a href="../../desktop/runtime/skill-library.mjs">桌面文件存储</a>。</li>
+<li>Skill 文件操作：<a href="../../web/src/components/skills/skill-library-screen.tsx">Skill 管理页</a>、<a href="../../web/src/skills/library.ts">SkillLibrary 接口与本地行为</a>、<a href="../../web/src/adapters/browser-skill-library.ts">浏览器 IndexedDB</a>、<a href="../../web/src/adapters/tauri/skills.ts">Tauri 适配器</a>、<a href="../../desktop/runtime/skill-library.ts">桌面文件存储</a>。</li>
 <li>Agent 身份、持久化与完整快照：<a href="../../desktop/runtime/assembly.ts">assembly.ts</a>、<a href="../../web/src/agents/source.ts">AgentSource</a>、<a href="../../web/src/components/premium/agent-builder/agent-builder.tsx">Agent 界面</a>、<a href="../../web/src/adapters/tauri/resources.ts">Tauri 资源映射</a>。</li>
 <li>MCP 配置、真实连接与工具调用：<a href="../../desktop/runtime/mcp.ts">mcp.ts</a>、<a href="../../web/src/components/premium/agent-builder/mcp-manager.tsx">MCP 管理界面</a>、<a href="../../web/src/components/premium/agent-builder/mcp-capability-dialog.tsx">MCP 能力弹窗</a>。</li>
-<li>Provider 管理与凭据：<a href="../../web/src/components/settings/provider-settings.tsx">设置页</a>、<a href="../../web/src/providers/source.ts">ProviderSource</a>、<a href="../../desktop/runtime/providers.mjs">Node.js Provider 模块</a>、<a href="../../desktop/runtime/credentials.mjs">凭据 IPC</a>、<a href="../../crates/omniops-bots-desktop/src/credentials.rs">原生凭据边界</a>；模型调用使用 <code>@langchain/openai</code> 的 <code>ChatOpenAI</code>。</li>
-<li>图装配、执行与恢复边界：<a href="../../desktop/runtime/graphs/browser-agent.ts">graphs/browser-agent.ts</a>、<a href="../../desktop/runtime/runtime.mjs">runtime.mjs</a>、<a href="../../desktop/runtime/execution/records.ts">execution/records.ts</a>、<a href="../../web/src/components/runs/run-history.tsx">执行记录页</a>、<a href="../../web/src/adapters/tauri/runtime.ts">Tauri 运行适配器</a>。</li>
-<li>更新与同步接口范围：<a href="../../web/src/app/dependencies.tsx">应用依赖</a>、<a href="../../web/src/agents/source.ts">Agent 来源接口</a>、<a href="../../web/src/skills/source.ts">Skill 来源接口</a>。桌面资源加载见 <a href="../../desktop/runtime/resources.mjs">resources.mjs</a>；现有 Web 未接入官方物料下载或桌面更新流程。</li>
+<li>Provider 管理与凭据：<a href="../../web/src/components/settings/provider-settings.tsx">设置页</a>、<a href="../../web/src/providers/source.ts">ProviderSource</a>、<a href="../../desktop/runtime/providers.ts">Node.js Provider 模块</a>、<a href="../../desktop/runtime/credentials.ts">凭据 IPC</a>、<a href="../../crates/omniops-bots-desktop/src/credentials.rs">原生凭据边界</a>；模型调用使用 <code>@langchain/openai</code> 的 <code>ChatOpenAI</code>。</li>
+<li>图装配、执行与恢复边界：<a href="../../desktop/runtime/graphs/browser-agent.ts">graphs/browser-agent.ts</a>、<a href="../../desktop/runtime/runtime.ts">runtime.ts</a>、<a href="../../desktop/runtime/execution/records.ts">execution/records.ts</a>、<a href="../../web/src/components/runs/run-history.tsx">执行记录页</a>、<a href="../../web/src/adapters/tauri/runtime.ts">Tauri 运行适配器</a>。</li>
+<li>更新与同步接口范围：<a href="../../web/src/app/dependencies.tsx">应用依赖</a>、<a href="../../web/src/agents/source.ts">Agent 来源接口</a>、<a href="../../web/src/skills/source.ts">Skill 来源接口</a>。桌面资源加载见 <a href="../../desktop/runtime/resources.ts">resources.mjs</a>；现有 Web 未接入官方物料下载或桌面更新流程。</li>
 <li>视觉依据：<a href="../../web/src/index.css">index.css</a> 第 13–14、57–92 行；<a href="../../web/src/components/premium/docs-pages/docs-article.css">文档阅读样式</a> 第 20–25、41–83 行。</li>
 </ul>
 </details><h2 id="08-frontend-详细设计">详细设计</h2>
@@ -2100,7 +2176,7 @@ description: 在指定运维平台内完成其职责范围内的查询与变更�
 </tr>
 </tbody></table>
 <h3>当前实现与新增部分</h3>
-<p>当前 <a href="../../desktop/runtime/main.mjs">main.mjs</a> 打开本地 SQLite，<a href="../../desktop/runtime/execution/index.ts">execution</a> 统一管理准入、图驱动、取消、checkpoint 与收尾。<a href="../../desktop/runtime/execution/records.ts">records.ts</a> 保存通用 <code>.records</code>，聊天 adapter 通过 <code>details</code> 保存消息展示与工具证据；<a href="../../desktop/runtime/chat/history.mjs">history.mjs</a> 保存 <code>.sessions</code> 的消息、固定快照和最后结算身份。每个 run 使用独立 graphThreadId；继续会话创建新图执行，不 resume 旧任务。</p>
+<p>当前 <a href="../../desktop/runtime/main.ts">main.ts</a> 打开本地 SQLite，<a href="../../desktop/runtime/execution/index.ts">execution</a> 统一管理准入、图驱动、取消、checkpoint 与收尾。<a href="../../desktop/runtime/execution/records.ts">records.ts</a> 保存通用 <code>.records</code>，聊天 adapter 通过 <code>details</code> 保存消息展示与工具证据；<a href="../../desktop/runtime/chat/history.ts">history.ts</a> 保存 <code>.sessions</code> 的消息、固定快照和最后结算身份。每个 run 使用独立 graphThreadId；继续会话创建新图执行，不 resume 旧任务。</p>
 <p>SQLite 已保留已提交 checkpoint，但诊断导出与上传入口仍待实现，不能将本地重开验证视为上传能力完成。旧版历史只导出已有记录，并明确标记 <code>checkpoint-missing</code>，不从消息推造 checkpoint。<a href="https://docs.langchain.com/oss/javascript/langgraph/persistence">LangGraph 官方持久化说明</a>也区分了内存 saver 与可跨重启保存的持久化 saver。</p>
 <h2 id="09-operations-客户端">客户端</h2>
 <h3>从运维诊断入口上传</h3>
@@ -2273,7 +2349,7 @@ description: 在指定运维平台内完成其职责范围内的查询与变更�
 <blockquote>
 <p>串讲重点：线上用户在服务端 Console 发起业务、查看任务状态与结果；服务端 Agent 以任务调用客户端 Agent，客户端作为后台进程执行并回传结果。服务端提供身份与权限、官方物料、草稿与发布、任务通道、桌面更新和诊断接收，明确成功边界及断线后的查询与重试。</p>
 </blockquote>
-<p><strong>本章是拟定的接入契约，相关平台 API、WSS 传输绑定和远端 A2A 任务通道尚未实现。</strong> 路径名称可适配现有平台网关，输入输出与成功边界保持一致；不据此另建账号体系、审批平台或文件级发布服务。客户端已实现的本地能力见<a href="#08-frontend">第 08 章</a>。</p>
+<p><strong>本章是拟定的接入契约，相关平台 API 与 WSS 传输绑定尚未实现；A2AService 已实现并通过独立标准 HTTP/SSE 验证，尚未接入生产任务通道。</strong> 路径名称可适配现有平台网关，输入输出与成功边界保持一致；不据此另建账号体系、审批平台或文件级发布服务。客户端已实现的本地能力见<a href="#08-frontend">第 08 章</a>。</p>
 <h2 id="10-server-api-api-分组与边界">API 分组与边界</h2>
 <p>线上客户端只向用户展示连接状态等基础信息；资源编辑、实验、本地会话、逐条过程和 Provider 管理属于运维调试入口。下列客户端职责同时包含后台执行与运维操作，不将完整调试桌面作为线上业务入口；Console 按既有任务状态与最终结果契约展示业务。</p>
 <table>
@@ -2533,8 +2609,9 @@ description: 在指定运维平台内完成其职责范围内的查询与变更�
 <p>联动发布先校验和暂存所有完整物料，再一次提交 Skill 正式标签、受影响 Agent 的固定引用、新内容 ID 与人工标签。只有所有版本都已可取得，才对列表公布本次发布；不能先显示 Skill 成功，再补写 Agent。失败保留旧版本及草稿，暂存内容不作为正式版本出现。</p>
 <p>发布请求提交即表示运维确认，不加审批或强制实验门槛。旧标签和历史装配保持不可变；仅修改模型参数不发布 Agent。发布超时使用原幂等键重试获取同一发布结果，不能因重试再生成一轮标签或新发布。</p>
 <h2 id="10-server-api-a2a-任务通道wss-只负责传输">A2A 任务通道：WSS 只负责传输</h2>
+<p><strong>A2A 模块已完成独立验证，WSS 接入暂缓。</strong> 独立外部 Agent 已经 SDK 标准 JSON-RPC-over-HTTP／SSE 调用真实 A2AService 与 runtime，覆盖任务、持久化、取消排空及进程重启；后续将模块作为黑盒接入网关。验证宿主仅临时监听 loopback，不是新增产品服务；下文 WSS binding 是后续平台配合契约，不是模块验证前置条件。关键类图和验收门槛见<a href="#core-ws-当前主线外部-agent-直接调用-a2a">核心 A2A</a>。</p>
 <p>API／网关／worker 拆分、跨机器 Compose 与文件持久化见<a href="#core-server-deployment">核心 · 服务端部署与持久化</a>，均为外部服务端待实施方案。</p>
-<p>线上运行顺序和异常场景集中见<a href="#core-ws">核心 · A2A 任务执行与恢复</a>。本节规定客户端依赖的协议契约，<strong>仍待实现</strong>。使用 <a href="https://a2a-protocol.org/v1.0.0/specification/">A2A 1.0.0</a>，协商版本为 <code>1.0</code>，不沿用原私有任务消息体系。</p>
+<p>线上运行顺序和异常场景集中见<a href="#core-ws">核心 · A2A 任务执行与恢复</a>。本节规定客户端依赖的协议契约：<strong>A2AService 已实现并完成独立标准 HTTP/SSE 验证，生产 WSS 与桌面入口组装待接入</strong>。使用 <a href="https://a2a-protocol.org/v1.0.0/specification/">A2A 1.0.0</a>，协商版本为 <code>1.0</code>，不沿用原私有任务消息体系。</p>
 <h3 id="10-server-api-wss-传输绑定">WSS 传输绑定</h3>
 <p>后台客户端以现有身份主动连接 <code>WSS /api/clients/connect</code>。握手核验用户、组织与安装身份，凭据不放 URL 查询串；版本与扩展按绑定明确协商。业务上的 A2A Client 是服务端 Agent，A2A Server 是桌面 Agent。断线仅清理连接与订阅，不取消或重启 Task。</p>
 <p>WSS 使用项目明确声明的自定义绑定 <code>urn:omniops:a2a:binding:wss-jsonrpc:v1</code>，不是标准 JSON-RPC-over-HTTP 接口。绑定沿用 JSON-RPC 2.0 请求／响应以及 A2A 1.0 的方法名、ProtoJSON 字段和枚举；每个文本消息承载一个 JSON-RPC 对象。流响应使用原请求 <code>id</code> 关联标准 <code>StreamResponse</code>，按生成顺序发送，终态结束对应任务流，不关闭共享连接。并发请求使用不同 RPC id；收发队列、消息大小和活动流数有界，具体额度在客户端与网关联调时固定。</p>
@@ -2976,7 +3053,7 @@ description: 在指定运维平台内完成其职责范围内的查询与变更�
 <p>Provider 管理与连接测试首版不新增专门的日志、span 或指标：界面的操作状态、测试结果与稳定的脱敏错误类别满足本期排查和验收。模型生成调用的观测继续遵循已有规范，密钥、认证头、提示词与回复正文不写入遥测。</p>
 <h3>当前实现与接入缺口</h3>
 <p>已在运维调试桌面接入 <a href="../../web/src/components/settings/provider-settings.tsx">Provider 设置页</a> 与 <a href="../../web/src/providers/source.ts">ProviderSource</a>：可新增、编辑、删除接入，维护多个模型，设置全局默认值，并手动测试已保存模型；本地调试会话开始前可改选，开始后固定。保存不触发测试；测试支持取消，不读取会话或执行工具。</p>
-<p><a href="../../desktop/runtime/providers.mjs">Node.js Provider 模块</a> 将配置原子保存到 <code>providers.json</code>，凭据字段只含 UUID 引用；<a href="../../desktop/runtime/credentials.mjs">凭据 IPC</a> 连接 <a href="../../crates/omniops-bots-desktop/src/credentials.rs">原生凭据边界</a>，分别使用 macOS Keychain 与 Windows Credential Manager。macOS 隔离 Keychain 验证已通过；Windows 尚未实机验证。无 Key 时不发送认证头，有引用但无法读取时明确失败，不自动降级或重试。</p>
+<p><a href="../../desktop/runtime/providers.ts">Node.js Provider 模块</a> 将配置原子保存到 <code>providers.json</code>，凭据字段只含 UUID 引用；<a href="../../desktop/runtime/credentials.ts">凭据 IPC</a> 连接 <a href="../../crates/omniops-bots-desktop/src/credentials.rs">原生凭据边界</a>，分别使用 macOS Keychain 与 Windows Credential Manager。macOS 隔离 Keychain 验证已通过；Windows 尚未实机验证。无 Key 时不发送认证头，有引用但无法读取时明确失败，不自动降级或重试。</p>
 <p>兼容迁移仅在 <code>providers.json</code> 不存在时导入旧环境变量／<code>model.env</code>；原文件保留，不自动删除，导入后由运维自行管理旧文件中的敏感内容。新配置读取失败可重试，不回退到旧单模型。缺少 Provider 快照的旧调试会话仍可查看，但须新建调试会话才能运行。服务端 Console 到后台客户端的任务通道仍待接入，不能据此将线上后台任务链路标为已完成。完成情况见 <a href="#08-frontend">08 · 前端现状与缺口</a>。</p>
 <h2 id="11-provider-服务端配合">服务端配合</h2>
 <p>首版 Provider 配置和凭据由运维在客户端本地预配置与管理，无需本项目服务端提供配置下发、凭据托管、模型发现或模型请求转发接口。接入地址可以指向既有内部网关，网关按自身约定提供 OpenAI 兼容服务。</p>
@@ -3000,7 +3077,7 @@ function show(){
  document.getElementById('chapter-select').value=id;
  document.getElementById('source').href=file;
  const diagram=document.getElementById('diagram');
- const runtimeLink=article.querySelector('a[href*="diagrams/a2a/full-chain/invoke.html"]')||article.querySelector('a[href*="diagrams/a2a/run.html"]')||article.querySelector('a[href*="diagrams/runtime/"]')||article.querySelector('figure.diagram a');
+ const runtimeLink=article.querySelector('a[href*="diagrams/a2a/module-contract/module-contract.html"]')||article.querySelector('a[href*="diagrams/a2a/full-chain/invoke.html"]')||article.querySelector('a[href*="diagrams/a2a/run.html"]')||article.querySelector('a[href*="diagrams/runtime/"]')||article.querySelector('figure.diagram a');
  diagram.hidden=!runtimeLink;
  diagram.classList.toggle('empty-diagram',!runtimeLink);
  diagram.href=runtimeLink?.getAttribute('href')||'#'+id;

@@ -10,9 +10,9 @@ import { DynamicStructuredTool } from '@langchain/core/tools';
 import { END, MemorySaver, MessagesAnnotation, START, StateGraph } from '@langchain/langgraph';
 import { z } from 'zod';
 import { createBrowserAgent } from '../graphs/browser-agent.ts';
-import { createResources } from '../resources.mjs';
+import { createResources } from '../resources.ts';
 import { createExecution } from '../execution/index.ts';
-import { RuntimeError } from '../errors.mjs';
+import { RuntimeError } from '../errors.ts';
 
 // The real graph still binds and executes tools. Only model generation and the
 // external browser/MCP effects are replaced with deterministic local fixtures.
@@ -261,7 +261,7 @@ test('fatal manual verification closes browser admission before a queued simulta
   };
   const { outcome, model } = await f.run([[call('inspect_browser', { url: 'first' }, 'first'), call('inspect_browser', { url: 'second' }, 'second')], []], { failure: true });
   assert.equal(outcome.ok, false);
-  assert.equal(outcome.error.kind, 'graph');
+  assert.equal(outcome.error.kind, 'login-required');
   assert.equal(outcome.error.cause, reason, 'the explicit fatal reason wins over propagated cancellation');
   assert.deepEqual(order, ['first:start:false']);
   assert.equal(model.inputs.length, 1);

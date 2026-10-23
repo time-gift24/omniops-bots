@@ -98,7 +98,7 @@ sequenceDiagram
 
 ## LangGraph.js 当前实际如何加载
 
-当前调用链为：`desktop/runtime/main.mjs` 启动，`resources.mjs` 提供资源接口，`assembly.ts` 捕获或验证会话装配，`runtime.mjs` 协调桌面命令，`execution/index.ts` 管理每轮生命周期，`chat/adapter.mjs` 转换聊天历史与展示，`graphs/browser-agent.ts` 调用 `createDeepAgent`。`mcp.ts` 负责真实 Streamable HTTP MCP 连接、能力发现与工具调用。依赖锁定在 `desktop/runtime/package.json`：`@langchain/langgraph` 1.5.0、`@langchain/langgraph-checkpoint` 1.2.0、`@langchain/langgraph-checkpoint-sqlite` 1.1.0、`deepagents` 1.15.0。
+当前调用链为：`desktop/runtime/main.ts` 启动，`resources.ts` 提供资源接口，`assembly.ts` 捕获或验证会话装配，`runtime.ts` 协调桌面命令，`execution/index.ts` 管理每轮生命周期，`chat/adapter.ts` 转换聊天历史与展示，`graphs/browser-agent.ts` 调用 `createDeepAgent`。`mcp.ts` 负责真实 Streamable HTTP MCP 连接、能力发现与工具调用。依赖锁定在 `desktop/runtime/package.json`：`@langchain/langgraph` 1.5.0、`@langchain/langgraph-checkpoint` 1.2.0、`@langchain/langgraph-checkpoint-sqlite` 1.1.0、`deepagents` 1.15.0。
 
 目前的配置是 Agent 的 `skillIds: string[]`。用户在 Agent 配置中勾选 Skill 后保存，`agent_save` 校验这些 ID 存在；`agents_load` 从当前 Skill 根目录生成可选资源。官方 ID 包含明确的 `contentId`，本地 ID 指向可编辑工作包。
 
@@ -127,7 +127,7 @@ sequenceDiagram
 sequenceDiagram
     actor U as 用户
     participant UI as 会话与 Tauri adapter
-    participant R as runtime.mjs
+    participant R as runtime.ts
     participant E as execution/index.ts
     participant C as chat/adapter.mjs
     participant Res as resources.mjs / assembly.ts
@@ -157,7 +157,7 @@ sequenceDiagram
     R-->>UI: 唯一 terminal 事件
 ```
 
-`main.mjs` 打开本地 `checkpoints.sqlite` 并注入 execution；每个 run 使用独立的 graphThreadId 作为图 `thread_id`，保留原生子图 namespace。`execution/records.ts` 在 `.records` 保存通用运行证据，`chat/history.mjs` 在 `.sessions` 保存消息和固定快照。下一轮由聊天适配器恢复已有历史或中止证据，使用新 run 和新图身份，不 resume 旧图任务。SQLite checkpoint 与聊天历史分别持久化；诊断导出、上传和服务端接收仍待实现，见[运维与诊断上传](./requirements-walkthrough/09-运维与诊断上传.md)。
+`main.ts` 打开本地 `checkpoints.sqlite` 并注入 execution；每个 run 使用独立的 graphThreadId 作为图 `thread_id`，保留原生子图 namespace。`execution/records.ts` 在 `.records` 保存通用运行证据，`chat/history.ts` 在 `.sessions` 保存消息和固定快照。下一轮由聊天适配器恢复已有历史或中止证据，使用新 run 和新图身份，不 resume 旧图任务。SQLite checkpoint 与聊天历史分别持久化；诊断导出、上传和服务端接收仍待实现，见[运维与诊断上传](./requirements-walkthrough/09-运维与诊断上传.md)。
 
 ## 完整装配：当前本地实现与后续服务端接入
 

@@ -22,7 +22,8 @@
     "web/src/components/chat/chat-screen.tsx": "754edd679a714f35d532ef0d22720749e6e31cada37afa89f10d2d916ad387e3",
     "web/src/components/chat/chat-thread.tsx": "838689fd7cb8059721b946056e70347f7002510715681dfe77484bebedca4a17"
   },
-  "scope": "files captures the previously validated full working tree, including unrelated UI edits; stagedFiles captures the isolated concurrency commit sources.",
+  "scope": "Historical concurrency validation captured on 2026-10-19, not current A2A/TS implementation evidence. files preserves the original working-tree hashes, including unrelated UI edits; its web/src/App.tsx variant was not included in the isolated commit. stagedFiles exactly matches stagedRevision: resolve these historical .mjs paths with git show <stagedRevision>:<path>, not against the current TS working tree. Current A2A validation is recorded in openspec/changes/define-desktop-a2a-interface/verification.md.",
+  "stagedRevision": "c2ff07d6d3fefcfd59e230b6f02eb25b3505daf2",
   "stagedFiles": {
     "desktop/runtime/execution/index.ts": "0dcbf1254b612acba56ad3a5bd56a88e9e8100d556450d39ef558d5e236447a7",
     "desktop/runtime/runtime.mjs": "3af2025aa4696ba4f9700a8ffe56965749d9819c250bf8390b3fb270f1ac98f5",

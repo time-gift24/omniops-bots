@@ -8,7 +8,7 @@ import { Annotation, END, getConfig, Graph, MemorySaver, START, StateGraph } fro
 import { FakeToolCallingModel } from 'langchain';
 import { createBrowserAgent } from '../graphs/browser-agent.ts';
 import { createExecution } from '../execution/index.ts';
-import { storageId, writeJson } from '../json-store.mjs';
+import { storageId, writeJson } from '../json-store.ts';
 
 const deferred = () => Promise.withResolvers();
 const Input = Annotation.Root({ question: Annotation() });
@@ -597,6 +597,7 @@ test('domain settlement freezes its outcome while late stop, timeout and close w
     await scope.updateDetails({ result: outcome.output, status: 'completed' });
   } }));
   await settling.promise;
+  assert.equal(f.execution.requestStop('settlement-commit'), 'result-fixed');
   controller.abort();
   const closing = f.execution.close();
   let finished = false;

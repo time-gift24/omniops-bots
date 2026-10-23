@@ -552,7 +552,7 @@ fn start_runtime(
     data_dir: PathBuf,
     manual_connection: Option<(String, String)>,
 ) -> Result<(), Error> {
-    let script = app.path().resource_dir()?.join("runtime/main.mjs");
+    let script = app.path().resource_dir()?.join("runtime/main.ts");
     if !script.is_file() {
         return Err(Error::Unavailable("Bundled agent runtime is missing"));
     }

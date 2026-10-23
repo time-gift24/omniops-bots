@@ -168,7 +168,10 @@ async function verifyPackage() {
   assert.ok(bundledFiles.length > 1_000, 'NSIS resource file manifest is missing');
   for (const name of ['libcef.dll', 'omniops-bots-desktop.dll', 'icudtl.dat', 'CEF-LICENSE.txt', 'CEF-CREDITS.html']) assert.ok(bundledFiles.some(file => file.target === name), `NSIS must put ${name} beside the launch EXE`);
   assert.ok(bundledFiles.some(file => file.target === 'locales\\en-US.pak'));
-  assert.ok(bundledFiles.some(file => file.target === 'runtime\\main.mjs'));
+  assert.ok(bundledFiles.some(file => file.target === 'runtime\\main.ts'));
+  assert.ok(bundledFiles.some(file => file.target === 'runtime\\a2a\\index.ts'));
+  assert.ok(bundledFiles.some(file => file.target === 'runtime\\a2a\\store.ts'));
+  assert.ok(bundledFiles.some(file => file.target === 'runtime\\node_modules\\@a2a-js\\sdk\\dist\\cli\\a2a_db.js'));
   assert.ok(bundledFiles.some(file => file.target === 'runtime\\execution\\sqlite.ts'));
   assert.ok(bundledFiles.some(file => file.target === 'runtime\\node_modules\\better-sqlite3\\build\\Release\\better_sqlite3.node'));
   assert.ok(bundledFiles.every(file => !/^browsers[\\/]/.test(file.target) && !/\.framework[\\/]|resources[\\/]windows[\\/]/.test(file.source)), 'Native installer contains an external Chromium or macOS payload');

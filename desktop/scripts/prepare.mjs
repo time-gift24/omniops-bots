@@ -77,17 +77,31 @@ export async function prepareSqliteAddon(staged, plan, executable, pinned) {
   const addon = join(packageDirectory, 'build/Release/better_sqlite3.node');
   const bytes = await readFile(addon);
   verifySqliteAddon(bytes, plan.target);
-  execFileSync(process.execPath, ['--input-type=module', '--eval', "await import('./runtime.mjs'); await import('./browser/browser.mjs'); await import('./browser/script-workspace.mjs');"], { cwd: staged, stdio: 'inherit' });
+  const validation = validateStagedRuntime(staged, executable, { native: !plan.cross });
+  return { package: JSON.parse(await readFile(packagePath, 'utf8')).version, nodeABI: process.versions.modules,
+    platform, arch, sha256: createHash('sha256').update(bytes).digest('hex'), ...validation };
+}
+
+/** Import the staged public modules, then exercise both native stores on a matching host. */
+export function validateStagedRuntime(staged, executable, { native = true } = {}) {
+  execFileSync(process.execPath, ['--input-type=module', '--eval', "await import('./runtime.ts'); await import('./browser/browser.ts'); await import('./browser/script-workspace.ts'); await import('./a2a/index.ts');"], { cwd: staged, stdio: 'inherit' });
   let loadValidation = 'not_run: requires Windows x64 host';
-  if (!plan.cross) {
+  if (native) {
     execFileSync(executable, ['--input-type=module', '--eval', `
       import { mkdtemp, rm } from 'node:fs/promises';
       import { tmpdir } from 'node:os';
       import { join } from 'node:path';
+      import { createHash } from 'node:crypto';
       import assert from 'node:assert/strict';
       import { emptyCheckpoint } from '@langchain/langgraph-checkpoint';
+      import { AgentCard, SendMessageRequest, Task, TaskState } from '@a2a-js/sdk';
+      import { ServerCallContext } from '@a2a-js/sdk/server';
+      import { canonicalize } from 'json-canonicalize';
       import { openSqliteCheckpointer } from './execution/sqlite.ts';
+      import { createA2AService } from './a2a/index.ts';
+      import { RuntimeError } from './errors.ts';
       const directory = await mkdtemp(join(tmpdir(), 'omniops-sqlite-package-'));
+      let service;
       try {
         const path = join(directory, 'checkpoints.sqlite');
         const config = { configurable: { thread_id: 'package-probe', checkpoint_ns: '' } };
@@ -97,12 +111,33 @@ export async function prepareSqliteAddon(staged, plan, executable, pinned) {
         const reopened = await openSqliteCheckpointer(path);
         try { assert.ok(await reopened.checkpointer.getTuple(config)); }
         finally { await reopened.close(); }
-      } finally { await rm(directory, { recursive: true, force: true }); }
+        const extension = 'urn:omniops:a2a:extension:delivery-receipt:v1';
+        const principal = { organizationId: 'package', callerId: 'probe', installationId: 'local' };
+        const userName = 'omniops-v1:' + createHash('sha256').update(canonicalize(Object.values(principal))).digest('hex');
+        const context = () => {
+          const value = new ServerCallContext({ user: { isAuthenticated: true, userName }, requestedVersion: '1.0', requestedExtensions: [extension], state: new Map([['omniops.principal', principal]]) });
+          value.setTenant('package');
+          return value;
+        };
+        const card = AgentCard.fromJSON({ name: 'Package probe', description: 'Local packaging validation only.', version: '1', supportedInterfaces: [{ url: 'http://127.0.0.1/a2a', protocolBinding: 'JSONRPC', protocolVersion: '1.0', tenant: 'package' }], defaultInputModes: ['application/json'], defaultOutputModes: ['application/json'], capabilities: { streaming: true, extensions: [{ uri: extension, required: true }] } });
+        const options = { directory: join(directory, 'a2a'), runtime: { reserveRun() { throw new RuntimeError('busy', 'Package probe uses no execution resource.'); } }, resolveEndpoint: async () => ({ agentId: 'probe', contentId: 'a'.repeat(64), card }), limits: { maxRequestBytes: 4096, maxTaskBytes: 8192, maxJsonDepth: 16, maxWaiters: 1, maxSubscriptions: 1 } };
+        service = await createA2AService(options);
+        const acceptedContext = context(), handler = await service.protocolFor(acceptedContext, 'package');
+        const task = await handler.sendMessage(SendMessageRequest.fromJSON({ tenant: 'package', message: { messageId: 'package-probe', role: 'ROLE_USER', parts: [{ data: {} }] }, configuration: { returnImmediately: true } }), acceptedContext);
+        assert.equal(task.status.state, TaskState.TASK_STATE_REJECTED);
+        await service.close({ deadline: performance.now() + 5000 });
+        service = await createA2AService(options);
+        const readContext = context(), reader = await service.protocolFor(readContext, 'package');
+        const retained = await reader.getTask({ tenant: 'package', id: task.id }, readContext);
+        assert.deepEqual(Task.toJSON(retained), Task.toJSON(task));
+      } finally {
+        try { await service?.close({ deadline: performance.now() + 5000 }); }
+        finally { await rm(directory, { recursive: true, force: true }); }
+      }
     `], { cwd: staged, stdio: 'inherit' });
     loadValidation = 'passed';
   }
-  return { package: JSON.parse(await readFile(packagePath, 'utf8')).version, nodeABI: process.versions.modules,
-    platform, arch, sha256: createHash('sha256').update(bytes).digest('hex'), runtimeImportValidation: 'passed', loadValidation, persistentReopenValidation: loadValidation };
+  return { runtimeImportValidation: 'passed', loadValidation, persistentReopenValidation: loadValidation, a2aPersistenceValidation: loadValidation };
 }
 
 async function download(url) {

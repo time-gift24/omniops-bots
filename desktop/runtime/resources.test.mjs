@@ -5,10 +5,10 @@ import path from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { test } from 'node:test';
-import { createResources } from './resources.mjs';
-import { createChatHistory } from './chat/history.mjs';
-import { createScriptWorkspace } from './browser/script-workspace.mjs';
-import { storageId } from './json-store.mjs';
+import { createResources } from './resources.ts';
+import { createChatHistory } from './chat/history.ts';
+import { createScriptWorkspace } from './browser/script-workspace.ts';
+import { storageId } from './json-store.ts';
 
 async function git(args) {
   const exec = promisify(execFile), env = { ...process.env };

@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { packageContentId } from './assembly.ts';
-import { createResources } from './resources.mjs';
+import { createResources } from './resources.ts';
 
 async function writable(directory) {
   const info = await lstat(directory);

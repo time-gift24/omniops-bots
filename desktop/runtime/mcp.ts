@@ -1,3 +1,4 @@
+import type { ToolEvent } from './graphs/browser-agent.ts';
 import { mkdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
@@ -5,8 +6,8 @@ import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
-import { invalid, RuntimeError } from './errors.mjs';
-import { writeJson } from './json-store.mjs';
+import { invalid, RuntimeError } from './errors.ts';
+import { writeJson } from './json-store.ts';
 import type { GraphScope } from './execution/index.ts';
 
 export type McpConfiguration = { id: string; name: string; description: string; url: string; credentialEnv?: string };
@@ -60,7 +61,7 @@ export function createMcpCatalog({ directory }: { directory: string }) {
 
 export async function connectMcp(configurations: readonly McpConfiguration[], {
   signal, scope, env = process.env, onTool = () => {}, redact = String,
-}: { signal: AbortSignal; scope?: GraphScope; env?: NodeJS.ProcessEnv; onTool?: (event: object) => void; redact?: (value: string) => string }) {
+}: { signal: AbortSignal; scope?: GraphScope; env?: NodeJS.ProcessEnv; onTool?: (event: ToolEvent) => void; redact?: (value: string) => string }) {
   const clients: Client[] = [];
   const tools: DynamicStructuredTool[] = [];
   const manifests: { id: string; url: string; tools: { name: string; sourceName: string; description?: string; inputSchema: Tool['inputSchema'] }[] }[] = [];

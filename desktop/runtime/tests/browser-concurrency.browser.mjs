@@ -9,10 +9,10 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { chromium } from 'playwright-core';
 import { FakeToolCallingModel } from 'langchain';
 import { MemorySaver } from '@langchain/langgraph';
-import { createBrowserService } from '../browser/browser.mjs';
-import { createScriptWorkspace } from '../browser/script-workspace.mjs';
-import { createDesktopRuntime } from '../runtime.mjs';
-import { createResources } from '../resources.mjs';
+import { createBrowserService } from '../browser/browser.ts';
+import { createScriptWorkspace } from '../browser/script-workspace.ts';
+import { createDesktopRuntime } from '../runtime.ts';
+import { createResources } from '../resources.ts';
 import { browserHostFixture } from './browser-host-fixture.mjs';
 
 async function until(check) {

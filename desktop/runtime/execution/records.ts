@@ -1,6 +1,6 @@
 import { mkdir, readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { storageId, writeJson } from '../json-store.mjs';
+import { storageId, writeJson } from '../json-store.ts';
 
 export type RunStatus = 'preparing' | 'running' | 'completed' | 'failed' | 'cancelled' | 'timed-out' | 'interrupted';
 export interface RunRecord {

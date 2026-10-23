@@ -121,7 +121,7 @@ Provider 管理与连接测试首版不新增专门的日志、span 或指标：
 
 已在运维调试桌面接入 [Provider 设置页](../../web/src/components/settings/provider-settings.tsx) 与 [ProviderSource](../../web/src/providers/source.ts)：可新增、编辑、删除接入，维护多个模型，设置全局默认值，并手动测试已保存模型；本地调试会话开始前可改选，开始后固定。保存不触发测试；测试支持取消，不读取会话或执行工具。
 
-[Node.js Provider 模块](../../desktop/runtime/providers.mjs) 将配置原子保存到 `providers.json`，凭据字段只含 UUID 引用；[凭据 IPC](../../desktop/runtime/credentials.mjs) 连接 [原生凭据边界](../../crates/omniops-bots-desktop/src/credentials.rs)，分别使用 macOS Keychain 与 Windows Credential Manager。macOS 隔离 Keychain 验证已通过；Windows 尚未实机验证。无 Key 时不发送认证头，有引用但无法读取时明确失败，不自动降级或重试。
+[Node.js Provider 模块](../../desktop/runtime/providers.ts) 将配置原子保存到 `providers.json`，凭据字段只含 UUID 引用；[凭据 IPC](../../desktop/runtime/credentials.ts) 连接 [原生凭据边界](../../crates/omniops-bots-desktop/src/credentials.rs)，分别使用 macOS Keychain 与 Windows Credential Manager。macOS 隔离 Keychain 验证已通过；Windows 尚未实机验证。无 Key 时不发送认证头，有引用但无法读取时明确失败，不自动降级或重试。
 
 兼容迁移仅在 `providers.json` 不存在时导入旧环境变量／`model.env`；原文件保留，不自动删除，导入后由运维自行管理旧文件中的敏感内容。新配置读取失败可重试，不回退到旧单模型。缺少 Provider 快照的旧调试会话仍可查看，但须新建调试会话才能运行。服务端 Console 到后台客户端的任务通道仍待接入，不能据此将线上后台任务链路标为已完成。完成情况见 [08 · 前端现状与缺口](./08-前端现状与缺口.md)。
 

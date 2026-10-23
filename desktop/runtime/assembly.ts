@@ -3,7 +3,7 @@ import { chmod, lstat, mkdir, open, readdir, realpath, rename, rm } from 'node:f
 import { createHash, randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { parse as parseYaml } from 'yaml';
-import { invalid, RuntimeError } from './errors.mjs';
+import { invalid, RuntimeError } from './errors.ts';
 
 export type AgentConfiguration = {
   name: string; description: string; instructions: string;
@@ -31,7 +31,7 @@ type SkillLibrary = {
 };
 type McpCatalog = { list(): unknown | Promise<unknown>; get(id: string): unknown | Promise<unknown> };
 type PrepareOptions = {
-  sessionId: string; agentId?: string; experimentSkillId?: string;
+  sessionId: string; agentId?: string; contentId?: string; experimentSkillId?: string;
   model?: string; modelParameters?: Record<string, unknown>; desktopVersion?: string;
 };
 const HASH = /^[a-f0-9]{64}$/u;
@@ -188,13 +188,13 @@ export function createAssemblyStore({ agentsDir, runsDir, skillLibrary, tools, m
   function entry(id: string, config: AgentConfiguration): AgentEntry {
     return { id, source: 'local', contentId: hash(canonical(config)), configuration: structuredClone(config) };
   }
-  async function readAgent(id: string): Promise<StoredAgent> {
+  async function readAgent(id: string, allowDefault = true): Promise<StoredAgent> {
     const root = await directory(agentsDir), file = path.join(root, `${agentId(id)}.json`);
     let value: unknown;
     try { value = await readJson(file); }
     catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
-      if (id !== 'browser-assistant') throw invalid('所选 Agent 不存在。');
+      if (id !== 'browser-assistant' || !allowDefault) throw invalid('所选 Agent 不存在。');
       const initial = entry(id, defaultConfiguration);
       await writeJson(file, initial);
       return initial;
@@ -216,6 +216,7 @@ export function createAssemblyStore({ agentsDir, runsDir, skillLibrary, tools, m
   async function restore(file: string, options: PrepareOptions, target: string): Promise<SessionAssembly> {
     const raw = record(await readJson(file));
     const agent = record(raw.agent);
+    if (options.contentId !== undefined && (agent.source !== 'official' || agent.contentId !== options.contentId)) throw invalid('远端任务的官方 Agent 版本与固定快照不一致。');
     if (raw.sessionId !== options.sessionId || options.agentId !== undefined && options.agentId !== agent.id || options.experimentSkillId !== undefined && options.experimentSkillId !== raw.experimentSkillId) throw invalid('会话已固定其他装配，请新建会话。');
     configuration(agent.configuration);
     agentId(agent.id);
@@ -239,6 +240,7 @@ export function createAssemblyStore({ agentsDir, runsDir, skillLibrary, tools, m
   }
   async function prepare(options: PrepareOptions): Promise<SessionAssembly> {
     text(options.sessionId, '会话 ID');
+    if (options.contentId !== undefined && (!HASH.test(options.contentId) || options.agentId === undefined || options.experimentSkillId !== undefined)) throw invalid('远端任务必须指定固定官方 Agent 版本。');
     const root = await directory(runsDir), target = path.join(root, hash(options.sessionId));
     const manifest = path.join(target, 'assembly.json');
     try {
@@ -250,7 +252,8 @@ export function createAssemblyStore({ agentsDir, runsDir, skillLibrary, tools, m
       try { await lstat(target); throw invalid('会话快照不完整，请新建会话。'); }
       catch (missing) { if ((missing as NodeJS.ErrnoException).code !== 'ENOENT') throw missing; }
     }
-    const { unpublished: _unpublished, ...selected } = await readAgent(options.agentId ?? 'browser-assistant');
+    const { unpublished: _unpublished, ...selected } = await readAgent(options.agentId ?? 'browser-assistant', options.contentId === undefined);
+    if (options.contentId !== undefined && (selected.source !== 'official' || selected.contentId !== options.contentId)) throw invalid('远端任务的官方 Agent 版本不存在或摘要不匹配。');
     const config = configuration(selected.configuration);
     const missing = config.toolIds.filter(id => !tools.some(tool => tool.id === id));
     if (missing.length) throw new RuntimeError('missing-tools', `当前桌面端缺少内置工具：${missing.join('、')}。请更新桌面端后重新发起任务。`);

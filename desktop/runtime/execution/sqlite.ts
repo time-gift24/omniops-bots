@@ -116,7 +116,7 @@ export async function openSqliteCheckpointer(path: string, { maxBytes = 512 * 10
     const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").all() as { name: string }[];
     if (tables.length) {
       if (!tables.some(table => table.name === 'omniops_checkpoint_format') ||
-          db.prepare('SELECT format FROM omniops_checkpoint_format WHERE id=1').get()?.format !== format) {
+          db.prepare<[], { format: string }>('SELECT format FROM omniops_checkpoint_format WHERE id=1').get()?.format !== format) {
         throw new Error('Unsupported checkpoint database format; preserve the database before upgrading');
       }
       for (const [table, expected] of Object.entries(columns)) {

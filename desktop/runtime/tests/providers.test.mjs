@@ -4,8 +4,8 @@ import { mkdtemp, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promise
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { createProviderCatalog } from '../providers.mjs';
-import { safeError } from '../errors.mjs';
+import { createProviderCatalog } from '../providers.ts';
+import { safeError } from '../errors.ts';
 
 const id = (provider, model = 'shared') => JSON.stringify([provider, model]);
 const selection = (provider, model = 'shared') => ({ provider, model });

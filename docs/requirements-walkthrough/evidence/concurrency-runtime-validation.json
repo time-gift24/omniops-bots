@@ -1,5 +1,6 @@
 {
   "verifiedAt": "2026-10-19T10:04:21.343Z",
+  "scope": "Historical concurrency validation only. Source paths and hashes refer to the 2026-10-19 snapshot described in sourceHashes, not the current A2A/TypeScript implementation. Current verification is recorded in openspec/changes/define-desktop-a2a-interface/verification.md.",
   "model": {
     "browserBinding": "threadId -> persistent targetId",
     "maxConcurrentRunsDefault": 4,

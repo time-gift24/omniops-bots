@@ -3,7 +3,7 @@ import { mkdtemp, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promise
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { test } from 'node:test';
-import { createClientSettings } from '../settings.mjs';
+import { createClientSettings } from '../settings.ts';
 
 async function fixture(t) {
   const directory = await mkdtemp(join(tmpdir(), 'omniops-settings-'));

@@ -3,9 +3,9 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { createChromeHost } from '../browser/chrome-host.mjs';
-import { createBrowserService, createOperationsBrowser } from '../browser/browser.mjs';
-import { safeError } from '../errors.mjs';
+import { createChromeHost } from '../browser/chrome-host.ts';
+import { createBrowserService, createOperationsBrowser } from '../browser/browser.ts';
+import { safeError } from '../errors.ts';
 
 test('invalid manual CDP configuration remains safely unavailable without affecting Agent Chrome', async () => {
   for (const config of [undefined, { endpoint: 'http://127.0.0.1:1' }, { targetId: 'manual' },

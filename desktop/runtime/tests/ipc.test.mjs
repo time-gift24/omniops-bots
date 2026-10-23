@@ -9,7 +9,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 
 test('JSONL entry returns structured safe errors, exact snapshots and clean shutdown without a configured model', { timeout: 15_000 }, async () => {
   const directory = await mkdtemp(join(tmpdir(), 'omniops-bots-ipc-'));
-  const child = spawn(process.execPath, ['main.mjs'], { cwd: new URL('..', import.meta.url), env: {
+  const child = spawn(process.execPath, ['main.ts'], { cwd: new URL('..', import.meta.url), env: {
     ...process.env, OMNIOPS_BOTS_DATA_DIR: directory, OMNIOPS_BOTS_LOCAL_ROOT: join(directory, 'local'), OMNIOPS_BOTS_MODEL: '', OPENAI_API_KEY: '', OPENAI_BASE_URL: '',
     OMNIOPS_BOTS_MAX_CONCURRENT_RUNS: '5',
   }, stdio: ['pipe', 'pipe', 'pipe'] });

@@ -9,9 +9,9 @@ import { ChatOpenAI } from '@langchain/openai';
 import { HumanMessage } from '@langchain/core/messages';
 import { Annotation, END, MemorySaver, START, StateGraph } from '@langchain/langgraph';
 import { createExecution } from '../execution/index.ts';
-import { createChatRun } from '../chat/adapter.mjs';
-import { createDesktopRuntime } from '../runtime.mjs';
-import { createResources } from '../resources.mjs';
+import { createChatRun } from '../chat/adapter.ts';
+import { createDesktopRuntime } from '../runtime.ts';
+import { createResources } from '../resources.ts';
 
 async function until(check) {
   const deadline = Date.now() + 3000;

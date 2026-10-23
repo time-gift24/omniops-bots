@@ -1,8 +1,55 @@
 # 核心 · A2A 任务执行与恢复
 
-**客户端主动建立一条 WSS，服务端 Agent 通过 A2A 调用确定版本的客户端 Agent。WebSocket 负责网络传输，A2A 负责任务语义，现有 Node.js runtime 负责 Agent 执行。** 线上用户仍在 Console 发起业务、查看状态和结果；运维调试桌面用于编辑、实验和排障。
+**先让外部 Agent 通过标准 A2A 接口调用桌面 Agent，独立验证 A2AService 的任务闭环，再接 WSS。** 外部 Agent 是 A2A Client，桌面 Agent 是 A2A Server；调用方只交业务 JSON、查询 Task、请求取消并接收最终 Artifact，不进入 runtime、LangGraph、数据库或浏览器内部。
 
-以下图示是本次确认的**目标设计**，不是已实现链路。远端 A2A、WSS 绑定、持久去重与交付确认仍待接入。协议以 [A2A 1.0.0](https://a2a-protocol.org/v1.0.0/specification/) 为基线，协商版本为 `1.0`；WebSocket 使用明确声明的自定义绑定，不宣称它是标准 HTTP JSON-RPC 绑定。
+**当前状态：A2AService 已实现，并通过独立外部 Agent 的标准 A2A 验收；WSS 尚未接入。** 本阶段已完成模块独立验证，WSS 连接、网关、心跳、重连和 Upgrade 协商均放到后续。标准协议基线为 [A2A 1.0.0](https://a2a-protocol.org/v1.0.0/specification/)，直接复用官方 `@a2a-js/sdk`，先不 fork；业务 input 为 JSON 对象，output 为任意 JSON 值，不绑定某个具体业务 Agent。
+
+## 当前主线：外部 Agent 直接调用 A2A
+
+本阶段独立验证使用 SDK 的标准 **JSON-RPC over HTTP，流响应为 SSE**；卡片声明 `protocolBinding: "JSONRPC"`、`protocolVersion: "1.0"` 和确定版本的 `tenant`。外部 Agent 在独立进程中使用 SDK `ClientFactory` 读取 AgentCard 并发起调用，不需要 Console、服务端 graph、WSS 或自定义 transport。这里的“直接”指调用公开 A2A 协议，不能用同进程调用内部函数代替外部验收。
+
+验证宿主只在本机 loopback 临时启动，复用 SDK `agentCardHandler`／`jsonRpcHandler`，不自写 HTTP/SSE 协议栈，也不把临时宿主变成桌面常驻公网服务。SDK Express peer 仅为验证宿主按需采用；不进入 A2AService 核心依赖，仅宿主使用开发依赖。宿主提供测试身份与独立请求上下文，服务仍逐次授权；不使用匿名上下文冒充鉴权通过。生产认证与远端可达方式留给后续接入。
+
+| 外部 Agent 做什么 | A2AService 保证什么 |
+| --- | --- |
+| 读取确定版本 AgentCard，发送带稳定 messageId 的 JSON Data Part | 授权、去重、共享容量准入；受理落盘后才执行，返回标准 Task |
+| SendMessage 默认等待终态；要先取 taskId 时显式 returnImmediately=true；也可 SendStreamingMessage | 初始 Task、任务级状态和最终 Artifact；不转发模型 token 或工具轨迹 |
+| GetTask／ListTasks／SubscribeToTask | 只读自己授权入口的已提交状态；中断等待不停止任务，重新查询不重跑 |
+| CancelTask | 可取消时先请求停止，排空期间 WORKING；真实排空并保存后才 CANCELED；固定结果不可改写 |
+| 保存原结果及索引，再调用 omniops/ConfirmTaskDelivery | 唯一项目业务扩展；校验结果摘要并持久确认，重复确认不执行任务 |
+
+标准 A2A 操作不要求调用者安装项目 client 包。交付确认是单独声明的扩展，SDK 没有该自定义方法的高层 client；验证端只补这一条 JSON-RPC 调用，复用标准请求／错误对象，不另造整套客户端。
+
+## 关键类图：公开边界与 SDK 复用
+
+![A2AService 目标契约：SDK handler、共享执行预留与 SDK Task 存储](./assets/a2a/module-contract.svg)
+
+[打开 A2AService 关键类图](./diagrams/a2a/module-contract/module-contract.html)
+
+图中是**已实现模块的公开类型关系**，仅列关键成员；完整签名、构造校验、错误和关闭见 [A2AService 契约](../../openspec/changes/define-desktop-a2a-interface/contract.md)。`A2AService` 是一个 Node 模块，不是新进程；对标准操作返回 SDK `A2ARequestHandler`，只适配两条发送路径与取消，查询／订阅等继续复用 `DefaultRequestHandler`。图中的 TaskStore 是内部依赖，不向外导出；受控写入继续调用 SDK `DatabaseTaskStore(trx)`，只加一张项目扩展表，不手写 Task CRUD 或分页。
+
+A2AService 与 runtime 之间是**同进程函数调用**：`reserveRun()` 后得到 `RunReservation`，`execute({threadId, runId, agent:{agentId, contentId}, input})` 返回现有 `ExecutionOutcome<JsonValue>`，`requestStop()` 报告 requested／result-fixed，`release()` 归还名额。图／模型／MCP／浏览器准备与实际清理由 runtime 负责；Message／Artifact 映射、终态和交付由 A2AService 负责。SDK `AgentExecutor` 只做内部薄桥接，不再创建执行服务。
+
+## 验证通过后，才把模块当黑盒
+
+下面是本阶段的验收门槛，模块、真实 runtime 和独立外部调用均已执行；完整命令、通过范围与限制见 [验收记录](../../openspec/changes/define-desktop-a2a-interface/verification.md)。先用小型 runtime fake 精确验证竞争与故障；再由独立外部 Agent 经过真实 SDK HTTP 入口，连到真实 runtime／LangGraph，以本地确定性模型 fixture 跑完任务。涉及浏览器的用例使用本地测试站点和受管理 Chrome，不用真实密钥或付费模型，也不预建某个业务 Agent。
+
+| 必验行为 | 从公开入口观察的通过条件 |
+| --- | --- |
+| 成功闭环 | 外部 Agent 提交 JSON、取得唯一 Task、收到最终 Artifact；0／false／null 不丢失，随后 GetTask 返回同一结果 |
+| 重投与容量 | 同 messageId 并发只执行一次；同 ID 不同内容报错；busy 保存可查询的 REJECTED，且不创建运行资源 |
+| 查询、隔离与协议 | 另一个主体／安装／入口不能读取原 Task；分页、版本、扩展、不支持能力与错误形状符合所声明契约 |
+| 取消与等待结束 | 取消先 WORKING 后 CANCELED；固定结果拒绝取消；外部调用者断开／放弃流后任务仍结算，可重新查询 |
+| 持久化与进程重启 | 真实 SQLite 验证两表原子提交、终态冻结和回执；重启保留原终态，遗留未完成转 FAILED/interrupted-unknown，均不重跑 |
+| 故障与关闭 | 受理写失败不执行、终态写失败不伪造完成、回执失败不改结果；有界等待／订阅、取消清理和同一预算关闭可验证 |
+
+“黑盒”意味着后续 adapter 只使用 `createA2AService`、`protocolFor` 返回的 SDK handler、`confirmTaskDelivery` 与本地 `close`；外部 Agent 只使用 AgentCard、标准 A2A 操作和明确的回执扩展。换成 WSS 时只验传输、身份注入和兼容接入，沿用同一组任务契约回归，不能把去重、状态、取消或持久化搬到 adapter。
+
+验收记录须分别标明模块／真实 runtime／外部协议互操作已通过什么；没有外部调用和真实持久化证据，不能仅凭 fake、文档校验或 SDK 示例宣称模块验证完毕。WSS 与生产平台认证仍另行验收。
+
+## 后续部署：WSS 接入与现有运行场景
+
+以下保留整体部署职责和既有场景图，说明模块后续如何接进服务端；**WSS 是后续传输方案，不是本阶段模块验证的前置条件**。外部标准 HTTP client 可以验证本模块，但不能直接连接自定义 WSS binding。
 
 部署前提见[核心 · 服务端部署与持久化](./核心-服务端部署与持久化.md)：Console API、网关和图 worker 分开运行，多台 Compose 共享 PostgreSQL、Redis 与文件存储；当前单机 Nginx 仍是入口单点。本章只规定跨端任务行为，不把容器重启解释为桌面任务恢复。
 
@@ -20,7 +67,7 @@
 
 这些是职责边界，共用一个 Node runtime，不要求新增独立服务、通用容器或每个 Agent 一条连接。Rust 继续承担原生宿主与系统能力。
 
-服务端 Agent 是 **A2A Client**，桌面 Agent 是 **A2A Server**；这与桌面主动建立 WSS 的网络方向不同。每个官方 `agentId + contentId` 对应一个逻辑入口和标准 AgentCard，复用官方目录；多个入口共享同一 WSS。请求携带所选 AgentCard 接口的标准 `tenant` 路由值，由 A2A 适配层解析；真实组织、用户与安装权限来自已鉴权连接，不由 `tenant` 自行声明。
+服务端 Agent 是 **A2A Client**，桌面 Agent 是 **A2A Server**；这与桌面主动建立 WSS 的网络方向不同。每个官方 `agentId + contentId` 对应一个逻辑入口和标准 AgentCard，复用官方目录；多个入口共享同一 WSS。请求携带所选 AgentCard 接口的标准 `tenant` 路由值，由 A2A 适配层解析；真实组织、用户与安装权限来自可信接入上下文（WSS 阶段由已鉴权连接提供），不由 `tenant` 自行声明。
 
 ## 完整链路：服务端 graph 节点调用确定版本的桌面 Agent
 
@@ -156,4 +203,6 @@
 - [10 · 服务端 API](./10-服务端API.md)：WSS 绑定、标准 A2A 操作、失败边界与唯一交付确认扩展。
 - [核心 · Skill 模板与迭代](./核心-Skill模板与迭代.md)：核心章节的最后一章，讲解运维能力如何积累与发布。
 
-本次只修订目标设计与串讲材料，沿用本地执行记录和既有观测边界，不新增日志、span 或指标。A2A 原始 Message、Artifact、提示词和完整错误来源链不作为遥测输出。
+本阶段已实现并验证模块，沿用本地执行记录和既有观测边界，不新增日志、span 或指标。A2A 原始 Message、Artifact、提示词和完整错误来源链不作为遥测输出。
+
+官方 TS SDK 1.3.0 的高层 client 会把 data:null 解码为缺失，本阶段没有 fork 或 monkey-patch。存储适配在 SDK 公开读取边界保留 null，外部验收另以标准线上报文核对 null；0／false 可直接经高层 client 读取。此上游限制、临时 HTTP 宿主与未覆盖平台均在验收记录中单独列明，不宣称生产 WSS 或所有 client 已兼容。

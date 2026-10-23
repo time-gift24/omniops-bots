@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createServer } from 'vite';
 import { fileURLToPath } from 'node:url';
-import { createResources } from '../../desktop/runtime/resources.mjs';
+import { createResources } from '../../desktop/runtime/resources.ts';
 
 test('desktop Skill adapter preserves binary bytes, readable metadata and conflict errors through RPC', async t => {
   const root = await mkdtemp(path.join(tmpdir(), 'omnimind-tauri-skills-'));

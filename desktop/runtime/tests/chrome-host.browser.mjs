@@ -3,8 +3,8 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { createChromeHost } from '../browser/chrome-host.mjs';
-import { createBrowserService } from '../browser/browser.mjs';
+import { createChromeHost } from '../browser/chrome-host.ts';
+import { createBrowserService } from '../browser/browser.ts';
 
 test('visible external Chrome pins each thread, reopens closed tabs, persists login and closes with the host', { timeout: 45_000 }, async () => {
   const directory = await mkdtemp(join(tmpdir(), 'omniops-chrome-'));

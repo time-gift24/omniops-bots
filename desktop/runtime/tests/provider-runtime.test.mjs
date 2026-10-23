@@ -9,9 +9,9 @@ import readline from 'node:readline';
 import { setTimeout as delay } from 'node:timers/promises';
 import { test } from 'node:test';
 import { MemorySaver } from '@langchain/langgraph';
-import { createProviderCatalog } from '../providers.mjs';
-import { createResources } from '../resources.mjs';
-import { createDesktopRuntime } from '../runtime.mjs';
+import { createProviderCatalog } from '../providers.ts';
+import { createResources } from '../resources.ts';
+import { createDesktopRuntime } from '../runtime.ts';
 import { createModelFixture } from './model-fixture.mjs';
 
 const id = provider => JSON.stringify([provider, 'shared']);
@@ -200,7 +200,7 @@ test('restarted Provider redacts first input and reflected remote IDs while pres
 test('packaged Node IPC imports legacy credentials via the host and tests a model without opening a browser', { timeout: 20000 }, async t => {
   const directory = await mkdtemp(join(tmpdir(), 'provider-main-ipc-'));
   const fixture = await createModelFixture({ respond: () => ({ text: 'OK' }) });
-  const child = spawn(process.execPath, [new URL('../main.mjs', import.meta.url).pathname], { env: { ...process.env,
+  const child = spawn(process.execPath, [new URL('../main.ts', import.meta.url).pathname], { env: { ...process.env,
     OMNIOPS_BOTS_DATA_DIR: directory, OMNIOPS_BOTS_LOCAL_ROOT: join(directory, 'local'),
     OMNIOPS_BOTS_MODEL: 'shared', OPENAI_BASE_URL: fixture.baseURL, OPENAI_API_KEY: 'private-legacy-fixture',
   }, stdio: ['pipe', 'pipe', 'pipe'] });

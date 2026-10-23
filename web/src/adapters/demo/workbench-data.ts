@@ -15,7 +15,7 @@ export const WORKSPACE_FILES: readonly WorkspaceFileEntry[] = [
   },
   { name: "index.css", path: "web/src/index.css", size: "12.6 KB" },
   { name: "Cargo.toml", path: "Cargo.toml", size: "2.3 KB" },
-  { name: "main.mjs", path: "desktop/runtime/main.mjs", size: "4.9 KB" },
+  { name: "main.ts", path: "desktop/runtime/main.ts", size: "4.9 KB" },
   { name: "AGENTS.md", path: "AGENTS.md", size: "9.7 KB" },
 ]
 

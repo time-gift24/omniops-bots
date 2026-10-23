@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createCredentialClient } from '../credentials.mjs';
-import { RuntimeError, safeError } from '../errors.mjs';
+import { createCredentialClient } from '../credentials.ts';
+import { RuntimeError, safeError } from '../errors.ts';
 
 const reference = 'b44da25d-0d6f-4a93-89e4-e2b0fb29974a';
 
