@@ -18,7 +18,6 @@ export default defineConfig([
   globalIgnores(['dist']),
   {
     files: ['**/*.{ts,tsx}'],
-    ignores: ['src/components/beui/**', 'src/lib/beui/**'],
     extends: [
       js.configs.recommended,
       tseslint.configs.recommended,
@@ -37,22 +36,8 @@ export default defineConfig([
     },
   },
   {
-    // beUI source provenance and adaptations: scripts/beui-catalog.json.
-    // TypeScript checks every catalog module; product rules above remain unchanged.
-    files: ['src/components/beui/**/*.{ts,tsx}', 'src/lib/beui/**/*.{ts,tsx}'],
-    languageOptions: { parser: tseslint.parser, globals: globals.browser },
-    rules: {
-      ...js.configs.recommended.rules,
-      'no-undef': 'off',
-      'no-unused-vars': 'off',
-      'no-redeclare': 'off',
-      'no-unexpected-multiline': 'off',
-      'no-useless-assignment': 'off',
-    },
-  },
-  {
     files: ['src/**/*.{ts,tsx}'],
-    ignores: ['src/adapters/**', 'src/main.tsx', 'src/bootstrap*.{ts,tsx}', 'src/bootstrap/**', 'src/components/beui/**', 'src/lib/beui/**'],
+    ignores: ['src/adapters/**', 'src/main.tsx', 'src/bootstrap*.{ts,tsx}', 'src/bootstrap/**'],
     rules: {
       'no-restricted-imports': ['error', {
         patterns: [{ regex: adapterImports, message: interfaceMessage }],

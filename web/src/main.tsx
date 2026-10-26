@@ -31,7 +31,9 @@ function render(content: ReactNode) {
 async function start() {
   try {
     if (isDesktop && !desktopWindow)
-      desktopWindow = (await import("@/adapters/tauri/window")).createTauriWindow()
+      desktopWindow = (
+        await import("@/adapters/tauri/window")
+      ).createTauriWindow()
     render(
       <p role="status" className="p-6 text-sm text-muted-foreground">
         正在加载工作区…
@@ -92,7 +94,8 @@ async function start() {
       tauri?.dispose()
     }
     const initialPreferences = await loadInitialThemePreferences(
-      dependencies.preferences
+      dependencies.preferences,
+      "dark"
     )
     if (disposed) {
       cleanup()

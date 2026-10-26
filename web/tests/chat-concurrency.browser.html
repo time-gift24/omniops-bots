@@ -59,7 +59,7 @@ const editor = () => fixture.querySelector('[role="textbox"]')
 const type = text => flushSync(() => { editor().textContent = text; editor().dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: text })) })
 const click = element => { assert(element && !element.disabled, "Expected enabled action"); flushSync(() => element.click()) }
 const render = threadId => flushSync(() => root.render(withDependencies(React.createElement(ChatScreen, { threadId, models: DEMO_MODELS, suggestions: ["尝试并行建议"] }), dependencies)))
-const retries = () => [...fixture.querySelectorAll("button")].filter(element => element.getAttribute("aria-label") === "重试" || ["重试", "重新生成"].includes(element.textContent.trim()))
+const retries = () => [...fixture.querySelectorAll("button")].filter(element => ["重试","重新生成"].includes(element.getAttribute("aria-label")) || ["重试", "重新生成"].includes(element.textContent.trim()))
 const bRequests = () => requests.filter(request => request.threadId === "b").length
 try {
   render("suggestion")
@@ -76,7 +76,7 @@ try {
   click(button("发送"))
   assert(bRequests() === 0 && dependencies.threads.get("b").getDraft().text === "Independent B request", "The immediate submit guard must block a newly busy B before subscription delivery")
   notify()
-  assert(button("停止任务") && !button("停止任务").disabled, "B must display its own task even when the selected browser task is A")
+  assert((button("停止响应") ?? button("停止任务")) && !(button("停止响应") ?? button("停止任务")).disabled, "B must display its own task even when the selected browser task is A")
   assert(!fixture.textContent.includes("Agent 正在执行任务") && !fixture.textContent.includes("其他会话正在运行任务。"), "Running tasks must not add a status strip above the composer")
   updateTasks([taskA, { ...taskB, error: "停止未能完成，请重试。" }])
   assert(fixture.querySelector('[role="alert"]')?.textContent.includes("停止未能完成"), "Removing task status must preserve actionable stop errors")

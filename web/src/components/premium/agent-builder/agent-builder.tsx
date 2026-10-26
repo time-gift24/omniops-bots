@@ -1,41 +1,13 @@
-"use client"
-
-import { HugeiconsIcon } from "@hugeicons/react"
-import {
-  BotIcon,
-  Copy01Icon,
-  Settings02Icon,
-} from "@hugeicons-pro/core-stroke-rounded"
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
-import {
-  MarkdownEditor,
-  type MarkdownEditorMode,
-} from "@/components/markdown/markdown-editor"
-import {
-  MarkdownOutline,
-  MarkdownReading,
-  useHeadingScroll,
-} from "@/components/markdown/markdown-reading"
-import {
-  findDocsHeading,
-  type DocsSection,
-} from "@/components/premium/docs-pages/docs-data"
-import { useScrollspy } from "@/components/premium/docs-pages/use-scrollspy"
+import { ArrowUpRight, Check, Copy, SlidersHorizontal, X } from "lucide-react"
+import { Button } from "@/components/arc/button/button"
+import { Input } from "@/components/motion/input"
+import { MarkdownEditor } from "@/components/markdown/markdown-editor"
 import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import { useToast } from "@/components/ui/toast"
-import { Button } from "@/components/motion/button"
-import { DocumentActions } from "@/components/markdown/document-actions"
 import { useSaveShortcut } from "@/hooks/use-save-shortcut"
 import { cn } from "@/lib/utils"
-import "@/components/premium/docs-pages/docs-article.css"
 import type {
   AgentConfiguration,
   AgentResource,
@@ -83,47 +55,28 @@ export function AgentBuilder({
   className,
   readOnly = false,
   showApproval = true,
-  debugLabel,
+  debugLabel = "开始对话",
   resourceManager,
   onCopy,
 }: AgentBuilderProps) {
   const [configuration, setConfiguration] = useState(initialDraft)
   const [saved, setSaved] = useState(initialConfiguration)
   const [saving, setSaving] = useState(false)
-  const toast = useToast()
+  const [hasSaved, setHasSaved] = useState(!initialEditing)
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [editing, setEditing] = useState(
-    !readOnly &&
-      (initialEditing ||
-        JSON.stringify(initialDraft) !== JSON.stringify(initialConfiguration))
-  )
-  const [mode, setMode] = useState<MarkdownEditorMode>("source")
-  const [outline, setOutline] = useState<DocsSection[]>([])
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const editorPreviewRef = useRef<HTMLDivElement>(null)
-  const settingsId = useId()
+  const [notice, setNotice] = useState("")
   const lock = useRef(false)
-  const dirty = JSON.stringify(configuration) !== JSON.stringify(saved)
-  const currentConfiguration = useRef(configuration)
-  const rootRef = useRef<HTMLDivElement>(null)
   const mounted = useRef(false)
-  const showError = (message: string) => {
-    toast.notify({
-      key: "agent-builder-error",
-      title: message,
-      tone: "error",
-    })
-  }
-  const showNotice = (message: string) => {
-    toast.dismissKey("agent-builder-error")
-    toast.notify({
-      key: "agent-builder-notice",
-      title: message,
-      tone: "success",
-    })
-  }
+  const current = useRef(configuration)
+  const root = useRef<HTMLDivElement>(null)
+  const toast = useToast()
+  const dirty = JSON.stringify(configuration) !== JSON.stringify(saved)
+  const capabilities =
+    configuration.mcpServerIds.length +
+    configuration.toolIds.length +
+    configuration.skillIds.length
   useLayoutEffect(() => {
-    currentConfiguration.current = configuration
+    current.current = configuration
   }, [configuration])
   useEffect(() => {
     mounted.current = true
@@ -132,11 +85,11 @@ export function AgentBuilder({
     }
   }, [])
   useEffect(() => {
-    if (!initialEditing || !editing) return
-    rootRef.current
-      ?.querySelector<HTMLInputElement>("aside input")
-      ?.focus({ preventScroll: true })
-  }, [initialEditing, editing])
+    if (initialEditing && !readOnly)
+      root.current
+        ?.querySelector<HTMLInputElement>('input[aria-label="名称"]')
+        ?.focus({ preventScroll: true })
+  }, [initialEditing, readOnly])
   useEffect(() => {
     if (!dirty) return
     const warn = (event: BeforeUnloadEvent) => {
@@ -146,288 +99,219 @@ export function AgentBuilder({
     window.addEventListener("beforeunload", warn)
     return () => window.removeEventListener("beforeunload", warn)
   }, [dirty])
-  useSaveShortcut({
-    active,
-    enabled: editing,
-    onSave: () => {
-      if (!saving) void save()
-    },
-  })
-
-  const updateSections = useCallback(
-    (sections: DocsSection[]) => setOutline(sections),
-    []
-  )
-  const outlineSections = !editing || mode === "preview" ? outline : []
-  const activeSection = useScrollspy(
-    outlineSections.map((section) => section.id),
-    editing ? editorPreviewRef : scrollRef
-  )
-  const resolveScroll = useCallback(
-    () => editorPreviewRef.current ?? scrollRef.current,
-    []
-  )
-  const { scrollToHeading } = useHeadingScroll(
-    resolveScroll,
-    editing ? mode : "reading"
-  )
-  const wide = editing && mode !== "preview"
-
+  useSaveShortcut({ active, enabled: !readOnly, onSave: () => void save() })
   function change(next: AgentConfiguration) {
     setConfiguration(next)
     onDraftChange?.(next)
+    setNotice("")
     toast.dismissKey("agent-builder-error")
-    toast.dismissKey("agent-builder-notice")
   }
-
   async function save() {
-    if (lock.current || readOnly) return
-    if (!dirty && !initialEditing) {
-      setEditing(false)
-      return
-    }
+    if (lock.current || readOnly || (!dirty && hasSaved)) return
     if (!configuration.name.trim() || !configuration.instructions.trim()) {
-      showError("请先填写名称和系统提示词，再保存。")
-      if (!configuration.name.trim()) setSettingsOpen(true)
-      else
-        rootRef.current
-          ?.querySelector<HTMLButtonElement>('[aria-label="编辑视图"] button')
-          ?.click()
-      requestAnimationFrame(() => {
-        rootRef.current
-          ?.querySelector<HTMLInputElement | HTMLTextAreaElement>(
-            !configuration.name.trim()
-              ? "aside input"
-              : 'textarea[aria-label="系统提示词"]'
-          )
-          ?.focus()
+      toast.notify({
+        key: "agent-builder-error",
+        title: "请填写名称和系统提示词。",
+        tone: "error",
       })
+      const field = root.current?.querySelector<
+        HTMLInputElement | HTMLTextAreaElement
+      >(
+        !configuration.name.trim()
+          ? 'input[aria-label="名称"]'
+          : 'textarea[aria-label="系统提示词"]'
+      )
+      if (field?.hidden)
+        root.current
+          ?.querySelector<HTMLButtonElement>(
+            `button[role="tab"][aria-controls="${field.id}"]`
+          )
+          ?.dispatchEvent(
+            new KeyboardEvent("keydown", {
+              key: "Enter",
+              bubbles: true,
+              cancelable: true,
+            })
+          )
+      requestAnimationFrame(() => field?.focus())
       return
     }
     lock.current = true
     setSaving(true)
+    setNotice("")
     toast.dismissKey("agent-builder-error")
-    toast.dismissKey("agent-builder-notice")
     const snapshot = structuredClone(configuration)
     try {
       await onSave(snapshot)
       if (!mounted.current) return
       setSaved(snapshot)
-      if (
-        JSON.stringify(currentConfiguration.current) ===
-        JSON.stringify(snapshot)
-      ) {
-        setEditing(false)
-        showNotice("Agent 已保存")
-      } else showNotice("已保存提交时的版本，新的修改尚未保存")
+      setHasSaved(true)
+      setNotice(
+        JSON.stringify(current.current) === JSON.stringify(snapshot)
+          ? "已保存"
+          : "已保存提交版本，新的修改尚未保存"
+      )
     } catch (cause) {
       if (mounted.current)
-        showError(
-          cause instanceof Error
-            ? `保存失败：${cause.message}`
-            : "保存失败，请重试。"
-        )
+        toast.notify({
+          key: "agent-builder-error",
+          title:
+            cause instanceof Error
+              ? `保存失败：${cause.message}`
+              : "保存失败，请重试。",
+          tone: "error",
+        })
     } finally {
       lock.current = false
       if (mounted.current) setSaving(false)
     }
   }
-
-  const toolbar = (
-    <div className="flex min-h-11 min-w-0 flex-1 items-center gap-2 py-1">
-      <div className="flex min-w-0 flex-1 items-center gap-2">
-        <Breadcrumbs
-          items={[
-            { label: "Agent", onSelect: onBack },
-            {
-              label: (
-                <div className="flex min-w-0 items-center gap-2">
-                  <span
-                    aria-hidden="true"
-                    className="grid size-6 shrink-0 place-items-center rounded-lg bg-accent text-accent-foreground"
-                  >
-                    <HugeiconsIcon icon={BotIcon} size={14} />
-                  </span>
-                  <h1
-                    className="truncate text-sm font-medium"
-                    title={configuration.name.trim() || "未命名 Agent"}
-                  >
-                    {configuration.name.trim() || "未命名 Agent"}
-                  </h1>
-                </div>
-              ),
-            },
-          ]}
-        />
-        <span
-          className="hidden shrink-0 text-xs text-muted-foreground @min-[400px]/agent-header:inline"
-          role="status"
-        >
-          {dirty ? "未保存" : ""}
-        </span>
-      </div>
-    </div>
-  )
-
-  const preview = (
-    <MarkdownReading
-      source={configuration.instructions}
-      onSections={updateSections}
-      empty={
-        <p className="py-12 text-center text-sm text-muted-foreground">
-          暂无系统提示词。
-        </p>
-      }
+  const breadcrumb = (
+    <Breadcrumbs
+      items={[
+        { label: "Agent", onSelect: onBack },
+        { label: configuration.name.trim() || "未命名 Agent" },
+      ]}
     />
   )
-
   return (
-    <div
-      className={cn(
-        "@container/agent flex h-full min-h-0 w-full flex-col overflow-hidden bg-background text-foreground",
-        className
-      )}
-      ref={rootRef}
-    >
+    <div ref={root} className={cn("editor-workspace @container", className)}>
       {active &&
         (toolbarTarget ? (
-          createPortal(toolbar, toolbarTarget)
+          createPortal(breadcrumb, toolbarTarget)
         ) : (
-          <div className="@container/agent-header flex shrink-0 px-3">
-            {toolbar}
-          </div>
+          <div className="flex min-h-11 items-center px-5">{breadcrumb}</div>
         ))}
-      <div className="doc-action-surface m-2 flex min-h-0 flex-1 flex-col gap-2 sm:m-3">
-        {active ? (
-          <DocumentActions
-            readOnly={readOnly}
-            debugLabel={debugLabel}
-            editing={editing}
-            busy={saving}
-            dirty={dirty}
-            onEdit={() => {
-              setEditing(true)
-              setMode("source")
-            }}
-            onSave={() => void save()}
-            onUndo={() => {
-              change(saved)
-              setEditing(false)
-            }}
-            onDebug={onDebug}
+      {active ? (
+        <div className="editor-actionbar" data-slot="editor-actions">
+          <span className="editor-save-state" role="status">
+            {saving
+              ? "正在保存…"
+              : dirty || !hasSaved
+                ? "有未保存的修改"
+                : notice || (readOnly ? "官方 Agent · 只读" : "所有修改已保存")}
+          </span>
+          <Button
+            variant={settingsOpen ? "secondary" : "ghost"}
+            size="sm"
+            aria-label="Agent 能力"
+            aria-expanded={settingsOpen}
+            onClick={() => setSettingsOpen((open) => !open)}
           >
-            {onCopy ? (
+            <SlidersHorizontal size={15} />
+            能力{capabilities ? ` ${capabilities}` : ""}
+          </Button>
+          {onCopy ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              loading={copyBusy}
+              disabled={copyBusy}
+              onClick={onCopy}
+            >
+              <Copy size={14} />
+              复制为本地
+            </Button>
+          ) : null}
+          {!readOnly ? (
+            <>
               <Button
                 variant="ghost"
-                size="icon"
-                className="size-7 text-muted-foreground/70 hover:text-foreground"
-                aria-label="复制为本地"
-                title="复制为本地 Agent"
-                disabled={copyBusy}
-                aria-busy={copyBusy}
-                onClick={onCopy}
+                size="sm"
+                disabled={!dirty || saving}
+                onClick={() => change(saved)}
               >
-                <HugeiconsIcon icon={Copy01Icon} size={16} aria-hidden="true" />
+                撤销修改
               </Button>
-            ) : null}
-            <Button
-              size="icon"
-              variant="ghost"
-              aria-label="Agent 配置"
-              title="Agent 配置"
-              aria-controls={settingsId}
-              aria-expanded={settingsOpen}
-              onClick={() => setSettingsOpen((open) => !open)}
-              className="size-7 text-muted-foreground/70 hover:text-foreground @min-[480px]/agent:hidden"
-            >
-              <HugeiconsIcon
-                icon={Settings02Icon}
-                size={16}
-                aria-hidden="true"
-              />
-            </Button>
-          </DocumentActions>
-        ) : null}
-        <div
-          data-slot="document-body"
-          className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[color:var(--border-strong)] @min-[480px]/agent:flex-row"
-        >
-          <aside
-            id={settingsId}
-            aria-label="Agent 配置"
-            className={cn(
-              "max-h-[48%] min-h-0 shrink-0 overflow-y-auto border-b border-border bg-muted/30 px-4 py-4 @min-[480px]/agent:max-h-none @min-[480px]/agent:w-1/3 @min-[480px]/agent:min-w-64 @min-[480px]/agent:border-r @min-[480px]/agent:border-b-0 @min-[760px]/agent:max-w-[26rem] @min-[760px]/agent:px-6 @min-[760px]/agent:py-6",
-              settingsOpen ? "block" : "hidden @min-[480px]/agent:block"
-            )}
-          >
-            <AgentConfigurationPanel
-              disabled={false}
-              readOnly={readOnly || !editing}
-              showApproval={showApproval}
-              mcpServers={mcpServers}
-              onChange={change}
-              tools={tools}
-              skills={skills}
-              value={configuration}
-            />
-            {resourceManager}
-          </aside>
-          <div className="flex min-h-0 min-w-0 flex-1">
-            <div
-              ref={scrollRef}
-              className={cn(
-                "doc-reading-scroll min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain",
-                editing && "overflow-hidden"
-              )}
-              tabIndex={0}
-              aria-label="系统提示词"
-            >
-              <div
-                className={cn("doc-reading-layout", wide && "doc-reading-wide")}
-                style={
-                  editing ? { height: "100%", maxWidth: "none" } : undefined
-                }
+              <Button
+                size="sm"
+                loading={saving}
+                disabled={saving || (!dirty && hasSaved)}
+                onClick={() => void save()}
               >
-                <article
-                  className={cn(
-                    "doc-article min-w-0 pt-2!",
-                    editing && "flex h-full min-h-0 flex-col p-3!"
-                  )}
-                >
-                  {editing ? (
-                    <MarkdownEditor
-                      title="系统提示词"
-                      ariaLabel="系统提示词"
-                      className="min-h-0 min-w-0 flex-1"
-                      value={configuration.instructions}
-                      maxLength={12000}
-                      placeholder="描述这个 Agent 的身份、职责、工作方式和边界。"
-                      autoFocus
-                      preview={preview}
-                      previewScrollRef={editorPreviewRef}
-                      onModeChange={setMode}
-                      onChange={(instructions) =>
-                        change({ ...configuration, instructions })
-                      }
-                    />
-                  ) : (
-                    preview
-                  )}
-                </article>
-                {!wide && outlineSections.length > 0 ? (
-                  <MarkdownOutline
-                    sections={outlineSections}
-                    active={activeSection ?? ""}
-                    onSelect={(id) => {
-                      const node = findDocsHeading(resolveScroll(), id)
-                      if (node) scrollToHeading(node)
-                    }}
-                  />
-                ) : null}
-              </div>
-            </div>
-          </div>
+                <Check size={15} />
+                保存 Agent
+              </Button>
+            </>
+          ) : null}
+          {onDebug ? (
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={dirty || !hasSaved || saving}
+              onClick={onDebug}
+            >
+              {debugLabel}
+              <ArrowUpRight size={14} />
+            </Button>
+          ) : null}
         </div>
+      ) : null}
+      <div className="editor-content">
+        <div className="agent-authoring">
+          <div className="agent-identity">
+            <Input
+              label="名称"
+              aria-label="名称"
+              value={configuration.name}
+              maxLength={80}
+              readOnly={readOnly}
+              placeholder="Agent 名称"
+              onChange={(name) => change({ ...configuration, name })}
+            />
+            <Input
+              label="简介"
+              aria-label="简介"
+              value={configuration.description}
+              maxLength={160}
+              readOnly={readOnly}
+              placeholder="一句话说明它负责什么"
+              onChange={(description) =>
+                change({ ...configuration, description })
+              }
+            />
+          </div>
+          <MarkdownEditor
+            title="系统提示词"
+            ariaLabel="系统提示词"
+            value={configuration.instructions}
+            readOnly={readOnly}
+            maxLength={12000}
+            placeholder="描述这个 Agent 的身份、职责、工作方式和边界。"
+            onChange={(instructions) =>
+              change({ ...configuration, instructions })
+            }
+          />
+        </div>
+        <aside
+          aria-label="Agent 配置"
+          className="agent-capabilities"
+          hidden={!settingsOpen}
+        >
+          <div className="agent-capabilities-header">
+            能力配置
+            <Button
+              variant="ghost"
+              size="sm"
+              className="editor-icon"
+              aria-label="关闭能力配置"
+              onClick={() => setSettingsOpen(false)}
+            >
+              <X size={16} />
+            </Button>
+          </div>
+          <AgentConfigurationPanel
+            disabled={false}
+            readOnly={readOnly}
+            showApproval={showApproval}
+            mcpServers={mcpServers}
+            tools={tools}
+            skills={skills}
+            value={configuration}
+            onChange={change}
+          />
+          {resourceManager}
+        </aside>
       </div>
     </div>
   )

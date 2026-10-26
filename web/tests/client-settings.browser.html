@@ -22,7 +22,12 @@
     assert(condition(), message)
   }
   const visible = element => element && element.getClientRects().length > 0 && !element.closest('[inert], [hidden], [aria-hidden="true"]')
-  const button = (name, scope = document) => [...scope.querySelectorAll("button")].find(element => visible(element) && (element.getAttribute("aria-label") === name || element.textContent.trim() === name))
+  const controlText = element => {
+    const copy = element.cloneNode(true)
+    copy.querySelectorAll('[aria-hidden="true"], [hidden]').forEach(node => node.remove())
+    return copy.textContent.trim()
+  }
+  const button = (name, scope = document) => [...scope.querySelectorAll("button")].find(element => visible(element) && (element.getAttribute("aria-label") === name || controlText(element) === name))
   const click = element => { assert(visible(element) && !element.disabled, "Expected enabled visible control"); flushSync(() => element.click()) }
   const field = () => fixture.querySelector('input[type="number"]')
   const setValue = value => flushSync(() => {
@@ -35,13 +40,12 @@
   const sectionLink = id => navigation()?.querySelector(`a[href="#client-settings-${id}"]`)
   const section = id => settingsPage()?.querySelector(`[data-settings-section="${id}"]`)
   const closeNavigation = async () => {
-    if (mobile && drawer()?.getAttribute("aria-hidden") === "false") {
-      click(button("Close sidebar"))
-      await until(() => drawer()?.getAttribute("aria-hidden") === "true", "Mobile navigation did not close")
-    }
+    if (!mobile) return;
+    if (document.querySelector('[data-mobile="true"][data-state="open"]')) click(button("Close sidebar"));
+    await until(() => !document.querySelector('[data-mobile="true"][data-state="open"]') && visible(fixture.querySelector('nav[aria-label="工作区导航区域"]')), "Mobile navigation must release the page");
   }
   const revealNavigation = async () => {
-    if (mobile && drawer()?.getAttribute("aria-hidden") !== "false") click(button("展开导航"))
+    if (mobile && !document.querySelector('[data-mobile="true"][data-state="open"]')) click(button("展开导航"))
     await until(() => visible(navigation()), "Settings section navigation must be reachable")
   }
   const expectCurrentSection = async id => {
@@ -118,18 +122,15 @@
       assert(breadcrumb?.textContent.includes("设置") && breadcrumb?.querySelector('[aria-current="page"] > span:last-child')?.textContent === "偏好设置", "Settings must use the shared breadcrumb")
       assert(field().labels[0]?.textContent === "同时运行的任务数", "Input needs an accessible visible label")
       await revealNavigation()
-      for (const [id, label] of [["theme", "主题"], ["palette", "配色"], ["tasks", "Agent 运行"]]) {
+      for (const [id, label] of [["theme", "主题"], ["tasks", "Agent 运行"]]) {
         assert(sectionLink(id)?.textContent.trim() === label && section(id)?.id === `client-settings-${id}`, `${label} must link to its settings section`)
       }
       await closeNavigation()
       await expectCurrentSection("theme")
-      await navigateTo("palette")
       await navigateTo("tasks")
-      assert(settingsPage().scrollTop > 0, "Section links must scroll the settings content")
-      settingsPage().scrollTo({ top: 0, behavior: "instant" })
-      await expectCurrentSection("theme")
-      settingsPage().scrollTo({ top: settingsPage().scrollHeight, behavior: "instant" })
-      await expectCurrentSection("tasks")
+      assert([...settingsPage().querySelectorAll('[data-settings-section]')].filter(visible).length === 1 && visible(section("tasks")), "Only the selected settings section must be visible");
+      settingsPage().scrollTo({ top: settingsPage().scrollHeight, behavior: "instant" });
+      await expectCurrentSection("tasks");
       await navigateTo("theme")
       for (const theme of ["dark", "light", "system"]) {
         const radio = settingsPage().querySelector(`input[name="settings-theme"][value="${theme}"]`)
@@ -138,13 +139,7 @@
         await until(() => radio.checked && document.documentElement.classList.contains(resolved) && document.documentElement.style.colorScheme === resolved, `${theme} must immediately update the visible theme`)
         assert(await dependencies.preferences.readTheme() === theme, "Theme selection must use the existing preferences adapter")
       }
-      await navigateTo("palette")
-      for (const palette of ["claude", "official"]) {
-        const radio = settingsPage().querySelector(`input[name="settings-palette"][value="${palette}"]`)
-        click(radio)
-        await until(() => radio.checked && document.documentElement.dataset.palette === palette, `${palette} must immediately update the visible palette`)
-        assert(await dependencies.preferences.readPalette() === palette, "Palette selection must use the existing preferences adapter")
-      }
+      assert(!section("palette") && !settingsPage().querySelector('[name="settings-palette"]'), "Removed palettes must not leave a redundant settings section");
       assert(saves.length === 0, "Appearance changes must not submit task settings")
       await navigateTo("tasks")
       for (const invalid of ["", "0", "65", "1.5"]) {
@@ -172,6 +167,7 @@
       click(button("工作区", fixture.querySelector('nav[aria-label="工作区导航区域"]')))
       failRead = true
       await openSettings()
+      await navigateTo("tasks")
       await until(() => button("重试", fixture.querySelector('[data-slot="client-settings"]')), "Read failure must be retryable")
       assert(!field() && saved === 8, "Read failure must not reset the saved limit")
       failRead = false
@@ -189,7 +185,7 @@
       assert(settingsPage().scrollWidth <= settingsPage().clientWidth + 1, "Settings content must not overflow horizontally")
       assert(fixture.textContent.includes("1–64 个") && fixture.textContent.includes("例如设为 4，可在 4 个会话中同时运行 Agent，包含浏览器任务。"), "Input limits and concurrency meaning must be clear")
     }
-    result.textContent = `PASS ${viewport ?? "desktop + 390px"}: section links and scroll tracking, immediate theme/palette preferences, loading, default 4, validation, duplicate save guard, failed save retains draft/value, save, reopen, read retry, active-run lowering, responsive settings and breadcrumb`
+    result.textContent = `PASS ${viewport ?? "desktop + 390px"}: focused section navigation and preserved drafts, immediate theme preferences, loading, default 4, validation, duplicate save guard, failed save retains draft/value, save, reopen, read retry, active-run lowering, responsive settings and breadcrumb`
     result.dataset.passed = "true"
   } catch (error) {
     result.textContent = `FAIL ${viewport ?? "all"}: ${error.stack}`

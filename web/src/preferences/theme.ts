@@ -1,5 +1,5 @@
 export type Theme = "dark" | "light" | "system"
-export type Palette = "official" | "claude"
+export type Palette = "official"
 
 /** null 表示删除或无效值；清空时同时通知两项。 */
 export type ThemePreferenceChange = {
@@ -26,7 +26,7 @@ export function isTheme(value: string | null): value is Theme {
 }
 
 export function isPalette(value: string | null): value is Palette {
-  return value === "official" || value === "claude"
+  return value === "official"
 }
 
 /** 两项独立回退，首次挂载前读取，避免先渲染默认配色。 */
@@ -44,8 +44,8 @@ export async function loadInitialThemePreferences(
         ? (theme.value ?? defaultTheme)
         : defaultTheme,
     palette:
-      palette.status === "fulfilled"
-        ? (palette.value ?? "official")
+      palette.status === "fulfilled" && isPalette(palette.value)
+        ? palette.value
         : "official",
   }
 }

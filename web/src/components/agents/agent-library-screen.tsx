@@ -1,6 +1,7 @@
 import { useRef, useState } from "react"
 import { Bot, Copy, Search, X } from "lucide-react"
 import type { AgentEntry } from "@/agents/source"
+import { Badge } from "@/components/arc/badge/badge"
 import { Button } from "@/components/motion/button"
 import { Input } from "@/components/motion/input"
 import { cn } from "@/lib/utils"
@@ -83,21 +84,23 @@ export function AgentLibraryScreen({
               rightIcon: "[&_button]:size-9 pointer-coarse:[&_button]:size-11",
             }}
             leftIcon={<Search className="size-4" aria-hidden="true" />}
-            rightIcon={query ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                aria-label="清除 Agent 搜索"
-                className="touch-manipulation rounded-full transition-colors pointer-coarse:size-11"
-                onClick={() => {
-                  setQuery("")
-                  search.current?.focus()
-                }}
-              >
-                <X aria-hidden="true" />
-              </Button>
-            ) : null}
+            rightIcon={
+              query ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="清除 Agent 搜索"
+                  className="touch-manipulation rounded-full transition-colors pointer-coarse:size-11"
+                  onClick={() => {
+                    setQuery("")
+                    search.current?.focus()
+                  }}
+                >
+                  <X aria-hidden="true" />
+                </Button>
+              ) : null
+            }
           />
         </div>
         <p className="sr-only" role="status">
@@ -156,9 +159,9 @@ export function AgentLibraryScreen({
                         </span>
                       </Button>
                       <div className="text-xs text-muted-foreground">
-                        <span className="inline-flex rounded-full border border-border px-2 py-1">
+                        <Badge size="sm">
                           {agent.source === "official" ? "官方" : "本地"}
-                        </span>
+                        </Badge>
                         {dirty ? (
                           <span className="mt-1.5 block text-primary">
                             未保存

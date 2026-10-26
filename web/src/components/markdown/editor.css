@@ -1,0 +1,412 @@
+.editor-workspace {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--background);
+}
+.editor-actionbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 24px;
+  min-height: 60px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.editor-actionbar .editor-save-state {
+  margin-right: auto;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.editor-actionbar button {
+  white-space: nowrap;
+}
+.editor-detail {
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+.editor-icon {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  padding: 0 !important;
+}
+.editor-icon svg {
+  flex-shrink: 0;
+}
+.editor-empty {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--muted-foreground);
+  font-size: 14px;
+}
+.editor-content {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+}
+.agent-authoring {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.agent-identity {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(200px, 2fr);
+  gap: 20px;
+  width: 100%;
+  max-width: 1000px;
+  margin-inline: auto;
+  padding: 24px 32px;
+  flex-shrink: 0;
+}
+.agent-identity input {
+  height: 40px;
+}
+.agent-capabilities {
+  width: 320px;
+  max-width: 40%;
+  flex-shrink: 0;
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 24px;
+  background: var(--surface);
+}
+.agent-capabilities[hidden] {
+  display: none;
+}
+.agent-capabilities-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+.markdown-workspace {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+.markdown-workspace-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 32px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+}
+.markdown-workspace-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 500;
+}
+.markdown-formatting {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 7px 26px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.markdown-formatting[hidden] {
+  display: none;
+}
+.markdown-canvas {
+  position: relative;
+  min-height: 0;
+  flex: 1;
+  display: flex;
+}
+.markdown-source {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  resize: none;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--foreground);
+  caret-color: var(--primary);
+  font: 13px/1.95 var(--font-mono);
+  tab-size: 2;
+  padding: 28px max(32px, calc((100% - 936px) / 2));
+  outline: none;
+}
+.markdown-source[hidden] {
+  display: none;
+}
+.markdown-source:focus-visible,
+.markdown-preview:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--ring);
+}
+.markdown-source::placeholder {
+  color: var(--muted-foreground);
+}
+.markdown-source::selection,
+.markdown-preview ::selection {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+.markdown-source:disabled {
+  opacity: 0.6;
+}
+.markdown-preview {
+  width: 100%;
+  min-width: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 28px max(32px, calc((100% - 800px) / 2));
+  outline: none;
+}
+.markdown-preview .chat-markdown {
+  font-size: 14px;
+  line-height: 1.9;
+  overflow-wrap: anywhere;
+}
+.markdown-status {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 32px;
+  border-top: 1px solid var(--border);
+  color: var(--muted-foreground);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.skill-editor-files {
+  width: 224px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  background: var(--surface);
+  overflow: auto;
+}
+.skill-editor-files[hidden] {
+  display: none;
+}
+.skill-file-navigation {
+  padding: 12px;
+}
+.skill-file-navigation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 4px 14px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+.skill-file-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.skill-file-list .skill-file-list {
+  margin-left: 12px;
+  padding-left: 4px;
+  border-left: 1px solid var(--border);
+}
+.skill-file-row {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  border-radius: 8px;
+  gap: 2px;
+}
+.skill-file-row[data-active="true"] {
+  background: var(--accent);
+}
+.skill-file-open {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+  padding: 9px 8px;
+  font-size: 13px;
+  color: var(--muted-foreground);
+  border-radius: 8px;
+  text-align: left;
+}
+.skill-file-row[data-active="true"] .skill-file-open {
+  color: var(--foreground);
+  font-weight: 500;
+}
+.skill-file-open > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.skill-file-open svg {
+  flex-shrink: 0;
+}
+.skill-file-open:hover {
+  color: var(--foreground);
+  background: var(--muted);
+}
+.skill-file-open:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+.skill-file-folder {
+  display: flex;
+  align-items: center;
+  padding: 0;
+  list-style: none;
+  cursor: pointer;
+}
+.skill-file-folder::-webkit-details-marker {
+  display: none;
+}
+.skill-file-folder > .skill-file-open {
+  flex: 1;
+}
+.skill-file-folder .folder-chevron {
+  transition: transform 150ms ease;
+}
+details[open] > .skill-file-folder .folder-chevron {
+  transform: rotate(90deg);
+}
+.skill-file-modified {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--primary);
+  flex-shrink: 0;
+}
+.skill-file-menu {
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+}
+.skill-files-toggle {
+  display: none;
+}
+.editor-dialog-form {
+  display: grid;
+  gap: 20px;
+}
+.editor-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+@container (max-width: 700px) {
+  .agent-identity {
+    gap: 14px;
+    padding: 20px;
+    grid-template-columns: 1fr;
+  }
+  .agent-capabilities {
+    max-width: none;
+    width: 280px;
+    padding: 20px;
+  }
+  .editor-actionbar {
+    padding: 10px 16px;
+    gap: 6px;
+  }
+  .editor-actionbar .editor-save-state {
+    flex: 1 1 100%;
+  }
+  .markdown-workspace-heading {
+    padding: 10px 20px;
+  }
+  .markdown-formatting {
+    padding-inline: 14px;
+  }
+  .markdown-source,
+  .markdown-preview {
+    padding: 20px;
+  }
+  .markdown-status {
+    padding-inline: 20px;
+  }
+  .skill-editor-files {
+    width: 190px;
+  }
+}
+@container (max-width: 500px) {
+  .editor-content:has(.agent-capabilities:not([hidden])) {
+    flex-direction: column-reverse;
+  }
+  .agent-capabilities {
+    width: 100%;
+    border-left: 0;
+    border-bottom: 1px solid var(--border);
+    max-height: 50%;
+  }
+  .skill-files-toggle {
+    display: inline-flex;
+  }
+  .skill-editor-files {
+    width: 100%;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+    max-height: 42%;
+  }
+  .skill-editor-content {
+    flex-direction: column;
+  }
+  .skill-editor-files[data-mobile-open="false"] {
+    display: none;
+  }
+  .agent-identity {
+    padding: 16px 20px;
+    gap: 12px;
+  }
+  .editor-actionbar .editor-save-state {
+    width: 100%;
+    flex-basis: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .folder-chevron {
+    transition: none !important;
+  }
+}
+
+.skill-file-row:has(> details) {
+  position: relative;
+  align-items: flex-start;
+}
+.skill-file-row:has(> details) > .skill-file-menu {
+  position: absolute;
+  right: 0;
+  top: 1px;
+}
+.skill-file-folder {
+  padding-right: 32px;
+}
+
+.markdown-source,
+.markdown-preview,
+.skill-editor-files,
+.agent-capabilities {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+@container (max-width: 500px) {
+  [data-slot="skill-screen"] > .editor-actionbar .editor-save-state {
+    width: 100%;
+    flex: 1 1 100%;
+    order: -1;
+  }
+}

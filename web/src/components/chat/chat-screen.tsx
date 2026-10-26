@@ -1,21 +1,18 @@
 "use client"
 
 import * as React from "react"
-import { LayoutGroup, motion, useReducedMotion } from "motion/react"
 import { Folder01Icon } from "@hugeicons-pro/core-stroke-rounded"
 import { HugeiconsIcon } from "@hugeicons/react"
 
 import { useAppDependencies } from "@/app/dependencies"
 import { threadTask } from "@/desktop/runtime"
 import { useThreadStore } from "@/chat/react.ts"
+import { EmptyWorkspace } from "@/components/workspace/empty-workspace"
 import { ChatComposer } from "@/components/chat/chat-composer"
 import {
   ChatThreadLoading,
   preloadChatThread,
 } from "@/components/chat/chat-thread-loading"
-import { Button } from "@/components/motion/button"
-import { TooltipProvider } from "@/components/ui/tooltip"
-import { SPRING_PANEL } from "@/lib/ease"
 import type { ModelChoice } from "@/models/source"
 import { providerModelLabel } from "@/providers/source"
 
@@ -85,14 +82,6 @@ export function ChatScreen({
         },
       ]
     : models
-  const editMessage = React.useCallback(
-    (text: string) => {
-      store.updateDraft({ text, attachments: [] })
-    },
-    [store]
-  )
-  const reduce = useReducedMotion()
-
   const composer = (
     <ChatComposer
       store={store}
@@ -101,93 +90,49 @@ export function ChatScreen({
       className="mx-auto w-full"
     />
   )
-
+  const available = sessionModels.some((choice) =>
+    draftModel ? choice.id === draftModel : choice.isDefault
+  )
   return (
-    <TooltipProvider>
-      <LayoutGroup id={threadId}>
-        <div className="flex h-full min-h-0 flex-col">
-          {empty ? (
-            <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4 sm:px-8">
-              <motion.div
-                initial={reduce ? false : { opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={reduce ? { duration: 0 } : SPRING_PANEL}
-                className="flex w-full max-w-[736px] flex-col items-center gap-6"
-              >
-                <motion.div
-                  layoutId={reduce ? undefined : "composer"}
-                  className="w-full"
-                  onInputCapture={preloadChatThread}
-                  onPointerEnter={preloadChatThread}
-                >
-                  {composer}
-                </motion.div>
-                <div className="flex flex-wrap justify-center gap-2">
-                  {suggestions.map((suggestion) => (
-                    <Button
-                      key={suggestion}
-                      disabled={
-                        !sessionModels.some((choice) =>
-                          draftModel
-                            ? choice.id === draftModel
-                            : choice.isDefault
-                        ) || Boolean(desktopTask)
-                      }
-                      variant="outline"
-                      size="sm"
-                      className="rounded-full"
-                      onClick={() => {
-                        if (threadTask(desktop.getState(), threadId)) return
-                        preloadChatThread()
-                        const selected = draftModel
-                          ? sessionModels.find(
-                              (choice) => choice.id === draftModel
-                            )?.id
-                          : sessionModels.find((choice) => choice.isDefault)?.id
-                        if (!selected) return
-                        const accepted = store.send(
-                          suggestion,
-                          undefined,
-                          selected
-                        )
-                        if (accepted) store.updateDraft({ model: selected })
-                      }}
-                    >
-                      {suggestion}
-                    </Button>
-                  ))}
-                </div>
-              </motion.div>
-            </div>
-          ) : (
-            <>
-              {workspaceName ? (
-                <div className="flex shrink-0 items-center gap-2 px-4 py-3 text-sm text-muted-foreground sm:px-8">
-                  <HugeiconsIcon
-                    icon={Folder01Icon}
-                    className="size-4 shrink-0"
-                    aria-hidden="true"
-                  />
-                  <span className="truncate">{workspaceName}</span>
-                </div>
-              ) : null}
-              <div className="min-h-0 flex-1">
-                <ChatThreadLoading store={store} onEditMessage={editMessage} />
-              </div>
-              <div className="shrink-0 px-4 pb-4 sm:px-8 sm:pb-6">
-                <motion.div
-                  layoutId={reduce ? undefined : "composer"}
-                  className="mx-auto max-w-[736px]"
-                  onInputCapture={preloadChatThread}
-                  onPointerEnter={preloadChatThread}
-                >
-                  {composer}
-                </motion.div>
-              </div>
-            </>
-          )}
+    <div className="flex h-full min-h-0 flex-col">
+      {empty ? (
+        <div className="min-h-0 flex-1 overflow-auto">
+          <EmptyWorkspace
+            composer={composer}
+            suggestions={suggestions}
+            disabled={!available || Boolean(desktopTask)}
+            onPrompt={(suggestion) => {
+              if (threadTask(desktop.getState(), threadId)) return
+              const selected = draftModel
+                ? sessionModels.find((x) => x.id === draftModel)?.id
+                : sessionModels.find((x) => x.isDefault)?.id
+              if (!selected) return
+              preloadChatThread()
+              if (store.send(suggestion, undefined, selected))
+                store.updateDraft({ model: selected })
+            }}
+          />
         </div>
-      </LayoutGroup>
-    </TooltipProvider>
+      ) : (
+        <>
+          {workspaceName ? (
+            <div className="flex shrink-0 items-center gap-2 px-4 py-3 text-sm text-muted-foreground sm:px-8">
+              <HugeiconsIcon
+                icon={Folder01Icon}
+                className="size-4 shrink-0"
+                aria-hidden="true"
+              />
+              <span className="truncate">{workspaceName}</span>
+            </div>
+          ) : null}
+          <div className="min-h-0 flex-1">
+            <ChatThreadLoading store={store} />
+          </div>
+          <div className="shrink-0 px-4 pb-4 sm:px-6">
+            <div className="mx-auto max-w-[48rem]">{composer}</div>
+          </div>
+        </>
+      )}
+    </div>
   )
 }

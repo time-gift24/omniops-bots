@@ -34,7 +34,7 @@ test("主题预读的两项失败独立回退，访问被拒绝不阻止订阅�
     const preferences = create("demo", () => ({ ...storage, getItem: key => key === blocked ? fail() : storage.getItem(key) }))
     assert.deepEqual(await loadInitialThemePreferences(preferences, "light"), {
       theme: blocked === "theme" ? "light" : "dark",
-      palette: blocked === "omniops-bots-palette" ? "official" : "claude",
+      palette: "official",
     })
   }
   const denied = create("demo", fail)
@@ -50,14 +50,14 @@ test("主题与配色隔离后端身份，只有demo读取legacy", async t => {
   const demo = create()
   const web = create("web")
   const desktop = create("desktop")
-  assert.deepEqual(await loadInitialThemePreferences(demo), { theme: "dark", palette: "claude" })
+  assert.deepEqual(await loadInitialThemePreferences(demo), { theme: "dark", palette: "official" })
   assert.deepEqual(await loadInitialThemePreferences(web), { theme: "system", palette: "official" })
   await web.writeTheme("light")
-  await web.writePalette("claude")
+  await web.writePalette("official")
   await desktop.writeTheme("dark")
-  assert.deepEqual(await loadInitialThemePreferences(web), { theme: "light", palette: "claude" })
+  assert.deepEqual(await loadInitialThemePreferences(web), { theme: "light", palette: "official" })
   assert.deepEqual(await loadInitialThemePreferences(desktop), { theme: "dark", palette: "official" })
-  assert.deepEqual(await loadInitialThemePreferences(demo), { theme: "dark", palette: "claude" })
+  assert.deepEqual(await loadInitialThemePreferences(demo), { theme: "dark", palette: "official" })
 })
 
 test("浏览器storage事件转换为同身份平台无关通知，含无效值、删除和清空", async t => {
@@ -65,7 +65,7 @@ test("浏览器storage事件转换为同身份平台无关通知，含无效值�
   const changes = []
   const preferences = create("web")
   await preferences.writeTheme("dark")
-  await preferences.writePalette("claude")
+  await preferences.writePalette("official")
   const themeKey = [...values.keys()].find(key => key.endsWith(":theme"))
   const paletteKey = [...values.keys()].find(key => key.endsWith(":omniops-bots-palette"))
   const stop = preferences.subscribe(change => changes.push(change))
@@ -73,10 +73,19 @@ test("浏览器storage事件转换为同身份平台无关通知，含无效值�
   notify(themeKey, "light", {})
   notify(themeKey, "light")
   notify(paletteKey, "official")
+  notify(paletteKey, "claude")
   notify(themeKey, "invalid")
   notify(paletteKey, null)
   notify(null, null)
-  assert.deepEqual(changes, [{ theme: "light" }, { palette: "official" }, { theme: null }, { palette: null }, { theme: null, palette: null }])
+  assert.deepEqual(changes, [{ theme: "light" }, { palette: "official" }, { palette: null }, { theme: null }, { palette: null }, { theme: null, palette: null }])
   stop()
   assert.equal(listeners.size, 0)
+})
+
+test("已删除的 Claude 配色在启动时回退到默认风格", async t => {
+  const { create, values, loadInitialThemePreferences } = await setup(t)
+  values.set("theme", "dark")
+  values.set("omniops-bots-palette", "claude")
+  assert.equal(await create().readPalette(), null)
+  assert.deepEqual(await loadInitialThemePreferences(create()), { theme: "dark", palette: "official" })
 })

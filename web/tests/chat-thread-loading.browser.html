@@ -76,7 +76,7 @@
     }
     type("next draft");
     assert(store.getDraft().text === "next draft" && editor().textContent === "next draft", "Loading or failure must leave the composer usable");
-    await until(() => finish && button("停止生成"), "Loading or failure must preserve streaming and Stop");
+    await until(() => finish && button("停止响应"), "Loading or failure must preserve streaming and Stop");
     assert(modelButton().disabled, "Streaming must keep model selection disabled");
     finish();
     await until(() => store.getState().status === "idle", "Loading must not stop consumption of the reply");
@@ -87,9 +87,9 @@
     if (mode === "failure") {
       assert(fixture.querySelector('[role="alert"]').textContent.includes("复制需要保留的草稿"), "Failure must explain how to preserve the draft before refreshing");
       click(button("发送"));
-      await until(() => finish && button("停止生成"), "A failed transcript must allow a new request");
+      await until(() => finish && button("停止响应"), "A failed transcript must allow a new request");
       type("draft after stop");
-      click(button("停止生成"));
+      click(button("停止响应"));
       assert(store.getState().status === "idle" && aborts === 1 && requests === 2 && editor().textContent === "draft after stop" && store.getDraft().text === "draft after stop", "Stop must remain usable after a transcript load failure without clearing the draft");
     }
     result.dataset.passed = "true";

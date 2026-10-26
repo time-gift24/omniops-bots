@@ -9,7 +9,7 @@
   import { createRoot } from "react-dom/client";
   import { flushSync } from "react-dom";
   import "/src/index.css";
-  import { SidebarRail } from "/src/components/premium/sidebar-blocks/sidebar-rail.tsx";
+  import { SidebarRail } from "/src/components/workspace/navigation.tsx";
   import { AnimatedModal, AnimatedModalTitle } from "/src/components/motion/animated-modal.tsx";
   import { CreditsModelSelector } from "/src/components/premium/agent-chat-input/credits-model-selector.tsx";
 
@@ -31,7 +31,7 @@
   const searchInput = () => document.querySelector('[data-slot=command-input]');
   const toggle = () => document.querySelector('button[aria-label="展开导航"], button[aria-label="收起导航"]');
   const drawer = () => document.querySelector('[data-mobile="true"]');
-  const modelTrigger = () => document.querySelector('button[aria-label^="Select model:"]');
+  const modelTrigger = () => document.querySelector('button[aria-label^="选择模型:"]');
   const models = () => [...document.querySelectorAll('[role="menuitemradio"]')];
   const passed = [];
 
@@ -73,7 +73,7 @@
       const root = createRoot(document.querySelector("#fixture"));
       flushSync(() => root.render(React.createElement(Fixture)));
       const mobile = viewport === "mobile";
-      await until(() => Boolean(search()) && Boolean(drawer()) === mobile, "Sidebar did not mount at requested viewport");
+      await until(() => Boolean(toggle()) && Boolean(drawer()) === mobile && (mobile || Boolean(search())), "Sidebar did not mount at requested viewport");
 
       if (mobile) {
         toggle().focus();
@@ -84,6 +84,7 @@
       search().focus();
       click(search());
       await until(() => document.activeElement === searchInput(), "Search did not focus the input");
+      await wait(30);
       key("Escape");
       await until(() => !dialog() && document.activeElement === search(), "Search dismissal did not restore its opener");
       passed.push("search Escape restores opener");
@@ -104,15 +105,18 @@
       origin.focus();
       key("k", { ctrlKey: true });
       await until(() => document.activeElement === searchInput(), "Keyboard shortcut did not open search");
+      await wait(30);
       key("Escape");
       await until(() => !dialog() && document.activeElement === origin, "Shortcut dismissal did not restore keyboard origin");
       passed.push("keyboard shortcut preserves input focus");
 
       key("k", { ctrlKey: true });
       await until(() => document.activeElement === searchInput(), "Rapid keyboard search did not open");
+      await wait(30);
       key("Escape");
       key("k", { ctrlKey: true });
       await until(() => document.activeElement === searchInput(), "Rapid keyboard search did not reopen");
+      await wait(30);
       key("Escape");
       await until(() => !dialog() && document.activeElement === origin, "Rapid keyboard reopen must preserve the original input opener");
 
@@ -123,28 +127,32 @@
         search().focus();
         click(search());
         await until(() => document.activeElement === searchInput(), "Peek search did not open");
-        key("Escape");
+        await wait(30);
+      key("Escape");
         await until(() => !dialog() && document.activeElement === toggle(), "Closed desktop peek did not restore navigation toggle");
         passed.push("closed desktop peek uses visible fallback");
       }
 
       modelTrigger().focus();
-      click(modelTrigger());
+      flushSync(() => modelTrigger().dispatchEvent(new KeyboardEvent("keydown", {key:"Enter",bubbles:true,cancelable:true})));
       await until(() => models().length === 2 && document.activeElement === models()[0], "Model popover did not focus selected model");
+      await wait(30);
       key("Escape");
       await wait(20);
-      click(modelTrigger());
+      flushSync(() => modelTrigger().dispatchEvent(new KeyboardEvent("keydown", {key:"Enter",bubbles:true,cancelable:true})));
       await until(() => models().length === 2 && document.activeElement === models()[0], "Rapid model reopen did not restore selected-item focus");
       models()[1].focus();
       click(models()[1]);
       await until(() => !models().length && document.activeElement === modelTrigger(), "Model selection did not restore trigger focus");
       assert(modelTrigger().textContent.includes("Sonnet"), "Model selection did not update the selected model");
-      click(modelTrigger());
+      flushSync(() => modelTrigger().dispatchEvent(new KeyboardEvent("keydown", {key:"Enter",bubbles:true,cancelable:true})));
       await until(() => models().length === 2 && document.activeElement === models()[1], "Reopened popover did not focus new selection");
       key("k", { ctrlKey: true });
       await until(() => document.activeElement === searchInput(), "Search did not open above model popover");
+      await wait(30);
       key("Escape");
       await until(() => !dialog() && models().length === 2 && document.activeElement === models()[1], "Search Escape also dismissed the underlying model popover");
+      await wait(30);
       key("Escape");
       await until(() => !models().length && document.activeElement === modelTrigger(), "Model Escape did not restore trigger focus");
       passed.push("model open, select, reopen and Escape preserve focus");
@@ -159,6 +167,7 @@
       assert(!dialog() && document.activeElement.textContent === "Close preview", "Navigation shortcut stole focus from a modal");
       assert(document.querySelector('[data-slot="sidebar-wrapper"]').dataset.state === sidebarState, "Sidebar shortcut changed the background while a modal was open");
       assert(!mobile || drawer().getAttribute("aria-hidden") === "true", "Sidebar shortcut opened a drawer behind the modal");
+      await wait(30);
       key("Escape");
       await until(() => document.activeElement === preview, "Closing preview did not restore its opener");
       passed.push("rapid reopen, nested Escape and modal shortcut isolation");

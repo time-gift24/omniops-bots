@@ -74,7 +74,7 @@
     assert(first.getDraft().text === "first request" && action("选择模型: Sonnet 5") && action("移除附件 notes.txt"), "Draft text, model and attachment must stay subscribed");
     click(action("发送"));
     const gateway = gateways.get("subscriptions-first");
-    assert(first.getState().status === "submitted" && action("停止生成") && fixture.querySelector('[aria-label="本会话固定模型"]'), "Submitting must switch the screen, fix the model and show Stop");
+    assert(first.getState().status === "submitted" && action("停止响应") && fixture.querySelector('[aria-label="本会话固定模型"]'), "Submitting must switch the screen, fix the model and show Stop");
     assert(gateway.requests[0].model === "sonnet-5" && gateway.requests[0].messages[0].attachments[0].name === "notes.txt", "Submit must use the latest model and attachments");
     assert(first.getDraft().text === "" && first.getDraft().attachments.length === 0, "Accepted submission must clear the submitted draft");
     assert(!action("选择模型: Sonnet 5") && fixture.querySelector('[aria-label="本会话固定模型"]').textContent === "Sonnet 5" && fixture.querySelector('input[type="file"]').disabled, "Submitted state must fix the model and disable attachment changes");
@@ -128,8 +128,8 @@
     await emit(first, { type: "started", metadata });
     assert(editor().textContent === "second draft" && action("选择模型: Opus 4.8") && action("发送") && !fixture.querySelector('[aria-label="本会话固定模型"]'), "An inactive thread's status must not leak into the active screen");
     render("subscriptions-first");
-    assert(editor().textContent === "first next draft" && action("停止生成"), "Returning to a streaming thread must recover its draft and status");
-    click(action("停止生成"));
+    assert(editor().textContent === "first next draft" && action("停止响应"), "Returning to a streaming thread must recover its draft and status");
+    click(action("停止响应"));
     assert(first.getState().status === "idle" && gateway.aborts === 1 && editor().textContent === "first next draft" && !action("发送").disabled, "Stop must restore Send and preserve the next draft");
     render("subscriptions-second");
     type("changed second draft");

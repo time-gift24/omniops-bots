@@ -1,0 +1,49 @@
+<!doctype html>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<div id="fixture" style="height: min(800px, 95dvh)"></div><pre id="result">Running…</pre>
+<script type="module">
+import React from "react"
+import { createRoot } from "react-dom/client"
+import { flushSync } from "react-dom"
+import "/src/index.css"
+import { MarkdownEditor } from "/src/components/markdown/markdown-editor.tsx"
+import { createTestDependencies, withTestTheme } from "/tests/support.tsx"
+const root = createRoot(document.querySelector("#fixture"))
+const result = document.querySelector("#result")
+const source = '---\nname: example\ncustom: retained\n---\n\n#### 深层标题\n\n| A | B |\n|---|---|\n| 1 | 2 |\n\n![示意图](data:image/png;base64,iVBORw0KGgo=)\n'
+const assert = (condition, message) => { if (!condition) throw new Error(message) }
+const until = async predicate => { const deadline = performance.now() + 5000; while (!predicate() && performance.now() < deadline) await new Promise(resolve => setTimeout(resolve, 20)); assert(predicate(), "Markdown preview must finish rendering") }
+const input = () => document.querySelector("textarea")
+const button = name => [...document.querySelectorAll("button")].find(node => (node.getAttribute("aria-label") ?? node.textContent).trim() === name)
+const click = node => flushSync(() => node.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true })))
+let changes = 0, escaped = 0
+window.addEventListener("keydown", event => { if (event.key === "b") escaped++ })
+function Harness() {
+ const [value, setValue] = React.useState(source)
+ return React.createElement("div", { className: "editor-workspace @container" }, React.createElement(MarkdownEditor, { value, ariaLabel: "Markdown 原文", onChange: value => { changes++; setValue(value) } }))
+}
+try {
+ flushSync(() => root.render(withTestTheme(React.createElement(Harness), createTestDependencies())))
+ const node = input(); const offset = source.indexOf("深层标题")
+ node.focus(); assert(getComputedStyle(node).boxShadow !== "none", "Source must have a visible keyboard focus ring"); node.setSelectionRange(offset, offset + 4)
+ const bold = new KeyboardEvent("keydown", { key: "b", ctrlKey: true, bubbles: true, cancelable: true })
+ flushSync(() => node.dispatchEvent(bold))
+ assert(bold.defaultPrevented && escaped === 0 && node.value.includes("**深层标题**"), "Formatting must edit only the selection and not trigger global navigation")
+ assert(changes === 1, "Formatting must emit a single source update")
+ flushSync(() => document.execCommand("undo"))
+ assert(node.value === source, "Formatting must participate in native undo")
+ const selection = [node.selectionStart, node.selectionEnd]
+ click(button("预览"))
+ await until(() => document.querySelector("h4") && document.querySelector("table"));
+ assert(document.querySelector("h4") && document.querySelector("table"), "Preview must preserve Markdown headings and tables")
+ const preview = document.querySelector(".markdown-preview"); preview.focus(); assert(getComputedStyle(preview).boxShadow !== "none", "Preview must have a visible keyboard focus ring")
+ click(button("编写"))
+ assert(input() === node && node.value === source && node.selectionStart === selection[0] && node.selectionEnd === selection[1], "Preview switches must retain the source, textarea and selection")
+ const before = node.value
+ flushSync(() => node.dispatchEvent(new KeyboardEvent("keydown", { key: "b", ctrlKey: true, isComposing: true, bubbles: true, cancelable: true })))
+ assert(node.value === before, "IME composition must not invoke formatting")
+ assert(document.querySelector('[role="toolbar"][aria-label="Markdown 格式"]'), "Arc formatting tools must remain accessible")
+ result.textContent = "PASS: Markdown source, preview, selection, native undo, keyboard isolation and IME"
+} catch(error) { result.textContent = `FAIL: ${error.stack}` }
+</script>

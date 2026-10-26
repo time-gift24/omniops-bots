@@ -1,174 +1,200 @@
-import {
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type ReactNode,
-  type Ref,
-} from "react"
-import { Markdown } from "@/components/chat/markdown"
-import { Button } from "@/components/motion/button"
+import { useEffect, useId, useRef, useState, type ReactNode } from "react"
+import { Bold, Italic, Heading2, List, Quote, Code2, Link2 } from "lucide-react"
+import { Button } from "@/components/arc/button/button"
+import { Tooltip } from "@/components/arc/tooltip/tooltip"
+import { Tabs, TabsList, TabsTrigger } from "@/components/motion/tabs"
+import { Markdown } from "./document-markdown"
+import { markdownCommand, type MarkdownCommand } from "./markdown-commands"
 import { cn } from "@/lib/utils"
+import "./editor.css"
 
-export type MarkdownEditorMode = "source" | "preview" | "split"
+const commands = [
+  ["bold", "加粗", Bold],
+  ["italic", "斜体", Italic],
+  ["heading", "二级标题", Heading2],
+  ["list", "列表", List],
+  ["quote", "引用", Quote],
+  ["code", "代码", Code2],
+  ["link", "链接", Link2],
+] as const
+
+const shortcuts: Readonly<Record<string, MarkdownCommand | undefined>> = {
+  b: "bold",
+  i: "italic",
+  k: "link",
+  e: "code",
+}
 
 export function MarkdownEditor({
   value,
   onChange,
   ariaLabel,
-  title,
+  title = "Markdown",
+  readOnly = false,
   disabled = false,
   maxLength,
   placeholder,
   preview,
   className,
-  autoFocus = false,
   markdown = true,
-  onModeChange,
-  previewScrollRef,
+  autoFocus = false,
+  initialPreview = false,
 }: {
   value: string
   onChange: (value: string) => void
   ariaLabel: string
   title?: ReactNode
+  readOnly?: boolean
   disabled?: boolean
   maxLength?: number
   placeholder?: string
   preview?: ReactNode
   className?: string
-  autoFocus?: boolean
   markdown?: boolean
-  onModeChange?: (mode: MarkdownEditorMode) => void
-  previewScrollRef?: Ref<HTMLDivElement>
+  autoFocus?: boolean
+  initialPreview?: boolean
 }) {
+  const [mode, setMode] = useState(initialPreview ? "preview" : "write")
+  const input = useRef<HTMLTextAreaElement>(null)
   const id = useId()
-  const root = useRef<HTMLDivElement>(null)
-  const [mode, setMode] = useState<MarkdownEditorMode>("source")
-  const [canSplit, setCanSplit] = useState(false)
-  const effectiveMode =
-    !markdown || (mode === "split" && !canSplit) ? "source" : mode
-
+  const viewing = readOnly || mode === "preview"
   useEffect(() => {
-    if (!root.current) return
-    const observer = new ResizeObserver(([entry]) =>
-      setCanSplit(entry.contentRect.width >= 680)
+    if (autoFocus && !disabled && !readOnly) input.current?.focus()
+  }, [autoFocus, disabled, readOnly])
+  function format(command: MarkdownCommand) {
+    const node = input.current
+    if (!node || disabled || readOnly) return
+    const edit = markdownCommand(
+      value,
+      node.selectionStart,
+      node.selectionEnd,
+      command
     )
-    observer.observe(root.current)
-    return () => observer.disconnect()
-  }, [])
-
-  useEffect(() => {
-    onModeChange?.(effectiveMode)
-  }, [effectiveMode, onModeChange])
-
+    if (
+      maxLength !== undefined &&
+      value.length - (edit.to - edit.from) + edit.insert.length > maxLength
+    )
+      return
+    node.focus({ preventScroll: true })
+    node.setSelectionRange(edit.from, edit.to)
+    // Browser editing preserves native undo; setRangeText covers engines without insertText.
+    if (!document.execCommand("insertText", false, edit.insert)) {
+      node.setRangeText(edit.insert, edit.from, edit.to, "end")
+      onChange(node.value)
+    }
+    node.setSelectionRange(edit.start, edit.end)
+  }
   return (
     <div
-      ref={root}
       data-slot="markdown-editor"
-      data-mode={effectiveMode}
-      className={cn(
-        "@container/editor flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg border border-border bg-background",
-        className
-      )}
+      data-mode={viewing ? "preview" : "source"}
+      className={cn("markdown-workspace", className)}
     >
-      <div
-        data-slot="markdown-editor-toolbar"
-        className="flex min-h-10 shrink-0 items-center justify-between gap-3 border-b border-border py-1 pr-20 pl-2"
-      >
-        <div className="flex min-w-0 flex-1 items-center gap-2 pl-1">
-          <span className="truncate text-[13px] font-medium">
-            {title ?? (markdown ? "Markdown" : "源码")}
-          </span>
-          <span className="hidden shrink-0 text-[11px] text-muted-foreground tabular-nums @min-[360px]/editor:inline">
-            {value.length.toLocaleString("zh-CN")}
-            {maxLength === undefined
-              ? " 字符"
-              : ` / ${maxLength.toLocaleString("zh-CN")} 字符`}
-          </span>
-        </div>
+      <div className="markdown-workspace-heading">
+        <span className="markdown-workspace-title">{title}</span>
+        {!readOnly && markdown ? (
+          <Tabs value={mode} onValueChange={setMode} variant="segment">
+            <TabsList aria-label="Markdown 视图">
+              <TabsTrigger
+                value="write"
+                aria-controls={`${id}-source`}
+                className="min-h-8 px-3 py-1.5 text-xs"
+              >
+                编写
+              </TabsTrigger>
+              <TabsTrigger
+                value="preview"
+                aria-controls={`${id}-preview`}
+                className="min-h-8 px-3 py-1.5 text-xs"
+              >
+                预览
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        ) : (
+          <span className="editor-detail">{readOnly ? "只读" : "源码"}</span>
+        )}
+      </div>
+      {!readOnly && markdown ? (
         <div
-          role="group"
-          aria-label="编辑视图"
-          className="flex shrink-0 gap-0.5"
+          className="markdown-formatting"
+          role="toolbar"
+          aria-label="Markdown 格式"
+          hidden={viewing}
         >
-          {(
-            [
-              "source",
-              ...(markdown ? ["preview", ...(canSplit ? ["split"] : [])] : []),
-            ] as MarkdownEditorMode[]
-          ).map((view) => (
-            <Button
-              key={view}
-              type="button"
-              variant="ghost"
-              size="sm"
-              aria-pressed={effectiveMode === view}
-              onClick={() => setMode(view)}
-              className={cn(
-                "rounded-md px-2.5 text-xs text-muted-foreground",
-                effectiveMode === view && "bg-muted text-foreground"
-              )}
-            >
-              {view === "source"
-                ? "源码"
-                : view === "preview"
-                  ? "预览"
-                  : "分栏"}
-            </Button>
+          {commands.map(([command, label, Icon]) => (
+            <Tooltip key={command} content={label}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="editor-icon"
+                aria-label={label}
+                disabled={disabled}
+                onPointerDown={(event) => event.preventDefault()}
+                onClick={() => format(command)}
+              >
+                <Icon size={16} />
+              </Button>
+            </Tooltip>
           ))}
         </div>
-      </div>
-      <div
-        className={cn(
-          "grid min-h-0 flex-1",
-          effectiveMode === "split" && "grid-cols-2"
-        )}
-      >
-        {effectiveMode !== "preview" ? (
-          <>
-            <label className="sr-only" htmlFor={id}>
-              {ariaLabel}
-            </label>
-            <textarea
-              id={id}
-              aria-label={ariaLabel}
-              value={value}
-              onChange={(event) => onChange(event.target.value)}
-              disabled={disabled}
-              maxLength={maxLength}
-              autoFocus={autoFocus}
-              spellCheck={false}
-              autoCapitalize="off"
-              autoCorrect="off"
-              wrap={markdown ? "soft" : "off"}
-              className="block h-full min-h-0 w-full resize-none overflow-auto overscroll-contain bg-transparent px-5 py-4 font-mono text-[13px] leading-6 text-foreground caret-primary outline-none selection:bg-accent selection:text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset disabled:opacity-60"
-              style={{ tabSize: 2 }}
-              placeholder={placeholder}
-            />
-          </>
+      ) : null}
+      <div className="markdown-canvas">
+        {!readOnly ? (
+          <textarea
+            ref={input}
+            id={`${id}-source`}
+            hidden={viewing}
+            aria-label={ariaLabel}
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            disabled={disabled}
+            maxLength={maxLength}
+            autoFocus={autoFocus}
+            spellCheck={false}
+            autoCapitalize="off"
+            autoCorrect="off"
+            placeholder={placeholder ?? "开始编写…"}
+            className="markdown-source"
+            onKeyDown={(event) => {
+              if (
+                event.nativeEvent.isComposing ||
+                !(event.metaKey || event.ctrlKey) ||
+                event.altKey
+              )
+                return
+              const command = shortcuts[event.key.toLowerCase()]
+              if (command && markdown) {
+                event.preventDefault()
+                event.stopPropagation()
+                format(command)
+              }
+            }}
+          />
         ) : null}
-        {effectiveMode !== "source" ? (
+        {viewing ? (
           <div
-            ref={previewScrollRef}
+            id={`${id}-preview`}
             tabIndex={0}
             aria-label={`${ariaLabel}预览`}
-            className={cn(
-              "min-h-0 min-w-0 overflow-auto overscroll-contain px-5 py-4 outline-none selection:bg-accent selection:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset",
-              effectiveMode === "split" && "border-l border-border"
-            )}
+            className="markdown-preview"
           >
             {preview ??
               (value.trim() ? (
-                <Markdown className="mx-auto max-w-[72ch] text-[13px] leading-7">
-                  {value}
-                </Markdown>
+                <Markdown>{value}</Markdown>
               ) : (
-                <p className="py-10 text-center text-xs text-muted-foreground">
-                  暂无预览内容。
-                </p>
+                <p className="editor-empty">暂无内容</p>
               ))}
           </div>
         ) : null}
+      </div>
+      <div className="markdown-status" aria-hidden="true">
+        <span>{markdown ? "Markdown" : "纯文本"}</span>
+        <span>
+          {value.split("\n").length} 行 <span className="mx-2">·</span>
+          {value.length.toLocaleString("zh-CN")}
+          {maxLength ? ` / ${maxLength.toLocaleString("zh-CN")}` : ""} 字符
+        </span>
       </div>
     </div>
   )

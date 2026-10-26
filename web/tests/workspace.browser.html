@@ -30,8 +30,13 @@
     assert(element && !element.disabled && !element.closest("[inert]"), "Target must be an enabled, reachable control");
     flushSync(() => { element.focus(); element.click(); });
   };
+  const controlText = element => {
+    const copy = element.cloneNode(true)
+    copy.querySelectorAll('[aria-hidden="true"], [hidden]').forEach(node => node.remove())
+    return copy.textContent.trim()
+  }
   const button = (text, scope = document) => [...scope.querySelectorAll("button")]
-    .find(element => element.textContent.trim() === text);
+    .find(element => controlText(element) === text);
   const labeled = label => [...document.querySelectorAll("button[aria-label]")]
     .find(element => element.getAttribute("aria-label") === label);
   const dialog = () => document.querySelector('[data-slot="dialog-content"]');
@@ -59,7 +64,10 @@
       "Workspace navigation did not open");
   };
   const closedDrawer = async () => {
-    if (mobile) await until(() => drawer()?.getAttribute("aria-hidden") === "true", "Selecting a session must close the mobile drawer");
+    if (mobile) {
+      await until(() => drawer()?.getAttribute("aria-hidden") === "true", "Selecting a session must close the mobile drawer");
+      await until(() => !fixture.closest('[aria-hidden="true"]') || document.querySelector('[aria-modal="true"]:not([data-mobile="true"])'), "Drawer must release focus or yield it to the new dialog");
+    }
   };
   const newSession = async (name) => {
     await navigation();
@@ -83,7 +91,7 @@
     await closedDrawer();
   };
   const selectModel = async label => {
-    click(model());
+    flushSync(() => model().dispatchEvent(new KeyboardEvent("keydown", {key:"Enter",bubbles:true,cancelable:true})));
     await until(() => [...document.querySelectorAll('[role="menuitemradio"]')].some(element => element.textContent.trim() === label),
       "Model choices did not open");
     click([...document.querySelectorAll('[role="menuitemradio"]')].find(element => element.textContent.trim() === label));
@@ -148,6 +156,8 @@
       await until(() => Boolean(editor()) && Boolean(labeled("工作区")) && Boolean(drawer()) === mobile, "StrictMode App did not mount at the requested viewport");
       assert(created.length === 1 && !dialog(), "Mounting must create one usable conversation without requiring a workspace");
       if (mobile) {
+        click(labeled("打开工作台"));
+        await until(() => labeled("收起工作台"), "The mobile workbench must open explicitly");
         const closeWorkbench = labeled("收起工作台");
         assert(closeWorkbench?.getClientRects().length && !closeWorkbench.closest("[inert]"), "The mobile workbench must expose its close action");
         click(closeWorkbench);
@@ -224,7 +234,8 @@
       assert(row("omniops-bots", title)?.getAttribute("aria-current") === "page", "Search must select the existing conversation rather than create one");
       assert(fixture.textContent.includes(title) && fixture.textContent.includes("缓存键") && created.length === 4, "Search must restore the completed conversation content");
       click(labeled("编辑"));
-      assert(editor().textContent === title && model().textContent.trim() === "GPT 5.6", "Editing must restore the user's text without changing models");
+      assert(fixture.querySelector('textarea[aria-label="编辑消息"]')?.value === title && model().textContent.trim() === "GPT 5.6", "Inline editing must restore the user's text without changing models");
+      click(button("取消"));
       const edited = `${title}，补充检查`;
       write(edited);
       await newSession("客户支持");
@@ -289,12 +300,13 @@
       assert(editor().textContent === "support workspace draft" && model().textContent.trim() === "Sonnet 5" && labeled("移除附件 notes.txt"), "Returning through search must restore the suggestion conversation's unsent text, model and attachment");
       assert(second.getDraft().attachments[0]?.file === supportFile && await supportFile.text() === "keep this file", "Returning through search must retain the original draft File and contents");
       click(labeled("编辑"));
-      await until(() => !labeled("移除附件 notes.txt"), "Editing the suggestion message must remove its unsent draft attachment");
-      assert(editor().textContent === suggestion && second.getDraft().attachments.length === 0 && model().textContent.trim() === "Sonnet 5", "Editing must replace the draft text, clear attachments and retain the model");
+      assert(fixture.querySelector('textarea[aria-label="编辑消息"]')?.value === suggestion, "Inline editing must show the original message");
+      assert(editor().textContent === "support workspace draft" && second.getDraft().attachments[0]?.file === supportFile, "Inline editing must preserve the independent composer draft and File");
+      click(button("取消"));
       await searchSession(title);
       assert(editor().textContent === edited, "Editing another workspace's conversation must leave the original draft unchanged");
       await searchSession(suggestion);
-      assert(editor().textContent === suggestion && second.getDraft().attachments.length === 0 && !labeled("移除附件 notes.txt") && model().textContent.trim() === "Sonnet 5", "The edited suggestion draft must stay attachment-free after switching conversations");
+      assert(editor().textContent === "support workspace draft" && second.getDraft().attachments[0]?.file === supportFile && model().textContent.trim() === "Sonnet 5", "Canceling inline edit must retain the original draft, attachment and model after navigation");
       assert(freshSupport.getDraft().text === "" && freshSupport.getDraft().attachments.length === 0 && aborted === 0, "Suggestion and edit navigation must leave the new conversation empty without aborting requests");
       passed.push("suggestion, new conversation, search and edit preserve per-conversation draft semantics");
 

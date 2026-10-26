@@ -5,7 +5,7 @@ import { createServer } from "vite";
 test("复制助手正文保留独立 Markdown 段落边界，用户原文不变", async (t) => {
   const server = await createServer({ server: { middlewareMode: true, hmr: false, ws: false }, appType: "custom", optimizeDeps: { noDiscovery: true, include: [] } });
   t.after(() => server.close());
-  const { messageText } = await server.ssrLoadModule("/src/components/chat/message-view.tsx");
+  const { messageText } = await server.ssrLoadModule("/src/components/chat/arc-bridge.ts");
   const parts = [
     { kind: "text", text: "先检查缓存。" },
     { kind: "reasoning", text: "内部步骤", state: "done" },

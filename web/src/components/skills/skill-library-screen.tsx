@@ -88,7 +88,6 @@ function FilePreview({
   onOpenFile,
   active,
   actions,
-  initialEditing = false,
   locked = false,
   onAddFile,
   onAddDirectory,
@@ -109,7 +108,6 @@ function FilePreview({
   onOpenFile: (path: string) => void
   active: boolean
   actions: ReactNode
-  initialEditing?: boolean
   locked?: boolean
   onAddFile?: (path: string, content: Blob, replace?: boolean) => Promise<void>
   onAddDirectory?: (path: string) => Promise<void>
@@ -131,13 +129,8 @@ function FilePreview({
   } | null>(null)
   const [readAttempt, setReadAttempt] = useState(0)
   const readFailure = readError?.entry === entry ? readError.message : ""
-  const [editingPath, setEditingPath] = useState<string | null>(
-    initialEditing ? entry.path : null
-  )
-  const editing = creating || editingPath === entry.path
   const isText = textFile(entry)
   const loadCallback = useRef(onLoaded)
-  const currentSource = useRef("")
   const currentEntry = useRef(entry)
   const mounted = useRef(false)
   const currentActive = useRef(active)
@@ -149,7 +142,6 @@ function FilePreview({
   }
   useLayoutEffect(() => {
     loadCallback.current = onLoaded
-    currentSource.current = source
     currentEntry.current = entry
     currentActive.current = active
   }, [onLoaded, source, entry, active])
@@ -187,26 +179,24 @@ function FilePreview({
   }, [readFile, skill.id, entry, isText, readAttempt])
   const dirty = !!edit && edit.value !== edit.saved
   async function save() {
-    if (busy || !ready || !editing || skill.readOnly) return
-    if (!dirty && !creating) {
-      setEditingPath(null)
+    if (
+      busy ||
+      !ready ||
+      skill.readOnly ||
+      locked ||
+      !isText ||
+      (!dirty && !creating)
+    )
       return
-    }
     try {
       await onSave(source)
-      if (
-        mounted.current &&
-        currentEntry.current.path === entry.path &&
-        currentSource.current === source
-      )
-        setEditingPath(null)
     } catch {
-      // The library displays the error; keep the current editor available for retry.
+      // The library reports failures and retains the submitted text for retry.
     }
   }
   useSaveShortcut({
     active,
-    enabled: editing,
+    enabled: !skill.readOnly && !locked && isText,
     onSave: () => void save(),
   })
   return (
@@ -240,9 +230,7 @@ function FilePreview({
         readOnly={
           locked || skill.readOnly || !isText || (!ready && !!readFailure)
         }
-        editing={editing}
         saveLabel={creating ? "保存 Skill" : "保存文件"}
-        onEdit={() => setEditingPath(entry.path)}
         onSave={() => void save()}
         onUndo={() => {
           if (onDiscard) {
@@ -250,12 +238,10 @@ function FilePreview({
             return
           }
           onEdit(edit?.saved ?? loaded?.text ?? "")
-          setEditingPath(null)
           setError("")
         }}
         onChange={onEdit}
         onSelectFile={(path) => {
-          setEditingPath(creating ? path : null)
           setError("")
           onOpenFile(path)
         }}
@@ -268,41 +254,14 @@ function FilePreview({
                   currentActive.current &&
                   currentEntry.current.path === entry.path
                 ) {
-                  setEditingPath(path)
                   onOpenFile(path)
                 }
               }
             : undefined
         }
         onAddDirectory={onAddDirectory}
-        onRenameEntry={
-          onRenameEntry
-            ? async (path, newPath) => {
-                await onRenameEntry(path, newPath)
-                if (mounted.current)
-                  setEditingPath((current) =>
-                    current &&
-                    (current === path || current.startsWith(`${path}/`))
-                      ? newPath + current.slice(path.length)
-                      : current
-                  )
-              }
-            : undefined
-        }
-        onDeleteEntry={
-          onDeleteEntry
-            ? async (path) => {
-                await onDeleteEntry(path)
-                if (mounted.current)
-                  setEditingPath((current) =>
-                    current &&
-                    (current === path || current.startsWith(`${path}/`))
-                      ? null
-                      : current
-                  )
-              }
-            : undefined
-        }
+        onRenameEntry={onRenameEntry}
+        onDeleteEntry={onDeleteEntry}
         onError={setError}
         preview={
           readFailure && !ready ? (
@@ -1110,11 +1069,6 @@ export function SkillLibraryScreen({
                       onOpenSkill(null)
                     }
                   : undefined
-              }
-              initialEditing={
-                creating ||
-                (!!edits[pathKey] &&
-                  edits[pathKey].value !== edits[pathKey].saved)
               }
               busy={busy}
               locked={entriesLocked}

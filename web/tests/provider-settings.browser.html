@@ -32,24 +32,30 @@
   const until = async (condition, message) => { const deadline = performance.now() + 12000; while (!condition() && performance.now() < deadline) await wait(); assert(condition(), message) }
   const visible = element => element && element.getClientRects().length && !element.closest('[inert], [hidden], [aria-hidden="true"]')
   const section = () => fixture.querySelector('[data-slot="provider-settings"]')
-  const button = (label, scope = document) => [...scope.querySelectorAll("button")].find(element => visible(element) && (element.getAttribute("aria-label") === label || element.textContent.trim() === label))
+  const text = element => { const copy=element.cloneNode(true); copy.querySelectorAll('[aria-hidden="true"]').forEach(node=>node.remove()); return copy.textContent.trim() };
+  const button = (label, scope = document) => [...scope.querySelectorAll("button")].find(element => visible(element) && (element.getAttribute("aria-label") === label || (label === "选择模型" && element.getAttribute("aria-label")?.startsWith("选择模型:")) || text(element) === label))
   const click = element => { assert(element && !element.disabled, "Expected enabled control"); flushSync(() => element.click()) }
   const input = label => [...section().querySelectorAll("input")].find(element => [...element.labels].some(labelElement => labelElement.textContent.trim() === label))
   const setInput = (label, value) => flushSync(() => { const element = input(label); assert(element, `Missing ${label}`); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set.call(element, value); element.dispatchEvent(new Event("input", { bubbles: true })) })
-  const chooseSaved = async model => { click(button("已保存模型")); await until(() => [...document.querySelectorAll('[role="option"]')].some(element => visible(element) && element.textContent.trim() === model), "Saved model choices did not open"); click([...document.querySelectorAll('[role="option"]')].find(element => visible(element) && element.textContent.trim() === model)); await wait() }
+  const chooseSaved = async model => { flushSync(()=>button("已保存模型").dispatchEvent(new KeyboardEvent("keydown",{key:"Enter",bubbles:true,cancelable:true}))); await until(() => [...document.querySelectorAll('[role="menuitemradio"]')].some(element => visible(element) && element.textContent.trim() === model), "Saved model choices did not open"); click([...document.querySelectorAll('[role="menuitemradio"]')].find(element => visible(element) && element.textContent.trim() === model)); await wait() }
   const mount = element => flushSync(() => root.render(withTestTheme(element, dependencies)))
   try {
     mount(React.createElement(React.StrictMode, null, React.createElement(App)))
     await until(() => button("设置"), "An empty model catalog must not block settings")
-    click(button("设置")); await until(() => section(), "Provider settings must be reachable")
+    click(button("设置")); await until(() => section(), "Provider settings must be reachable"); click(document.querySelector('a[href="#client-settings-providers"]'));
     await until(() => button("重新读取 Provider"), "Catalog read failure must offer retry")
     failRead = false; click(button("重新读取 Provider")); await until(() => button("添加 Provider"), "Catalog retry must recover")
     click(button("添加 Provider")); setInput("名称", "公司网关"); setInput("接入地址", "https://gateway.example/prefix/v1"); setInput("模型 1", "model-a")
     click(button("添加模型")); setInput("模型 2", "model-b")
     click(section().querySelector('input[type="radio"][value="replace"]')); setInput("新的 API Key", "fixture-secret")
+    click(document.querySelector('a[href="#client-settings-theme"]'));
+    assert(section().hidden, "Switching sections must hide the Provider editor");
+    click(document.querySelector('a[href="#client-settings-providers"]'));
+    assert(input("名称").value === "公司网关" && input("模型 2").value === "model-b" && input("新的 API Key").value === "fixture-secret", "Section switching must retain the complete unsaved Provider draft");
     click(button("保存 Provider")); await until(() => fixture.textContent.includes("系统凭据保存失败"), "Save failure must remain visible")
     assert(input("名称").value === "公司网关" && input("模型 2").value === "model-b" && input("新的 API Key").value === "fixture-secret", "Failed save must retain every draft field")
     assert((await source.providers.load()).providers.length === 0 && tests.length === 0, "Failed save must not commit or test")
+    await until(()=>button("保存 Provider") && !button("保存 Provider").disabled,"Failed save must unlock retry");
     click(button("保存 Provider")); await until(() => fixture.textContent.includes("Provider 已保存"), "Save must recover")
     assert(section().textContent.includes("API Key 已配置") && !section().querySelector('input[type="password"]') && !section().textContent.includes("fixture-secret"), "Keys only disclose configured status after save")
     assert(tests.length === 0 && section().textContent.includes("全局默认模型：未设置"), "Save must not test or choose the first model as default")
@@ -59,6 +65,7 @@
     tests[0].promise.resolve(); await wait(); assert(!section().textContent.includes("模拟测试成功"), "Late cancelled test must not report success")
     click(button("测试连接")); tests[1].promise.resolve(); await until(() => section().textContent.includes("公司网关 / model-a：模拟测试成功"), "Current manual test must identify tested provider/model")
     setInput("接入地址", "https://gateway.example/new/v1"); assert(!section().textContent.includes("模拟测试成功") && button("测试连接").disabled, "Editing invalidates old test evidence and requires saving")
+    await until(()=>button("保存 Provider") && !button("保存 Provider").disabled,"Failed save must unlock retry");
     click(button("保存 Provider")); await until(() => fixture.textContent.includes("Provider 已保存"), "Edit must save")
     assert((await source.providers.load()).providers[0].hasKey, "Editing without a key operation must preserve it")
     click(section().querySelector('input[type="radio"][value="clear"]')); click(button("保存 Provider")); await until(() => section().textContent.includes("API Key 未配置"), "Explicit clear must remove key status")
@@ -68,17 +75,17 @@
     const renderChat = async (threadId) => mount(React.createElement(ChatScreen, { threadId, models: await source.models.list(), suggestions: [] }))
     await renderChat("fixed")
     await until(() => button("选择模型: 公司网关 / model-a"), "New chat must preselect explicit global default")
-    click(button("选择模型: 公司网关 / model-a")); await until(() => [...document.querySelectorAll('[role="menuitemradio"]')].some(element => element.textContent.trim() === "公司网关 / model-b"), "Model selector must expose provider + model")
+    flushSync(()=>button("选择模型: 公司网关 / model-a").dispatchEvent(new KeyboardEvent("keydown",{key:"Enter",bubbles:true,cancelable:true}))); await until(() => [...document.querySelectorAll('[role="menuitemradio"]')].some(element => element.textContent.trim() === "公司网关 / model-b"), "Model selector must expose provider + model")
     click([...document.querySelectorAll('[role="menuitemradio"]')].find(element => element.textContent.trim() === "公司网关 / model-b"))
     assert(dependencies.threads.get("fixed").getState().messages.length === 0, "Choosing a model must not create a conversation")
     const editor = () => fixture.querySelector('[role="textbox"]')
     flushSync(() => { editor().textContent = "first send"; editor().dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: "first send" })) })
-    click(button("发送")); await until(() => fixture.querySelector('[aria-label="本会话固定模型"]'), "Accepted send must lock the chosen model")
+    click(button("发送")); await until(() => button("选择模型: 公司网关 / model-b"), "Accepted send must lock the chosen model")
     await until(() => requests.length === 1 && !dependencies.threads.get("fixed").streaming, "Send must finish")
     const fixedId = providerModelId({ provider: "公司网关", model: "model-b" })
-    assert(requests[0].request.model === fixedId && !button("选择模型: 公司网关 / model-b"), "Started conversation must use and display fixed selection")
+    assert(requests[0].request.model === fixedId && button("选择模型: 公司网关 / model-b").disabled, "Started conversation must use and display fixed selection")
     await source.providers.remove("公司网关"); await renderChat("fixed")
-    assert(fixture.querySelector('[aria-label="本会话固定模型"]').textContent === "公司网关 / model-b", "Deleted catalog entry must retain its readable fixed identity")
+    assert(text(button("选择模型: 公司网关 / model-b")) === "公司网关 / model-b", "Deleted catalog entry must retain its readable fixed identity")
     flushSync(() => { editor().textContent = "second send"; editor().dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: "second send" })) })
     click(button("发送")); await until(() => requests.length === 2, "Fixed model must still be sent for backend availability validation")
     assert(requests[1].request.model === fixedId, "Missing catalog must never change an existing choice")

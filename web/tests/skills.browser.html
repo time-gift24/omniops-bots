@@ -71,12 +71,7 @@
           .trim()
           .replace(/\s*未保存$/, "") === name
     )
-  const editor = (path) => {
-    const label = [...fixture.querySelectorAll("label[for]")].find(
-      (element) => element.textContent.trim() === `编辑 ${path}`
-    )
-    return label ? document.getElementById(label.htmlFor) : null
-  }
+  const editor = path => fixture.querySelector(`textarea[aria-label="编辑 ${path}"]`)
   const click = (element) => {
     assert(
       visible(element) && !element.disabled,
@@ -84,7 +79,7 @@
     )
     flushSync(() => {
       element.focus()
-      element.click()
+      element.getAttribute("role") === "tab" ? element.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true })) : element.click()
     })
   }
   const write = (path, value) =>
@@ -114,25 +109,8 @@
   const content = () => fixture.querySelector('[aria-label="文件内容"]')
   const header = () => fixture.querySelector("header")
   const checkHeader = () => {
-    assert(!fixture.querySelector(".skill-doc-bar"), "Skill content must not retain the old document toolbar")
-    for (const name of ["编辑", "撤销", "保存草稿", "恢复原始内容", "浏览技能文件"]) {
-      assert(!button(name, header()), "Document actions must float in the body, outside the Header")
-    }
-    const dock = fixture.querySelector('[data-slot="document-actions"]')
-    assert(visible(dock) && !dock.closest("header"), "Skill actions must share one body dock")
-    assert(dock.querySelector('button[aria-label="浏览技能文件"]'), "File navigation must belong to the same dock as editing")
-    const controls = [...dock.querySelectorAll("button")].filter(visible)
-    const bounds = fixture.getBoundingClientRect()
-    for (let index = 0; index < controls.length; index++) {
-      const left = controls[index].getBoundingClientRect()
-      assert(left.left >= bounds.left - 1 && left.right <= bounds.right + 1,
-        "Skill body actions must fit their container")
-      for (const control of controls.slice(index + 1)) {
-        const right = control.getBoundingClientRect()
-        assert(left.right <= right.left + 1 && Math.abs((left.top + left.bottom) / 2 - (right.top + right.bottom) / 2) <= 1,
-          "Skill actions must form one horizontal row without overlap")
-      }
-    }
+    assert(!header().querySelector("button"), "The shared Header must contain location only")
+    assert(fixture.querySelector('[data-slot="editor-actions"]'), "Labeled actions must remain in the document")
   }
   const fileLink = (path) =>
     [...document.querySelectorAll('nav[aria-label="技能文件"]')]
@@ -159,14 +137,8 @@
       "File selection must close mobile navigation"
     )
   }
-  const startEditing = async (path) => {
-    await until(() => button("编辑", fixture) && !button("编辑", fixture).disabled, "Draft initialization must finish before editing")
-    click(button("编辑", fixture))
-    await until(() => editor(path), `Expected source editor for ${path}`)
-    assert(button("撤销", fixture) && button("保存草稿", fixture),
-      "Editing must expand into accessible undo and save icons")
-    assert(!button("编辑", fixture) && !button("恢复原始内容", fixture),
-      "Editing must hide read-mode actions")
+  const startEditing = async path => {
+    await until(() => editor(path), "Markdown must be directly editable after loading")
     checkHeader()
   }
   function Probe() {
@@ -193,240 +165,69 @@
 
   try {
     render("initial")
-    await until(
-      () => content()?.querySelector("h1")?.textContent === "周报助手",
-      "Default view must render Markdown"
-    )
-    const summary = [...fixture.querySelectorAll("summary")].find(
-      (element) => element.textContent === "文件元数据（frontmatter）"
-    )
-    assert(
-      summary && !summary.closest("details").open,
-      "Frontmatter must be available and collapsed by default"
-    )
-    assert(
-      !fixture.querySelector("textarea"),
-      "Default reading view must not expose a source editor"
-    )
-    assert(button("编辑", fixture) && !button("编辑", header()), "Reading mode must expose Edit in the body")
-    assert(!button("保存草稿") && !button("撤销"), "Reading mode must hide save and undo")
-    checkHeader()
-    checks.push("Markdown reading and collapsed frontmatter")
-
-    const fileNavigation = () => [...document.querySelectorAll('nav[aria-label="技能文件"]')].find(visible)
-    if (!fileNavigation()) {
-      click(button("浏览技能文件"))
-      await until(fileNavigation, "File navigation must open for folder checks")
-    }
-    const referenceFolder = button("reference", fileNavigation())
-    const referenceGroup = referenceFolder.closest(".branched-menu__section")
-    const referenceFold = referenceGroup.querySelector(".branched-menu__fold")
-    const referenceFiles = [...referenceGroup.querySelectorAll(".branched-menu__item")]
-    assert(referenceFolder.getAttribute("aria-expanded") === "true" && referenceFiles.length > 0,
-      "The reference folder must start expanded with selectable files")
-    click(referenceFolder)
-    await until(() => referenceFolder.getAttribute("aria-expanded") === "false" && referenceFold.getBoundingClientRect().height < 1,
-      "File folders must still collapse and hide their children")
-    assert(referenceFiles.every(control => control.tabIndex < 0), "Collapsed file children must leave keyboard navigation")
-    assert(content()?.querySelector("h1")?.textContent === "周报助手", "Toggling a folder must not navigate away from the current file")
-    click(referenceFolder)
-    const templateFile = button("template.md", referenceGroup)
-    await until(() => referenceFolder.getAttribute("aria-expanded") === "true" && templateFile.tabIndex >= 0 &&
-      templateFile.getBoundingClientRect().bottom <= referenceFold.getBoundingClientRect().bottom + 1,
-      "Expanding a file folder must restore visible, keyboard-reachable children")
-    click(templateFile)
-    await until(() => !button("关闭文件导航") && content()?.querySelector("h1")?.textContent === "周报模板",
-      "An expanded file child must remain selectable")
-    await selectFile("SKILL.md")
-    checks.push("file folders still fold, remove hidden children from keyboard navigation and reopen for selection")
-
     await startEditing("SKILL.md")
-    assert(
-      editor("SKILL.md").value === skillSource,
-      "Editing must expose the complete original source including frontmatter"
-    )
-    click(button("撤销"))
-    assert(!editor("SKILL.md") && button("编辑"), "Undo must exit clean editing too")
-    await startEditing("SKILL.md")
-    click(button("保存草稿"))
-    assert(!editor("SKILL.md") && button("编辑"), "Saving unchanged content must return to reading")
-    assert(values.size === 0, "Unchanged content must not create a draft")
-    await startEditing("SKILL.md")
-    fixture.style.width = "1200px"
-    await until(() => button("分栏"), "Wide container must expose split mode")
-    click(button("分栏"))
-    await until(
-      () => fixture.querySelector('[data-mode="split"]'),
-      "Wide container must enter split mode"
-    )
-    fixture.style.width = "380px"
-    await until(
-      () =>
-        fixture.querySelector('[data-mode="source"]') &&
-        button("源码")?.getAttribute("aria-pressed") === "true",
-      "Narrowing split mode must select source semantically and visually"
-    )
-    checkHeader()
+    assert(editor("SKILL.md").value === skillSource, "Original Markdown including YAML must be intact")
     click(button("预览"))
-    await until(
-      () =>
-        !editor("SKILL.md") &&
-        button("预览")?.getAttribute("aria-pressed") === "true",
-      "Narrow preview must remain selectable after split fallback"
-    )
-    click(button("源码"))
-    fixture.style.width = ""
-    checks.push("wide split to narrow source and preview selection")
-    const edited = `${skillSource}\n\n## 浏览器回归\n\n保留这条尚未保存的编辑。\n`
-    write("SKILL.md", edited)
+    assert(fixture.querySelector(".markdown-preview h1")?.textContent === "周报助手", "Preview must render the body")
+    assert([...fixture.querySelectorAll("summary")].some(node => node.textContent === "元数据" && !node.parentElement.open), "Preview metadata must be available without changing the source")
+    click(button("编写"))
+    write("SKILL.md", "未保存的主文件")
     await selectFile("reference/template.md")
-    await until(
-      () => content()?.querySelector("h1")?.textContent === "周报模板",
-      "File navigation must change the selected document"
-    )
+    await startEditing("reference/template.md")
+    write("reference/template.md", "另一个文件的草稿")
     await selectFile("SKILL.md")
-    await startEditing("SKILL.md")
-    assert(
-      editor("SKILL.md").value === edited,
-      "Switching files must retain unsaved source"
-    )
-    saveShortcut()
-    await until(() => saved() && !editor("SKILL.md") && button("编辑"), "Ctrl+S must save the current draft and return to reading")
-    render("restored")
-    await startEditing("SKILL.md")
-    assert(
-      editor("SKILL.md").value === edited,
-      "Remount must restore the saved source"
-    )
-    checks.push(
-      "complete source, unsaved file switching and Ctrl+S persistence"
-    )
-    write("SKILL.md", "discard only this unsaved edit")
-    click(button("撤销"))
-    assert(!editor("SKILL.md") && content().textContent.includes("保留这条尚未保存的编辑。"), "Undo must return to the saved source in reading mode")
-    assert(values.get(fileKey("weekly-report", "SKILL.md")) === edited, "Undo must preserve the saved draft overlay")
-    await startEditing("SKILL.md")
-    assert(editor("SKILL.md").value === edited, "Reopening after undo must use the last saved source")
-    checks.push("undo restores the last saved draft without deleting it")
-
-    write("SKILL.md", "")
-    saveShortcut()
-    await until(() => saved() && !editor("SKILL.md"), "An empty draft must be saveable and return to reading")
-    render("empty-restored")
-    await startEditing("SKILL.md")
-    assert(
-      editor("SKILL.md").value === "",
-      "An empty saved draft must not fall back to original content"
-    )
-    checks.push("empty draft persistence")
-
-    saveGate = Promise.withResolvers()
-    write("SKILL.md", "submitted version")
-    saveShortcut()
-    write("SKILL.md", "new edit while saving")
-    assert(button("保存草稿").disabled, "An in-flight save must block duplicate writes")
-    saveGate.resolve()
-    await until(() => !button("保存草稿").disabled, "Later editing must remain dirty after the captured version is saved")
-    assert(editor("SKILL.md").value === "new edit while saving", "Saving must not overwrite later editing")
-    assert(values.get(fileKey("weekly-report", "SKILL.md")) === "submitted version", "Save must persist its captured input")
-    saveGate = undefined
-    checks.push("async save captures input without clearing newer edits")
-
-    await selectFile("reference/template.md")
-    await selectFile("SKILL.md")
-    assert(!editor("SKILL.md"), "Returning to a file must show its unsaved content in reading mode")
-    removeGate = Promise.withResolvers()
-    failRemoves = true
-    click(button("恢复原始内容"))
-    await wait()
-    assert(content().textContent.includes("new edit while saving"), "Restore must wait for deletion before changing content")
-    removeGate.resolve()
-    await until(() => fixture.querySelector('[role="alert"]')?.textContent.includes("未能移除"), "Failed deletion must be visible")
-    assert(content().textContent.includes("new edit while saving"), "Failed restore must preserve current editing")
-    failRemoves = false
-    removeGate = undefined
-    click(button("恢复原始内容"))
-    await until(() => !button("恢复原始内容"), "Successful deletion must restore the original source")
-    assert(!values.has(fileKey("weekly-report", "SKILL.md")), "Restore must remove only the saved draft")
-    await startEditing("SKILL.md")
-    checks.push("async restore waits for deletion and preserves edits on failure")
-
-    const unsaved = "# 保存失败后保留\n\n这段编辑仍然可以继续修改。\n"
-    write("SKILL.md", unsaved)
-    failWrites = true
-    click(button("保存草稿"))
-    await until(
-      () =>
-        fixture
-          .querySelector('[role="alert"]')
-          ?.textContent.includes("草稿保存失败"),
-      "Storage denial must produce a visible error"
-    )
-    assert(
-      editor("SKILL.md").value === unsaved && !button("保存草稿").disabled,
-      "Failed saving must preserve editable, unsaved content"
-    )
-    checks.push("storage errors preserve unsaved edits")
-
+    assert(editor("SKILL.md").value === "未保存的主文件", "Switching files must preserve independent drafts")
+    click(button("撤销修改"))
+    assert(editor("SKILL.md").value === skillSource, "Undo must restore the saved baseline")
+    write("SKILL.md", "保存失败时的原文")
+    failWrites = true; click(button("保存草稿"))
+    await until(() => fixture.querySelector('[role="alert"]')?.textContent.includes("草稿保存失败"), "Failure must be visible")
+    assert(editor("SKILL.md").value === "保存失败时的原文", "A failed save must retain source")
     failWrites = false
-    values.clear()
-    render("links-and-script")
-    await until(
-      () => link("指标口径", content()),
-      "Markdown must expose its relative file link"
-    )
-    click(link("指标口径", content()))
-    await until(
-      () => content()?.querySelector("h1")?.textContent === "指标口径",
-      "Relative Markdown links must open metrics.md"
-    )
-    await selectFile("scripts/ss.js")
-    await until(
-      () => content()?.querySelector("h1")?.textContent === "ss.js",
-      "Script file must render its source view"
-    )
-    await startEditing("scripts/ss.js")
-    assert(
-      editor("scripts/ss.js").value === scriptSource,
-      "Script editing must retain the complete source"
-    )
-    const modes = fixture.querySelector('[role="group"][aria-label="编辑视图"]')
-    assert(
-      button("源码", modes)?.getAttribute("aria-pressed") === "true" &&
-        !button("预览", modes) &&
-        !button("分栏", modes),
-      "JavaScript must only offer source editing"
-    )
-    checks.push("relative file links and JavaScript source-only editing")
-
-    loadGate = Promise.withResolvers()
-    values.set(fileKey("weekly-report", "SKILL.md"), "late persisted draft")
-    render("waiting-for-drafts")
-    assert(button("编辑").disabled, "Editing must wait for async draft initialization")
-    render("replaced-loading-screen")
-    loadGate.resolve()
+    saveGate = Promise.withResolvers(); write("SKILL.md", "提交快照"); saveShortcut()
+    write("SKILL.md", "保存期间的新输入")
+    assert(button("保存草稿").disabled, "Duplicate saves must be blocked")
+    saveGate.resolve(); saveGate = undefined
+    await until(() => !button("保存草稿").hasAttribute("aria-busy"), "Save must settle")
+    assert(values.get(fileKey("weekly-report", "SKILL.md")) === "提交快照" && editor("SKILL.md").value === "保存期间的新输入", "The save snapshot must not replace new typing")
+    saveShortcut()
+    await until(() => values.get(fileKey("weekly-report", "SKILL.md")) === "保存期间的新输入", "A second save must persist the latest source")
+    write("SKILL.md", ""); saveShortcut()
+    await until(() => values.get(fileKey("weekly-report", "SKILL.md")) === "", "Empty Markdown must be saveable")
+    render("empty-restored"); await startEditing("SKILL.md")
+    assert(editor("SKILL.md").value === "", "An empty draft must not fall back to the original")
+    failRemoves = true; click(button("恢复原文"))
+    await until(() => fixture.querySelector('[role="alert"]')?.textContent.includes("未能移除"), "Restore failure must be recoverable")
+    assert(editor("SKILL.md").value === "" && values.has(fileKey("weekly-report", "SKILL.md")), "Failed restore must retain the draft")
+    failRemoves = false; click(button("恢复原文"))
+    await until(() => editor("SKILL.md").value === skillSource && !values.has(fileKey("weekly-report", "SKILL.md")), "Restore must remove only the draft overlay")
+    checks.push("Source, preview, file drafts, undo, save snapshots, empty drafts and retryable restore")
+    await selectFile("scripts/ss.js"); await startEditing("scripts/ss.js")
+    assert(editor("scripts/ss.js").value === scriptSource && !button("预览"), "Scripts must remain exact source without Markdown formatting")
+    await selectFile("SKILL.md"); click(button("预览"))
+    await until(() => [...fixture.querySelectorAll(".markdown-preview a")].some(node => node.textContent === "指标口径"), "Preview must finish rendering links")
+    const target = [...fixture.querySelectorAll(".markdown-preview a")].find(node => node.textContent === "指标口径")
+    click(target)
+    await until(() => fixture.querySelector(".markdown-preview h1")?.textContent === "指标口径", "Relative links must open the target document preview")
+    checks.push("Script editing and relative Markdown links")
+    loadGate = Promise.withResolvers(); values.set(fileKey("weekly-report", "SKILL.md"), "延迟草稿")
+    render("abandoned"); assert(!editor("SKILL.md"), "Editor must wait for draft loading")
+    render("live"); loadGate.resolve(); loadGate = undefined
     await startEditing("SKILL.md")
-    assert(editor("SKILL.md").value === "late persisted draft", "Only the live screen may apply loaded drafts")
-    write("SKILL.md", "new live editing")
-    await wait()
-    assert(editor("SKILL.md").value === "new live editing", "Late initialization cannot overwrite editing")
-    loadGate = undefined
-    failReads = true
-    render("read-failure")
-    await until(() => fixture.querySelector('[role="alert"]')?.textContent.includes("无法读取"), "Read failure must remain distinguishable from an empty cache")
-    await startEditing("SKILL.md")
-    write("SKILL.md", "editing despite read failure")
-    assert(editor("SKILL.md").value === "editing despite read failure", "Read failure must still allow editing")
-    failReads = false
-    checks.push("async initialization gates editing, ignores abandoned loads and permits editing after failure")
+    assert(editor("SKILL.md").value === "延迟草稿", "Only the current screen may apply a delayed load")
+    failReads = true; render("read-failure")
+    await until(() => fixture.querySelector('[role="alert"]')?.textContent.includes("无法读取"), "Read failure must not look like an empty cache")
+    await startEditing("SKILL.md"); write("SKILL.md", "读取失败后仍可编辑")
+    assert(editor("SKILL.md").value === "读取失败后仍可编辑", "A read failure must permit further editing")
+    checks.push("Loading gates, abandoned requests and safe read failure")
 
     result.textContent = `PASS: ${checks.join("; ")}`
     result.dataset.passed = "true"
   } catch (error) {
-    result.textContent = `FAIL: ${error.message}`
+    result.textContent = `FAIL: ${error.stack}`
     result.dataset.passed = "false"
     throw error
   } finally {
-    flushSync(() => root.unmount())
+    if (result.dataset.passed === "true") flushSync(() => root.unmount())
   }
 </script>

@@ -6,6 +6,8 @@ import type {
   ThemePreferences,
 } from "@/preferences/theme"
 
+import { isPalette } from "@/preferences/theme"
+
 type ResolvedTheme = "dark" | "light"
 
 type ThemeProviderProps = {
@@ -84,7 +86,11 @@ export function ThemeProvider({
   ...props
 }: ThemeProviderProps) {
   const [theme, setThemeState] = React.useState(initialPreferences.theme)
-  const [palette, setPaletteState] = React.useState(initialPreferences.palette)
+  const [palette, setPaletteState] = React.useState<Palette>(
+    isPalette(initialPreferences.palette)
+      ? initialPreferences.palette
+      : "official"
+  )
 
   const setTheme = React.useCallback(
     (nextTheme: Theme) => {
@@ -185,7 +191,9 @@ export function ThemeProvider({
         if (change.theme !== undefined)
           setThemeState(change.theme ?? defaultTheme)
         if (change.palette !== undefined)
-          setPaletteState(change.palette ?? "official")
+          setPaletteState(
+            isPalette(change.palette) ? change.palette : "official"
+          )
       }),
     [defaultTheme, preferences]
   )

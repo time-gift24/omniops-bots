@@ -1,173 +1,298 @@
-"use client";
-
-import { memo, useCallback, useEffect, useState, useSyncExternalStore } from "react";
-
-import { useAppDependencies } from "@/app/dependencies";
-import { threadTask } from "@/desktop/runtime";
-import type { ThreadStore } from "@/chat/thread-store.ts";
-import type { ChatMessageView } from "@/chat/fold.ts";
-import { useThreadState } from "@/chat/react.ts";
-import { MessageView } from "@/components/chat/message-view";
-import { AIThinkingLoader } from "@/components/premium/ai-thinking-loader";
+"use client"
 import {
-  MessageScroller,
-  MessageScrollerButton,
-  MessageScrollerContent,
-  MessageScrollerItem,
-  MessageScrollerProvider,
-  MessageScrollerViewport,
-} from "@/components/ui/message-scroller";
+  memo,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react"
+import { ArrowDown, Bot } from "lucide-react"
+import { useAppDependencies } from "@/app/dependencies"
+import { threadTask } from "@/desktop/runtime"
+import type { ThreadStore } from "@/chat/thread-store"
+import { useThreadState } from "@/chat/react"
+import { providerModelLabel } from "@/providers/source"
+import {
+  TurnView,
+  type ThreadActions,
+} from "@/components/arc/blocks/ai-chat/chat-thread"
+import type { Turn } from "@/components/arc/blocks/ai-chat/chat-state"
+import type { ChatModel } from "@/components/arc/blocks/ai-chat/chat-data"
+import { nextCut } from "@/components/arc/blocks/ai-chat/chat-reveal"
+import { useReduced } from "@/components/arc/blocks/ai-chat/chat-parts"
+import {
+  ClaudeMark,
+  OpenaiMark,
+  GeminiColorMark,
+} from "@/components/arc/blocks/ai-chat/ai-chat-marks"
+import { toArcTurns } from "./arc-bridge"
+import styles from "@/components/arc/blocks/ai-chat/chat.module.css"
 
-/** 卸载前为 index.css 的 chat-swap-out 动画预留的时间（ms）。 */
-const LOADER_EXIT_MS = 220;
-
-/** 过场与内容同格叠放，交叉淡入淡出时避免布局跳动。 */
-function AssistantSlot({
-  message,
+const graphemes = new Intl.Segmenter("zh", { granularity: "grapheme" })
+const ArcTurn = memo(function ArcTurn({
+  turn,
+  model,
+  last,
   busy,
-  onRetry,
-  onEdit,
-  retryDisabled,
+  reduced,
+  actions,
 }: {
-  message: ChatMessageView;
-  busy: boolean;
-  onRetry: () => void;
-  onEdit?: (text: string) => void;
-  retryDisabled: boolean;
+  turn: Turn
+  model: ChatModel
+  last: boolean
+  busy: boolean
+  reduced: boolean
+  actions: ThreadActions
 }) {
-  const waiting =
-    busy && message.state === "streaming" && message.parts.length === 0;
-
-  // 在渲染期派生退场状态，避免内容到达时先卸载过场再挂回。
-  const [exiting, setExiting] = useState(false);
-  const [prevWaiting, setPrevWaiting] = useState(waiting);
-  if (prevWaiting !== waiting) {
-    setPrevWaiting(waiting);
-    setExiting(!waiting);
-  }
+  const reply = turn.versions[0].reply
+  const [reveal, setReveal] = useState({
+    id: reply.id,
+    text: reply.text,
+    shown: reply.text.length,
+    marks: [] as number[],
+  })
+  const latest = useRef(reply),
+    clock = useRef(0)
+  useLayoutEffect(() => {
+    latest.current = reply
+  }, [reply])
+  const running = reply.status === "streaming" && !reduced
   useEffect(() => {
-    if (!exiting) return;
-    const timer = setTimeout(() => setExiting(false), LOADER_EXIT_MS);
-    return () => clearTimeout(timer);
-  }, [exiting]);
-
+    if (!running) return
+    let frame = 0
+    const tick = (now: number) => {
+      frame = requestAnimationFrame(tick)
+      if (now - clock.current < 34) return
+      clock.current = now
+      const target = latest.current
+      setReveal((current) => {
+        const from =
+          current.id === target.id && target.text.startsWith(current.text)
+            ? Math.min(current.shown, target.text.length)
+            : 0
+        if (from >= target.text.length) return current
+        let cut = nextCut(
+          target.text,
+          from,
+          target.text.length - from > 600 ? 4 : 3,
+          false
+        )
+        if (
+          cut === from &&
+          /[^\p{ASCII}]/u.test(target.text.slice(from)) &&
+          !/^\s*```/.test(target.text.slice(from))
+        ) {
+          const chars = [...graphemes.segment(target.text.slice(from))].slice(
+            0,
+            6
+          )
+          cut = from + chars.reduce((n, char) => n + char.segment.length, 0)
+        }
+        return cut > from
+          ? {
+              id: target.id,
+              text: target.text,
+              shown: cut,
+              marks: [...(current.id === target.id ? current.marks : []), from],
+            }
+          : current
+      })
+    }
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [running])
+  const shown = running
+    ? reveal.id === reply.id
+      ? Math.min(reveal.shown, reply.text.length)
+      : 0
+    : reply.text.length
+  const version = {
+    ...turn.versions[0],
+    reply: { ...reply, shown, marks: running ? reveal.marks : undefined },
+  }
   return (
-    <div className="grid">
-      <div className="col-start-1 row-start-1 min-w-0">
-        {!waiting && (
-          <MessageView
-            message={message}
-            streaming={busy && message.state === "streaming"}
-            onRetry={onRetry}
-            retryDisabled={retryDisabled}
-            onEdit={onEdit}
-          />
-        )}
-      </div>
-      {(waiting || exiting) && (
-        <div
-          className={`col-start-1 row-start-1${waiting ? "" : " chat-swap-out"}`}
-          aria-hidden={!waiting}
-        >
-          <AIThinkingLoader
-            variant="diamond"
-            label="正在思考"
-            paused={!waiting}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
+    <TurnView
+      turn={turn}
+      version={version}
+      model={model}
+      last={last}
+      busy={busy}
+      reduced={reduced}
+      actions={actions}
+    />
+  )
+})
 
-const ThreadMessage = memo(function ThreadMessage({
-  message,
-  streaming,
-  onRetry,
-  retryDisabled,
-  onEdit,
-}: {
-  message: ChatMessageView;
-  streaming: boolean;
-  onRetry: (messageId: string) => void;
-  retryDisabled: boolean;
-  onEdit?: (text: string) => void;
-}) {
-  const retry = () => onRetry(message.id);
-  return (
-    <MessageScrollerItem
-      messageId={message.id}
-      scrollAnchor={message.role === "user"}
-    >
-      {message.role === "assistant" ? (
-        <AssistantSlot
-          message={message}
-          busy={streaming}
-          onRetry={retry}
-          retryDisabled={retryDisabled}
-          onEdit={onEdit}
-        />
-      ) : (
-        <MessageView
-          message={message}
-          streaming={false}
-          onRetry={retry}
-          retryDisabled={retryDisabled}
-          onEdit={onEdit}
-        />
-      )}
-    </MessageScrollerItem>
-  );
-});
-
-export function ChatThread({
-  store,
-  onEditMessage,
-}: {
-  store: ThreadStore;
-  onEditMessage?: (text: string) => void;
-}) {
-  const { desktop } = useAppDependencies();
+/** Cognacta's Arc thread, reveal clock and scroll behavior consume the existing per-thread store. */
+export function ChatThread({ store }: { store: ThreadStore }) {
+  const { desktop } = useAppDependencies(),
+    state = useThreadState(store),
+    reduced = useReduced()
   const desktopBusy = useSyncExternalStore(
     desktop.subscribe,
-    () => threadTask(desktop.getState(), store.getState().threadId) !== null,
-    () => threadTask(desktop.getState(), store.getState().threadId) !== null,
-  );
-  const onRetry = useCallback((messageId: string) => {
-    if (threadTask(desktop.getState(), store.getState().threadId) || store.appendOnly) return;
-    store.retry(messageId);
-  }, [desktop, store]);
-  const state = useThreadState(store);
+    () => Boolean(threadTask(desktop.getState(), state.threadId)),
+    () => false
+  )
   const busy =
-    state.status === "submitted" ||
     state.status === "streaming" ||
-    state.status === "stopping";
-
+    state.status === "submitted" ||
+    state.status === "stopping"
+  const modelId =
+    state.metadata?.resolvedModel ??
+    state.metadata?.requestedModel ??
+    store.getDraft().model ??
+    ""
+  const model = useMemo<ChatModel>(
+    () => ({
+      id: modelId,
+      name: providerModelLabel(modelId) || "Assistant",
+      mark: /claude/i.test(modelId)
+        ? ClaudeMark
+        : /gemini/i.test(modelId)
+          ? GeminiColorMark
+          : /gpt|openai/i.test(modelId)
+            ? OpenaiMark
+            : Bot,
+    }),
+    [modelId]
+  )
+  const turns = useMemo(
+    () => toArcTurns(state.messages, modelId, state.error?.message),
+    [state.messages, modelId, state.error?.message]
+  )
+  const [announcement, announce] = useState("")
+  const turnsRef = useRef(turns),
+    stateRef = useRef({ busy: busy || desktopBusy, modelId })
+  useLayoutEffect(() => {
+    turnsRef.current = turns
+    stateRef.current = { busy: busy || desktopBusy, modelId }
+  }, [turns, busy, desktopBusy, modelId])
+  const actions = useMemo<ThreadActions>(
+    () => ({
+      retry: (id) => {
+        if (
+          stateRef.current.busy ||
+          threadTask(desktop.getState(), store.getState().threadId) ||
+          store.appendOnly
+        )
+          return
+        const reply = turnsRef.current.find((turn) => turn.id === id)
+          ?.versions[0].reply
+        if (reply) store.retry(reply.id)
+      },
+      retryInPlace: (id) => {
+        if (
+          stateRef.current.busy ||
+          threadTask(desktop.getState(), store.getState().threadId) ||
+          store.appendOnly
+        )
+          return
+        const reply = turnsRef.current.find((turn) => turn.id === id)
+          ?.versions[0].reply
+        if (reply) store.retry(reply.id)
+      },
+      edit: (_id, text) => {
+        if (
+          stateRef.current.busy ||
+          threadTask(desktop.getState(), store.getState().threadId)
+        )
+          return
+        const accepted = store.send(text, undefined, stateRef.current.modelId)
+        if (accepted) store.updateDraft({ text: "", attachments: [] })
+      },
+      select: () => {},
+      feedback: () => {},
+      canFeedback: false,
+      canRetry: !store.appendOnly,
+      copied: (ok) => announce(ok ? "已复制到剪贴板" : "复制失败，请重试"),
+    }),
+    [store, desktop]
+  )
+  const scroller = useRef<HTMLDivElement>(null),
+    content = useRef<HTMLDivElement>(null),
+    stuck = useRef(true),
+    [jump, setJump] = useState(false)
+  useEffect(() => {
+    const node = scroller.current,
+      body = content.current
+    if (!node || !body) return
+    let frame = 0
+    const observer = new ResizeObserver(() => {
+      if (!stuck.current) return
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => {
+        node.scrollTop = node.scrollHeight
+      })
+    })
+    observer.observe(body)
+    node.scrollTop = node.scrollHeight
+    return () => {
+      observer.disconnect()
+      cancelAnimationFrame(frame)
+    }
+  }, [])
   return (
-    <MessageScrollerProvider autoScroll scrollPreviousItemPeek={64}>
-      <MessageScroller>
-        <MessageScrollerViewport className="px-4 sm:px-8">
-          <MessageScrollerContent
-            aria-busy={busy}
-            className="mx-auto w-full max-w-[883.2px] gap-8 px-4 py-6"
-          >
-            {state.messages.map((message) => (
-              <ThreadMessage
-                key={message.id}
-                message={message}
-                streaming={busy && message.state === "streaming"}
-                onRetry={onRetry}
-                retryDisabled={busy || desktopBusy || store.appendOnly === true}
-                onEdit={onEditMessage}
-              />
-            ))}
-            {store.appendOnly && !busy && state.messages.length > 0 ? (
-              <p className="text-xs text-muted-foreground">需要重新尝试时，请发送一条新消息继续。</p>
-            ) : null}
-          </MessageScrollerContent>
-        </MessageScrollerViewport>
-        <MessageScrollerButton />
-      </MessageScroller>
-    </MessageScrollerProvider>
-  );
+    <section
+      className={styles.root}
+      aria-label="对话"
+      style={{ height: "100%", background: "transparent" }}
+    >
+      <div
+        ref={scroller}
+        data-slot="message-scroller-viewport"
+        className="min-h-0 flex-1 [scrollbar-width:none] overflow-y-auto"
+        tabIndex={0}
+        onScroll={(event) => {
+          const node = event.currentTarget
+          stuck.current =
+            node.scrollHeight - node.clientHeight - node.scrollTop < 40
+          setJump(!stuck.current)
+        }}
+      >
+        <div ref={content} className={styles.thread} aria-busy={busy}>
+          {turns.map((turn, index) => (
+            <ArcTurn
+              key={turn.id}
+              turn={turn}
+              model={model}
+              last={index === turns.length - 1}
+              busy={busy || desktopBusy}
+              reduced={reduced}
+              actions={actions}
+            />
+          ))}
+          {store.appendOnly && !busy ? (
+            <p className="text-xs text-muted-foreground">
+              需要重新尝试时，请发送一条新消息继续。
+            </p>
+          ) : null}
+        </div>
+      </div>
+      {jump ? (
+        <button
+          type="button"
+          aria-label="滚动到最新消息"
+          className="bg-surface absolute right-4 bottom-4 rounded-full border border-border p-2"
+          onClick={() => {
+            const node = scroller.current
+            if (node) {
+              stuck.current = true
+              node.scrollTo({
+                top: node.scrollHeight,
+                behavior: reduced ? "instant" : "smooth",
+              })
+              setJump(false)
+            }
+          }}
+        >
+          <ArrowDown size={16} />
+        </button>
+      ) : null}
+      <span role="status" className="sr-only">
+        {announcement}
+      </span>
+    </section>
+  )
 }

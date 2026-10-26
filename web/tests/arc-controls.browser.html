@@ -1,0 +1,43 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Arc control compatibility</title>
+<div id="fixture"></div>
+<pre id="result">Running…</pre>
+<script type="module">
+  import React from "react"
+  import { createRoot } from "react-dom/client"
+  import { flushSync } from "react-dom"
+  import "/src/index.css"
+  import { Button } from "/src/components/motion/button.tsx"
+  import { Input } from "/src/components/motion/input.tsx"
+  const h = React.createElement
+  const button = React.createRef()
+  const input = React.createRef()
+  let clicks = 0, submits = 0, value = ""
+  const root = createRoot(document.querySelector("#fixture"))
+  const assert = (condition, message) => { if (!condition) throw new Error(message) }
+  const render = error => flushSync(() => root.render(h("form", { onSubmit: e => { e.preventDefault(); submits++ } },
+    h(Button, { ref: button, onClick: () => clicks++ }, "保存"),
+    h(Input, { ref: input, label: "名称", defaultValue: "草稿", onChange: next => value = next, error, "aria-invalid": false, leftIcon: h("svg", { "aria-hidden": true }) }),
+    h(Button, { variant: "plain", id: "plain" }, h("span", null, "打开")),
+  )))
+  try {
+    render(undefined)
+    assert(input.current.getAttribute("aria-invalid") === "false", "Explicit valid state must survive the adapter")
+    assert(button.current.type === "button", "Arc buttons must not submit parent forms by default")
+    button.current.click()
+    assert(clicks === 1 && submits === 0, "Ref and click handlers must reach the native button once")
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set.call(input.current, "新名称")
+    input.current.dispatchEvent(new Event("input", { bubbles: true }))
+    assert(value === "新名称", "Input must retain the public string callback")
+    assert(document.querySelector("label").htmlFor === input.current.id, "Label must name the actual input")
+    render("名称不能为空")
+    assert(input.current.value === "新名称", "Validation updates must preserve uncontrolled edits")
+    assert(input.current.getAttribute("aria-invalid") === "true", "Invalid fields must retain semantics")
+    assert(document.getElementById(input.current.getAttribute("aria-describedby"))?.getAttribute("role") === "alert", "Errors must be described and announced")
+    assert(document.querySelector("#plain").firstElementChild.textContent === "打开", "Layout buttons must retain direct children")
+    document.querySelector("#result").textContent = "PASS: Arc refs, button defaults, value callbacks, validation and layout compatibility"
+  } catch (error) {
+    document.querySelector("#result").textContent = `FAIL\n${error.stack}`
+  }
+</script>

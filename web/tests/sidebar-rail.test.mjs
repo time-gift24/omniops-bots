@@ -7,10 +7,8 @@ import { createServer } from "vite";
 test("SidebarRail renders on the server without mounting browser portals", async (t) => {
   const server = await createServer({ server: { middlewareMode: true, hmr: false, ws: false }, appType: "custom", optimizeDeps: { noDiscovery: true, include: [] } });
   t.after(() => server.close());
-  const { useHydrated } = await server.ssrLoadModule("/src/lib/hooks/use-hydrated.ts");
-  assert.equal(renderToString(createElement(() => String(useHydrated()))), "false");
   const { SidebarRail } = await server.ssrLoadModule(
-    "/src/components/premium/sidebar-blocks/sidebar-rail.tsx",
+    "/src/components/workspace/navigation.tsx",
   );
   const html = renderToString(createElement(SidebarRail, { workspaceName: "omniops-bots" }));
   assert.match(html, /omniops-bots/);

@@ -48,7 +48,7 @@
     .find(node => visible(node) && label(node) === name)
   const click = node => {
     assert(visible(node) && !node.disabled, "Expected an enabled visible control")
-    flushSync(() => node.click())
+    flushSync(() => node.getAttribute("role") === "tab" ? node.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true })) : node.click())
   }
   const header = () => fixture.querySelector("header")
   const titlebar = () => fixture.querySelector('[data-slot="desktop-titlebar"]')
@@ -68,6 +68,7 @@
     if (drawer) {
       click(button("Close sidebar"))
       await until(() => drawer.getAttribute("aria-hidden") === "true", "Mobile navigation must close")
+      await until(() => !fixture.closest('[aria-hidden="true"]'), "Drawer must release background focus")
     }
   }
   const openSection = async name => {
@@ -115,7 +116,9 @@
     flushSync(() => root.render(withTestTheme(
       React.createElement(WindowFrame, { window: nativeWindow }, React.createElement(App)), dependencies
     )))
-    await until(() => header() && button("收起工作台"), "App must load its shared Header")
+    await until(() => header() && button("打开工作台"), "App must load its shared Header")
+    click(button("打开工作台"))
+    await until(() => button("收起工作台"), "Workbench must open from the shared Header")
     const workbench = fixture.querySelector('aside[aria-label="工作台"]')
     const closeWorkbench = button("收起工作台")
     await until(() => closeWorkbench.contains(hitTarget(closeWorkbench)), () => `Default workbench toolbar must be clickable; hit ${hitTarget(closeWorkbench)?.outerHTML.slice(0, 300)}`)
@@ -164,13 +167,12 @@
     await until(() => button(longName), "Agent navigation must expose the long-name fixture")
     click(button(longName))
     await dismissNavigation()
-    await until(() => currentTitle() === longName && button("编辑"), "Agent toolbar must update the same Header")
-    assert(header().querySelector("h1")?.textContent === longName, "Agent toolbar title must be portaled into the shared Header")
-    const actions = [...fixture.querySelectorAll('[data-slot="document-actions"]')].find(visible)
+    await until(() => currentTitle() === longName && button("保存 Agent"), "Agent toolbar must update the same Header")
+    assert(label(header().querySelector('ol > li[aria-current="page"]')) === longName, "Agent toolbar title must be portaled into the shared Header")
+    const actions = [...fixture.querySelectorAll('[data-slot="editor-actions"]')].find(visible)
     assert(actions && !header().contains(actions) && actions.getBoundingClientRect().top >= header().getBoundingClientRect().bottom - 1, "Agent document actions must remain below the Header")
     checkHeader()
-    click(button("编辑", actions))
-    await until(() => button("保存", actions) && button("撤销", actions), "Agent editing actions must remain available below the Header")
+    await until(() => button("保存 Agent", actions) && button("撤销修改", actions), "Agent editing actions must remain available below the Header")
     assert(currentTitle() === longName, "Switching Agent toolbar state must preserve the titlebar title")
     checkHeader()
     result.textContent = `PASS: ${platform} titlebar placement, single Header, controls/failure/retry, settings/Agent toolbar and long-title layout (${innerWidth}px)`

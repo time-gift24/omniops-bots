@@ -63,6 +63,7 @@ async function client(directory, model, manual = {}, keys = new Map()) {
     MCP_LOCAL_TOKEN: 'local-mcp-private',
     OMNIOPS_BOTS_MANUAL_BROWSER_CDP_ENDPOINT: manual.endpoint || '', OMNIOPS_BOTS_MANUAL_BROWSER_TARGET_ID: manual.targetId || '',
   }, stdio: ['pipe', 'pipe', 'pipe'] });
+  const subscribers = new Set();
   const events = [], pending = new Map(), ready = Promise.withResolvers(), exited = Promise.withResolvers();
   let sequence = 0, stderr = '';
   child.stderr.on('data', bytes => { stderr += bytes; });
@@ -77,7 +78,7 @@ async function client(directory, model, manual = {}, keys = new Map()) {
         result: message.operation === 'get' ? keys.get(message.reference) ?? null : null }) + '\n');
       return;
     }
-    if (message.event) events.push(message);
+    if (message.event) { events.push(message); for (const subscriber of subscribers) subscriber(message); }
     if (message.event === 'ready') ready.resolve();
     const request = pending.get(message.id);
     if (request) { pending.delete(message.id); message.error ? request.reject(Object.assign(new Error(message.error.message), message.error)) : request.resolve(message.result); }
@@ -88,7 +89,7 @@ async function client(directory, model, manual = {}, keys = new Map()) {
     child.stdin.write(JSON.stringify({ id, method, params }) + '\n');
     return result.promise;
   }
-  return { rpc, events, async close(force = false) {
+  return { rpc, events, subscribe(listener) { subscribers.add(listener); return () => subscribers.delete(listener); }, async close(force = false) {
     if (child.exitCode !== null || child.signalCode) return;
     if (force) child.kill('SIGKILL'); else await rpc('shutdown');
     await exited.promise;
@@ -226,5 +227,115 @@ test('client JSONL isolates manual CDP operations from Agent Chrome, runs pinned
   } finally {
     await runtime?.close(); await control?.close(); await manualControl?.close(); await manualServer?.close();
     await model?.close(); await mcp?.close(); await writable(directory); await rm(directory, { recursive: true, force: true });
+  }
+});
+
+// Run against source or the packaged Node/runtime using the same environment
+// overrides as the client regression above. Only the native transport and model
+// service are fixtures; LangGraph, JSONL, adapters, stores and Arc are real.
+test('Cognacta input renders real LangGraph IPC deltas, tools, completion, history and cancellation', { timeout: 90_000 }, async () => {
+  const directory = await realpath(await mkdtemp(join(tmpdir(), 'omniops-chat-ui-')));
+  const gates = [], requests = [];
+  let runtime, browser, vite, page, unsubscribe, mcp;
+  const http = createServer(async (request, response) => {
+    try {
+      let raw = '';
+      for await (const bytes of request) raw += bytes;
+      const body = JSON.parse(raw);
+      requests.push(body);
+      const user = body.messages.findLastIndex(message => message.role === 'user');
+      const stopped = body.messages[user].content.includes('取消');
+      const tools = body.messages.slice(user + 1).filter(message => message.role === 'tool');
+      response.writeHead(200, { 'Content-Type': 'text/event-stream' });
+      const send = (delta, finish_reason = null) => response.write(`data: ${JSON.stringify({ id: `chatcmpl-ui-${requests.length}`, object: 'chat.completion.chunk', created: 1, model: 'ui-fixture', choices: [{ index: 0, delta, finish_reason }] })}\n\n`);
+      send({ role: 'assistant' });
+      if (!tools.length && !stopped) {
+        send({ tool_calls: [{ index: 0, id: 'lookup-proof', type: 'function', function: { name: 'mcp_local_lookup', arguments: '{"value":"live-ui"}' } }] });
+        send({}, 'tool_calls');
+      } else {
+        send({ content: stopped ? '取消前保留 👩🏽‍💻' : 'LangGraph 实时中文 👩🏽‍💻' });
+        const gate = Promise.withResolvers();
+        gates.push(gate);
+        await gate.promise;
+        if (response.destroyed) return;
+        send({ content: '\n\n```ts\nconst verified = true\n```\n\n完成结果。' });
+        send({}, 'stop');
+      }
+      response.end('data: [DONE]\n\n');
+    } catch { if (!response.headersSent) response.writeHead(500); response.end(); }
+  });
+  try {
+    await new Promise(resolve => http.listen(0, '127.0.0.1', resolve));
+    runtime = await client(directory, { model: 'ui-fixture', baseURL: `http://127.0.0.1:${http.address().port}/v1` });
+    mcp = await mcpFixture();
+    await runtime.rpc('mcp_save', { server: { id: 'local', name: 'Local fixture', description: 'Local streaming fixture', url: mcp.url, credentialEnv: 'MCP_LOCAL_TOKEN' } });
+    const agent = await runtime.rpc('agent_create', { configuration: { name: 'UI proof', description: '', instructions: 'Use the selected MCP lookup and answer.', skillIds: [], toolIds: [], mcpServerIds: ['local'] } });
+    const { createServer: createVite } = await import('../../../web/node_modules/vite/dist/node/index.js');
+    vite = await createVite({ appType: 'custom', root: new URL('../../../web', import.meta.url).pathname, plugins: [{ name: 'chat-ui-test', resolveId(id) { if (id === '/chat-ui-test.js') return id; }, load(id) { if (id === '/chat-ui-test.js') return 'import React from "react"; import ReactDOM from "react-dom/client"; export const h = React.createElement; export const createRoot = ReactDOM.createRoot;'; } }], cacheDir: 'node_modules/.vite-langgraph-ui', server: { host: '127.0.0.1', port: 0 }, optimizeDeps: { entries: ['src/main.tsx'] } });
+    vite.middlewares.use('/__chat_ui', async (_request, response) => { response.setHeader('Content-Type', 'text/html'); response.end(await vite.transformIndexHtml('/__chat_ui', '<!doctype html><div id="root" style="height:800px"></div>')); });
+    await vite.listen();
+    browser = await chromium.launch({ channel: 'chrome', headless: true });
+    page = await browser.newPage({ viewport: { width: 1100, height: 850 } });
+    await page.exposeFunction('runtimeInvoke', async (command, args) => {
+      if (['runtime_prepare_run', 'runtime_release_run'].includes(command)) return null;
+      assert.equal(command, 'runtime_request');
+      return runtime.rpc(args.method, args.params);
+    });
+    await page.goto(`http://127.0.0.1:${vite.httpServer.address().port}/__chat_ui`);
+    unsubscribe = runtime.subscribe(message => { void page.evaluate(message => window.runtimeListener?.(message), message).catch(() => {}); });
+    await page.evaluate(async agentId => {
+      const [{ h, createRoot }, { createTauriAdapters }, { createAppDependencies, AppDependenciesProvider }, { ChatScreen }] = await Promise.all([
+        import('/chat-ui-test.js'),
+        import('/src/adapters/tauri/index.ts'), import('/src/app/dependencies.tsx'), import('/src/components/chat/chat-screen.tsx'), import('/src/index.css'),
+      ]);
+      const connection = await createTauriAdapters({ invoke: window.runtimeInvoke, async listen(_name, callback) { window.runtimeListener = callback; return () => { window.runtimeListener = undefined; }; } });
+      connection.setContextResolver(async () => ({ agentId }));
+      const dependencies = createAppDependencies(connection.adapters), models = await dependencies.models.list();
+      const root = createRoot(document.querySelector('#root'));
+      const mount = () => root.render(h(AppDependenciesProvider, { value: dependencies }, h(ChatScreen, { threadId: 'live-ui', models })));
+      window.uiProof = { mount, unmount: () => root.render(null), dispose: () => { root.unmount(); connection.dispose(); } };
+      mount();
+    }, agent.id);
+    const input = page.getByRole('textbox', { name: '消息输入' });
+    await input.fill('验证实时 LangGraph');
+    await page.getByRole('button', { name: '发送', exact: true }).click();
+    try { await page.getByText('LangGraph 实时中文 👩🏽‍💻', { exact: false }).waitFor({ timeout: 10_000 }); }
+    catch (cause) { throw new Error(JSON.stringify({ requests: requests.map(body => body.messages.map(message => ({ role: message.role, tool: message.name }))), events: runtime.events.filter(message => message.event === 'chat_event').map(message => ({ type: message.data.type, error: message.data.error })), ui: await page.locator('body').innerText() }), { cause }); }
+    const running = await runtime.rpc('status');
+    assert.equal(running.tasks.length, 1, 'Arc must reveal deltas while the real graph is still running');
+    assert.ok(runtime.events.some(message => message.data?.type === 'delta'));
+    assert.equal(runtime.events.some(message => message.data?.type === 'completed'), false);
+    await page.getByRole('button', { name: /mcp_local_lookup/ }).click();
+    assert.ok(await page.getByText('live-ui', { exact: false }).count(), 'Actual graph tool output reaches the Arc tool detail');
+    await input.fill('保留下一轮草稿');
+    await page.evaluate(() => window.uiProof.unmount());
+    gates[0].resolve();
+    await until(async () => (await runtime.rpc('status')).tasks.length === 0);
+    await page.evaluate(() => window.uiProof.mount());
+    await page.getByText('完成结果。', { exact: false }).waitFor();
+    assert.equal(await input.textContent(), '保留下一轮草稿');
+    assert.match(await page.locator('pre').innerText(), /const verified = true/);
+    const records = await runtime.rpc('runs_list');
+    assert.equal(records[0].status, 'completed');
+    assert.equal(records[0].result.assistant.parts.filter(part => part.type === 'text').map(part => part.text).join(''), 'LangGraph 实时中文 👩🏽‍💻\n\n```ts\nconst verified = true\n```\n\n完成结果。');
+    await input.fill('验证取消');
+    await page.getByRole('button', { name: '发送', exact: true }).click();
+    await page.getByText('取消前保留 👩🏽‍💻', { exact: false }).waitFor();
+    await page.getByRole('button', { name: '停止响应', exact: true }).click();
+    await until(async () => (await runtime.rpc('status')).tasks.length === 0);
+    assert.ok(await page.getByText('取消前保留 👩🏽‍💻', { exact: false }).count());
+    assert.equal((await runtime.rpc('runs_list'))[0].status, 'cancelled');
+    assert.equal(requests.length, 3, 'Stop and remount must never replay a graph/model call');
+    await page.evaluate(() => window.uiProof.dispose());
+  } finally {
+    unsubscribe?.();
+    for (const gate of gates) gate.resolve();
+    await browser?.close();
+    await vite?.close();
+    await runtime?.close();
+    await mcp?.close();
+    http.closeAllConnections();
+    await new Promise(resolve => http.close(resolve));
+    await writable(directory); await rm(directory, { recursive: true, force: true });
   }
 });

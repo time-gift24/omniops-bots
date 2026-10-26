@@ -1,53 +1,99 @@
-"use client";
-
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Cancel01Icon } from "@hugeicons-pro/core-stroke-rounded";
+"use client"
+import { useLayoutEffect, useRef, type ReactNode, type RefObject } from "react"
+import type { MotionProps } from "motion/react"
+import { X } from "lucide-react"
 import {
-  AnimatedModal as BeuiAnimatedModal,
-  type AnimatedModalProps as BeuiAnimatedModalProps,
-} from "@/components/beui/motion/animated-modal";
-import { Button } from "@/components/motion/button";
-import { EASE_IN_OUT, SPRING_MODAL } from "@/lib/ease";
-import { cn } from "@/lib/utils";
-
-export { AnimatedModalTitle, AnimatedModalDescription } from "@/components/beui/motion/animated-modal";
-
-export type AnimatedModalProps = Omit<BeuiAnimatedModalProps, "panelMotion"> & {
-  showCloseButton?: boolean;
-};
-
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/arc/dialog/dialog"
+import { motionTokens } from "@/components/arc/motion-tokens"
+import { Button } from "./button"
+import { cn } from "@/lib/utils"
+export const AnimatedModalTitle = DialogTitle
+export const AnimatedModalDescription = DialogDescription
 export const dialogPanelMotion = {
-  initial: { opacity: 0, y: 10, scale: 0.96 },
-  exit: { opacity: 0, y: 6, scale: 0.96, transition: { duration: 0.15, ease: EASE_IN_OUT } },
-  transition: SPRING_MODAL,
-} satisfies NonNullable<BeuiAnimatedModalProps["panelMotion"]>;
-
+  initial: { opacity: 0, y: 8, scale: 0.96 },
+  exit: { opacity: 0, y: 4, scale: 0.98 },
+  transition: motionTokens.spring.smooth,
+}
+export type AnimatedModalProps = {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onExitComplete?: () => void
+  initialFocus?: RefObject<HTMLElement | null>
+  children: ReactNode
+  className?: string
+  backdropClassName?: string
+  viewportClassName?: string
+  panelClassName?: string
+  panelDataSlot?: string
+  showCloseButton?: boolean
+  panelMotion?: Pick<MotionProps, "initial" | "exit" | "transition">
+}
 export function AnimatedModal({
-  showCloseButton = false,
+  open,
+  onOpenChange,
+  onExitComplete,
+  initialFocus,
   children,
   panelClassName,
-  onOpenChange,
-  ...props
+  panelDataSlot,
+  showCloseButton,
 }: AnimatedModalProps) {
+  const returnFocus = useRef<HTMLElement | null>(null)
+  const previous = useRef(false)
+  const currentOpen = useRef(open)
+  useLayoutEffect(() => {
+    currentOpen.current = open
+    if (open && !previous.current)
+      returnFocus.current =
+        document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null
+    previous.current = open
+  }, [open])
   return (
-    <BeuiAnimatedModal
-      {...props}
-      onOpenChange={onOpenChange}
-      panelClassName={cn("chat-modal-panel relative", panelClassName)}
-      panelMotion={dialogPanelMotion}
-    >
-      {children}
-      {showCloseButton ? (
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="关闭"
-          onClick={() => onOpenChange(false)}
-          className="absolute top-4 right-4 size-9 rounded-full text-muted-foreground"
-        >
-          <HugeiconsIcon icon={Cancel01Icon} size={16} aria-hidden="true" />
-        </Button>
-      ) : null}
-    </BeuiAnimatedModal>
-  );
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        unstyled
+        data-slot={panelDataSlot}
+        className={cn(
+          "relative max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-lg overflow-auto p-6",
+          panelClassName
+        )}
+        onOpenAutoFocus={(event) => {
+          if (initialFocus?.current) {
+            event.preventDefault()
+            initialFocus.current.focus()
+          }
+        }}
+        onCloseAutoFocus={(event) => {
+          event.preventDefault()
+          const target = returnFocus.current
+          if (target?.isConnected && !target.closest("[inert]"))
+            target.focus({ preventScroll: true })
+        }}
+        onExitComplete={() =>
+          requestAnimationFrame(() => {
+            if (!currentOpen.current) onExitComplete?.()
+          })
+        }
+      >
+        {children}
+        {showCloseButton ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="关闭"
+            className="absolute top-3 right-3"
+            onClick={() => onOpenChange(false)}
+          >
+            <X size={16} />
+          </Button>
+        ) : null}
+      </DialogContent>
+    </Dialog>
+  )
 }

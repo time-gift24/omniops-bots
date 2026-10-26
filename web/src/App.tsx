@@ -36,7 +36,7 @@ import {
   type SidebarRailAction,
   type SidebarRailItem,
   type SidebarRailSection,
-} from "@/components/premium/sidebar-blocks/sidebar-rail"
+} from "@/components/workspace/navigation"
 import { Button } from "@/components/motion/button"
 import { useIsMobile } from "@/components/motion/animated-sidebar"
 import { Select } from "@/components/premium/select/select"
@@ -44,7 +44,7 @@ import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import {
   MorphicCommandPalette,
   MorphicCommandPaletteContent,
-} from "@/components/beui/premium/morphic-command-palette/morphic-command-palette"
+} from "@/components/workspace/search-palette"
 import {
   WorkbenchPanel,
   type WorkbenchHandle,
@@ -53,7 +53,6 @@ import { WorkspacePanel } from "@/components/workspace/workspace-panel"
 import { WorkspacePicker } from "@/components/workspace/workspace-picker"
 import { useToast } from "@/components/ui/toast"
 import { EASE_OUT } from "@/lib/ease"
-import { ThemePicker } from "@/components/theme-picker"
 import { RunHistory } from "@/components/runs/run-history"
 import { ClientSettingsScreen } from "@/components/settings/client-settings"
 import {
@@ -610,6 +609,7 @@ function WorkspaceApp({
         <SettingsNavigation
           active={activeSettingsSection}
           onNavigate={(section) => {
+            setActiveSettingsSection(section)
             closeNavigation()
             requestAnimationFrame(() => {
               const target =
@@ -617,9 +617,9 @@ function WorkspaceApp({
                   `#client-settings-${section}`
                 )
               target?.focus({ preventScroll: true })
-              target?.scrollIntoView({
-                behavior: reduce ? "instant" : "smooth",
-                block: "start",
+              settingsScrollRef.current?.scrollTo({
+                top: 0,
+                behavior: "instant",
               })
             })
           }}
@@ -889,12 +889,6 @@ function WorkspaceApp({
           setNavigationExpanded(expanded)
           if (expanded && compactWindow) setWorkbenchOpen(false)
         }}
-        railActions={<ThemePicker />}
-        panelHeader={
-          activeSectionId === "settings" ? (
-            <h2 className="text-xl font-medium">设置</h2>
-          ) : undefined
-        }
         activeSectionId={activeSectionId}
         activeItemId={activeItemId}
         onSectionSelect={(section) => {
@@ -1334,6 +1328,7 @@ function WorkspaceApp({
               view.itemId === "preferences" ? (
               <ClientSettingsScreen
                 scrollRef={settingsScrollRef}
+                activeSection={activeSettingsSection}
                 onSectionChange={setActiveSettingsSection}
               />
             ) : view.kind === "page" ||

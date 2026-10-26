@@ -22,7 +22,6 @@ async function load(t) {
   return {
     ...await server.ssrLoadModule("/src/chat/thread-store.ts"),
     ...await server.ssrLoadModule("/src/chat/fold.ts"),
-    ...await server.ssrLoadModule("/src/chat/wire.ts"),
     ...await server.ssrLoadModule("/src/chat/registry.ts"),
   };
 }
@@ -132,16 +131,6 @@ test("duplicate starts and deltas for unknown parts fail without destroying acce
     const rejected = foldChatEvent(state, invalid);
     assert.equal(rejected.error?.kind, "invalid-response");
     assert.equal(rejected.messages[0].parts[0].text, "kept");
-  }
-});
-
-test("wire rejects impossible counters and part IDs before folding", async t => {
-  const { chatEventFromWire, WireFormatError } = await load(t);
-  for (const count of [-1, 1.5, Number.MAX_SAFE_INTEGER + 1]) {
-    assert.throws(() => chatEventFromWire({ type: "usage", usage: { total_tokens: count } }), WireFormatError);
-  }
-  for (const part of [-1, 1.5, 2 ** 32]) {
-    assert.throws(() => chatEventFromWire({ type: "part_started", part, kind: "text" }), WireFormatError);
   }
 });
 

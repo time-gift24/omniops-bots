@@ -159,11 +159,11 @@
   const click = (element) => {
     assert(
       visible(element) && !element.disabled,
-      "Expected an enabled visible control"
+      `Expected enabled visible control: ${element?.outerHTML.slice(0,250) ?? "missing"}; sidebar=${!!document.querySelector('[data-slot="sidebar-mobile"]')}`
     )
     flushSync(() => {
       element.focus()
-      element.click()
+      element.getAttribute("role") === "tab" ? element.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true })) : element.click()
     })
   }
   const fill = (input, value) =>
@@ -200,19 +200,23 @@
     )
   const sidebarRow = (name) =>
     [
-      ...document.querySelectorAll('[data-slot="sidebar-menu-item"] button'),
+      ...document.querySelectorAll('[data-slot="sidebar"] li button'),
     ].find((element) => visible(element) && label(element) === name)
   const mobileDrawer = () =>
-    document.querySelector('[data-mobile="true"][aria-hidden="false"]')
+    document.querySelector('[data-slot="sidebar-mobile"]')
   const openNavigation = async () => {
-    if (innerWidth >= 768 || mobileDrawer()) return
+    if (innerWidth >= 768) return
+    await until(() => !mobileDrawer() || button("Close sidebar", mobileDrawer()), "A leaving navigation sheet must settle")
+    if (mobileDrawer()) return
     click(button("展开导航"))
-    await until(() => mobileDrawer(), "Mobile navigation did not open")
+    await until(() => mobileDrawer() && button("Close sidebar", mobileDrawer()), "Mobile navigation did not open")
   }
   const closeNavigation = async () => {
+    await until(() => !mobileDrawer() || button("Close sidebar", mobileDrawer()), "A leaving navigation sheet must release its controls")
     if (!mobileDrawer()) return
     click(button("Close sidebar", mobileDrawer()))
     await until(() => !mobileDrawer(), "Mobile navigation did not close")
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
   }
   const checkSidebar = async (name, present, message) => {
     await openNavigation()
@@ -221,6 +225,7 @@
   }
   const openAgent = async () => {
     await closeNavigation()
+    await until(() => visible(navigation("Agent")) && !navigation("Agent").disabled, "Navigation must be released after closing the drawer")
     click(navigation("Agent"))
     await closeNavigation()
     await until(
@@ -230,10 +235,10 @@
     click(button("测试 Agent") ?? button("打开 测试 Agent"))
     await until(
       () =>
-        agentScreen() && (settings() || button("Agent 配置", agentScreen())),
+        agentScreen() && (settings() || button("Agent 能力", agentScreen())),
       "Agent page did not open"
     )
-    if (!settings()) click(button("Agent 配置", agentScreen()))
+    if (!settings()) click(button("Agent 能力", agentScreen()))
     await until(settings, "Agent configuration did not open")
     click(
       [...settings().querySelectorAll('[role="tab"]')].find((element) =>
@@ -284,204 +289,46 @@
         !button("下载文件"),
       "New and existing Skills must use the shared document layout without management or toolbar controls"
     )
-  const fileNav = () =>
-    [...document.querySelectorAll('nav[aria-label="技能文件"]')].find(visible)
-  const fileTree = () =>
-    [...document.querySelectorAll('[data-slot="skill-file-tree"]')].find(
-      visible
-    )
-  const treeRow = (path) =>
-    [...fileNav().querySelectorAll("[data-menu-value]")].find(
-      (element) => element.dataset.menuValue === path
-    )
-  const menuItem = (name) =>
-    [...document.querySelectorAll('[role="menuitem"]')].find(
-      (element) => visible(element) && element.textContent.trim() === name
-    )
+  const fileNav = () => [...document.querySelectorAll('nav[aria-label="技能文件"]')].find(visible)
+  const fileTree = fileNav
+  const treeRow = path => [...fileNav().querySelectorAll('[data-file-entry]')].find(node => node.dataset.fileEntry === path)
+  const menuItem = name => [...document.querySelectorAll('[role="menuitem"]')].find(node => visible(node) && node.textContent.trim() === name)
   const showFiles = async () => {
-    await new Promise((resolve) =>
-      requestAnimationFrame(() => requestAnimationFrame(resolve))
-    )
-    const ready = () => {
-      const nav = fileNav(),
-        panel = nav?.closest(".chat-modal-panel")
-      return nav && (!panel || Number(getComputedStyle(panel).opacity) >= 0.999)
-    }
-    await until(
-      () => ready() || (!fileNav() && button("浏览技能文件")),
-      "File navigation must finish exiting before it can reopen"
-    )
-    if (!ready()) click(button("浏览技能文件"))
-    await until(ready, "Shared Skill file navigation must be fully available")
+    await until(() => fileNav() || button("浏览技能文件"), "Dialogs must release file navigation")
+    if (!fileNav()) click(button("浏览技能文件"))
+    await until(fileNav, "Files must open")
   }
-  const closeFiles = async () => {
-    const close = button("关闭文件导航", document)
-    if (close) click(close)
-    await until(
-      () => !button("关闭文件导航", document),
-      "File drawer must close"
-    )
-  }
+  const closeFiles = async () => { const toggle = button("浏览技能文件"); if (toggle?.getAttribute("aria-expanded") === "true") click(toggle) }
   const openActions = async (path = null) => {
     await showFiles()
-    await until(
-      () =>
-        !fixture.querySelector(
-          '[data-testid="skill-library"] [data-slot="document-actions"] button[aria-busy="true"]'
-        ) &&
-        [...fileTree().querySelectorAll("button[data-skill-action]")].every(
-          (button) => !button.disabled
-        ),
-      "Creation must settle before another context action"
-    )
-    await new Promise((resolve) =>
-      requestAnimationFrame(() => requestAnimationFrame(resolve))
-    )
-    const target =
-      path === null ? fileTree() : treeRow(path)?.querySelector("button")
-    assert(
-      visible(target),
-      "Draft file tree must expose the same context targets as an existing Skill"
-    )
-    const bounds = target.getBoundingClientRect()
-    flushSync(() =>
-      target.dispatchEvent(
-        new MouseEvent("contextmenu", {
-          bubbles: true,
-          cancelable: true,
-          clientX: bounds.left + 12,
-          clientY: bounds.top + 12,
-        })
-      )
-    )
-    await until(
-      () => menuItem("新建文件"),
-      "Draft file tree must retain the beui right-click dropdown"
-    )
-    if (path === null)
-      assert(
-        !menuItem("重命名") && !menuItem("删除"),
-        "Whitespace must only offer creation"
-      )
+    const trigger = button(path ? `文件操作 ${path}` : "新建文件或目录", fileNav())
+    await until(() => trigger && !trigger.disabled, "File operations must settle")
+    flushSync(() => { trigger.focus(); trigger.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true })) })
+    await until(() => menuItem("新建文件"), "Arc file menu must open")
   }
-  const selectAction = async (action) => {
-    const choice = menuItem(action)
-    assert(choice, `The dropdown must expose ${action}`)
-    flushSync(() => {
-      choice.dispatchEvent(
-        new PointerEvent("pointerdown", {
-          bubbles: true,
-          cancelable: true,
-          pointerType: "mouse",
-          button: 0,
-        })
-      )
-      choice.dispatchEvent(
-        new PointerEvent("pointerup", {
-          bubbles: true,
-          cancelable: true,
-          pointerType: "mouse",
-          button: 0,
-        })
-      )
-    })
-    click(choice)
+  const performTreeAction = async (action, path = null) => { await openActions(path); click(menuItem(action)) }
+  const createEntry = async (action, path = null) => {
+    await performTreeAction(action, path)
+    await until(() => button("创建", document), "New file must request a name")
+    click(button("创建", document))
   }
-  const performTreeAction = async (action, path, mode = "hover") => {
-    if (mode !== "hover" || path === null) {
-      await openActions(path)
-      await selectAction(action)
-      return
-    }
-    await showFiles()
-    await until(
-      () =>
-        treeRow(path) &&
-        [...treeRow(path).querySelectorAll("button[data-skill-action]")].every(
-          (button) => !button.disabled
-        ),
-      "A draft row action must settle before the next one"
-    )
-    flushSync(() => treeRow(path).querySelector("button").focus())
-    const control = button(`${action} ${path}`, treeRow(path))
-    assert(
-      control?.title === `${action} ${path}`,
-      "Draft direct action icons must have the same accessible name and title"
-    )
-    click(control)
-    assert(
-      !menuItem("新建文件"),
-      "Draft direct icons must invoke their action without another menu"
-    )
+  const checkRowActions = path => assert(button(`文件操作 ${path}`, fileNav()), "Each entry must have an accessible menu")
+  const renameInput = path => [...document.querySelectorAll("input")].find(node => visible(node) && node.getAttribute("aria-label") === `重命名 ${path}`)
+  const renameEntry = async (path, name) => {
+    await performTreeAction("重命名", path)
+    await until(() => renameInput(path) && document.activeElement === renameInput(path), "Rename must focus its field")
+    fill(renameInput(path), name); flushSync(() => renameInput(path).form.requestSubmit())
+    await until(() => !renameInput(path), "Rename must finish")
   }
-  const createEntry = (action, path = null, mode) =>
-    performTreeAction(action, path, mode)
-  const checkRowActions = (path, folder = false) => {
-    const expected = (
-      folder ? ["新建文件", "新建目录", "重命名", "删除"] : ["重命名", "删除"]
-    ).map((action) => `${action} ${path}`)
-    const controls = [
-      ...treeRow(path).querySelectorAll("button[data-skill-action]"),
-    ]
-    assert(
-      controls.length === expected.length &&
-        controls.every(
-          (control, index) =>
-            control.getAttribute("aria-label") === expected[index] &&
-            control.title === expected[index]
-        ),
-      "Draft directories need four direct icons and files exactly rename/delete"
-    )
-    assert(
-      !fileTree().querySelector('button[aria-label^="操作 "]'),
-      "Draft rows must have no ellipsis menu button"
-    )
-  }
-  const renameInput = (path) =>
-    [...document.querySelectorAll("input")].find(
-      (input) =>
-        visible(input) && input.getAttribute("aria-label") === `重命名 ${path}`
-    )
-  const renameEntry = async (path, name, mode = "hover") => {
-    await performTreeAction("重命名", path, mode)
-    await until(
-      () => renameInput(path) && document.activeElement === renameInput(path),
-      "Draft rename must use the shared focused inline editor"
-    )
-    fill(renameInput(path), name)
-    flushSync(() => renameInput(path).form.requestSubmit())
-    await until(() => !renameInput(path), "Draft rename must finish inline")
-  }
-  const deleteEntry = async (path) => {
+  const deleteEntry = async path => {
     await performTreeAction("删除", path)
-    await until(
-      () => button("确认删除", document),
-      "Draft deletion must require explicit confirmation"
-    )
-    const confirmation = button("确认删除", document).closest(
-      '[role="dialog"], [role="alertdialog"]'
-    )
-    click(button("确认删除", document))
-    await until(
-      () => !confirmation.isConnected,
-      "Confirmed draft deletion must finish and close its dialog"
-    )
+    await until(() => button("确认删除", document), "Deletion must confirm")
+    const dialog = button("确认删除", document).closest('[role="dialog"]')
+    click(button("确认删除", document)); await until(() => !dialog.isConnected, "Deletion must finish")
   }
-  const editFile = async (path) => {
-    await showFiles()
-    click(treeRow(path)?.querySelector("button"))
-    await closeFiles()
-    await until(
-      () =>
-        editor()?.getAttribute("aria-label") === `编辑 ${path}` ||
-        button("编辑"),
-      "The selected file must open in the shared document"
-    )
-    if (!editor()) click(button("编辑"))
-    await until(
-      () => editor()?.getAttribute("aria-label") === `编辑 ${path}`,
-      "The selected file must be editable"
-    )
+  const editFile = async path => {
+    await showFiles(); click(treeRow(path)?.querySelector("button.skill-file-open")); await closeFiles()
+    await until(() => editor()?.getAttribute("aria-label") === `编辑 ${path}`, "The selected file must open for editing")
   }
   const root = createRoot(fixture)
   try {
@@ -571,6 +418,7 @@
       () => editor()?.getAttribute("aria-label") === "编辑 GUIDE.md",
       "Draft main-file rename must follow the same selected-file behavior"
     )
+    await closeNavigation()
     click(button("保存 Skill"))
     await until(
       () =>
@@ -622,7 +470,7 @@
     await showFiles()
     assert(
       fileTree() &&
-        fileNav().querySelectorAll("[data-menu-value]").length === 0,
+        fileNav().querySelectorAll("[data-file-entry]").length === 0,
       "Deleting the last draft file must retain an empty, actionable file tree"
     )
     await createEntry("新建文件")
@@ -641,13 +489,13 @@
       "Draft file and directory rename/delete must stay unpublished in memory"
     )
     checks.push(
-      "Draft hover actions and right-click share rename/delete behavior; dirty source follows renamed descendants, deletion confirms, and empty packages remain editable without publishing"
+      "Arc file menus preserve unpublished drafts through rename, delete confirmation and empty packages"
     )
     fill(
       draftBody(),
       '---\nname: "取消的技能"\ndescription: "取消"\n---\n\n# 草稿'
     )
-    click(button("撤销"))
+    click(button("取消新建"))
     await until(
       () => !draftBody(),
       "Undo must leave the unsaved creation editor"
@@ -664,7 +512,8 @@
       "---\nname: [invalid\ndescription: test\n---\n",
     ]) {
       fill(draftBody(), invalid)
-      click(button("保存 Skill"))
+      await closeNavigation()
+    click(button("保存 Skill"))
       await until(
         () =>
           fixture.querySelector('[role="alert"]')?.textContent.trim() &&
@@ -740,6 +589,7 @@
     )
     await closeFiles()
     failWrites = true
+    await closeNavigation()
     click(button("保存 Skill"))
     await until(
       () =>
@@ -781,6 +631,7 @@
         release = resolve
       }),
     }
+    await closeNavigation()
     click(button("保存 Skill"))
     await until(
       () => saveStarted && button("保存 Skill").disabled,
@@ -872,7 +723,7 @@
     )
     click(button("保存文件"))
     await until(
-      () => !draftBody() && button("编辑"),
+      () => draftBody() && button("保存文件") && !button("保存文件").hasAttribute("aria-busy"),
       "Saving newer source must return the created Skill to reading mode"
     )
     assert(
@@ -890,7 +741,7 @@
     )
     click(button("保存文件"))
     await until(
-      () => !editor() && button("编辑"),
+      () => editor() && button("保存文件") && !button("保存文件").hasAttribute("aria-busy"),
       "Saving a newer reference must use the existing shared file-save action"
     )
     assert(
@@ -899,7 +750,7 @@
       "Saving a reference must update the same Skill without a duplicate create"
     )
     checks.push(
-      "New and existing Skills share the document tree and context actions; unpublished draft files and nested empty folders survive navigation and failed saves"
+      "New and existing Skills share Arc file menus; draft files and folders survive navigation and failed saves"
     )
     checks.push(
       "Atomic background creation publishes once and preserves newer main and reference edits until explicitly saved"
@@ -910,14 +761,14 @@
       draftBody(),
       '---\nname: "直接阅读新技能"\ndescription: "验证保存后直接阅读"\n---\n\n# 保存后直接阅读\n\n新建正文。'
     )
+    await closeNavigation()
     click(button("保存 Skill"))
     await until(
       () =>
         libraryScreen()
           ?.querySelector(".skill-file-preview")
           ?.textContent.includes("保存后直接阅读") &&
-        button("编辑") &&
-        !draftBody(),
+        draftBody() && button("保存文件") && !button("保存文件").hasAttribute("aria-busy"),
       "A successful foreground save must open the saved Skill in reading mode"
     )
     noIntermediatePage()
@@ -926,8 +777,7 @@
       "Saving a new Skill opens its complete saved document directly in reading mode"
     )
     click(catalogEntry("直接阅读新技能"))
-    await until(() => button("编辑"), "Created Skill must open for editing")
-    click(button("编辑"))
+    await until(() => draftBody(), "Created Skill must open for editing")
     const renamedSource =
       "---\nname: 'Markdown 新名称'\ndescription: >-\n  保存后同步说明\n---\n\n# 已重命名\n"
     fill(draftBody(), renamedSource)
@@ -955,7 +805,7 @@
     failWrites = false
     click(button("保存文件"))
     await until(
-      () => !draftBody() && button("编辑"),
+      () => draftBody() && button("保存文件") && !button("保存文件").hasAttribute("aria-busy"),
       "Successful metadata save must return to reading"
     )
     assert(
@@ -1001,12 +851,11 @@
       settings().textContent.includes(`资源不可用：${legacy.id}`),
       "An existing selection must remain explicitly removable when its Skill is deleted"
     )
-    click(button("编辑"))
     click(button("移除", settings()))
     click(skillSwitch("跨页新技能"))
-    click(button("保存"))
+    click(button("保存 Agent"))
     await until(
-      () => saved.length === 1 && button("编辑"),
+      () => saved.length === 1 && !button("保存 Agent").hasAttribute("aria-busy"),
       "Agent selection changes must save successfully"
     )
     assert(

@@ -1,12 +1,7 @@
+import { CopyButton as ArcCopyButton } from "@/components/arc/copy-button/copy-button"
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
-
-import { HugeiconsIcon } from "@hugeicons/react"
-import { AlertCircleIcon, CheckIcon, Copy01Icon } from "@hugeicons-pro/core-stroke-rounded"
-
-import { Button } from "@/components/motion/button"
-import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard"
 
 const codeBlockVariants = cva(
   "group/code-block relative flex w-full min-w-0 flex-col overflow-hidden rounded-xl text-sm has-[>[data-slot=code-block-content]:focus-visible]:ring-3 has-[>[data-slot=code-block-content]:focus-visible]:ring-ring/50 data-[size=sm]:text-xs",
@@ -87,43 +82,19 @@ function CodeBlockActions({
 
 function CodeBlockCopyButton({
   value,
-  variant = "ghost",
-  size = "icon-xs",
-  className,
-  onClick,
   disabled,
-  ...props
-}: React.ComponentProps<typeof Button> & { value: string }) {
-  const { status, copy } = useCopyToClipboard()
-  const copied = status === "copied"
-  const failed = status === "error"
-
+}: {
+  value: string
+  disabled?: boolean
+}) {
   return (
-    <>
-      <Button
-        data-slot="code-block-copy-button"
-        data-copied={copied || undefined}
-        variant={variant}
-        size={size}
-        aria-label={failed ? "复制失败，点击重试" : copied ? "已复制" : status === "pending" ? "复制中…" : "复制"}
-        disabled={disabled || status === "pending"}
-        className={cn(className)}
-        onClick={(event) => {
-          onClick?.(event)
-          if (!event.defaultPrevented) void copy(value)
-        }}
-        {...props}
-      >
-        <HugeiconsIcon
-          key={status}
-          icon={failed ? AlertCircleIcon : copied ? CheckIcon : Copy01Icon}
-          className={copied ? "chat-check-decay" : undefined}
-        />
-      </Button>
-      <span role="status" className={failed ? "text-xs text-destructive" : "sr-only"}>
-        {failed ? "复制失败，请重试" : copied ? "已复制" : ""}
-      </span>
-    </>
+    <ArcCopyButton
+      value={value}
+      label="复制代码"
+      iconOnly
+      variant="plain"
+      disabled={disabled}
+    />
   )
 }
 

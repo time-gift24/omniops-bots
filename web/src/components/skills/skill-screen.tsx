@@ -38,7 +38,6 @@ export function SkillScreen({
   const operation = useRef(false)
   const mounted = useRef(false)
   const [paths, setPaths] = useState<Record<string, string>>({})
-  const [editing, setEditing] = useState(false)
   const skill = skills.find((entry) => entry.id === skillId) ?? skills[0]
   const path = (skill && paths[skill.id]) ?? "SKILL.md"
   const file = skill?.files.find((entry) => entry.path === path)
@@ -94,10 +93,8 @@ export function SkillScreen({
     })
   )
   async function save() {
-    if (readOnly || !skill || !file || !editing || loading || operation.current)
-      return
+    if (readOnly || !skill || !file || loading || operation.current) return
     if (!dirty) {
-      setEditing(false)
       return
     }
     operation.current = true
@@ -110,7 +107,6 @@ export function SkillScreen({
         toast.dismissKey("skill-screen-error")
         if (currentSource.current === source) {
           setMessage("草稿已保存")
-          setEditing(false)
         }
       }
     } catch {
@@ -136,14 +132,13 @@ export function SkillScreen({
 
   useSaveShortcut({
     active,
-    enabled: editing,
+    enabled: !readOnly,
     onSave: () => void save(),
   })
 
   function selectFile(nextPath: string) {
     if (!skill) return
     setPaths((current) => ({ ...current, [skill.id]: nextPath }))
-    setEditing(false)
     setMessage("")
   }
 
@@ -206,18 +201,12 @@ export function SkillScreen({
           busy={busy}
           dirty={dirty}
           readOnly={readOnly}
-          editing={editing}
-          onEdit={() => {
-            setEditing(true)
-            setMessage("")
-          }}
           onSave={() => void save()}
           onUndo={() => {
             setContents((current) => ({
               ...current,
               [key]: saved[key] ?? original,
             }))
-            setEditing(false)
             toast.dismissKey("skill-screen-error")
             setMessage("")
           }}

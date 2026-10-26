@@ -74,9 +74,9 @@
     failWrites.add("theme"); failWrites.add("palette");
     await render("denied");
     expectTheme("light"); expectPalette("official");
-    flushSync(() => { setTheme("dark"); setPalette("claude"); });
+    flushSync(() => { setTheme("dark"); setPalette("official"); });
     await Promise.resolve();
-    expectTheme("dark"); expectPalette("claude");
+    expectTheme("dark"); expectPalette("official");
     failReads.clear(); failWrites.clear();
 
     for (const blocked of ["theme", "palette"]) {
@@ -84,7 +84,7 @@
       failReads.add(blocked); failWrites.add(blocked);
       await render(`blocked-${blocked}`);
       expectTheme(blocked === "theme" ? "light" : "dark");
-      expectPalette(blocked === "palette" ? "official" : "claude");
+      expectPalette("official");
       flushSync(() => { setTheme("light"); setPalette("official"); });
       await Promise.resolve();
       expectTheme("light"); expectPalette("official");
@@ -94,8 +94,8 @@
 
     values.set("theme", "dark"); values.set("palette", "claude");
     await render("working");
-    expectTheme("dark"); expectPalette("claude");
-    for (const palette of ["official", "claude"]) {
+    expectTheme("dark"); expectPalette("official");
+    for (const palette of ["official"]) {
       for (const theme of ["light", "dark"]) {
         flushSync(() => { setTheme(theme); setPalette(palette); });
         expectTheme(theme); expectPalette(palette);
@@ -103,12 +103,12 @@
       }
     }
     await render("remounted");
-    expectTheme("dark"); expectPalette("claude");
+    expectTheme("dark"); expectPalette("official");
     assert(listeners.size === 1, "Remount must clean up the old subscription");
     notify({ palette: "official" }); expectTheme("dark"); expectPalette("official");
     notify({ theme: "light" }); expectTheme("light");
     notify({ palette: "claude" });
-    notify({ theme: null }); expectTheme("light"); expectPalette("claude");
+    notify({ theme: null }); expectTheme("light"); expectPalette("official");
     notify({ theme: "dark", palette: null }); expectTheme("dark"); expectPalette("official");
     notify({}); expectTheme("dark");
     notify({ theme: null, palette: null }); expectTheme("light"); expectPalette("official");
@@ -121,13 +121,13 @@
     await Promise.resolve(); await Promise.resolve();
     expectTheme("light");
 
-    flushSync(() => { setPalette("claude"); setTheme("system"); });
-    expectTheme("system", "light"); expectPalette("claude");
+    flushSync(() => { setPalette("official"); setTheme("system"); });
+    expectTheme("system", "light"); expectPalette("official");
     mediaQuery.matches = true;
     flushSync(() => mediaQuery.dispatchEvent(new Event("change")));
     expectTheme("system", "dark");
     flushSync(() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "d", bubbles: true })));
-    expectTheme("light"); expectPalette("claude");
+    expectTheme("light"); expectPalette("official");
     result.textContent = "PASS: preloaded initial preferences, independent read/write failures, immediate changes without rollback, remount persistence, platform-neutral cross-tab updates, reset, system changes and keyboard toggle";
     result.dataset.passed = "true";
   } catch (error) {

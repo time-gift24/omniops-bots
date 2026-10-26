@@ -3,10 +3,8 @@
 import { HugeiconsIcon } from "@hugeicons/react"
 import { ShieldCheckIcon } from "@hugeicons-pro/core-stroke-rounded"
 import { useId, useState } from "react"
-import { Input } from "@/components/motion/input"
 import { Switch } from "@/components/motion/switch"
 import { Tabs, TabsList, TabsTrigger } from "@/components/motion/tabs"
-import { Textarea } from "@/components/ui/textarea"
 import type {
   AgentConfiguration,
   AgentResource,
@@ -61,47 +59,7 @@ export function AgentConfigurationPanel({
   return (
     <>
       <fieldset disabled={disabled} className="min-w-0">
-        <div className="space-y-4">
-          <Input
-            label="名称"
-            value={value.name}
-            readOnly={readOnly}
-            placeholder="给这个 Agent 起个名字"
-            maxLength={80}
-            onChange={(name) => onChange({ ...value, name })}
-            classNames={{
-              label: "px-0 text-[13px]",
-              field: "h-8 rounded-lg bg-background",
-              input: "px-2.5 text-[13px]",
-            }}
-          />
-          <div className="space-y-1.5">
-            <label
-              htmlFor={`${id}-description`}
-              className="text-[13px] font-medium"
-            >
-              简介
-            </label>
-            <Textarea
-              id={`${id}-description`}
-              value={value.description}
-              readOnly={readOnly}
-              placeholder="一句话说明它负责什么"
-              maxLength={160}
-              rows={3}
-              onChange={(event) =>
-                onChange({ ...value, description: event.target.value })
-              }
-              className="min-h-20 resize-y bg-background text-[13px] leading-relaxed md:text-[13px]"
-            />
-          </div>
-        </div>
-        <div
-          className="my-5 border-t border-border @min-[760px]/agent:my-6"
-          aria-hidden="true"
-        />
         <div>
-          <p className="mb-1 text-[13px] font-medium">能力</p>
           <Tabs value={tab} onValueChange={setTab} variant="underline">
             <TabsList aria-label="Agent 能力" className="w-full gap-4">
               {SECTIONS.map((section) => (

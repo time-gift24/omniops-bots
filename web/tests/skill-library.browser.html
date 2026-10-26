@@ -69,7 +69,7 @@
   }
   const visible = element => element && element.getClientRects().length > 0 && !element.closest('[inert], [hidden], [aria-hidden="true"]')
   const button = (name, scope = fixture) => [...scope.querySelectorAll("button")].find(element => visible(element) && (element.getAttribute("aria-label") ?? element.textContent).trim() === name)
-  const click = element => { assert(visible(element) && !element.disabled, "Expected enabled visible control"); flushSync(() => { element.focus(); element.click() }) }
+  const click = element => { assert(visible(element) && !element.disabled, "Expected enabled visible control"); flushSync(() => { element.focus(); element.getAttribute("role") === "tab" ? element.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true })) : element.click() }) }
   const textarea = () => [...fixture.querySelectorAll('textarea[aria-label^="编辑 "]')].find(visible)
   const fillName = (input, value) => flushSync(() => {
     assert(visible(input) && !input.disabled, "Expected editable inline name")
@@ -84,116 +84,56 @@
   })
   const choose = id => flushSync(() => chooseSkill(id))
   const deferred = () => { let resolve; const promise = new Promise(done => { resolve = done }); return { promise, resolve } }
-  const loadedText = () => fixture.querySelector(".skill-file-preview")?.textContent ?? ""
+  const loadedText = () => (fixture.querySelector(".skill-file-preview")?.textContent ?? "") + (textarea()?.value ?? "")
   const documentView = () => fixture.querySelector('[data-slot="skill-screen"]')
   const fileNav = () => documentView()?.querySelector('nav[aria-label="技能文件"]')
   const visibleFileNav = () => [...document.querySelectorAll('nav[aria-label="技能文件"]')].find(visible)
-  const fileTree = () => [...document.querySelectorAll('[data-slot="skill-file-tree"]')].find(visible)
-  const treeRow = path => [...visibleFileNav().querySelectorAll('[data-menu-value]')].find(element => element.dataset.menuValue === path)
+  const fileTree = visibleFileNav
+  const treeRow = path => [...visibleFileNav().querySelectorAll('[data-file-entry]')].find(element => element.dataset.fileEntry === path)
   const menuItem = name => [...document.querySelectorAll('[role="menuitem"]')].find(element => visible(element) && element.textContent.trim() === name)
   async function showFileNavigation() {
-    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
-    const ready = () => {
-      const nav = visibleFileNav(), panel = nav?.closest(".chat-modal-panel")
-      return nav && (!panel || Number(getComputedStyle(panel).opacity) >= 0.999)
-    }
-    await until(() => ready() || (!visibleFileNav() && button("浏览技能文件")), "File navigation must finish exiting before it can reopen")
-    if (!ready()) click(button("浏览技能文件"))
-    await until(ready, "File navigation must be fully available in the sidebar or mobile drawer")
+    await until(() => visibleFileNav() || button("浏览技能文件"), "A closing dialog must release navigation")
+    if (!visibleFileNav()) click(button("浏览技能文件"))
+    await until(visibleFileNav, "File navigation must open")
   }
   async function closeFileNavigation() {
-    const close = button("关闭文件导航", document)
-    if (close) click(close)
-    await until(() => !button("关闭文件导航", document), "The mobile file drawer must close")
+    const toggle = button("浏览技能文件")
+    if (toggle?.getAttribute("aria-expanded") === "true") click(toggle)
   }
   async function openFile(name) {
     await showFileNavigation()
-    const label = [...visibleFileNav().querySelectorAll(".branched-menu__label")].find(element => visible(element) && element.textContent.trim() === name)
-    click(label?.closest("button"))
-    await until(() => !button("关闭文件导航", document), "Selecting a file must close the mobile drawer")
-  }
-  async function openActions(path = null, mode = "context") {
-    await showFileNavigation()
-    await until(() => [...fileTree().querySelectorAll('button[data-skill-action]')].every(button => !button.disabled), "The previous tree action must settle")
-    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
-    const target = path === null ? fileTree() : treeRow(path)?.querySelector("button")
-    assert(visible(target), "The file tree context target must exist")
-    flushSync(() => {
-      target.focus()
-      const bounds = target.getBoundingClientRect()
-      target.dispatchEvent(mode === "keyboard"
-        ? new KeyboardEvent("keydown", { key: "F10", shiftKey: true, bubbles: true, cancelable: true })
-        : new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: bounds.left + 12, clientY: bounds.top + 12 }))
-    })
-    await until(() => menuItem("新建文件"), "Right-click and keyboard must retain the beui file tree dropdown")
-    if (path === null) assert(!menuItem("重命名") && !menuItem("删除"), "Whitespace actions must only create entries")
-    return [...document.querySelectorAll('[role="menuitem"]')].filter(visible)
-  }
-  async function performTreeAction(action, path, mode) {
-    if (mode !== "hover" || path === null) {
-      await openActions(path, mode)
-      click(menuItem(action))
-      return
-    }
-    await showFileNavigation()
-    await until(() => treeRow(path) && [...treeRow(path).querySelectorAll('button[data-skill-action]')].every(button => !button.disabled), "The previous row action must settle")
-    flushSync(() => treeRow(path).querySelector("button").focus())
-    const control = button(`${action} ${path}`, treeRow(path))
-    assert(control?.title === `${action} ${path}`, "Each direct action icon must have an accessible name and title")
+    const control = [...visibleFileNav().querySelectorAll('button.skill-file-open')].find(element => element.title === name || element.title.split("/").at(-1) === name)
     click(control)
-    assert(!menuItem("新建文件"), "A direct row action must run without opening an extra menu")
   }
-  const checkRowActions = (path, folder = false) => {
-    const row = treeRow(path)
-    const expected = (folder ? ["新建文件", "新建目录", "重命名", "删除"] : ["重命名", "删除"]).map(action => `${action} ${path}`)
-    const actions = [...row.querySelectorAll('button[data-skill-action]')]
-    assert(actions.length === expected.length && actions.every((control, index) => control.getAttribute("aria-label") === expected[index] && control.title === expected[index]), "Folders must expose four direct icons and files exactly rename/delete in order")
-    assert(!fileTree().querySelector('button[aria-label^="操作 "]'), "Direct icons must replace the ellipsis action menu button")
-    const plain = row.cloneNode(true)
-    plain.removeAttribute("data-actions")
-    plain.querySelectorAll(".branched-menu__actions").forEach(element => element.remove())
-    row.after(plain)
-    const original = row.querySelector(".branched-menu__head, .branched-menu__item")
-    const baseline = plain.querySelector(".branched-menu__head, .branched-menu__item")
-    const presentation = getComputedStyle(original)
-    if (original.classList.contains("branched-menu__item")) {
-      assert(presentation.height === "36px" && presentation.fontSize === "14px", "Branch rows must retain the menu's 36px height and 14px text without shared Button size overrides")
-    }
-    assert(presentation.backgroundColor === "rgba(0, 0, 0, 0)" && presentation.borderRadius === "0px", "Menu selection must use its text and branch highlighting without an added pill background")
-    if (original.hasAttribute("data-active")) {
-      assert(presentation.color === getComputedStyle(original.closest("nav").querySelector(".branched-menu__marker")).backgroundColor, "The selected row must use the menu's accent color")
-    }
-    const styles = ["height", "width", "padding", "margin", "font", "borderRadius"]
-    assert(styles.every(property => getComputedStyle(original)[property] === getComputedStyle(baseline)[property]) && original.querySelector(".branched-menu__label").getBoundingClientRect().width === baseline.querySelector(".branched-menu__label").getBoundingClientRect().width, "Action icons must not override the original Branched Menu row dimensions or label space when idle")
-    plain.remove()
+  async function openActions(path = null) {
+    await showFileNavigation()
+    const trigger = path === null ? button("新建文件或目录", visibleFileNav()) : button(`文件操作 ${path}`, visibleFileNav())
+    await until(() => trigger && !trigger.disabled, "File operation must settle")
+    flushSync(() => { trigger.focus(); trigger.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true })) })
+    await until(() => menuItem("新建文件"), "Arc menu must open from the keyboard")
   }
-  async function createEntry(action, path = null, mode = "context") {
-    await performTreeAction(action, path, mode)
-    assert(!document.querySelector('form[aria-label="新建技能文件"], input[aria-label="新文件路径"]'), "File creation must be immediate without a filename form")
+  async function performTreeAction(action, path) { await openActions(path); click(menuItem(action)) }
+  function checkRowActions(path) { assert(button(`文件操作 ${path}`, visibleFileNav()), "Every local entry must expose its operation menu") }
+  async function createEntry(action, path = null) {
+    if (!document.querySelector('input[aria-label="文件或目录名称"]')) await performTreeAction(action, path)
+    await until(() => button("创建", document), "Creation must request a filename")
+    click(button("创建", document))
   }
-  const beginFile = (path = null, mode) => createEntry("新建文件", path, mode)
-  const beginDirectory = (path = null, mode) => createEntry("新建目录", path, mode)
+  const beginFile = path => createEntry("新建文件", path)
+  const beginDirectory = path => createEntry("新建目录", path)
   const renameInput = path => [...document.querySelectorAll("input")].find(input => visible(input) && input.getAttribute("aria-label") === `重命名 ${path}`)
-  async function beginRename(path, mode = "hover") {
-    await performTreeAction("重命名", path, mode)
-    await until(() => renameInput(path) && document.activeElement === renameInput(path), "Rename must focus an inline name editor")
-  }
-  const submitName = (path, value, key = "Enter") => {
+  async function beginRename(path) { await performTreeAction("重命名", path); await until(() => renameInput(path) && document.activeElement === renameInput(path), "Rename must focus its field") }
+  function submitName(path, value, key = "Enter") {
     fillName(renameInput(path), value)
-    flushSync(() => {
-      if (key === "Enter") renameInput(path).form.requestSubmit()
-      else renameInput(path).dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }))
-    })
+    flushSync(() => key === "Enter" ? renameInput(path).form.requestSubmit() : renameInput(path).dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true })))
   }
-  async function requestDelete(path, kind = "文件", mode = "hover") {
-    await performTreeAction("删除", path, mode)
-    await until(() => button("确认删除", document), "Deletion must request confirmation")
-    const dialog = button("确认删除", document).closest('[role="dialog"], [role="alertdialog"]')
-    assert(dialog?.textContent.includes(`删除${kind}`) && dialog.textContent.includes(path.split("/").at(-1)), "Delete confirmation must name the selected entry and its kind")
-    return dialog
+  async function requestDelete(path) {
+    await performTreeAction("删除", path)
+    await until(() => button("确认删除", document), "Delete must ask for confirmation")
+    return button("确认删除", document).closest('[role="dialog"]')
   }
   const editedText = async (id, path) => (await baseLibrary.readFile(id, path)).text()
-  const directReading = () => assert(!fixture.querySelector('[data-slot="file-manager"], [data-slot="skill-file-actions"], form[aria-label="管理 Skill 文件与目录"]') && !fixture.textContent.includes("管理文件与目录") && !button("新建文件", document) && !button("上传文件", document) && !button("列表查看") && !button("阅读视图") && !button("下载文件"), "Skill details must use only the file tree context menu without a management section or toolbar")
+  const directReading = () => assert(documentView() && fileNav(), "Skill files and Markdown must share one workspace")
   const row = name => [...fixture.querySelectorAll(".skill-catalog-row > button")].find(element => element.textContent.includes(name))
   try {
     await baseLibrary.createDirectory("local-a", "未命名-2.md")
@@ -211,8 +151,8 @@
     await until(() => button("重新读取文件"), "File read failure must expose a retry action")
     failReads = false
     click(button("重新读取文件"))
-    await until(() => visible(documentView()) && loadedText().includes("运行前检查。") && button("编辑"), "Selecting a Skill must open SKILL.md directly in the reading layout")
-    assert(fileNav() && documentView().querySelector('[data-slot="document-actions"]'), "Reading must retain file navigation and floating document actions")
+    await until(() => visible(documentView()) && loadedText().includes("运行前检查。"), "Selecting a Skill must open SKILL.md directly in the reading layout")
+    assert(fileNav() && documentView().querySelector('[data-slot="editor-actions"]'), "Reading must retain file navigation and floating document actions")
     directReading()
     await showFileNavigation()
     checkRowActions("SKILL.md")
@@ -221,10 +161,9 @@
     await closeFileNavigation()
     const shortcut = new KeyboardEvent("keydown", { key: "s", metaKey: true, bubbles: true, cancelable: true })
     window.dispatchEvent(shortcut)
-    assert(!shortcut.defaultPrevented && !textarea(), "Reading mode must leave Cmd+S to the browser")
+    assert(shortcut.defaultPrevented && textarea(), "The Markdown workspace must handle Cmd+S directly")
     checks.push("Versioned list rows open Skill documents directly; catalog/file read failures retry without reloading")
 
-    click(button("编辑"))
     await until(textarea, "The reading page must offer source editing")
     write("# 阅读草稿\n\n切换后继续编辑。")
     choose("local-b")
@@ -246,7 +185,7 @@
     assert(await editedText("local-a", "未命名.MD") === "保留同名原文件", "Automatic naming must preserve existing case-insensitive files")
     write("新增文件的正文")
     click(button("保存文件"))
-    await until(() => !textarea() && loadedText().includes("新增文件的正文"), "A created file must use the existing save flow")
+    await until(() => loadedText().includes("新增文件的正文"), "A created file must use the existing save flow")
     await beginFile("未命名-3.md", "keyboard")
     await until(() => textarea()?.getAttribute("aria-label") === "编辑 未命名-4.md" && textarea().value === "", "Keyboard context menu on a file must create a distinct sibling")
     assert(await editedText("local-a", "未命名-3.md") === "新增文件的正文", "Repeated creation must not overwrite the previous new file")
@@ -257,10 +196,9 @@
     await until(() => textarea()?.getAttribute("aria-label") === "编辑 reference/未命名-2.md" && textarea().value === "", "Right-clicking a file must create inside its parent directory")
     await openFile("SKILL.md")
     await until(() => loadedText().includes("切换后继续编辑"), "Creating other files must retain the original Markdown draft")
-    click(button("编辑"))
     await until(() => textarea()?.value.includes("切换后继续编辑"), "The original Markdown draft must remain editable")
     assert(await editedText("local-a", "SKILL.md") === originals[0].files[0].content, "Adding another file must not implicitly save Markdown")
-    checks.push("Direct directory icons plus right-click and keyboard create unique blank files; idle Branched Menu dimensions stay unchanged and failures preserve drafts")
+    checks.push("Arc file menus create uniquely named files, focus the new editor and preserve drafts after failure")
 
     failWrites = true
     await beginDirectory()
@@ -278,12 +216,11 @@
     assert((await baseLibrary.get("local-a")).entries.some(entry => entry.path === "未命名目录-3/未命名目录" && entry.kind === "folder"), "Nested empty directories must persist as directory entries")
     await openFile("SKILL.md")
     await until(() => loadedText().includes("切换后继续编辑"), "Directory creation must retain the original source draft")
-    click(button("编辑"))
-    checks.push("Directory context actions preserve empty folders, skip occupied names, and work on nested folders with keyboard access")
+    checks.push("Arc file menus preserve empty folders and avoid name conflicts when creating nested entries")
 
     await openFile("seed.txt")
     await until(() => loadedText().includes("子目录参考文本"), "Nested reference must load before renaming")
-    click(button("编辑")); write("重命名后仍然保留的未保存编辑")
+    write("重命名后仍然保留的未保存编辑")
     await beginRename("reference/seed.txt")
     submitName("reference/seed.txt", "取消改名.txt", "Escape")
     await until(() => !renameInput("reference/seed.txt"), "Escape must cancel the inline rename")
@@ -320,7 +257,7 @@
     await until(() => !confirmation.isConnected, "The delete confirmation must close before saving")
     await closeFileNavigation()
     click(button("保存文件"))
-    await until(() => !textarea() && loadedText().includes("重命名后仍然保留的未保存编辑"), "A renamed dirty file must remain saveable at its new path")
+    await until(() => loadedText().includes("重命名后仍然保留的未保存编辑"), "A renamed dirty file must remain saveable at its new path")
     confirmation = await requestDelete("renamed-reference", "目录")
     failWrites = true
     click(button("确认删除", confirmation))
@@ -330,17 +267,15 @@
     click(button("确认删除", confirmation))
     await until(() => !confirmation.isConnected, "Successful deletion must close its confirmation")
     await closeFileNavigation()
-    await until(() => !textarea() && loadedText().includes("切换后继续编辑"), "Deleting the selected descendant must select the remaining main document and retain its own draft")
+    await until(() => loadedText().includes("切换后继续编辑"), "Deleting the selected descendant must select the remaining main document and retain its own draft")
     assert(!(await baseLibrary.get("local-a")).entries.some(entry => entry.path.startsWith("renamed-reference")), "Confirmed directory deletion must remove all descendants")
-    click(button("编辑"))
-    checks.push("Hover actions and right-click rename files and whole directories; names and dirty descendants survive failure, while unsafe deletion is blocked and successful deletion selects a remaining file")
+    checks.push("File menus rename files and folders; failures retain names and dirty descendants, unsafe deletion is blocked, and successful deletion selects a remaining file")
 
-    click(button("撤销"))
-    await until(() => !textarea() && loadedText().includes("运行前检查。"), "Undo must restore the saved reading content")
+    click(button("撤销修改"))
+    await until(() => loadedText().includes("运行前检查。"), "Undo must restore the saved reading content")
     await openFile("note.txt")
-    await until(() => loadedText().includes("原始参考文本") && button("编辑"), "The document file navigation must open references directly")
+    await until(() => loadedText().includes("原始参考文本"), "The document file navigation must open references directly")
     directReading()
-    click(button("编辑"))
     write("失败时保留的编辑")
     failWrites = true
     click(button("保存文件"))
@@ -357,10 +292,9 @@
     await until(() => button("保存文件") && !button("保存文件").disabled && textarea()?.value === "保存期间继续输入的内容", "New typing during saving must remain unsaved")
     assert(await editedText("local-a", "note.txt") === "保存开始时的快照", "Only the captured save version may persist")
     click(button("保存文件"))
-    await until(() => !textarea() && button("编辑") && loadedText().includes("保存期间继续输入的内容"), "Saving the current version must return to reading")
+    await until(() => loadedText().includes("保存期间继续输入的内容") && !button("保存文件").hasAttribute("aria-busy"), "Saving the current version must return to reading")
     checks.push("Document navigation preserves drafts; failed saves retain bytes; delayed saves preserve newer typing")
 
-    click(button("编辑"))
     write("实验保存时的版本")
     const experimentSave = deferred()
     saveGate = experimentSave; saveStarted = false
@@ -397,23 +331,23 @@
     await until(() => loadedText().includes("实验等待期间的新编辑"), "Switching Skill must keep its own document available while another file is saving")
     backgroundSave.resolve()
     await until(() => button("在新会话中实验") && !button("在新会话中实验").disabled, "The background file save must finish")
-    assert(currentId === "local-a" && !textarea() && loadedText().includes("实验等待期间的新编辑"), "A completed background create must not select a file or enter editing in another Skill")
+    assert(currentId === "local-a" && loadedText().includes("实验等待期间的新编辑"), "A completed background create must not select a file or enter editing in another Skill")
     assert((await baseLibrary.get("local-b")).entries.some(entry => entry.path === "未命名.md"), "A completed background create must remain saved to its original Skill")
     choose("local-b")
     await until(() => loadedText().includes("第二个 Skill 的独立内容"), "Returning to a Skill must preserve its selected file after a background create")
     await openFile("未命名.md")
-    await until(() => fixture.querySelector('.skill-file-preview')?.getAttribute("aria-label") === "未命名.md 文件内容" && button("编辑") && !button("编辑").disabled, "The file created in the background must be available from navigation")
+    await until(() => fixture.querySelector('.skill-file-preview')?.getAttribute("aria-label") === "未命名.md 文件内容" && textarea() && !textarea().disabled, "The file created in the background must be available from navigation")
     checks.push("Background file creation persists to its original Skill without stealing the current document")
 
     const sameSkillSave = deferred()
     saveGate = sameSkillSave; saveStarted = false
     await beginFile()
     await until(() => saveStarted, "A delayed same-Skill file create must reach persistence")
-    await openFile("beta.txt")
-    await until(() => loadedText().includes("第二个 Skill 的独立内容"), "File navigation must remain available while a new file is saving")
+    flushSync(() => [...fixture.querySelectorAll("button.skill-file-open")].find(node => node.title === "beta.txt").click())
+    await until(() => loadedText().includes("第二个 Skill 的独立内容"), "A new file selection must remain independent while creation is pending")
     sameSkillSave.resolve()
     await until(() => button("在新会话中实验") && !button("在新会话中实验").disabled, "The delayed same-Skill file save must finish")
-    assert(currentId === "local-b" && !textarea() && loadedText().includes("第二个 Skill 的独立内容"), "Finishing a file create must not steal a newer file selection within the same Skill")
+    assert(currentId === "local-b" && loadedText().includes("第二个 Skill 的独立内容"), "Finishing a file create must not steal a newer file selection within the same Skill")
     assert((await baseLibrary.get("local-b")).entries.some(entry => entry.path === "未命名-2.md"), "A file created after selecting another file must still be persisted")
     checks.push("Delayed file creation preserves newer file selections within the same Skill")
 
@@ -424,7 +358,7 @@
     }
     assert((await baseLibrary.get("local-b")).entries.length === 0, "Deleting all files must leave an empty persisted Skill")
     await showFileNavigation()
-    assert(fileTree() && visibleFileNav().querySelectorAll('[data-menu-value]').length === 0, "An existing empty Skill must retain its actionable tree")
+    assert(fileTree() && visibleFileNav().querySelectorAll('[data-file-entry]').length === 0, "An existing empty Skill must retain its actionable tree")
     await beginFile()
     await until(() => textarea()?.getAttribute("aria-label") === "编辑 未命名.md" && textarea().value === "", "The empty persisted Skill must allow a new focused file without a management page")
     checks.push("Deleting the final saved file retains the same file tree and allows immediate root file creation")
@@ -433,7 +367,7 @@
     await until(() => loadedText().includes("实验等待期间的新编辑"), "Returning must retain the existing local source")
     await openFile("payload.bin")
     await until(() => fixture.querySelector('.skill-file-preview')?.getAttribute("aria-label") === "payload.bin 文件内容", "Binary file must open before testing its tree actions")
-    assert(!button("编辑"), "Binary files must not expose a text editor")
+    assert(!textarea(), "Binary files must not expose a text editor")
     await beginRename("payload.bin")
     submitName("payload.bin", "renamed.bin")
     await until(() => !renameInput("payload.bin"), "Binary rename must finish inline")
@@ -447,7 +381,7 @@
 
     choose("official")
     await until(() => loadedText().includes("这是固定的官方内容。"), "Official Skill must open directly in reading mode")
-    assert(!button("编辑"), "Official files must remain read-only")
+    assert(!textarea(), "Official files must remain read-only")
     await showFileNavigation()
     const officialTree = fileTree() ?? visibleFileNav()
     const officialBounds = officialTree.getBoundingClientRect()
@@ -456,10 +390,10 @@
     await closeFileNavigation()
     directReading()
     click(button("复制为本地 Skill"))
-    await until(() => currentId?.startsWith("copy-") && button("编辑") && !button("编辑").disabled, "A local copy must open its editable document directly")
+    await until(() => currentId?.startsWith("copy-") && textarea() && !textarea().disabled, "A local copy must open its editable document directly")
     const copiedId = currentId
-    click(button("编辑")); write("# 本地副本改动"); click(button("保存文件"))
-    await until(() => !textarea() && loadedText().includes("本地副本改动"), "Local copy save must return to reading")
+    write("# 本地副本改动"); click(button("保存文件"))
+    await until(() => loadedText().includes("本地副本改动"), "Local copy save must return to reading")
     assert(await editedText(copiedId, "SKILL.md") === "# 本地副本改动" && await editedText("official", "SKILL.md") === originals[2].files[0].content, "Editing a local copy must not modify the official release")
     choose(null)
     await until(() => row("巡检技能"), "The catalog must remain reachable")
