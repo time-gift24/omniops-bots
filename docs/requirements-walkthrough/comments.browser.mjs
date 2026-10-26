@@ -35,7 +35,7 @@ test('document comments work across chapters, reloads, narrow screens, and stora
     await page.waitForFunction(() => [...document.querySelectorAll('#preface-versioning figure.diagram img')].every(image => image.complete && image.naturalWidth > 0));
     assert.deepEqual(await prefaceDiagrams.locator('a').evaluateAll(links => links.map(link => link.getAttribute('href'))), ['./diagrams/agent-assembly/relations.html', './diagrams/agent-assembly/loading.html', './diagrams/preface-fingerprint.html', './diagrams/preface-evaluation-rollback.html']);
     assert.equal(await page.locator('#progress').textContent(), '1 / 16');
-    assert.equal(await page.locator('.rail a[aria-label="需求串讲首页"]').getAttribute('href'), '#preface-versioning');
+    assert.equal(await page.getByRole('link', { name: '需求串讲首页', exact: true }).getAttribute('href'), '#preface-versioning');
     assert.equal(await page.locator('#nav-core').getAttribute('open'), '');
     assert.equal(await page.locator('#nav-details').getAttribute('open'), null);
     await page.locator('#nav-core summary').focus();
@@ -113,6 +113,15 @@ test('document comments work across chapters, reloads, narrow screens, and stora
     assert.ok(bounds.y >= 0 && bounds.y + bounds.height <= 844);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     await page.getByRole('button', { name: '关闭文档评论' }).click();
+    assert.equal(await page.locator('#chapter-contents').getAttribute('open'), null);
+    await page.locator('#chapter-contents summary').focus();
+    await page.keyboard.press('Enter');
+    assert.equal(await page.locator('#chapter-contents').getAttribute('open'), '');
+    await page.keyboard.press('Enter');
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.waitForFunction(() => document.getElementById('chapter-contents').open);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForFunction(() => !document.getElementById('chapter-contents').open);
     assert.deepEqual(await page.locator('#chapter-select optgroup').evaluateAll(groups => groups.map(group => group.label)), ['核心', '细节']);
     assert.deepEqual(await page.locator('#chapter-select optgroup[label="核心"] option').evaluateAll(options => options.map(option => option.value)), ['preface-versioning', 'core-server-deployment', '00-overview', 'core-ws', 'core-skill-system']);
     await page.getByLabel('章节', { exact: true }).selectOption('core-skill-system');

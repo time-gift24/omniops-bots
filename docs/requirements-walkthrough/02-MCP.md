@@ -6,7 +6,7 @@
 
 ### 运维调试界面设计
 
-![现有 MCP 能力详情：工具、资源与提示词](./assets/screenshots/02-mcp.png)
+![现有 Agent 能力配置中的 MCP 服务选择](./assets/screenshots/02-mcp.png)
 
 *客户端运维调试工作台实拍，图中使用演示数据；线上客户端仅提供连接状态等基础信息。*
 

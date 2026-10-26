@@ -32,11 +32,11 @@ Skill 的内容结构、路由与平台操作分工、两类 `SKILL.md` 模板�
 
 ### 调试页面方案：Skill 列表 → 包内文件管理
 
-已安装 [`@beui-pro/file-manager-workspace`](https://pro.beui.dev/components/file-manager)，接入 Skill 列表与包内文件管理。目录导航、搜索、文件列表、预览和上传交互使用客户端的暖灰底色、绿色强调、细边框及 Geist / MiSans 字体。
+Skill 页面采用 Cognacta 的导航结构，按钮、菜单和对话框使用 Arc 组件。本地包直接进入 Markdown 工作区，文件导航、编写与预览保持在同一页面；界面沿用共享前端的中性色、绿色强调、细分隔线和 Geist / MiSans 字体。
 
 ![已实现的 Skill 包内文件管理](./assets/screenshots/01-skill-files.png)
 
-*客户端运维调试工作台的 Web 界面实拍：可浏览目录、搜索文件、上传、新建、重命名和删除；官方已发布包只读。*
+*当前共享前端的 Web 界面实拍：左侧浏览文件，通过 Arc 菜单新建、重命名和删除；右侧直接编辑 Markdown，官方已发布包只读。*
 
 调试工作台已完成列表管理、文件级上传、文本编辑及真实内容持久化。下表保留完整页面目标，其中官方草稿维护、历史版本切换、选 Agent 实验、服务端草稿上传与联动发布尚未接入。当前页面不提供这些操作的假成功入口。
 
@@ -55,7 +55,7 @@ Skill 的内容结构、路由与平台操作分工、两类 `SKILL.md` 模板�
 
 ![上传文件、编辑和保存后的实际界面](./assets/screenshots/01-skill-file-upload.png)
 
-*浏览器实测上传 Markdown 文件、修改后保存，刷新页面仍能读取。桌面文件系统另由 runtime 测试验证；此图不是桌面运行截图。*
+*历史浏览器实测（旧版界面）：上传 Markdown 文件、修改后保存，刷新页面仍能读取。桌面文件系统另由 runtime 测试验证；此图不是桌面运行截图。*
 
 目录与版本规则、当前运行加载路径及后续完整快照装配见[客户端 Skill 文件管理、版本与运行加载](../skill-storage-and-loading.md)。本地包放在 `skills/local/<localId>`；官方版本放在 `skills/releases/<skillId>/<contentId>`，人工标签通过 `tags.json` 映射到内容 ID。正式发布和同步校验仍由后续服务端接入完成。
 
@@ -72,15 +72,11 @@ Skill 的内容结构、路由与平台操作分工、两类 `SKILL.md` 模板�
 文件级上传不产生独立文件版本，也不直接改写已发布包。同名文件先展示目标路径，由用户选择替换或跳过，不静默改名；目录失效则停止对应写入，不把文件改放到根目录。批量上传分别显示成功和失败，失败项可重试，原文件与其他已成功项保留。重命名、删除前展示目标路径并提醒可能影响包内引用，不自动改写其他文件的内容。
 
 <details>
-<summary>早期编辑界面与组件参考</summary>
+<summary>Markdown 编辑工作区</summary>
 
 ![现有 Skill 草稿编辑器](./assets/screenshots/01-skill-edit.png)
 
-早期单文件编辑器截图。当前包内编辑继续提供源码、预览和分栏模式；完整草稿实验与发布尚未接入。
-
-![指定 File Manager 组件的上游 Web 截图](./assets/screenshots/01-file-manager-reference.png)
-
-*上游组件参考，来源：pro.beui.dev/components/file-manager；英文内容为组件示例。*
+当前 Markdown 工作区的 Web 实拍。编写与预览使用同一份源码，保存和撤销为显式操作；旧编辑开关、分栏模式和右侧大纲已移除。
 
 </details>
 
