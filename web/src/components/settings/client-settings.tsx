@@ -12,6 +12,9 @@ import { useBackendData } from "@/components/workbench/use-backend-data"
 import { Select } from "@/components/premium/select/select"
 import { settingsSections, type SettingsSection } from "./settings-navigation"
 import { ProviderSettings } from "./provider-settings"
+import { ClientMaintenance } from "./client-maintenance"
+import { ResourcePublicationPanel } from "./resource-publication"
+import type { HistoricalResource } from "@/resources/publication"
 import "./client-settings.css"
 
 function AppearancePreview() {
@@ -52,10 +55,12 @@ export function ClientSettingsScreen({
   scrollRef,
   activeSection,
   onSectionChange,
+  onOpenResource,
 }: {
   scrollRef: RefObject<HTMLDivElement | null>
   activeSection: SettingsSection
   onSectionChange: (section: SettingsSection) => void
+  onOpenResource?: (resource: HistoricalResource) => Promise<void> | void
 }) {
   const { desktop } = useAppDependencies()
   const { theme, setTheme } = useTheme()
@@ -127,6 +132,24 @@ export function ClientSettingsScreen({
           </div>
         </section>
         <ProviderSettings active={activeSection === "providers"} />
+        {activeSection === "maintenance" ? (
+          <section
+            id="client-settings-maintenance"
+            data-settings-section="maintenance"
+            tabIndex={-1}
+          >
+            <ClientMaintenance />
+          </section>
+        ) : null}
+        {activeSection === "publication" ? (
+          <section
+            id="client-settings-publication"
+            data-settings-section="publication"
+            tabIndex={-1}
+          >
+            <ResourcePublicationPanel onOpenResource={onOpenResource} />
+          </section>
+        ) : null}
         <section
           id="client-settings-tasks"
           hidden={activeSection !== "tasks"}

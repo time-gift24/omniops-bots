@@ -1,0 +1,113 @@
+<!doctype html>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Resource publication regression</title>
+<div id="fixture" style="height:90dvh;overflow:auto"></div>
+<pre id="result" style="max-width:100%;white-space:pre-wrap;overflow-wrap:anywhere">Running…</pre>
+<script type="module">
+  import React from "react"
+  import { createRoot } from "react-dom/client"
+  import { flushSync } from "react-dom"
+  import "/src/index.css"
+  import { ResourcePublicationPanel } from "/src/components/settings/resource-publication.tsx"
+  import { RunHistory } from "/src/components/runs/run-history.tsx"
+  import { createTestDependencies, withTestTheme } from "/tests/support.tsx"
+
+  const fixture = document.querySelector("#fixture"), result = document.querySelector("#result"), checks = []
+  const assert = (condition, text) => { if (!condition) throw new Error(text) }
+  const until = async (condition, text) => { const end = performance.now() + 6000; while (!condition() && performance.now() < end) await new Promise(resolve => setTimeout(resolve, 20)); assert(condition(), text) }
+  const visible = element => element?.getClientRects().length && !element.closest('[hidden],[inert],[aria-hidden="true"]')
+  const button = text => [...fixture.querySelectorAll("button")].find(element => visible(element) && element.textContent.trim() === text)
+  const click = element => { assert(element && !element.disabled, "Expected enabled control"); flushSync(() => element.click()) }
+  const field = text => { const label = [...fixture.querySelectorAll("label")].find(item => item.textContent.trim() === text); return label && document.getElementById(label.htmlFor) }
+  const select = (element, value) => flushSync(() => { element.value = value; element.dispatchEvent(new Event("change", { bubbles: true })) })
+  const input = (element, value) => flushSync(() => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set.call(element, value); element.dispatchEvent(new Event("input", { bubbles: true })) })
+  let root = createRoot(fixture)
+  const base = createTestDependencies(), hash = "a".repeat(64), oldHash = "b".repeat(64), calls = [], opened = []
+  let persisted = null, uploadResolve, failPublish = true, snapshot = { ...base.desktop.getState(), simulated: false, connection: { state: "connected", permissions: ["official-maintain"], destination: "https://fixture.invalid", account: "operator" } }
+  const listeners = new Set()
+  const preview = { kind: "skill", contentId: hash, baseline: "baseline", expectedContentId: oldHash, affectedAgents: [{ agentId: "dependent-agent", expectedContentId: oldHash }] }
+  const source = {
+    async listOperations() { calls.push("list"); return { items: persisted && snapshot.connection.account === "operator" ? [persisted] : [] } },
+    async prepare(request) { calls.push(["prepare", request]); return persisted = { operationId: "frozen-op", kind: "skill", localId: request.id, officialId: "official", contentId: hash, phase: "prepared", files: [{ path: "SKILL.md", kind: "file", bytes: 10, sha256: hash }] } },
+    async uploadDraft(operationId) { calls.push(["upload", operationId]); await new Promise(resolve => { uploadResolve = resolve }); return persisted = { ...persisted, phase: "uploaded", draftRevisionId: "draft-revision", revision: "opaque-head" } },
+    async preview(operationId) { calls.push(["preview", operationId]); persisted = { ...persisted, preview }; return preview },
+    async publish(request) { calls.push(["publish", structuredClone(request)]); persisted = { ...persisted, publication: { releaseTag: request.releaseTag, affectedAgents: request.affectedAgents } }; if (failPublish) throw new Error("发布回执丢失，请使用原键重试。"); return persisted = { ...persisted, phase: "published", release: { releaseId: "release", versions: [{ kind: "skill", id: "official", contentId: hash, releaseTag: request.releaseTag }, { kind: "agent", id: "dependent-agent", contentId: oldHash, releaseTag: request.affectedAgents[0].releaseTag }] } } },
+    async versions() { return { items: [{ contentId: oldHash, releaseTag: "v.1.0.0" }], nextCursor: null } },
+    async selectHistory(request) { calls.push(["history", request]); return { kind: "skill", officialId: "official", contentId: request.contentId, ...(request.editable ? { localId: "independent-copy" } : {}), skill: { id: request.editable ? "independent-copy" : "official", name: "fixture", description: "", origin: request.editable ? "local" : "official", readOnly: !request.editable, modifiedAt: null, entries: [{ path: "SKILL.md", kind: "file", size: 10, mimeType: "text/markdown", modifiedAt: null }] } } },
+  }
+  const dependencies = createTestDependencies({ publications: source,
+    desktop: { ...base.desktop, getState: () => snapshot, subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener) } },
+    skillLibrary: { ...base.skillLibrary, list: async () => [{ id: "local", name: "已保存的 Skill", origin: "local" }, { id: "official", name: "官方 Skill", origin: "official" }] },
+  })
+  const render = () => flushSync(() => root.render(withTestTheme(React.createElement(ResourcePublicationPanel, { onOpenResource: async resource => opened.push(resource) }), dependencies)))
+  try {
+    render()
+    await until(() => field("已保存的本机资源")?.options.length > 1, "Saved local packages must load")
+    assert(!calls.some(item => Array.isArray(item) && ["prepare", "upload", "publish"].includes(item[0])), "Opening publishing must not capture, upload or publish")
+    select(field("已保存的本机资源"), "local")
+    input(field("官方资源 ID"), "official")
+    click(button("准备新的上传修订"))
+    await until(() => button("上传完整草稿／原键重试"), "Preparation freezes saved content first")
+    assert(!calls.some(item => item[0] === "upload"), "Preparation is not upload")
+    click(button("上传完整草稿／原键重试"))
+    await until(() => uploadResolve, "Upload must be in flight")
+    assert(field("已保存的本机资源").disabled, "An in-flight operation cannot change scope")
+    assert(!button("获取发布预览"), "Unacknowledged draft is not publishable")
+    uploadResolve()
+    await until(() => button("获取发布预览") && !button("获取发布预览").disabled, "Only a durable draft receipt enables preview")
+    click(button("获取发布预览"))
+    await until(() => field("Skill 新标签"), "Preview must include all affected Agents")
+    input(field("Skill 新标签"), "v.2.0.0")
+    assert(button("确认标签并发布全部版本").disabled, "Every affected Agent needs its own manual label")
+    input(field("受影响 Agent dependent-agent 新标签"), "v.3.0.0")
+    click(button("确认标签并发布全部版本"))
+    await until(() => fixture.textContent.includes("发布回执丢失"), "Unknown outcome preserves the frozen operation")
+    assert(field("Skill 新标签").disabled, "Retry may not change the original label")
+    root.unmount(); root = createRoot(fixture); render()
+    await until(() => field("恢复已保留的发布操作")?.options.length > 1, "Restart must restore retained operations")
+    select(field("恢复已保留的发布操作"), "frozen-op")
+    await until(() => button("使用原标签和原键重试发布"), "Recovered publication carries original body and preview")
+    assert(field("Skill 新标签").value === "v.2.0.0" && field("Skill 新标签").disabled, "Original publication label survives remount")
+    failPublish = false; click(button("使用原标签和原键重试发布"))
+    await until(() => fixture.querySelector('[aria-label="正式发布回执"]'), "Atomic release receipt must show both resource versions")
+    const publishes = calls.filter(item => item[0] === "publish").map(item => item[1])
+    assert(JSON.stringify(publishes[0]) === JSON.stringify(publishes[1]), "Unknown-outcome retry reuses exact operation and all labels")
+    click(button("读取正式版本"))
+    await until(() => field("精确正式版本"), "Official immutable history must load")
+    select(field("精确正式版本"), oldHash)
+    click(button("查看只读版本"))
+    await until(() => fixture.textContent.includes("只读正式版本"), "Exact historical selection is readonly")
+    click(button("创建独立工作副本"))
+    await until(() => opened.length === 1, "History copy opens through the existing editor interface")
+    assert(opened[0].localId === "independent-copy" && calls.filter(item => item[0] === "history").every(item => item[1].contentId === oldHash), "Copy retains exact source version and independent local identity")
+    checks.push("frozen draft, complete atomic preview, manual labels, original-key retry after remount, exact independent history copy")
+    root.unmount(); root = createRoot(fixture)
+    let run = { origin: "a2a", runId: "remote", threadId: "thread", title: "远端 JSON 结果", status: "completed", startedAt: "2026-10-27T00:00:00Z", output: null, events: [], delivery: { taskId: "task", state: "pending" } }
+    const runSource = { list: async () => [run], get: async () => run, snapshot: async () => null, bindSession() {} }
+    flushSync(() => root.render(withTestTheme(React.createElement(RunHistory, { source: runSource, onContinue() { throw new Error("Remote runs cannot resume") } }), dependencies)))
+    const remoteButton = () => [...fixture.querySelectorAll("button")].find(item => item.textContent.includes("远端 JSON 结果"))
+    await until(() => remoteButton(), "Remote run record must load without a chat response")
+    click(remoteButton())
+    await until(() => fixture.querySelector('[aria-label="远端任务 JSON 结果"]'), "Remote JSON output must render")
+    assert(fixture.querySelector('[aria-label="远端任务 JSON 结果"]').textContent === "null" && fixture.textContent.includes("结果待服务端确认"), "Null output is present and delivery remains separately pending")
+    run = { ...run, output: false, delivery: { taskId: "task", state: "confirmed" } }
+    click(button("刷新"))
+    await until(() => fixture.textContent.includes("服务端已确认"), "Delivery receipt updates independently of completed execution")
+    assert(button("服务端任务 · 只读").disabled, "Remote records remain readonly")
+    checks.push("remote finite JSON null/false output and separate delivery confirmation")
+    assert(document.documentElement.scrollWidth <= innerWidth + 1, "Publication and output views must fit narrow screens")
+    root.unmount(); root = createRoot(fixture); render()
+    await until(() => field("恢复已保留的发布操作")?.options.length > 1, "Final publication preview must load retained operation")
+    select(field("恢复已保留的发布操作"), "frozen-op")
+    await until(() => fixture.querySelector('[aria-label="正式发布回执"]'), "Final publication preview must show formal receipt")
+    flushSync(() => { snapshot = { ...snapshot, connection: { ...snapshot.connection, account: "other-operator" } }; listeners.forEach(listener => listener()) })
+    await until(() => !field("恢复已保留的发布操作"), "Account switch must discard the prior owner's publication view")
+    assert(!fixture.textContent.includes("frozen-op"), "Prior account operation identity may not remain on screen")
+    flushSync(() => { snapshot = { ...snapshot, connection: { ...snapshot.connection, account: "operator" } }; listeners.forEach(listener => listener()) })
+    await until(() => field("恢复已保留的发布操作")?.options.length > 1, "Returning owner can reload durable operations")
+    select(field("恢复已保留的发布操作"), "frozen-op")
+    await until(() => fixture.querySelector('[aria-label="正式发布回执"]'), "Owner restores the verified release receipt")
+    result.textContent = `PASS: ${checks.join("; ")}`; result.dataset.passed = "true"
+  } catch (error) { result.textContent = `FAIL: ${error.stack ?? error.message}`; result.dataset.passed = "false"; throw error }
+</script>

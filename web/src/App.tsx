@@ -55,6 +55,7 @@ import { useToast } from "@/components/ui/toast"
 import { EASE_OUT } from "@/lib/ease"
 import { RunHistory } from "@/components/runs/run-history"
 import { ClientSettingsScreen } from "@/components/settings/client-settings"
+import { ClientMaintenance } from "@/components/settings/client-maintenance"
 import {
   SettingsNavigation,
   type SettingsSection,
@@ -115,7 +116,7 @@ class PageLoadBoundary extends Component<
 
 type View =
   | { kind: "chat" }
-  | { kind: "session"; threadId: string; title: string }
+  | { kind: "session"; threadId: string; title: string; fixedModel?: string }
   | { kind: "agent"; agentId: string }
   | { kind: "skill" }
   | { kind: "skill-draft" }
@@ -141,6 +142,116 @@ export function App({
 }: {
   edition?: "user" | "operations"
 }) {
+  const { desktop } = useAppDependencies()
+  const snapshot = useSyncExternalStore(
+    desktop.subscribe,
+    desktop.getState,
+    desktop.getState
+  )
+  const permissions = snapshot.connection?.permissions
+  const verified =
+    snapshot.connection?.state === "connected" || !!snapshot.connection?.account
+  const authorizedOperations =
+    edition === "operations" &&
+    !snapshot.diagnosticsOnly &&
+    ((!verified && !permissions?.length) ||
+      !!permissions?.includes("official-maintain"))
+  return authorizedOperations ? (
+    <ResourceApp edition="operations" />
+  ) : (
+    <UserClientApp />
+  )
+}
+
+function UserClientApp() {
+  const { runs, desktop } = useAppDependencies()
+  const snapshot = useSyncExternalStore(
+    desktop.subscribe,
+    desktop.getState,
+    desktop.getState
+  )
+  const [page, setPage] = useState("maintenance")
+  const [skillId, setSkillId] = useState<string | null>(null)
+  const sections: SidebarRailSection[] = [
+    {
+      id: "maintenance",
+      label: "连接与维护",
+      icon: Folder01Icon,
+      groups: [],
+      collapseOnSelect: true,
+    },
+    {
+      id: "runs",
+      label: "执行记录",
+      icon: HistoryIcon,
+      groups: [],
+      collapseOnSelect: true,
+    },
+    {
+      id: "skills",
+      label: "技能",
+      icon: PackageIcon,
+      groups: [],
+      collapseOnSelect: true,
+    },
+  ].filter(
+    (section) => !snapshot.diagnosticsOnly || section.id === "maintenance"
+  )
+  return (
+    <SidebarRail
+      workspaceName="客户端"
+      sections={sections}
+      activeSectionId={page}
+      defaultExpanded={false}
+      onSectionSelect={(section) => {
+        setPage(section.id)
+        if (section.id !== "skills") setSkillId(null)
+      }}
+      workspaceHeader={
+        <Breadcrumbs
+          items={[
+            { label: "客户端" },
+            {
+              label:
+                sections.find((section) => section.id === page)?.label ??
+                "连接与维护",
+            },
+          ]}
+        />
+      }
+      railFooter={null}
+      contentClassName="p-0 sm:p-0"
+    >
+      <main className="h-full min-h-0 overflow-auto">
+        {page === "maintenance" ? (
+          <ClientMaintenance />
+        ) : page === "runs" ? (
+          runs ? (
+            <RunHistory source={runs} readOnly onContinue={async () => {}} />
+          ) : (
+            <p className="p-6 text-sm text-muted-foreground">暂无执行记录。</p>
+          )
+        ) : (
+          <Suspense
+            fallback={
+              <p role="status" className="p-6 text-sm">
+                正在读取技能…
+              </p>
+            }
+          >
+            <SkillLibraryScreen
+              skillId={skillId}
+              onOpenSkill={setSkillId}
+              officialOnly
+            />
+          </Suspense>
+        )}
+      </main>
+    </SidebarRail>
+  )
+}
+
+function ResourceApp({ edition }: { edition: "user" | "operations" }) {
   const dependencies = useAppDependencies()
   const operations = edition === "operations"
   const toast = useToast()
@@ -783,6 +894,7 @@ function WorkspaceApp({
     const threadId = `session-${crypto.randomUUID()}`
     runs.bindSession(threadId, {
       agentId: agent.id,
+      ...(agent.contentId ? { agentContentId: agent.contentId } : {}),
       ...(skillId ? { experimentSkillId: skillId } : {}),
     })
     showSession(
@@ -1276,11 +1388,32 @@ function WorkspaceApp({
                 threadId={view.threadId}
                 models={models}
                 workspaceName={view.title}
+                fixedModel={view.fixedModel}
                 suggestions={[]}
               />
             ) : view.kind === "section" && view.sectionId === "runs" ? (
               runs ? (
-                <RunHistory source={runs} onContinue={continueSession} />
+                <RunHistory
+                  source={runs}
+                  onContinue={continueSession}
+                  onNewFromRun={async (run) => {
+                    const model = run.snapshot?.model
+                    if (typeof model !== "string" || !model)
+                      throw new Error(
+                        "此记录没有完整模型组合，不能据此新建会话。"
+                      )
+                    const threadId = `session-${crypto.randomUUID()}`
+                    runs.bindSession(threadId, { historyRunId: run.runId })
+                    threads.get(threadId).updateDraft({ model })
+                    setView({
+                      kind: "session",
+                      threadId,
+                      title: `${run.title} · 历史组合`,
+                      fixedModel: model,
+                    })
+                    if (compactWindow) setWorkbenchOpen(false)
+                  }}
+                />
               ) : (
                 <p className="px-5 py-6 text-sm text-muted-foreground">
                   暂无执行记录。
@@ -1330,6 +1463,35 @@ function WorkspaceApp({
                 scrollRef={settingsScrollRef}
                 activeSection={activeSettingsSection}
                 onSectionChange={setActiveSettingsSection}
+                onOpenResource={async (resource) => {
+                  if (!resource.localId && resource.agent) {
+                    startAgentSession(resource.agent)
+                    return
+                  }
+                  if (!resource.localId) return
+                  if (resource.kind === "agent" && resource.agent) {
+                    const agent = resource.agent
+                    agentVersion.current++
+                    if (!unsavedAgentIdsRef.current.includes(agent.id))
+                      unsavedAgentIdsRef.current = [
+                        ...unsavedAgentIdsRef.current,
+                        agent.id,
+                      ]
+                    setUnsavedAgentIds(unsavedAgentIdsRef.current)
+                    setAgents((current) => [
+                      ...current.filter((item) => item.id !== agent.id),
+                      agent,
+                    ])
+                    openAgent(agent.id)
+                  } else if (resource.kind === "skill" && skillLibrary) {
+                    const items = await skillLibrary.list()
+                    if (!mounted.current) return
+                    setSkillCatalog(items.map(skillResource))
+                    setOpenedSkillId(resource.localId)
+                    setSkillsVisited(true)
+                    setView({ kind: "skill" })
+                  }
+                }}
               />
             ) : view.kind === "page" ||
               view.kind === "skill" ||

@@ -69,11 +69,11 @@
   const owner = makeStore("owner");
   const other = makeStore("other");
   const dependencies = createTestDependencies({ desktop: runtime });
-  const render = store => flushSync(() => root.render(withDependencies(React.createElement(ChatComposer, { key: store.getState().threadId, store, models: [{ id: "test", label: "Test model" }] }), dependencies)));
+  const render = store => flushSync(() => root.render(withDependencies(React.createElement(ChatComposer, { key: store.getState().threadId, store, models: [{ id: "test", label: "Test model", isDefault: true }] }), dependencies)));
   const panel = () => fixture.querySelector('[data-slot="approval-panel"]');
-  const composer = () => fixture.querySelector('.chat-composer-shell');
+  const composer = () => fixture.querySelector('[data-slot="chat-composer-anchor"]');
   const editor = () => fixture.querySelector('[contenteditable="true"]');
-  const button = text => [...fixture.querySelectorAll("button")].find(node => node.textContent.trim() === text || node.getAttribute("aria-label") === text);
+  const button = text => [...fixture.querySelectorAll("button")].find(node => node.getAttribute("aria-label") === text || (() => { const copy = node.cloneNode(true); copy.querySelectorAll('[aria-hidden="true"],[hidden]').forEach(item => item.remove()); return copy.textContent.trim() === text; })());
   const click = text => { const target = button(text); assert(target, `Missing ${text}`); flushSync(() => target.click()); };
   const reason = () => fixture.querySelector('textarea[aria-label="拒绝理由（可选）"]');
   const setReason = text => flushSync(() => {

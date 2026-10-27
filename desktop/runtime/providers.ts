@@ -28,6 +28,16 @@ const failure = (kind: string, message: string, cause?: unknown) => Object.assig
 const named = (value: unknown, field: string) => identifier(value, field).trim();
 const modelId = (provider: string, model: string) => JSON.stringify([provider, model]);
 
+/** Effective non-secret wire parameters shared by model construction and run fingerprints. */
+export function providerModelParameters(binding: Pick<ProviderBinding, 'baseURL'>, maxTokens?: number) {
+  return {
+    temperature: 0,
+    parallel_tool_calls: false,
+    ...(maxTokens !== undefined ? { max_tokens: maxTokens } : {}),
+    ...(new URL(binding.baseURL).hostname === 'api.deepseek.com' ? { thinking: { type: 'disabled' } } : {}),
+  };
+}
+
 function baseAddress(value: unknown) {
   if (typeof value !== 'string' || value.length > 2048) throw invalid('接入地址不能超过 2048 个字符。');
   const url = new URL(httpUrl(value));
@@ -296,10 +306,11 @@ export async function createProviderCatalog({ file, credentials, legacy }: Catal
       }));
       return new Response(body, { status: response.status, statusText: response.statusText, headers: response.headers });
     };
+    const { temperature, max_tokens, ...modelKwargs } = providerModelParameters(fixed, maxTokens);
     return new ChatOpenAI({
-      model: fixed.model, apiKey: 'omniops-local-credential', temperature: 0, maxTokens,
+      model: fixed.model, apiKey: 'omniops-local-credential', temperature, maxTokens: max_tokens,
       useResponsesApi: false, timeout: REQUEST_TIMEOUT, maxRetries: 0,
-      modelKwargs: { parallel_tool_calls: false, ...(new URL(fixed.baseURL).hostname === 'api.deepseek.com' ? { thinking: { type: 'disabled' } } : {}) },
+      modelKwargs,
       configuration: { baseURL: fixed.baseURL, fetch: secureFetch, organization: null, project: null, adminAPIKey: null, logLevel: 'off', defaultHeaders: { Authorization: null } },
     });
   };

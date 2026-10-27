@@ -20,6 +20,12 @@ pub enum Error {
     NativeString(#[from] std::ffi::NulError),
     #[error("runtime process operation failed")]
     Shell(#[from] tauri_plugin_shell::Error),
+    #[error("更新下载或验证失败，当前应用未执行安装。")]
+    Updater(#[from] tauri_plugin_updater::Error),
+    #[error("更新安装未完成；执行服务已停止，请重新启动并检查应用版本。")]
+    UpdateInstall(#[source] tauri_plugin_updater::Error),
+    #[error("更新网络请求失败，当前应用未执行安装。")]
+    UpdateNetwork(#[from] reqwest::Error),
     #[error("runtime protocol is invalid")]
     Protocol(#[from] serde_json::Error),
     #[error("{0}")]
@@ -53,6 +59,7 @@ impl Error {
             Self::Tauri(_) => "host",
             Self::Shell(_) => "transport",
             Self::Protocol(_) => "protocol",
+            Self::Updater(_) | Self::UpdateInstall(_) | Self::UpdateNetwork(_) => "update",
             Self::Unavailable(_) => "unavailable",
             Self::InvalidInput(_) => "invalid-input",
             Self::Timeout => "timeout",
@@ -96,6 +103,7 @@ impl From<Error> for IpcError {
             #[cfg(windows)]
             Error::NativeIo { .. } => "native-browser",
             Error::Protocol(_) => "protocol",
+            Error::Updater(_) | Error::UpdateInstall(_) | Error::UpdateNetwork(_) => "update",
             Error::Credentials(_) | Error::CredentialBoundary(_) => "credentials",
             _ => "host",
         };

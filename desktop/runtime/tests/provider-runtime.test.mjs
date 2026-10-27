@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
+import { chmod, lstat, mkdir, mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -13,6 +13,9 @@ import { createProviderCatalog } from '../providers.ts';
 import { createResources } from '../resources.ts';
 import { createDesktopRuntime } from '../runtime.ts';
 import { createModelFixture } from './model-fixture.mjs';
+import { packageContentId, writePackageFiles } from '../package.ts';
+import { createRunFingerprint } from '../fingerprint.ts';
+import { createRunRecords } from '../execution/records.ts';
 
 const id = provider => JSON.stringify([provider, 'shared']);
 const request = { messages: [{ role: 'user', text: '只回答当前问题。' }] };
@@ -21,6 +24,67 @@ async function until(check) {
   for (let i = 0; i < 500; i++) { const value = await check(); if (value) return value; await delay(10); }
   throw new Error('Runtime did not settle');
 }
+
+test('historyRunId starts a new exact formal composition with current credentials and refuses incompatible history', async t => {
+  const directory = await mkdtemp(join(tmpdir(), 'provider-history-')), runsDir = join(directory, 'runs');
+  const fixture = await createModelFixture({ respond: () => ({ text: '历史组成的新执行。' }) }), keys = new Map();
+  const credentials = { async get(ref) { return keys.get(ref) ?? null; }, async set(ref, key) { keys.set(ref, key); }, async delete(ref) { keys.delete(ref); } };
+  let catalog, runtime;
+  const writable = async file => { if (!(await lstat(file)).isDirectory()) return; await chmod(file, 0o700); for (const name of await readdir(file)) await writable(join(file, name)); };
+  t.after(async () => { await runtime?.close(); await fixture.close(); await writable(directory); await rm(directory, { recursive: true, force: true }); });
+  const store = async (kind, id, entries) => {
+    const contentId = packageContentId(entries), target = join(directory, '.omnimind-ops', kind, 'releases', id, contentId);
+    await mkdir(target, { recursive: true }); await writePackageFiles(entries, target); return { contentId, target };
+  };
+  const skill = await store('skills', 'fixed', [{ path: 'SKILL.md', kind: 'file', bytes: Buffer.from('---\nname: fixed\ndescription: Historical package.\n---\nFixed instructions.\n') }, { path: 'reference.bin', kind: 'file', bytes: Buffer.from([0,255,1]) }]);
+  const config = { schemaVersion: 1, name: 'Historical operator', description: 'Exact history', promptFile: 'prompt.md', toolIds: [], mcpServers: [], skills: [{ skillId: 'fixed', contentId: skill.contentId, mountPath: '/skills/fixed/' }] };
+  const agent = await store('agents', 'historical', [{ path: 'agent.json', kind: 'file', bytes: Buffer.from(JSON.stringify(config)) }, { path: 'prompt.md', kind: 'file', bytes: Buffer.from('HISTORICAL_PROMPT') }]);
+  await store('agents', 'historical', [{ path: 'agent.json', kind: 'file', bytes: Buffer.from(JSON.stringify(config)) }, { path: 'prompt.md', kind: 'file', bytes: Buffer.from('CURRENT_PROMPT') }]);
+  const open = async () => {
+    catalog = await createProviderCatalog({ file: join(directory, 'providers.json'), credentials });
+    runtime = await createDesktopRuntime({ browser: browser(), resources: createResources({ homeDir: directory, runsDir }), runsDir, providers: catalog, workspace: {}, checkpointer: new MemorySaver(), redact: catalog.redact });
+  };
+  await open();
+  await catalog.save({ name: '历史接入', baseURL: fixture.baseURL, models: ['shared'], apiKey: 'old-history-key' });
+  await catalog.setDefault({ provider: '历史接入', model: 'shared' });
+  const settle = runId => until(() => runtime.getState().tasks.length ? null : runtime.dispatch('run_get', { runId }));
+  runtime.dispatch('chat_start', { runId: 'source', threadId: 'old-thread', agentId: 'historical', agentContentId: agent.contentId, request: { messages: [{ role: 'user', text: 'SOURCE_ONLY_INPUT' }] } });
+  const source = await settle('source'); assert.equal(source.status, 'completed');
+  await catalog.save({ originalName: '历史接入', name: '历史接入', baseURL: fixture.baseURL, models: ['shared'], apiKey: 'rotated-history-key' });
+  assert.equal(keys.has(source.snapshot.provider.credentialRef), false, 'old credential reference must no longer resolve');
+  await catalog.save({ name: '新默认', baseURL: fixture.baseURL, models: ['shared'] });
+  await catalog.setDefault({ provider: '新默认', model: 'shared' });
+  const start = (runId, threadId, extra = {}) => runtime.dispatch('chat_start', { runId, threadId, historyRunId: 'source', request: { messages: [{ role: 'user', text: 'NEW_ONLY_INPUT' }] }, ...extra });
+  start('restored-history', 'new-history');
+  const restored = await settle('restored-history'); assert.equal(restored.status, 'completed', JSON.stringify(restored.error));
+  assert.equal(restored.historyRunId, 'source'); assert.notEqual(restored.graphThreadId, source.graphThreadId);
+  assert.equal(restored.snapshot.fingerprint, source.snapshot.fingerprint); assert.equal(restored.snapshot.agent.contentId, agent.contentId);
+  assert.equal(restored.snapshot.provider.provider, '历史接入'); assert.notEqual(restored.snapshot.provider.credentialRef, source.snapshot.provider.credentialRef);
+  assert.deepEqual(await readFile(join(restored.snapshot.directory, 'skills/fixed/reference.bin')), Buffer.from([0,255,1]));
+  const wire = JSON.stringify(fixture.requests.at(-1));
+  assert.match(wire, /HISTORICAL_PROMPT/); assert.match(wire, /NEW_ONLY_INPUT/); assert.doesNotMatch(wire, /SOURCE_ONLY_INPUT|CURRENT_PROMPT/);
+  assert.deepEqual(runtime.dispatch('run_get', { runId: 'source' }), source);
+  assert.throws(() => start('existing-thread', 'new-history'), { kind: 'invalid-request' });
+  assert.throws(() => start('conflicting-model', 'other-thread', { request: { ...request, model: id('新默认') } }), { kind: 'invalid-request' });
+  const count = fixture.requests.length;
+  await catalog.save({ originalName: '历史接入', name: '历史接入', baseURL: fixture.baseURL + '/changed', models: ['shared'] });
+  start('changed-endpoint', 'changed-endpoint');
+  assert.equal((await settle('changed-endpoint')).error.kind, 'unavailable'); assert.equal(fixture.requests.length, count);
+  await catalog.save({ originalName: '历史接入', name: '历史接入', baseURL: fixture.baseURL, models: ['shared'] });
+  await runtime.close();
+  const records = await createRunRecords(runsDir), changed = { ...source.snapshot, modelParameters: { temperature: 1, parallel_tool_calls: false } };
+  Object.assign(changed, createRunFingerprint({ agent: changed.agent, skills: changed.skills, provider: changed.provider, modelId: changed.provider.model, parameters: changed.modelParameters }));
+  await records.save({ runId: 'prior-parameters', threadId: 'prior-parameters', graphThreadId: 'old-parameters-graph', status: 'completed', startedAt: new Date().toISOString(), details: { snapshot: changed, events: [] } });
+  await open();
+  start('changed-parameters', 'changed-parameters', { historyRunId: 'prior-parameters' });
+  assert.equal((await settle('changed-parameters')).error.kind, 'unavailable'); assert.equal(fixture.requests.length, count);
+  await rm(skill.target, { recursive: true });
+  start('missing-asset', 'missing-asset');
+  assert.equal((await settle('missing-asset')).status, 'failed'); assert.equal(fixture.requests.length, count, 'missing exact Skill cannot fall back to the saved working snapshot');
+  runtime.dispatch('chat_start', { runId: 'local-source', threadId: 'local-source', request });
+  assert.equal((await settle('local-source')).status, 'completed');
+  assert.throws(() => start('local-history', 'local-history', { historyRunId: 'local-source' }), { kind: 'unavailable' });
+});
 
 test('real Provider models stay pinned across defaults, failed preparation, settings changes and restart', async t => {
   const directory = await mkdtemp(join(tmpdir(), 'provider-runtime-'));

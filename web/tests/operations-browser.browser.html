@@ -42,7 +42,7 @@ function Harness() {
 const assert = (value, message) => { if (!value) throw new Error(message) }
 const until = async (condition, message) => { const deadline = Date.now() + 4000; while (!condition() && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 20)); assert(condition(), message) }
 const button = name => [...fixture.querySelectorAll("button")].find(element => element.getAttribute("aria-label") === name || element.textContent.trim() === name)
-const click = element => { assert(element && !element.disabled, "Missing enabled control"); flushSync(() => element.click()) }
+const click = element => { assert(element && !element.disabled, "Missing enabled control"); flushSync(() => element.getAttribute("role") === "tab" ? element.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true })) : element.click()) }
 const operationsAddress = () => fixture.querySelector('[aria-label="运维浏览器地址栏"]')
 const write = value => flushSync(() => { const input = operationsAddress(); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set.call(input, value); input.dispatchEvent(new Event("input", { bubbles: true })) })
 const submit = () => flushSync(() => operationsAddress().closest("form").dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })))

@@ -5,6 +5,7 @@ import {
   Folder,
   MoreHorizontal,
   Plus,
+  Upload,
 } from "lucide-react"
 import { Button } from "@/components/arc/button/button"
 import {
@@ -16,7 +17,7 @@ import {
 } from "@/components/arc/menu/menu"
 import { Dialog, DialogContent } from "@/components/arc/dialog/dialog"
 import { Input } from "@/components/motion/input"
-import { validateSkillPath } from "@/skills/library"
+import { MAX_SKILL_ENTRIES, validateSkillPath } from "@/skills/library"
 
 export type SkillFileNavProps = {
   files: readonly { path: string; modified?: boolean }[]
@@ -24,7 +25,12 @@ export type SkillFileNavProps = {
   path: string
   busy: boolean
   onSelect: (path: string) => void
-  onAddFile?: (path: string, content: Blob) => Promise<void>
+  onAddFile?: (path: string, content: Blob, replace?: boolean) => Promise<void>
+  onUploadFile?: (
+    path: string,
+    content: Blob,
+    replace?: boolean
+  ) => Promise<void>
   onAddDirectory?: (path: string) => Promise<void>
   onRenameEntry?: (path: string, newPath: string) => Promise<void>
   onDeleteEntry?: (path: string) => Promise<void>
@@ -36,6 +42,14 @@ type Operation = {
   name: string
   folder: boolean
 }
+type UploadItem = {
+  file: File
+  path: string
+  conflict: boolean
+  replace: boolean
+  state: "pending" | "saved" | "skipped" | "failed"
+  error?: string
+}
 
 export function SkillFileNav({
   files,
@@ -44,6 +58,7 @@ export function SkillFileNav({
   busy,
   onSelect,
   onAddFile,
+  onUploadFile,
   onAddDirectory,
   onRenameEntry,
   onDeleteEntry,
@@ -51,6 +66,14 @@ export function SkillFileNav({
   const [operation, setOperation] = useState<Operation | null>(null)
   const [error, setError] = useState("")
   const [pending, setPending] = useState(false)
+  const [upload, setUpload] = useState<{
+    directory: string
+    items: UploadItem[]
+  } | null>(null)
+  const [uploadError, setUploadError] = useState("")
+  const uploadInput = useRef<HTMLInputElement>(null)
+  const uploadDirectory = useRef("")
+  const cancelRemaining = useRef(false)
   const locked = useRef(false)
   const mounted = useRef(false)
   const returnFocus = useRef<HTMLElement | null>(null)
@@ -97,6 +120,51 @@ export function SkillFileNav({
     }
     setError("")
     setOperation({ kind, path: entryPath, name, folder })
+  }
+  function chooseUpload(directory: string) {
+    uploadDirectory.current = directory
+    uploadInput.current?.click()
+  }
+  async function uploadFiles() {
+    if (!upload || !onUploadFile || locked.current || busy) return
+    locked.current = true
+    cancelRemaining.current = false
+    setPending(true)
+    const directory = upload.directory
+    for (const item of upload.items) {
+      if (cancelRemaining.current || !mounted.current) break
+      if (item.state === "saved" || item.state === "skipped") continue
+      let state: UploadItem["state"] = "saved",
+        error: string | undefined
+      if (item.conflict && !item.replace) state = "skipped"
+      else {
+        try {
+          validateSkillPath(item.path)
+          await onUploadFile(item.path, item.file, item.replace)
+        } catch (cause) {
+          state = "failed"
+          error =
+            cause instanceof Error
+              ? cause.message
+              : "文件保存失败，原内容已保留。"
+        }
+      }
+      if (mounted.current)
+        setUpload((current) =>
+          current?.directory === directory
+            ? {
+                ...current,
+                items: current.items.map((value) =>
+                  value === item || value.path === item.path
+                    ? { ...value, state, error }
+                    : value
+                ),
+              }
+            : current
+        )
+    }
+    locked.current = false
+    if (mounted.current) setPending(false)
   }
   async function submit() {
     if (!operation || locked.current || busy) return
@@ -183,6 +251,24 @@ export function SkillFileNav({
               }
             >
               新建文件
+            </MenuItem>
+          ) : null}
+          {onUploadFile ? (
+            <MenuItem
+              onSelect={() =>
+                chooseUpload(
+                  node
+                    ? node.folder
+                      ? node.path
+                      : node.path.slice(
+                          0,
+                          Math.max(0, node.path.lastIndexOf("/"))
+                        )
+                    : ""
+                )
+              }
+            >
+              上传文件
             </MenuItem>
           ) : null}
           {onAddDirectory ? (
@@ -295,9 +381,159 @@ export function SkillFileNav({
         <span>
           文件 <span className="ml-1 tabular-nums">{files.length}</span>
         </span>
-        {entryMenu()}
+        <div className="flex items-center gap-1">
+          {onUploadFile ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="editor-icon"
+              disabled={busy || pending}
+              aria-label="上传技能文件"
+              onClick={() => chooseUpload("")}
+            >
+              <Upload size={15} />
+            </Button>
+          ) : null}
+          {entryMenu()}
+        </div>
       </div>
+      {onUploadFile ? (
+        <input
+          ref={uploadInput}
+          type="file"
+          multiple
+          className="sr-only"
+          tabIndex={-1}
+          aria-label="选择上传的技能文件"
+          onChange={(event) => {
+            const files = [...(event.target.files ?? [])]
+            event.target.value = ""
+            if (!files.length) return
+            if (files.length > MAX_SKILL_ENTRIES) {
+              setUploadError(`一次最多选择 ${MAX_SKILL_ENTRIES} 个文件。`)
+              return
+            }
+            setUploadError("")
+            const directory = uploadDirectory.current
+            setUpload({
+              directory,
+              items: files.map((file) => {
+                const path = directory ? `${directory}/${file.name}` : file.name
+                return {
+                  file,
+                  path,
+                  conflict: occupied.has(path.toLowerCase()),
+                  replace: false,
+                  state: "pending",
+                }
+              }),
+            })
+          }}
+        />
+      ) : null}
+      {uploadError ? (
+        <p role="alert" className="px-3 py-2 text-xs text-destructive">
+          {uploadError}
+        </p>
+      ) : null}
       {tree.length ? nodes(tree) : <p className="editor-empty">暂无文件</p>}
+      <Dialog
+        open={!!upload}
+        onOpenChange={(open) => {
+          if (!open && !locked.current) setUpload(null)
+        }}
+      >
+        <DialogContent
+          title="上传技能文件"
+          description={`保存到${upload?.directory ? ` ${upload.directory}` : " Skill 根目录"}。`}
+          closeLabel="关闭上传"
+          className="max-w-lg"
+        >
+          <ul className="max-h-80 space-y-3 overflow-auto">
+            {upload?.items.map((item) => (
+              <li key={item.path} className="space-y-2 text-sm">
+                <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                  <span className="break-all">{item.file.name}</span>
+                  <span role="status" className="text-xs text-muted-foreground">
+                    {
+                      {
+                        pending: "待上传",
+                        saved: "已保存",
+                        skipped: "已跳过",
+                        failed: "保存失败",
+                      }[item.state]
+                    }
+                  </span>
+                </div>
+                {item.conflict &&
+                (item.state === "pending" || item.state === "failed") ? (
+                  <label className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                    同名文件
+                    <select
+                      aria-label={`同名文件 ${item.file.name}`}
+                      className="rounded-md border border-border bg-background px-2 py-1 text-foreground"
+                      disabled={pending}
+                      value={item.replace ? "replace" : "skip"}
+                      onChange={(event) =>
+                        setUpload((current) =>
+                          current
+                            ? {
+                                ...current,
+                                items: current.items.map((value) =>
+                                  value.path === item.path
+                                    ? {
+                                        ...value,
+                                        replace:
+                                          event.target.value === "replace",
+                                      }
+                                    : value
+                                ),
+                              }
+                            : current
+                        )
+                      }
+                    >
+                      <option value="skip">跳过</option>
+                      <option value="replace">替换</option>
+                    </select>
+                  </label>
+                ) : null}
+                {item.error ? (
+                  <p role="alert" className="text-xs text-destructive">
+                    {item.error}
+                  </p>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+          <div className="editor-dialog-footer">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                if (pending) cancelRemaining.current = true
+                else setUpload(null)
+              }}
+            >
+              {pending ? "取消剩余上传" : "关闭"}
+            </Button>
+            <Button
+              disabled={
+                pending ||
+                busy ||
+                !upload?.items.some(
+                  (item) => item.state === "pending" || item.state === "failed"
+                )
+              }
+              loading={pending}
+              onClick={() => void uploadFiles()}
+            >
+              {upload?.items.some((item) => item.state === "failed")
+                ? "重试失败项"
+                : "开始上传"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       <Dialog
         open={!!operation}
         onOpenChange={(open) => {

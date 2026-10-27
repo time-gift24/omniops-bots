@@ -13,6 +13,12 @@ import {
   readBrowserSnapshot,
   readChatEvent,
   readDesktopSnapshot,
+  readDiagnosticThreads,
+  readDiagnosticPackage,
+  readDiagnosticUpload,
+  readSavedDiagnosticPackages,
+  readDiagnosticFilePreview,
+  readUpdate,
   readRpcError,
   string,
 } from "./protocol"
@@ -27,8 +33,10 @@ export interface TauriBridge {
   ): Promise<() => void>
 }
 export type RunContext = {
+  historyRunId?: string
   workspacePath?: string
   agentId?: string
+  agentContentId?: string
   experimentSkillId?: string
   instructions?: string
 }
@@ -85,10 +93,13 @@ export function createTauriRuntime(bridge: TauriBridge) {
   let connected = false
   let unavailable = false
   let unlisten: (() => void) | undefined
+  let unlistenUpdate: (() => void) | undefined
+  let updateListener: Promise<void> | undefined
   let resolveContext: (
     threadId: string
   ) => Promise<RunContext> = async () => ({})
   const listeners = new Set<() => void>()
+  const runListeners = new Set<() => void>()
   const runs = new Map<string, PendingRun>()
   const pendingStop = new Map<string, { confirmation?: Promise<void> }>()
   const terminalRuns = new Set<string>()
@@ -105,12 +116,40 @@ export function createTauriRuntime(bridge: TauriBridge) {
         : next.browserThreadId
     state = {
       ...next,
+      update: next.update ?? state.update,
       tasks,
       browserThreadId,
       task: tasks.find((task) => task.threadId === browserThreadId) ?? null,
     }
     version++
     for (const listener of [...listeners]) listener()
+  }
+  const nativeUpdate = async (command: string) => {
+    if (disposed) throw new Error("桌面连接已关闭。")
+    updateListener ??= bridge
+      .listen("updater-state", (value) => {
+        if (disposed) return
+        try {
+          publish({ ...state, update: readUpdate(value) })
+        } catch {
+          /* A malformed progress event cannot replace the last verified state. */
+        }
+      })
+      .then((unsubscribe) => {
+        if (disposed) unsubscribe()
+        else unlistenUpdate = unsubscribe
+      })
+    try {
+      await updateListener
+      const update = readUpdate(await bridge.invoke(command))
+      if (!disposed) publish({ ...state, update })
+      return update
+    } catch (cause) {
+      if (!unlistenUpdate) updateListener = undefined
+      throw new Error("更新操作未完成，请检查当前任务和更新配置后重试。", {
+        cause,
+      })
+    }
   }
   const updateTask = (task: DesktopTask) =>
     publish({
@@ -157,6 +196,10 @@ export function createTauriRuntime(bridge: TauriBridge) {
     if (disposed || unavailable) return
     try {
       const event = object(value)
+      if (event.event === "delivery_changed") {
+        for (const listener of [...runListeners]) listener()
+        return
+      }
       if (event.event === "exit_blocked") {
         publish({ ...state, closeBlocked: true })
         return
@@ -339,6 +382,62 @@ export function createTauriRuntime(bridge: TauriBridge) {
     return viewportWrite
   }
   const desktop: DesktopRuntime = {
+    async reconnectPlatform() {
+      if (!connected || disposed) throw new Error("桌面服务未连接。")
+      try {
+        await request("platform_reconnect")
+      } catch {
+        throw new Error("平台连接未能恢复，请检查登录与接入配置后重试。")
+      }
+    },
+    async listDiagnosticThreads(options = {}) {
+      if (!connected || disposed) throw new Error("桌面服务未连接。")
+      return readDiagnosticThreads(await request("diagnostic_threads", options))
+    },
+    async exportDiagnostics(threadId, includeAttachments = []) {
+      if (!connected || disposed) throw new Error("桌面服务未连接。")
+      return readDiagnosticPackage(
+        await request("diagnostic_export", {
+          threadId,
+          includeAttachments: [...includeAttachments],
+        })
+      )
+    },
+    async listDiagnosticPackages() {
+      if (!connected || disposed) throw new Error("桌面服务未连接。")
+      return readSavedDiagnosticPackages(
+        await request("diagnostic_saved_packages")
+      )
+    },
+    async openDiagnosticPackage(uploadId) {
+      if (!connected || disposed) throw new Error("桌面服务未连接。")
+      return readDiagnosticPackage(
+        await request("diagnostic_open_package", { uploadId })
+      )
+    },
+    async previewDiagnosticFile(uploadId, path) {
+      if (!connected || disposed) throw new Error("桌面服务未连接。")
+      return readDiagnosticFilePreview(
+        await request("diagnostic_preview_file", { uploadId, path })
+      )
+    },
+    async uploadDiagnostics(uploadId, consent) {
+      if (consent !== true) throw new Error("请先预览材料并确认同意上传。")
+      if (!connected || disposed) throw new Error("桌面服务未连接。")
+      return readDiagnosticUpload(
+        await request("diagnostic_upload", { uploadId, consent })
+      )
+    },
+    async diagnosticUploadStatus(uploadId) {
+      if (!connected || disposed) throw new Error("桌面服务未连接。")
+      return readDiagnosticUpload(
+        await request("diagnostic_upload_status", { uploadId })
+      )
+    },
+    readUpdate: () => nativeUpdate("updater_status"),
+    checkUpdate: () => nativeUpdate("updater_check"),
+    downloadUpdate: () => nativeUpdate("updater_download"),
+    installUpdate: () => nativeUpdate("updater_install"),
     setBrowserViewport,
     async readOperationsBrowser() {
       if (!connected || disposed) throw new Error("桌面服务未连接。")
@@ -552,6 +651,12 @@ export function createTauriRuntime(bridge: TauriBridge) {
     }
   }
   return {
+    subscribeRuns(listener: () => void) {
+      runListeners.add(listener)
+      return () => {
+        runListeners.delete(listener)
+      }
+    },
     desktop,
     gatewayFor,
     request,
@@ -575,8 +680,10 @@ export function createTauriRuntime(bridge: TauriBridge) {
     dispose() {
       disposed = true
       unlisten?.()
+      unlistenUpdate?.()
       disconnected("桌面连接已关闭。")
       listeners.clear()
+      runListeners.clear()
       void setBrowserViewport(null).catch(() => {})
     },
   }

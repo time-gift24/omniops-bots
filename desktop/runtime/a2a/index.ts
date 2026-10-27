@@ -35,9 +35,14 @@ export type CallOptions = Readonly<{ signal?: AbortSignal }>;
 export type CloseOptions = Readonly<{ deadline: number }>;
 export type DeliveryReceipt = Readonly<{ tenant: string; taskId: string; resultSha256: string; receivedAt: string }>;
 export type DeliveryConfirmation = Readonly<{ taskId: string; resultSha256: string }>;
+export type LocalDeliveryState = Readonly<{ taskId: string; threadId: string; runId: string; state: 'pending' | 'confirmed'; receivedAt?: string }>;
 export interface A2AService {
   protocolFor(context: ServerCallContext, tenant: string, options?: CallOptions): Promise<A2ARequestHandler>;
   confirmTaskDelivery(request: DeliveryReceipt, context: ServerCallContext, options?: CallOptions): Promise<DeliveryConfirmation>;
+  /** Local host projection only, never a remote A2A operation. Bounded to 1000 known Run IDs.
+   * No payloads, principals or credentials are returned; closing/storage errors reject safely.
+   */
+  deliveriesForRuns(runIds: readonly string[]): Promise<LocalDeliveryState[]>;
   close(options: CloseOptions): Promise<void>;
 }
 
@@ -495,6 +500,14 @@ export async function createA2AService(options: A2AServiceOptions, callOptions: 
     }
   }
   return {
+    deliveriesForRuns: runIds => guarded(async () => {
+      open();
+      if (!Array.isArray(runIds) || runIds.length > 1000) throw new RequestMalformedError();
+      runIds.forEach(value => id(value));
+      if (!runIds.length) return [];
+      const rows = await store.deliveriesForRuns(runIds);
+      return rows.filter(row => row.run_id !== null && row.thread_id !== null).map(row => ({ taskId: row.task_id, threadId: row.thread_id!, runId: row.run_id!, state: row.received_at === null ? 'pending' as const : 'confirmed' as const, ...(row.received_at !== null ? { receivedAt: row.received_at } : {}) }));
+    }),
     protocolFor: (c, tenant, opts = {}) => guarded(async () => new BoundHandler(await authorize(c, tenant, opts.signal), tenant)),
     confirmTaskDelivery: (request, c, opts = {}) => guarded(async () => {
       checkRequest(request); await authorize(c, request.tenant, opts.signal);

@@ -34,7 +34,8 @@ test('JSONL entry returns structured safe errors, exact snapshots and clean shut
   try {
     await ready.promise;
     const status = (await rpc('status')).result;
-    assert.deepEqual(Object.keys(status).sort(), ['browser', 'browserRequest', 'browserThreadId', 'operationsBrowser', 'simulated', 'task', 'tasks']);
+    assert.deepEqual(Object.keys(status).sort(), ['browser', 'browserRequest', 'browserThreadId', 'connection', 'operationsBrowser', 'simulated', 'task', 'tasks']);
+    assert.deepEqual(status.connection, { state: 'offline', permissions: [] });
     assert.equal(status.operationsBrowser.status, 'error');
     assert.equal((await rpc('operations_browser_navigate', { url: 'https://example.com' })).error.kind, 'unavailable');
     assert.deepEqual((await rpc('operations_browser_status')).result, status.operationsBrowser);

@@ -7,12 +7,14 @@
 <script type="module">
   import { mockIPC, mockWindows } from "@tauri-apps/api/mocks"
   import { emit } from "@tauri-apps/api/event"
+  const operations = import.meta.env.VITE_APP_EDITION === "operations"
   let starts = 0
   const calls = []
   let state = { simulated: false, task: null, browserRequest: 0, browser: { url: "", title: "", status: "empty", canGoBack: false, canGoForward: false } }
   mockWindows("main")
   mockIPC(async (command, args) => {
     calls.push([command, args])
+    if (command === "updater_status") return { phase: "disabled", currentVersion: "0.1.0", downloadedBytes: 0 }
     if (command !== "runtime_request") throw new Error(`Unexpected command ${command}`)
     switch (args.method) {
       case "status":
@@ -21,6 +23,8 @@
       case "agents_load": return { agents: [], resources: { mcpServers: [], tools: [], skills: [] } }
       case "skill_library_info": return { kind: "desktop", root: "/home/test/.omnimind-ops/skills" }
       case "skill_library_list": case "skills_list": case "models_list": return []
+      case "diagnostic_threads": return { items: [], nextCursor: null }
+      case "diagnostic_saved_packages": return []
       case "workspace_directories": return [{ name: "Fixture", path: "/fixture" }]
       case "workspace_resolve": return { name: "Fixture", path: args.params.path }
       case "workspace_bind": return null
@@ -45,11 +49,17 @@
     assert(document.querySelector('[data-slot="desktop-titlebar"]'), "Startup failure must retain the desktop titlebar")
     assert(!document.querySelector('[data-slot="chat-composer-anchor"]'), "Failure must not fall back to the demo app")
     button("重试启动").click()
-    await until(() => document.querySelector('[data-slot="chat-composer-anchor"]'), "Retry must initialize chat without requiring a workspace")
+    await until(() => operations ? document.querySelector('[data-slot="chat-composer-anchor"]') : document.querySelector('section[aria-label="连接与维护"]'), "Retry must initialize the intended edition without requiring a workspace")
     const titlebar = document.querySelector('[data-slot="desktop-titlebar"]')
     await until(() => titlebar.querySelector("header"), "Retry must move the shared Header into the desktop titlebar")
     assert(document.querySelectorAll("header").length === 1 && !titlebar.nextElementSibling.querySelector("header"), "Desktop content must not duplicate the shared Header")
     assert(!calls.some(([, args]) => args?.method === "browser_select" && args.params.focus), "Normal startup must not open or focus Chrome")
+    if (!operations) {
+      assert(!document.querySelector('[data-slot="chat-composer-anchor"]') && !button("Agent"), "User edition must enter basic maintenance without a debug composer or Agent editor")
+      assert(!calls.some(([, args]) => ["models_list", "agents_load", "chat_start"].includes(args?.method)), "User startup must not initialize the debug model or Agent flow")
+      await until(() => document.body.textContent.includes("更新未配置"), "User maintenance must read the native updater state without downloading")
+      assert(!calls.some(([command]) => ["updater_check", "updater_download", "updater_install"].includes(command)), "Reading startup status cannot download or install an update")
+    } else {
     assert(!button("选择工作区") && !button("选择工作区（可选）"), "The composer must not show a workspace selection entry")
     button("添加工作区").click()
     await until(() => button("打开工作区") && !button("打开工作区").disabled, "Directory picker remains available without a model")
@@ -66,7 +76,8 @@
     button("显示 Chrome").click()
     await until(() => calls.some(([, args]) => args?.method === "browser_select" && args.params.focus === true), "Show Chrome must explicitly focus the selected runtime page")
     assert(!calls.some(([command]) => command === "browser_set_bounds"), "External Chrome must not receive native surface commands")
-    document.querySelector("#result").textContent = "PASS: native titlebar survives startup failure/retry, single shared Header, no demo fallback, missing-model explanation, directory/baseline, manual browser without model"
+    }
+    document.querySelector("#result").textContent = `PASS: ${operations ? "operations" : "user"}; native titlebar survives startup failure/retry, single shared Header, no demo fallback, missing-model explanation, directory/baseline, manual browser without model; user maintenance initializes no debug resources`
   } catch (error) {
     document.querySelector("#result").textContent = `FAIL: ${error.stack}`
     throw error

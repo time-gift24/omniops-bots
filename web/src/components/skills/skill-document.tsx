@@ -259,13 +259,14 @@ export function SkillDocument({
             onSelect={selectFile}
             onAddFile={
               onAddFile
-                ? async (path, content) => {
-                    await onAddFile(path, content)
+                ? async (path, content, replace) => {
+                    await onAddFile(path, content, replace)
                     setFocusPath(path)
                     setNavOpen(false)
                   }
                 : undefined
             }
+            onUploadFile={saveLabel === "保存 Skill" ? undefined : onAddFile}
             onAddDirectory={onAddDirectory}
             onRenameEntry={onRenameEntry}
             onDeleteEntry={onDeleteEntry}

@@ -69,7 +69,7 @@
     await until(() => JSON.stringify(path()) === JSON.stringify(expected),
       `Expected breadcrumb ${expected.join(" / ")}, received ${path().join(" / ")}`);
     if (expected[0] === "技能" && expected.length > 1) {
-      await until(() => visible(skillDocument()) && skillDocument().querySelector(".markdown-workspace") && button("保存文件", skillDocument()),
+      await until(() => visible(skillDocument()) && skillDocument().querySelector('[data-slot="markdown-editor"]') && button("保存文件", skillDocument()),
         "Skill navigation must load the original reading layout and document actions");
     }
     const current = breadcrumb().querySelector('[aria-current="page"]');
@@ -91,7 +91,7 @@
       [...fixture.querySelectorAll('nav[aria-label="面包屑"]')].filter(visible).length === 1,
       "Every page must use one shared Header and one breadcrumb navigation");
     const toggle = button("打开工作台");
-    if (toggle) assert(breadcrumb().querySelector("ol").getBoundingClientRect().right <= toggle.getBoundingClientRect().left + 1,
+    if (toggle) await until(() => breadcrumb().querySelector("ol").getBoundingClientRect().right <= toggle.getBoundingClientRect().left + 1,
       "The shared Header must reserve room for the floating workbench toggle");
     const controls = [...fixture.querySelector("header").querySelectorAll("button")]
       .filter(visible).concat(toggle ? [toggle] : []);
@@ -108,7 +108,7 @@
     } else assert(!dock, "Leaving the editor must hide its actions");
     if (expected[0] === "技能") {
       if (expected.length > 1) {
-        assert(skillDocument().querySelector('nav[aria-label="技能文件"]') && skillDocument().querySelector(".markdown-workspace"),
+        assert(skillDocument().querySelector('nav[aria-label="技能文件"]') && skillDocument().querySelector('[data-slot="markdown-editor"]'),
           "Skill detail must retain the original file tree and document reading layout");
         assert(!visible(skillPage().querySelector('[data-slot="file-manager"]')),
           "Opening a Skill must read its selected file rather than replacing the page with a file manager");

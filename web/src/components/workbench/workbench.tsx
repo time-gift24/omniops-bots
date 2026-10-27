@@ -231,6 +231,25 @@ export function WorkbenchPanel({
     { id: "tab-1", view: { type: "start" } },
   ])
   const [activeId, setActiveId] = useState("tab-1")
+  const tabList = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const list = tabList.current
+    if (!list) return
+    const reveal = () => {
+      const active = document.getElementById(`${namespace}-tab-${activeId}`)
+      if (!active || !list.contains(active)) return
+      const target = active.getBoundingClientRect(),
+        bounds = list.getBoundingClientRect()
+      if (target.left < bounds.left)
+        list.scrollLeft -= bounds.left - target.left
+      else if (target.right > bounds.right)
+        list.scrollLeft += target.right - bounds.right
+    }
+    reveal()
+    const observer = new ResizeObserver(reveal)
+    observer.observe(list)
+    return () => observer.disconnect()
+  }, [activeId, tabs, namespace, open])
   const pendingTabFocus = useRef<string | null>(null)
   useLayoutEffect(() => {
     if (!pendingTabFocus.current) return
@@ -496,7 +515,7 @@ export function WorkbenchPanel({
             </Button>
           </MorphicTooltip>
           <Tabs value={activeId} onValueChange={selectTab} variant="segment" className="min-w-0 flex-1">
-            <TabsList aria-label="工作台标签页" className="gap-0.5 bg-transparent p-0">
+            <TabsList ref={tabList} aria-label="工作台标签页" className="gap-0.5 overflow-x-auto bg-transparent p-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {tabs.map((tab) => (
               <TabButton
                 key={tab.id}

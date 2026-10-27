@@ -32,7 +32,7 @@ allow = ["CDLA-Permissive-2.0"]
 
 # Required Tauri/CEF transitive dependencies, limited to reviewed versions.
 [[licenses.exceptions]]
-crate = "clipboard-win@=5.4.1"
+crate = "clipboard-win@=5.4.3"
 allow = ["BSL-1.0"]
 
 [[licenses.exceptions]]

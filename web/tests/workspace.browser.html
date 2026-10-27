@@ -214,7 +214,10 @@
       const title = "侧边栏回归：工作区会话";
       write(title);
       click(labeled("发送"));
-      await until(() => held && first.streaming && row("omniops-bots", title), "Starting generation must turn the blank row into a titled history entry");
+      await until(() => held && first.streaming, "The submitted workspace conversation must start generation");
+      if (mobile) await navigation();
+      await until(() => row("omniops-bots", title), "Starting generation must turn the blank row into a titled history entry");
+      if (mobile) { click(row("omniops-bots", title)); await closedDrawer(); }
       assert(requests[0]?.id === created[1] && requests[0].request.model === "gpt-5.6", "The request must use the selected thread and model");
       assert(requests[0].request.messages[0].attachments?.[0]?.name === "notes.txt", "The request must include the selected thread's attachment");
       assert(editor().textContent === "" && first.getDraft().attachments.length === 0, "Accepted send must clear only its submitted draft");
@@ -231,7 +234,9 @@
       passed.push("history title, explicit workspace selection and uninterrupted background generation");
 
       await searchSession(title);
+      if (mobile) await navigation();
       assert(row("omniops-bots", title)?.getAttribute("aria-current") === "page", "Search must select the existing conversation rather than create one");
+      if (mobile) { click(row("omniops-bots", title)); await closedDrawer(); }
       assert(fixture.textContent.includes(title) && fixture.textContent.includes("缓存键") && created.length === 4, "Search must restore the completed conversation content");
       click(labeled("编辑"));
       assert(fixture.querySelector('textarea[aria-label="编辑消息"]')?.value === title && model().textContent.trim() === "GPT 5.6", "Inline editing must restore the user's text without changing models");
@@ -284,7 +289,10 @@
       const suggestion = "总结一下这个仓库本周的变更";
       const requestCount = requests.length;
       click(button(suggestion, fixture));
-      await until(() => requests.length === requestCount + 1 && row("客户支持", suggestion), "A suggestion must create a titled conversation in its own workspace");
+      await until(() => requests.length === requestCount + 1, "A suggestion must submit exactly one request");
+      if (mobile) await navigation();
+      await until(() => row("客户支持", suggestion), "A suggestion must create a titled conversation in its own workspace");
+      if (mobile) { click(row("客户支持", suggestion)); await closedDrawer(); }
       const suggestionRequest = requests[requestCount];
       assert(suggestionRequest.id === created[2] && suggestionRequest.request.model === "sonnet-5", "The suggestion must use the support conversation and its selected model");
       assert(suggestionRequest.request.messages.length === 1 && suggestionRequest.request.messages[0].text === suggestion && !suggestionRequest.request.messages[0].attachments?.length, "The suggestion must send only its own text, without draft attachments");
@@ -316,10 +324,12 @@
       const temporaryTitle = "侧边栏回归：临时会话";
       write(temporaryTitle);
       click(labeled("发送"));
+      if (mobile) await navigation();
       await until(() => sessionRow(temporaryTitle), "An accepted temporary send must publish its conversation below New conversation");
       assert(!row("omniops-bots", temporaryTitle) && !row("客户支持", temporaryTitle), "The temporary conversation must not inherit any workspace");
       const temporaryRequest = requests.find(entry => entry.id === created[0]);
       assert(temporaryRequest?.request.model === "sonnet-5" && temporaryRequest.request.messages[0].text === temporaryTitle, "The temporary send must use its own thread and selected model");
+      if (mobile) { click(sessionRow(temporaryTitle)); await closedDrawer(); }
       const beforeTemporary = created.length;
       await newSession();
       assert(created.length === beforeTemporary + 1 && editor().textContent === "" && model().textContent.trim() === "Pine 1", "New temporary conversation after sending must own an independent blank draft");

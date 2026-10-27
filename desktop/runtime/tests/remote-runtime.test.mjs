@@ -11,7 +11,7 @@ import { MemorySaver } from '@langchain/langgraph';
 import { createDesktopRuntime } from '../runtime.ts';
 import { createResources } from '../resources.ts';
 
-async function fixture(t, generate) {
+async function fixture(t, generate, providersFactory) {
   const directory = await mkdtemp(join(tmpdir(), 'a2a-runtime-'));
   const agentsDir = join(directory, 'agents');
   await mkdir(agentsDir);
@@ -30,7 +30,8 @@ async function fixture(t, generate) {
     }
   }
   const workspace = { list: async () => [], read: async () => { throw new Error('unused'); }, save: async () => { throw new Error('unused'); }, run: async () => { throw new Error('unused'); } };
-  const runtime = await createDesktopRuntime({ browser, resources, workspace, runsDir: join(directory, 'runs'), checkpointer: new MemorySaver(), modelName: 'fixture', modelFactory: () => new Model({ toolCalls: [] }), maxConcurrentRuns: 1 });
+  const modelFactory = () => new Model({ toolCalls: [] });
+  const runtime = await createDesktopRuntime({ browser, resources, workspace, runsDir: join(directory, 'runs'), checkpointer: new MemorySaver(), modelName: 'fixture', modelFactory, ...(providersFactory ? { providers: providersFactory(modelFactory) } : {}), maxConcurrentRuns: 1 });
   t.after(async () => { await runtime.close(); await rm(directory, { recursive: true, force: true }); });
   return { runtime, request: (input = {}, options = {}) => ({ threadId: randomUUID(), runId: randomUUID(), agent: { agentId: 'fixture-agent', contentId }, input, ...options }) };
 }
@@ -48,6 +49,54 @@ test('real JSON graph preserves scalar outputs and quota is released only explic
     reservation.release(); reservation.release();
     assert.equal((await reservation.execute(request())).ok, false);
   }
+});
+
+test('maintenance and thread export leases share all runtime admissions', async t => {
+  const { runtime, request } = await fixture(t, () => 'null');
+  const maintenance = runtime.beginMaintenance();
+  assert.throws(() => runtime.reserveRun(), { kind: 'busy' });
+  assert.throws(() => runtime.dispatch('chat_start', { runId: 'm', threadId: 'm' }), { kind: 'unavailable' });
+  maintenance.release(); maintenance.release();
+  const reservation = runtime.reserveRun();
+  assert.throws(() => runtime.beginMaintenance(), { kind: 'busy' });
+  const locked = request();
+  const lease = runtime.reserveThreadExport(locked.threadId);
+  assert.equal((await reservation.execute(locked)).error.kind, 'busy');
+  reservation.release(); lease.release(); lease.release();
+  const next = runtime.reserveRun();
+  assert.equal((await next.execute(request())).ok, true); next.release();
+});
+
+test('remote run appears in host state until terminal delivery owner releases it', async t => {
+  const entered = Promise.withResolvers(), release = Promise.withResolvers();
+  const { runtime, request } = await fixture(t, async () => { entered.resolve(); await release.promise; return 'null'; });
+  const input = request(), reservation = runtime.reserveRun(), done = reservation.execute(input);
+  await entered.promise;
+  assert.equal(runtime.getState().tasks[0].runId, input.runId);
+  assert.throws(() => runtime.reserveThreadExport(input.threadId), { kind: 'busy' });
+  release.resolve(); await done;
+  assert.equal(runtime.getState().tasks.length, 1);
+  reservation.release();
+  assert.equal(runtime.getState().tasks.length, 0);
+  assert.throws(() => runtime.dispatch('chat_start', { runId: 'append', threadId: input.threadId }), /只读/);
+});
+
+test('remote Provider default is pinned at admission before asynchronous preparation', async t => {
+  let chosen = 'first'; const used = [];
+  const { runtime, request } = await fixture(t, () => 'false', factory => ({
+    pin() { const model = chosen; return Promise.resolve({ id: model, provider: 'test', model, baseURL: 'http://127.0.0.1:1/v1', protocol: 'openai-chat-completions', revision: 'fixed', credentialRef: null }); },
+    createModel(binding) { used.push(binding.model); return Promise.resolve(factory()); },
+    close: async () => {},
+  }));
+  const reservation = runtime.reserveRun();
+  chosen = 'second';
+  const outcome = await reservation.execute(request());
+  assert.equal(outcome.ok, true);
+  assert.deepEqual(used, ['first']);
+  const record = runtime.dispatch('run_get', { runId: outcome.run.runId });
+  assert.equal(record.snapshot.provider.model, 'first');
+  assert.equal(record.snapshot.composition.modelId, 'first');
+  reservation.release();
 });
 
 test('remote cancellation waits actual model drain and freezes before Run settlement', async t => {

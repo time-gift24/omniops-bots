@@ -15,6 +15,7 @@ import type { SkillDraftCache } from "@/skills/drafts"
 import type { SkillSource } from "@/skills/source"
 import type { SkillLibrary } from "@/skills/library"
 import type { RunSource } from "@/runs/source"
+import type { ResourcePublicationSource } from "@/resources/publication"
 import type { WorkbenchBackend } from "@/workbench/backend"
 import type { WorkspaceAccess } from "@/workspace/access"
 import { createWorkspaceStore, type WorkspaceStore } from "@/workspace/store"
@@ -26,6 +27,7 @@ export interface FrontendAdapters {
   readonly workbench: WorkbenchBackend
   readonly agents: AgentSource
   readonly runs?: RunSource
+  readonly publications?: ResourcePublicationSource
   readonly skills: SkillSource
   readonly skillLibrary?: SkillLibrary
   readonly models: ModelSource

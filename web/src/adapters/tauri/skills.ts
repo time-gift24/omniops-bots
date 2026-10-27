@@ -21,9 +21,10 @@ function readEntry(value: unknown): SkillEntry {
     modifiedAt: raw.modifiedAt === null ? null : string(raw.modifiedAt),
   }
 }
-function readSkill(value: unknown): ManagedSkill {
+export function readSkill(value: unknown): ManagedSkill {
   const raw = object(value)
   if (raw.origin !== "local" && raw.origin !== "official") throw new Error("Invalid Skill origin")
+  const official = raw.origin === "official" ? /^official\/([A-Za-z0-9][A-Za-z0-9_-]{0,127})\/[a-f0-9]{64}$/.exec(string(raw.id))?.[1] : undefined
   return {
     id: string(raw.id),
     name: string(raw.name),
@@ -32,6 +33,7 @@ function readSkill(value: unknown): ManagedSkill {
     readOnly: boolean(raw.readOnly),
     ...(raw.version === undefined ? {} : { version: string(raw.version) }),
     ...(raw.contentId === undefined ? {} : { contentId: string(raw.contentId) }),
+    ...(official === undefined ? {} : { officialId: official }),
     modifiedAt: raw.modifiedAt === null ? null : string(raw.modifiedAt),
     entries: array(raw.entries, readEntry),
   }

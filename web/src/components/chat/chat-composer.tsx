@@ -6,6 +6,7 @@ import { useAppDependencies } from "@/app/dependencies"
 import { threadTask } from "@/desktop/runtime"
 import type { ThreadStore } from "@/chat/thread-store.ts"
 import { ApprovalPanel } from "@/components/chat/approval-panel"
+import { preloadChatThread } from "@/components/chat/chat-thread-loading"
 import { AgentChatCredits } from "@/components/premium/agent-chat-input/agent-chat-credits"
 import { cn } from "@/lib/utils"
 import type { ModelChoice } from "@/models/source"
@@ -76,17 +77,11 @@ export function ChatComposer({
           onStop={() => store.stop()}
         />
       ) : ownsTask && (task?.error || threadError) ? (
-        <p
-          role="alert"
-          className="mb-3 text-xs text-destructive"
-        >
+        <p role="alert" className="mb-3 text-xs text-destructive">
           {task?.error ?? threadError}
         </p>
       ) : !task && !model ? (
-        <p
-          role="alert"
-          className="mb-3 text-xs text-muted-foreground"
-        >
+        <p role="alert" className="mb-3 text-xs text-muted-foreground">
           {models.length
             ? "请选择模型，或在设置中配置全局默认模型。"
             : "尚未配置模型。请在设置的 Provider 中添加接入与模型。"}
@@ -95,7 +90,10 @@ export function ChatComposer({
       <AgentChatCredits
         compact
         value={draft.text}
-        onValueChange={(text) => store.updateDraft({ text })}
+        onValueChange={(text) => {
+          store.updateDraft({ text })
+          if (text.trim()) preloadChatThread()
+        }}
         skills={[]}
         models={models}
         model={model}

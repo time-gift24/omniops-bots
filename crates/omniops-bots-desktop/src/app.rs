@@ -1,5 +1,7 @@
 #[path = "credentials.rs"]
 mod credentials;
+#[path = "data_root.rs"]
+mod data_root;
 #[path = "error.rs"]
 pub(crate) mod error;
 #[cfg(all(target_os = "macos", feature = "native-browser"))]
@@ -8,6 +10,8 @@ pub(crate) mod native_browser;
 #[cfg(all(target_os = "windows", feature = "native-browser"))]
 #[path = "native_browser_windows.rs"]
 pub(crate) mod native_browser;
+#[path = "updater.rs"]
+mod updater;
 
 use error::{Error, IpcError};
 #[cfg(all(
@@ -36,6 +40,19 @@ use tauri_plugin_shell::{
 use tokio::sync::{Semaphore, oneshot};
 
 type Reply = Result<Value, IpcError>;
+
+fn runtime_request_line(id: u64, method: &str, params: &Value) -> Result<Vec<u8>, Error> {
+    let mut message = json!({"id": id, "method": method});
+    if !params.is_null() {
+        message["params"] = params.clone();
+    }
+    let mut line = serde_json::to_vec(&message)?;
+    line.push(b'\n');
+    if line.len() > 40 * 1024 * 1024 {
+        return Err(Error::InvalidInput("Request is too large"));
+    }
+    Ok(line)
+}
 
 struct Runtime {
     inner: Arc<Mutex<Inner>>,
@@ -186,12 +203,7 @@ impl Runtime {
                 .child
                 .as_mut()
                 .ok_or(Error::Unavailable("Agent runtime is unavailable"))?;
-            let mut line =
-                serde_json::to_vec(&json!({"id": id, "method": method, "params": params}))?;
-            line.push(b'\n');
-            if line.len() > 40 * 1024 * 1024 {
-                return Err(Error::InvalidInput("Request is too large"));
-            }
+            let line = runtime_request_line(id, method, &params)?;
             child.write(&line)?;
             if method == "chat_start" {
                 if let Some(run_id) = params.get("runId").and_then(Value::as_str) {
@@ -328,24 +340,30 @@ impl Runtime {
         self.fail(Error::Unavailable("Agent runtime stopped").into());
     }
 
-    async fn shutdown(&self) {
+    async fn shutdown_for_update(&self, deadline: Instant) -> Result<(), Error> {
         self.inner.lock().unwrap().shutting_down = true;
-        let graceful = async {
-            let _ = self
-                .request("shutdown", Value::Null, Duration::from_millis(11_500))
-                .await;
-            while self.inner.lock().unwrap().child.is_some() {
-                tokio::time::sleep(Duration::from_millis(25)).await;
+        let remaining = deadline
+            .checked_duration_since(Instant::now())
+            .ok_or(Error::Timeout)?;
+        self.request_inner("shutdown", Value::Null, remaining)
+            .await?;
+        while self.inner.lock().unwrap().child.is_some() {
+            if Instant::now() >= deadline {
+                return Err(Error::Timeout);
             }
-        };
-        if tokio::time::timeout(Duration::from_secs(12), graceful)
-            .await
-            .is_err()
+            tokio::time::sleep(
+                Duration::from_millis(20).min(deadline.saturating_duration_since(Instant::now())),
+            )
+            .await;
+        }
+        Ok(())
+    }
+
+    async fn shutdown(&self, deadline: Instant) {
+        if self.shutdown_for_update(deadline).await.is_err()
+            && let Some(child) = self.inner.lock().unwrap().child.take()
         {
-            if let Some(child) = self.inner.lock().unwrap().child.take() {
-                kill_child(child);
-            }
-            tokio::time::sleep(Duration::from_millis(100)).await;
+            kill_child(child);
         }
     }
 }
@@ -551,6 +569,8 @@ fn start_runtime(
     runtime: Arc<Runtime>,
     data_dir: PathBuf,
     manual_connection: Option<(String, String)>,
+    local_root: PathBuf,
+    diagnostics_only: bool,
 ) -> Result<(), Error> {
     let script = app.path().resource_dir()?.join("runtime/main.ts");
     if !script.is_file() {
@@ -561,6 +581,11 @@ fn start_runtime(
         .sidecar("omniops-bots-node")?
         .arg(script)
         .env("OMNIOPS_BOTS_DATA_DIR", data_dir)
+        .env("OMNIOPS_BOTS_LOCAL_ROOT", local_root)
+        .env(
+            "OMNIOPS_BOTS_DIAGNOSTICS_ONLY",
+            if diagnostics_only { "1" } else { "0" },
+        )
         .set_process_group(true);
     if let Some((endpoint, target_id)) = manual_connection {
         command = command
@@ -727,23 +752,36 @@ async fn smoke_native_pages(app: tauri::AppHandle) -> Result<Value, Error> {
     feature = "native-browser",
     any(target_os = "macos", target_os = "windows")
 ))]
-async fn close_native_browser(app: &tauri::AppHandle) {
-    let (sender, receiver) = oneshot::channel();
-    if app
-        .run_on_main_thread(move || {
+async fn close_native_browser_for_update(
+    app: &tauri::AppHandle,
+    deadline: Instant,
+) -> Result<(), Error> {
+    tokio::time::timeout_at(tokio::time::Instant::from_std(deadline), async {
+        let (sender, receiver) = oneshot::channel();
+        app.run_on_main_thread(move || {
             let _ = sender.send(native_browser::begin_close());
-        })
-        .is_err()
-    {
-        return;
-    }
-    if !matches!(receiver.await, Ok(Ok(()))) {
-        return;
-    }
-    let deadline = Instant::now() + Duration::from_secs(8);
-    while !native_browser::is_closed() && Instant::now() < deadline {
-        tokio::time::sleep(Duration::from_millis(20)).await;
-    }
+        })?;
+        receiver
+            .await
+            .map_err(|_| Error::Unavailable("浏览器关闭被中断。"))??;
+        while !native_browser::is_closed() {
+            tokio::time::sleep(Duration::from_millis(20)).await;
+        }
+        let (sender, receiver) = oneshot::channel();
+        app.run_on_main_thread(move || {
+            let _ = sender.send(native_browser::finish_shutdown());
+        })?;
+        receiver
+            .await
+            .map_err(|_| Error::Unavailable("浏览器清理被中断。"))?
+    })
+    .await
+    .map_err(|_| Error::Timeout)?
+}
+
+pub(crate) fn diagnostics_only() -> bool {
+    std::env::args_os().any(|argument| argument == "--diagnostics")
+        || std::env::var_os("OMNIOPS_BOTS_DIAGNOSTICS_ONLY").is_some_and(|value| value == "1")
 }
 
 pub(crate) fn run() -> Result<i32, Error> {
@@ -771,22 +809,35 @@ pub(crate) fn run() -> Result<i32, Error> {
 }
 
 fn run_app() -> Result<i32, Error> {
+    let diagnostics_only = diagnostics_only();
+    let (_data_lock, local_root, startup_error) =
+        match data_root::local_root().and_then(|root| data_root::DataRootLock::acquire(&root)) {
+            Ok(lock) => {
+                let directory = lock.directory.clone();
+                (Some(lock), Some(directory), None)
+            }
+            Err(error) => (None, None, Some(IpcError::from(error))),
+        };
+
     #[cfg(all(
         feature = "native-browser",
         any(target_os = "macos", target_os = "windows")
     ))]
-    native_browser::prepare_framework().inspect_err(|error| {
-        tracing::warn!(
-            component = "browser",
-            phase = "startup",
-            error_kind = error.diagnostic_kind()
-        );
-    })?;
+    if !diagnostics_only && startup_error.is_none() {
+        native_browser::prepare_framework().inspect_err(|error| {
+            tracing::warn!(
+                component = "browser",
+                phase = "startup",
+                error_kind = error.diagnostic_kind()
+            );
+        })?;
+    }
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             runtime_request,
             runtime_prepare_run,
@@ -798,18 +849,38 @@ fn run_app() -> Result<i32, Error> {
             browser_set_bounds,
             host_copy_text,
             host_open_external,
-            host_confirm
+            host_confirm,
+            updater::updater_status,
+            updater::updater_check,
+            updater::updater_download,
+            updater::updater_install
         ])
-        .setup(|app| {
-            let data_dir = app.path().app_data_dir()?;
+        .setup(move |app| {
+            let data_dir = std::env::var_os("OMNIOPS_BOTS_DATA_DIR")
+                .map(PathBuf::from)
+                .unwrap_or(app.path().app_data_dir()?);
+            if !data_dir.is_absolute() {
+                return Err(Error::InvalidInput("应用数据目录必须为绝对路径。").into());
+            }
             std::fs::create_dir_all(&data_dir)?;
             let runtime = Arc::new(Runtime::new());
             app.manage(runtime.clone());
+            app.manage(updater::Updater::new(
+                app.package_info().version.to_string(),
+                diagnostics_only,
+            ));
+            if let Some(error) = startup_error.clone() {
+                runtime.fail(error);
+                return Ok(());
+            }
+            let local_root = local_root
+                .clone()
+                .ok_or(Error::Unavailable("本地数据目录不可用。"))?;
             #[cfg(all(
                 feature = "native-browser",
                 any(target_os = "macos", target_os = "windows")
             ))]
-            {
+            if !diagnostics_only {
                 let window = app
                     .get_webview_window("main")
                     .ok_or(Error::Unavailable("Main window is missing"))?;
@@ -829,7 +900,9 @@ fn run_app() -> Result<i32, Error> {
                     feature = "native-browser",
                     any(target_os = "macos", target_os = "windows")
                 ))]
-                if let Some(report_path) = std::env::var_os("OMNIOPS_BOTS_BROWSER_SMOKE_REPORT") {
+                if let Some(report_path) = std::env::var_os("OMNIOPS_BOTS_BROWSER_SMOKE_REPORT")
+                    .filter(|_| !diagnostics_only)
+                {
                     let result = match native_browser::wait_ready(Duration::from_secs(15)).await {
                         Ok(_) => smoke_native_pages(handle.clone()).await,
                         Err(error) => Err(error),
@@ -849,7 +922,9 @@ fn run_app() -> Result<i32, Error> {
                         feature = "native-browser",
                         any(target_os = "macos", target_os = "windows")
                     ))]
-                    let manual_connection = {
+                    let manual_connection = if diagnostics_only {
+                        None
+                    } else {
                         let connection =
                             native_browser::wait_ready(Duration::from_secs(15)).await?;
                         Some((connection.endpoint, connection.target_id))
@@ -859,7 +934,14 @@ fn run_app() -> Result<i32, Error> {
                         any(target_os = "macos", target_os = "windows")
                     )))]
                     let manual_connection = None;
-                    start_runtime(&handle, runtime.clone(), data_dir, manual_connection)
+                    start_runtime(
+                        &handle,
+                        runtime.clone(),
+                        data_dir,
+                        manual_connection,
+                        local_root,
+                        diagnostics_only,
+                    )
                 }
                 .await;
                 if let Err(error) = result {
@@ -923,12 +1005,15 @@ fn run_app() -> Result<i32, Error> {
                 let runtime = runtime.inner().clone();
                 let app = app.clone();
                 tauri::async_runtime::spawn(async move {
-                    runtime.shutdown().await;
+                    let deadline = Instant::now() + Duration::from_secs(10);
+                    runtime.shutdown(deadline).await;
                     #[cfg(all(
                         feature = "native-browser",
                         any(target_os = "macos", target_os = "windows")
                     ))]
-                    close_native_browser(&app).await;
+                    if !diagnostics_only {
+                        let _ = close_native_browser_for_update(&app, deadline).await;
+                    }
                     runtime.inner.lock().unwrap().exit_allowed = true;
                     app.exit(code.unwrap_or(0));
                 });
@@ -936,7 +1021,9 @@ fn run_app() -> Result<i32, Error> {
             RunEvent::Exit => {
                 let needs_shutdown = !runtime.inner.lock().unwrap().exit_allowed;
                 if needs_shutdown {
-                    tauri::async_runtime::block_on(runtime.shutdown());
+                    tauri::async_runtime::block_on(
+                        runtime.shutdown(Instant::now() + Duration::from_secs(10)),
+                    );
                 }
             }
             _ => {}
@@ -946,13 +1033,34 @@ fn run_app() -> Result<i32, Error> {
         feature = "native-browser",
         any(target_os = "macos", target_os = "windows")
     ))]
-    native_browser::finish_shutdown()?;
+    if !diagnostics_only {
+        if !native_browser::is_closed() {
+            return Err(Error::Unavailable("浏览器清理未在退出期限内完成。"));
+        }
+        native_browser::finish_shutdown()?;
+    }
     Ok(exit_code)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn runtime_request_serialization_omits_absent_params_for_node_ipc() {
+        let shutdown = runtime_request_line(7, "shutdown", &Value::Null).unwrap();
+        assert_eq!(shutdown.last(), Some(&b'\n'));
+        assert_eq!(
+            serde_json::from_slice::<Value>(&shutdown).unwrap(),
+            json!({"id": 7, "method": "shutdown"})
+        );
+        let params = json!({"threadId": "thread-1", "limit": 10});
+        let request = runtime_request_line(8, "diagnostic_threads", &params).unwrap();
+        assert_eq!(
+            serde_json::from_slice::<Value>(&request).unwrap(),
+            json!({"id": 8, "method": "diagnostic_threads", "params": params})
+        );
+    }
 
     #[cfg(all(
         feature = "native-browser",

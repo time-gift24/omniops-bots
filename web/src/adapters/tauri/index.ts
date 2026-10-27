@@ -6,6 +6,7 @@ import { safeHttpUrl } from "./attachments"
 import { createTauriSkillLibrary } from "./skills"
 import { array, boolean } from "./protocol"
 import { createTauriProviders } from "./providers"
+import { createTauriPublications } from "./publication"
 import {
   readAgents,
   readAgent,
@@ -87,7 +88,7 @@ export async function createTauriAdapters(providedBridge?: TauriBridge) {
     runtime.dispose()
     throw error
   })
-  const sessions = createRunSource(request)
+  const sessions = createRunSource(request, runtime.subscribeRuns)
   const providerSources = createTauriProviders(request)
   const adapters: FrontendAdapters = {
     backendId: "desktop",
@@ -119,6 +120,7 @@ export async function createTauriAdapters(providedBridge?: TauriBridge) {
         readMcpCapabilities(await request("mcp_test", { id })),
     },
     runs: sessions.runs,
+    publications: createTauriPublications(request),
     skills: { list: async () => readSkills(await request("skills_list")) },
     skillLibrary,
     ...providerSources,

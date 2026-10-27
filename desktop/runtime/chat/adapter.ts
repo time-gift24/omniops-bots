@@ -12,19 +12,22 @@ import type { DesktopRuntimeOptions } from '../runtime.ts';
 import type { SessionAssembly } from '../assembly.ts';
 import type { createChatHistory } from './history.ts';
 import type { chatInput } from '../input.ts';
+import { createRunFingerprint } from '../fingerprint.ts';
+import { providerModelParameters } from '../providers.ts';
 type Failure = ReturnType<typeof safeError>;
 type Provider = Awaited<ReturnType<NonNullable<DesktopRuntimeOptions['providers']>['pin']>>;
 type Model = Parameters<typeof createBrowserAgent>[0]['model'];
 type RawChatMessage = { role: 'user'; text: string; attachments?: { name: string; mediaType: string }[] };
-export type ChatSnapshot = SessionAssembly & { workingDirectory?: string; provider?: Provider; tools: string[]; mcpTools: unknown[] };
+export type ChatSnapshot = SessionAssembly & { workingDirectory?: string; provider?: Provider; tools: string[]; mcpTools: unknown[]; fingerprint?: string; fingerprintVersion?: number; composition?: object };
 export type ChatSession = { snapshot: ChatSnapshot; messages: StoredMessage[]; lastRunId?: string; lastRunStatus?: RunStatus };
 type ChatResponse = { assistant: { parts: ChatPart[] }; finish: { reason: string }; usage: object; metadata?: object };
-export type ChatDetails = { title?: string; inputMessages?: RawChatMessage[]; agentId?: string; snapshot?: Partial<ChatSnapshot>; events: ChatEvent[]; error?: Failure; result?: ChatResponse };
+export type ChatDetails = { origin?: 'local' | 'a2a'; title?: string; inputMessages?: RawChatMessage[]; agentId?: string; historyRunId?: string; snapshot?: Partial<ChatSnapshot>; events: ChatEvent[]; error?: Failure; result?: ChatResponse; output?: unknown };
 export type ChatRunInput = {
-  id: string; threadId: string; workspacePath?: string; agentId?: string; experimentSkillId?: string;
+  id: string; threadId: string; workspacePath?: string; agentId?: string; agentContentId?: string; experimentSkillId?: string;
   input: ReturnType<typeof chatInput>; request: { messages: RawChatMessage[] }; inputCount: number;
   controller: AbortController; fixedSnapshot?: Partial<ChatSnapshot>; fixedProvider?: Provider;
   providerResolution?: Promise<{ binding?: Provider; error?: unknown }>;
+  historyRunId?: string; historicalSnapshot?: ChatSnapshot;
 };
 type ChatRunOptions = Pick<DesktopRuntimeOptions, 'workspace' | 'workspaceFactory' | 'modelFactory' | 'providers' | 'resources'> & {
   run: ChatRunInput; execution: Execution; history: Awaited<ReturnType<typeof createChatHistory<ChatSession>>>;
@@ -56,13 +59,14 @@ export function chatRecord(record: RunRecord) {
   const { details: raw, ...core } = record;
   const details = raw as ChatDetails | undefined;
   const result: Omit<RunRecord, 'details'> & ChatDetails = { ...details, ...core, events: [] };
+  if (details?.origin === 'a2a') result.title ??= details.snapshot?.agent?.configuration.name ?? '远端任务';
   result.events = [...(details?.events ?? [])];
   if (core.status !== 'completed' && core.error) result.error = details?.error ??
     (['cancelled', 'timed-out', 'storage', 'checkpoint'].includes(core.error.kind) ? chatFailure(core.error) : core.error);
   if (core.status !== 'completed') delete result.result;
   if (['completed', 'failed', 'cancelled', 'timed-out', 'interrupted'].includes(core.status)) {
     result.events = result.events.filter(event => !['completed', 'failed'].includes(event.type));
-    result.events.push(core.status === 'completed'
+    if (details?.origin !== 'a2a') result.events.push(core.status === 'completed'
       ? { type: 'completed', response: details?.result }
       : { type: 'failed', error: result.error });
   }
@@ -127,6 +131,7 @@ export function createChatRun({ run, execution, history, browser, workspace, wor
   const details: ChatDetails = {
     ...(providers ? { title: '正在准备会话…', inputMessages: [] } : inputDetails()),
     ...(run.agentId ? { agentId: run.agentId } : {}),
+    ...(run.historyRunId ? { historyRunId: run.historyRunId } : {}),
     events: [],
   };
   let scope: GraphScope | undefined, snapshot: ChatSnapshot | undefined, initialIds = new Set<string>(), inputHistory: BaseMessage[] | undefined, metadata: object | undefined, bytes = 0;
@@ -155,6 +160,7 @@ export function createChatRun({ run, execution, history, browser, workspace, wor
       scope.defer(async () => signal.removeEventListener('abort', stopping));
       signal.throwIfAborted();
       const previous = await history.read(run.threadId);
+      if (run.historyRunId && previous) throw invalid('历史组成只能用于全新会话的首次执行。');
       let provider: Provider | undefined, preparedModel: Model | undefined;
       if (providers) {
         provider = previous?.snapshot.provider ?? run.fixedProvider;
@@ -174,8 +180,13 @@ export function createChatRun({ run, execution, history, browser, workspace, wor
         signal.throwIfAborted();
         Object.assign(details, inputDetails());
       }
-      const session = await resources.prepareSession({ sessionId: run.threadId, workspacePath: run.workspacePath, agentId: run.agentId, experimentSkillId: run.experimentSkillId });
+      const session = await resources.prepareSession({ sessionId: run.threadId, workspacePath: run.workspacePath, agentId: run.agentId, contentId: run.agentContentId, experimentSkillId: run.experimentSkillId, signal });
       signal.throwIfAborted();
+      if (run.historicalSnapshot) {
+        const saved = run.historicalSnapshot;
+        const actual = provider && createRunFingerprint({ agent: session.agent, skills: session.skills, provider, modelId: provider.model, parameters: providerModelParameters(provider) });
+        if (!actual || actual.fingerprint !== saved.fingerprint || session.agent.source !== 'official' || session.assemblyContentId !== saved.assemblyContentId || !isDeepStrictEqual(session.agent.configuration, saved.agent.configuration) || !isDeepStrictEqual(session.mcpServers, saved.mcpServers)) throw new RuntimeError('unavailable', '历史 Agent、Skill 或 MCP 固定组成无法精确恢复。');
+      }
       const fixed = ['sessionId', 'assemblyContentId', 'agent', 'skills', 'mcpServers', 'experimentSkillId'] as const;
       if (previous && !isDeepStrictEqual(fixed.map(key => session[key]), fixed.map(key => previous.snapshot[key]))) {
         throw invalid('历史会话的固定快照缺失或不一致，请新建会话；本轮未执行任何工具。');
@@ -194,7 +205,8 @@ export function createChatRun({ run, execution, history, browser, workspace, wor
       if (previous && JSON.stringify(previous.snapshot.mcpTools) !== JSON.stringify(mcp.manifests)) {
         throw invalid('MCP 工具定义已变化，请新建会话使用新的装配。');
       }
-      snapshot = previous ? { ...previous.snapshot, directory: session.directory, workingDirectory: session.workingDirectory } : { ...session, model: provider?.id ?? run.input.model, ...(provider ? { provider } : {}), modelParameters, desktopVersion,
+      if (run.historicalSnapshot && !isDeepStrictEqual(run.historicalSnapshot.mcpTools, mcp.manifests)) throw new RuntimeError('unavailable', '历史 MCP 能力与当前工具不兼容，请明确选择新的组成。');
+      snapshot = previous ? { ...previous.snapshot, directory: session.directory, workingDirectory: session.workingDirectory } : { ...session, model: provider?.id ?? run.input.model, ...(provider ? { provider, ...createRunFingerprint({ agent: session.agent, skills: session.skills, provider, modelId: provider.model, parameters: providerModelParameters(provider) }) } : {}), modelParameters: provider ? providerModelParameters(provider) : modelParameters, desktopVersion,
         tools: [...session.agent.configuration.toolIds, ...mcp.tools.map(tool => tool.name)], mcpTools: mcp.manifests };
       const currentWorkspace = workspaceFactory ? await workspaceFactory(session, browser) : workspace;
       scope.defer(async () => { if (signal.aborted) await browser.stop?.(); });

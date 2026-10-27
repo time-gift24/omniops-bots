@@ -1,0 +1,135 @@
+<!doctype html>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Client maintenance and Skill upload regression</title>
+<div id="fixture" style="height:90dvh;overflow:auto"></div>
+<pre id="result" style="max-width:100%;white-space:pre-wrap;overflow-wrap:anywhere">Running…</pre>
+<script type="module">
+  import React, { useState } from "react"
+  import { createRoot } from "react-dom/client"
+  import { flushSync } from "react-dom"
+  import "/src/index.css"
+  import "/src/components/skills/skill-library.css"
+  import { ClientMaintenance } from "/src/components/settings/client-maintenance.tsx"
+  import { SkillDocument } from "/src/components/skills/skill-document.tsx"
+  import { createTestDependencies, withTestTheme } from "/tests/support.tsx"
+
+  const fixture = document.querySelector("#fixture"), result = document.querySelector("#result")
+  const checks = []
+  const assert = (condition, text) => { if (!condition) throw new Error(text) }
+  const until = async (condition, text) => { const end = performance.now() + 6000; while (!condition() && performance.now() < end) await new Promise(resolve => setTimeout(resolve, 20)); assert(condition(), text) }
+  const visible = element => element?.getClientRects().length && !element.closest('[hidden],[inert],[aria-hidden="true"]')
+  const button = text => [...document.querySelectorAll("button")].find(element => visible(element) && (element.getAttribute("aria-label") === text || element.textContent.trim() === text))
+  const click = element => { assert(element && !element.disabled, `Expected enabled control: ${element?.outerHTML?.slice(0, 250) ?? "missing"}`); flushSync(() => element.click()) }
+  const select = (element, value) => flushSync(() => { element.value = value; element.dispatchEvent(new Event("change", { bubbles: true })) })
+  let root = createRoot(fixture)
+  const base = createTestDependencies()
+  let snapshot = { ...base.desktop.getState(), simulated: false, connection: { state: "connected", destination: "https://test.example.invalid", account: "运维测试账号", permissions: ["official-maintain", "diagnostic-own"] } }
+  const listeners = new Set()
+  let update = { phase: "available", currentVersion: "0.1.0", version: "0.2.0", downloadedBytes: 0 }, uploads = 0, installations = 0, nativeConfirmations = 0, confirmInstall = false, nativeInstallFailure = false, exports = 0
+  const savedPackages = new Map()
+  const bundle = () => ({ uploadId: `upload-${++exports}`, threadId: "thread", packageFile: "/test/diagnostics/upload.zip", bundleSha256: "a".repeat(64), manifest: {}, preview: { files: [{ path: "thread.json", bytes: 256 }, { path: "attachments/shot.png", bytes: 68 }], missing: [{ item: "screenshot", reason: "not-captured" }], attachments: [{ id: "shot", name: "故障截图" }], redactionPolicy: "v1" } })
+  const desktop = { ...base.desktop, getState: () => snapshot, subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener) },
+    readUpdate: async () => update, checkUpdate: async () => update,
+    downloadUpdate: async () => (update = { ...update, phase: "ready", downloadedBytes: 100 }),
+    installUpdate: async () => { nativeConfirmations++; if (!confirmInstall) return { ...update, phase: "ready" }; if (nativeInstallFailure) throw new Error("原生安装准备失败"); installations++; return { ...update, phase: "installing" } },
+    listDiagnosticThreads: async () => ({ items: [{ threadId: "thread", title: "巡检故障", lastUpdated: "2026-10-26T00:00:00Z", checkpointAvailable: true }], nextCursor: null }),
+    exportDiagnostics: async () => { const value = bundle(); savedPackages.set(value.uploadId, value); return value },
+    listDiagnosticPackages: async () => [...savedPackages.values()].map(value => ({ ...value, createdAt: "2026-10-27T00:00:00Z" })),
+    openDiagnosticPackage: async uploadId => savedPackages.get(uploadId),
+    previewDiagnosticFile: async (uploadId, path) => { assert(savedPackages.has(uploadId), "Only saved package content may be previewed"); return path.endsWith(".png") ? { mediaType: "image/png", dataUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", truncated: false } : { mediaType: "text/plain", text: '{"credential":"[REDACTED]"}', truncated: false } },
+    uploadDiagnostics: async uploadId => { uploads++; return { state: "pending", uploadId } },
+    diagnosticUploadStatus: async uploadId => ({ state: "received", uploadId, threadId: "thread", bundleSha256: "a".repeat(64), diagnosticId: "receipt", receivedAt: "2026-10-26T00:00:00Z", incomplete: true, missing: ["screenshot"] }),
+  }
+  const dependencies = createTestDependencies({ desktop, host: { ...base.host, confirm: async () => { throw new Error("The native install interface must own the only confirmation") } } })
+  try {
+    flushSync(() => root.render(withTestTheme(React.createElement(ClientMaintenance), dependencies)))
+    await until(() => button("下载更新"), "New version must be actionable")
+    assert(installations === 0 && uploads === 0, "Opening maintenance must not install or upload")
+    click(button("下载更新"))
+    await until(() => button("确认安装并重启") && !button("确认安装并重启").disabled, "Validated update must wait for confirmation")
+    click(button("确认安装并重启"))
+    await until(() => !button("确认安装并重启").disabled, "Cancelled confirmation must release the UI")
+    assert(installations === 0 && nativeConfirmations === 1, "Cancelling the sole native confirmation must preserve the ready update and running app")
+    confirmInstall = true; nativeInstallFailure = true; click(button("确认安装并重启"))
+    await until(() => fixture.textContent.includes("原生安装准备失败") && !button("确认安装并重启").disabled, "Native preparation failure must remain retryable")
+    assert(installations === 0 && nativeConfirmations === 2 && !fixture.textContent.includes("正在准备安装"), "A failed native install may not be represented as installed or installing")
+    nativeInstallFailure = false; confirmInstall = false
+    select(document.querySelector("select"), "thread")
+    click(button("准备诊断材料"))
+    await until(() => fixture.textContent.includes("材料已导出到本机"), "Export must show preview before consent")
+    assert(uploads === 0 && button("上传诊断").disabled, "Export is not upload")
+    assert(fixture.textContent.includes("https://test.example.invalid") && fixture.textContent.includes("运维测试账号"), "Consent identifies receiver and account")
+    const consent = () => [...fixture.querySelectorAll('input[type="checkbox"]')].find(element => element.parentElement.textContent.includes("我已预览"))
+    assert(consent().disabled, "Consent waits for material content preview")
+    click([...fixture.querySelectorAll("summary")].find(element => element.textContent.includes("预览材料")))
+    click(button("thread.json"))
+    await until(() => fixture.querySelector('[aria-label="诊断文件内容"]')?.textContent.includes("[REDACTED]"), "Redacted material body must be visible before consent")
+    click(consent())
+    flushSync(() => { snapshot = { ...snapshot, connection: { ...snapshot.connection, account: "切换后的测试账号" } }; listeners.forEach(listener => listener()) })
+    assert(!consent().checked && button("上传诊断").disabled, "Changing the receiver identity must invalidate existing consent")
+    click(consent()); click(button("上传诊断"))
+    await until(() => fixture.textContent.includes("接收待确认"), "HTTP pending is not received")
+    click(button("查询接收状态"))
+    await until(() => fixture.textContent.includes("服务端已接收，材料不完整"), "Matching receipt must retain missing evidence")
+    assert(uploads === 1, "Status query must not create another upload")
+    click([...fixture.querySelectorAll('input[type="checkbox"]')].find(element => element.parentElement.textContent.includes("故障截图")))
+    assert(button("上传诊断").disabled && !consent().checked, "Changed attachments require a new frozen preview and consent")
+    await until(() => button("重新准备材料") && !button("重新准备材料").disabled, "Preparation control must settle after its label transition")
+    click(button("重新准备材料"))
+    await until(() => !consent().checked && !button("重新准备材料").disabled, "New immutable package resets consent")
+    const previewSummary = [...fixture.querySelectorAll("summary")].find(element => element.textContent.includes("预览材料"))
+    if (!previewSummary.parentElement.open) click(previewSummary)
+    click(button("attachments/shot.png"))
+    await until(() => fixture.querySelector('[aria-label="诊断文件内容"] img')?.complete, "Selected actual screenshot must render")
+    const retainedId = [...savedPackages.keys()].at(-1), exportCount = exports
+    root.unmount(); root = createRoot(fixture)
+    flushSync(() => root.render(withTestTheme(React.createElement(ClientMaintenance), dependencies)))
+    await until(() => fixture.querySelector('[aria-label="已保留的诊断包"]'), "Remount must list retained immutable packages")
+    select(fixture.querySelector('[aria-label="已保留的诊断包"]'), retainedId)
+    await until(() => button("上传诊断"), "Retained ZIP can be reopened without export")
+    assert(exports === exportCount && !consent().checked && consent().disabled, "Restored material retains identity and requires fresh content preview and consent")
+    checks.push("maintenance consent, frozen ZIP recovery, redacted body/image preview, pending receipt, update confirmation")
+    root.unmount(); root = createRoot(fixture)
+
+    const saved = new Map([["note.txt", new Blob(["old note"])]]), calls = []
+    let fail = true, source = "未保存的正文仍保留"
+    function Document() {
+      const [revision, setRevision] = useState(0)
+      return React.createElement(SkillDocument, { files: [{ path: "SKILL.md" }, { path: "note.txt" }, ...[...saved.keys()].filter(key => key !== "note.txt").map(path => ({ path }))],
+        path: "SKILL.md", source, active: true, dirty: true, onSave() {}, onUndo() {}, onChange(value) { source = value }, onSelectFile() {}, onError() {},
+        onAddFile: async (path, content, replace) => { calls.push({ path, replace }); if (path === "payload.bin" && fail) throw new Error("fixture write failed"); saved.set(path, content); setRevision(revision + 1) },
+      })
+    }
+    flushSync(() => root.render(withTestTheme(React.createElement(Document), base)))
+    await until(() => document.querySelector('input[type="file"]'), "Markdown workspace must expose a file input")
+    const upload = files => { const transfer = new DataTransfer(); files.forEach(file => transfer.items.add(file)); const input = document.querySelector('input[type="file"]'); flushSync(() => { input.files = transfer.files; input.dispatchEvent(new Event("change", { bubbles: true })) }) }
+    upload([new File(["new note"], "note.txt"), new File([new Uint8Array([0, 1, 255])], "payload.bin")])
+    await until(() => button("开始上传"), "Batch upload must disclose collisions")
+    assert(document.querySelector('[aria-label="同名文件 note.txt"]').value === "skip", "Collision must not overwrite by default")
+    click(button("开始上传"))
+    await until(() => button("重试失败项") && !button("重试失败项").disabled, "Failed batch retains retryable selected bytes")
+    assert(await saved.get("note.txt").text() === "old note", "Skipped collision remains intact")
+    assert(source === "未保存的正文仍保留", "Upload failure preserves editor draft")
+    fail = false; click(button("重试失败项"))
+    await until(() => saved.has("payload.bin"), "Retry must use the retained File")
+    assert([...new Uint8Array(await saved.get("payload.bin").arrayBuffer())].join() === "0,1,255", "Binary bytes reach the interface intact")
+    await until(() => button("关闭") && !button("关闭").disabled, "Upload must drain before closing")
+    click(button("关闭"))
+    await until(() => !button("重试失败项"), "Upload dialog must close")
+    upload([new File(["explicit replacement"], "note.txt")])
+    await until(() => document.querySelector('[aria-label="同名文件 note.txt"]'), "Replacement must be explicit")
+    select(document.querySelector('[aria-label="同名文件 note.txt"]'), "replace")
+    click(button("开始上传"))
+    await until(() => calls.some(call => call.path === "note.txt" && call.replace === true), "Replace flag must reach the existing interface")
+    assert(await saved.get("note.txt").text() === "explicit replacement", "Explicit replacement saves actual bytes")
+    checks.push("Markdown binary upload, skip, replacement, failure retry")
+    root.unmount(); root = createRoot(fixture)
+    flushSync(() => root.render(withTestTheme(React.createElement(ClientMaintenance), dependencies)))
+    await until(() => fixture.querySelector('section[aria-label="连接与维护"]'), "Final preview must render")
+    assert(document.documentElement.scrollWidth <= innerWidth + 1, "Maintenance must fit the viewport")
+    result.textContent = `PASS: ${checks.join("; ")}`; result.dataset.passed = "true"
+  } catch (error) {
+    result.textContent = `FAIL: ${error.stack ?? error.message}`; result.dataset.passed = "false"; throw error
+  }
+</script>

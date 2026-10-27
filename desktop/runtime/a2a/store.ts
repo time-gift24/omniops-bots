@@ -394,6 +394,8 @@ export async function openA2AStore(options: Readonly<{ directory: string; maxTas
     signal?.throwIfAborted();
     return {
       taskStore,
+      deliveriesForRuns: (runIds: readonly string[]) => run(() => database.selectFrom('omniops_a2a_delivery')
+        .select(['task_id', 'thread_id', 'run_id', 'result_sha256', 'received_at']).where('run_id', 'in', [...runIds]).execute()),
       accept: (request: Acceptance, create: () => InitialTask, beforeCommit?: () => void): Promise<{ task: Task; fresh: boolean }> => run(async () => {
         const { principal, messageId, fingerprint, agentId, contentId, context } = request;
         const { tenant, owner } = scope(context);

@@ -49,7 +49,11 @@ export function CreditsToolbar({
     <div className="flex items-center justify-between gap-3 px-1">
       <div className="flex min-w-0 items-center gap-0.5 text-muted-foreground">
         {attachControl ?? (
-          <ActionButton label={t("attachFiles")} onClick={onAttach}>
+          <ActionButton
+            label={t("attachFiles")}
+            onClick={onAttach}
+            disabled={disabled || busy}
+          >
             <Paperclip className="size-[16px]" />
           </ActionButton>
         )}
@@ -109,14 +113,17 @@ function ActionButton({
   label,
   onClick,
   children,
+  disabled,
 }: {
   label: string
   onClick?: () => void
   children: ReactNode
+  disabled?: boolean
 }) {
   return (
     <motion.button
       type="button"
+      disabled={disabled}
       aria-label={label}
       onClick={onClick}
       whileTap={{ scale: 0.92 }}

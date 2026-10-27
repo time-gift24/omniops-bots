@@ -9,8 +9,19 @@ export type RunStatus =
   | "timed-out"
   | "interrupted"
 export type RunSnapshot = Readonly<Record<string, unknown>>
-export type SessionContext = { agentId?: string; experimentSkillId?: string }
+export type SessionContext = {
+  historyRunId?: string
+  agentId?: string
+  agentContentId?: string
+  experimentSkillId?: string
+}
 export type RunRecord = {
+  origin?: "a2a"
+  delivery?: {
+    taskId: string
+    state: "pending" | "confirmed"
+    receivedAt?: string
+  }
   runId: string
   threadId: string
   agentId?: string
@@ -20,6 +31,8 @@ export type RunRecord = {
   endedAt?: string
   error?: { kind: string; message: string }
   result?: ChatResponse
+  /** Remote A2A results retain their JSON shape, including null/false/0. */
+  output?: unknown
   snapshot?: RunSnapshot
   events?: ChatEvent[]
   inputMessages?: {
@@ -34,6 +47,8 @@ export type RunRecord = {
  * Reading history never executes a model or resumes interrupted work.
  */
 export interface RunSource {
+  /** State changes only invalidate cached reads; unsubscribing never stops a run. */
+  subscribe?(listener: () => void): () => void
   bindSession(threadId: string, context: SessionContext): void
   list(): Promise<readonly RunRecord[]>
   get(runId: string): Promise<RunRecord>

@@ -2,6 +2,8 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
+    <!-- Declare layers before Vite's split component stylesheets can load. -->
+    <style>@layer properties, theme, base, components, utilities;</style>
     <link rel="icon" type="image/png" href="/icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>omniops-bots</title>

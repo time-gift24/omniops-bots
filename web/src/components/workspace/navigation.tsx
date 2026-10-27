@@ -371,7 +371,10 @@ export function SidebarRail({
         onItemSelect?.(first, entry)
       }
     }
-    if (mobile) setMobileOpen(true)
+    if (entry.collapseOnSelect) {
+      setExpanded(false)
+      closeNavigation()
+    } else if (mobile) setMobileOpen(true)
     else setExpanded(true)
   }
   function selectItem(item: SidebarRailItem) {

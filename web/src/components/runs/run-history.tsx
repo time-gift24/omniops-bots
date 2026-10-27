@@ -26,9 +26,14 @@ const date = (value: string) =>
 export function RunHistory({
   source,
   onContinue,
+  readOnly = false,
+  onNewFromRun,
 }: {
   source: RunSource
   onContinue: (run: RunRecord, records: readonly RunRecord[]) => Promise<void>
+  readOnly?: boolean
+  /** Selects a new empty session from the server's saved Run; never replays input. */
+  onNewFromRun?: (run: RunRecord) => Promise<void>
 }) {
   const [attempt, setAttempt] = useState(0)
   const [records, setRecords] = useState<readonly RunRecord[]>([])
@@ -40,6 +45,10 @@ export function RunHistory({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
   const selection = useRef({ version: 0 })
+  useEffect(
+    () => source.subscribe?.(() => setAttempt((value) => value + 1)),
+    [source]
+  )
   useEffect(() => {
     let live = true
     const lifecycle = selection.current
@@ -50,6 +59,16 @@ export function RunHistory({
             [...items].sort((a, b) => b.startedAt.localeCompare(a.startedAt))
           )
           setLoading(false)
+          setSelected((current) =>
+            current
+              ? {
+                  ...current,
+                  run:
+                    items.find((item) => item.runId === current.run.runId) ??
+                    current.run,
+                }
+              : current
+          )
         }
       },
       (cause) => {
@@ -79,7 +98,7 @@ export function RunHistory({
     }
   }
   async function restore() {
-    if (!selected || busy) return
+    if (!selected || busy || readOnly || selected.run.origin === "a2a") return
     const token = selection.current.version
     setBusy(true)
     setError("")
@@ -95,6 +114,20 @@ export function RunHistory({
           { ...selected.run, snapshot: selected.snapshot ?? undefined },
           history
         )
+    } catch (cause) {
+      if (token === selection.current.version) setError(message(cause))
+    } finally {
+      if (token === selection.current.version) setBusy(false)
+    }
+  }
+  async function newFromRun() {
+    if (!selected || busy || readOnly || !onNewFromRun || !selected.snapshot)
+      return
+    const token = selection.current.version
+    setBusy(true)
+    setError("")
+    try {
+      await onNewFromRun({ ...selected.run, snapshot: selected.snapshot })
     } catch (cause) {
       if (token === selection.current.version) setError(message(cause))
     } finally {
@@ -129,14 +162,15 @@ export function RunHistory({
         {loading ? (
           <p role="status">正在读取执行记录…</p>
         ) : !records.length ? (
-          <p className="text-sm text-muted-foreground">
-            暂无执行记录。
-          </p>
+          <p className="text-sm text-muted-foreground">暂无执行记录。</p>
         ) : (
           <ul className="divide-y divide-border">
             {records.map((run) => (
               <li key={run.runId}>
-                <Button variant="plain" pressScale={1} whileHover={undefined}
+                <Button
+                  variant="plain"
+                  pressScale={1}
+                  whileHover={undefined}
                   className="flex w-full items-start justify-between gap-4 rounded-lg px-3 py-3 text-left hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
                   onClick={() => void inspect(run)}
                   aria-pressed={selected?.run.runId === run.runId}
@@ -171,19 +205,52 @@ export function RunHistory({
               <h2 className="text-base font-medium">
                 {selected.run.title || "执行详情"}
               </h2>
-              <Button
-                size="sm"
-                disabled={
-                  busy ||
-                  selected.run.status === "preparing" ||
-                  selected.run.status === "running"
-                }
-                onClick={() => void restore()}
-              >
-                继续会话
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                {onNewFromRun && !readOnly ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={
+                      busy ||
+                      !selected.snapshot ||
+                      selected.run.status === "preparing" ||
+                      selected.run.status === "running"
+                    }
+                    onClick={() => void newFromRun()}
+                  >
+                    按此组合新建会话
+                  </Button>
+                ) : null}
+                <Button
+                  size="sm"
+                  disabled={
+                    busy ||
+                    readOnly ||
+                    selected.run.origin === "a2a" ||
+                    selected.run.status === "preparing" ||
+                    selected.run.status === "running"
+                  }
+                  onClick={() => void restore()}
+                >
+                  {selected.run.origin === "a2a"
+                    ? "服务端任务 · 只读"
+                    : readOnly
+                      ? "只读记录"
+                      : "继续会话"}
+                </Button>
+              </div>
             </div>
             <dl className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
+              {selected.run.origin === "a2a" ? (
+                <div>
+                  <dt className="inline">交付：</dt>
+                  <dd className="inline">
+                    {selected.run.delivery?.state === "confirmed"
+                      ? "服务端已确认"
+                      : "结果待服务端确认"}
+                  </dd>
+                </div>
+              ) : null}
               <div>
                 <dt className="inline">状态：</dt>
                 <dd className="inline">{statusLabels[selected.run.status]}</dd>
@@ -211,6 +278,15 @@ export function RunHistory({
                   .map((part) => part.text)
                   .join("\n")}
               </div>
+            ) : null}
+            {selected.run.origin === "a2a" &&
+            Object.hasOwn(selected.run, "output") ? (
+              <pre
+                aria-label="远端任务 JSON 结果"
+                className="max-h-96 overflow-auto rounded-lg border border-border p-3 text-xs leading-6 break-words whitespace-pre-wrap"
+              >
+                {JSON.stringify(selected.run.output, null, 2)}
+              </pre>
             ) : null}
             <details className="rounded-lg border border-border p-3">
               <summary className="cursor-pointer text-sm font-medium">

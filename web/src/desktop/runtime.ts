@@ -36,6 +36,10 @@ export interface DesktopTask {
 }
 
 export interface DesktopSnapshot {
+  diagnosticsOnly?: boolean
+  /** Safe platform projection; absent on older/demo adapters means unconfigured. */
+  connection?: DesktopConnection
+  update?: DesktopUpdate
   closeBlocked?: boolean
   simulated: boolean
   /** Active runs across all threads. Older demo adapters expose only task. */
@@ -49,6 +53,78 @@ export interface DesktopSnapshot {
   operationsBrowser?: BrowserSnapshot
   /** Increments once for each new browser call, including before approval. */
   browserRequest: number
+}
+
+export interface DesktopConnection {
+  state:
+    | "offline"
+    | "connecting"
+    | "connected"
+    | "reconnecting"
+    | "blocked"
+    | "closing"
+    | "closed"
+  reason?: string
+  permissions: readonly string[]
+  destination?: string
+  account?: string
+}
+export interface DiagnosticThread {
+  threadId: string
+  title: string
+  lastUpdated: string
+  checkpointAvailable: boolean
+}
+export interface DiagnosticPackage {
+  uploadId: string
+  threadId: string
+  packageFile: string
+  bundleSha256: string
+  manifest: Readonly<Record<string, unknown>>
+  preview: {
+    files: readonly { path: string; bytes: number }[]
+    missing: readonly { item: string; reason: string }[]
+    attachments: readonly { id: string; name: string }[]
+    redactionPolicy: string
+  }
+}
+export type SavedDiagnosticPackage = Pick<
+  DiagnosticPackage,
+  "uploadId" | "threadId" | "bundleSha256" | "preview"
+> & { createdAt: string }
+export type DiagnosticFilePreview =
+  | { mediaType: "text/plain"; text: string; truncated: boolean }
+  | {
+      mediaType: "image/png" | "image/jpeg"
+      dataUrl: string
+      truncated: boolean
+    }
+export interface DiagnosticUploadState {
+  state: "pending" | "received" | "failed"
+  uploadId: string
+  diagnosticId?: string
+  threadId?: string
+  bundleSha256?: string
+  receivedAt?: string
+  incomplete?: boolean
+  missing?: readonly string[]
+}
+export interface DesktopUpdate {
+  phase:
+    | "disabled"
+    | "idle"
+    | "checking"
+    | "available"
+    | "downloading"
+    | "ready"
+    | "installing"
+    | "failed"
+  currentVersion: string
+  version?: string
+  notes?: string
+  downloadedBytes: number
+  totalBytes?: number
+  error?: string
 }
 
 /** Legacy demo adapters retain their single shared task slot. */
@@ -81,6 +157,41 @@ export interface BrowserViewport {
 }
 
 export interface DesktopRuntime {
+  /** Connection changes do not stop tasks; rejection leaves existing data intact. */
+  reconnectPlatform?(): Promise<void>
+  /** Read-only thread listing and frozen diagnostic preparation. Pages never pass local paths.
+   * Navigating away ignores late UI results but does not cancel runs or delete prepared packages.
+   * Upload needs explicit consent after preview; retry/query retains the same immutable uploadId.
+   */
+  listDiagnosticThreads?(options?: {
+    cursor?: string
+    limit?: number
+  }): Promise<{ items: readonly DiagnosticThread[]; nextCursor: string | null }>
+  exportDiagnostics?(
+    threadId: string,
+    includeAttachments?: readonly string[]
+  ): Promise<DiagnosticPackage>
+  /** Retained immutable ZIPs may be reopened after navigation/restart. Preview paths
+   * must come from the selected package manifest; no arbitrary filesystem access. */
+  listDiagnosticPackages?(): Promise<readonly SavedDiagnosticPackage[]>
+  openDiagnosticPackage?(uploadId: string): Promise<DiagnosticPackage>
+  previewDiagnosticFile?(
+    uploadId: string,
+    path: string
+  ): Promise<DiagnosticFilePreview>
+  uploadDiagnostics?(
+    uploadId: string,
+    consent: true
+  ): Promise<DiagnosticUploadState>
+  diagnosticUploadStatus?(uploadId: string): Promise<DiagnosticUploadState>
+  /** Native signed updater. Reading never downloads or installs; both actions are explicit. */
+  readUpdate?(): Promise<DesktopUpdate>
+  checkUpdate?(): Promise<DesktopUpdate>
+  downloadUpdate?(): Promise<DesktopUpdate>
+  /** The host owns the final install/restart confirmation and maintenance gate.
+   * Cancellation resolves with the retained ready state; preparation failure rejects.
+   */
+  installUpdate?(): Promise<DesktopUpdate>
   /** Positions the manual operations page; null hides it without closing it. */
   setBrowserViewport?(bounds: BrowserViewport | null): Promise<void>
   readOperationsBrowser?(): Promise<BrowserSnapshot>

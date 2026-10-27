@@ -29,7 +29,7 @@
   const click = label => { const target = typeof label === "string" ? button(label) : label; assert(target && !target.disabled, `Missing ${label}`); flushSync(() => target.click()) }
   const record = () => [...fixture.querySelectorAll('section[aria-label="执行记录"] button')].find(element => visible(element) && element.textContent.includes("检查服务"))
   const officialSkill = () => [...fixture.querySelectorAll('[data-testid="skill-library"] button')].find(element => visible(element) && element.textContent.includes("官方巡检"))
-  const closeNavigation = () => { if (button("Close sidebar")) click("Close sidebar") }
+  const closeNavigation = () => { const close = button("Close sidebar", document); if (close) click(close) }
   const official = { id: "official", name: "官方巡检", description: "官方使用说明", origin: "official", version: "v1", files: [{ path: "SKILL.md", content: "# 官方巡检\n\n发布的原始说明。" }] }
   const local = { id: "local", name: "本地草稿技能", description: "不在用户版显示", files: [{ path: "SKILL.md", content: "# 本地草稿技能" }] }
   const run = { runId: "run-one", threadId: "thread-one", title: "检查服务", status: "completed", startedAt: "2026-10-22T00:00:00Z", endedAt: "2026-10-22T00:00:01Z", snapshot: { model: "test", skills: [] } }
@@ -51,11 +51,14 @@
       if (fallback) dependencies.skillLibrary = undefined
       root = createRoot(fixture)
       flushSync(() => root.render(withTestTheme(React.createElement(App, { edition: "user" }), dependencies)))
-      await until(record, "User edition must start at execution records")
-      assert(button("打开工作台") && !button("收起工作台"), "Right panel must start collapsed")
-      assert(!button("工作区") && !button("Agent") && !button("设置") && !button("新建 Skill"), "User edition must expose only records and skills")
+      await until(() => fixture.querySelector('section[aria-label="连接与维护"]'), "User edition must start at connection and maintenance")
+      assert(!button("打开工作台") && !button("收起工作台"), "Basic user view must not require a debug workbench")
+      assert(!button("工作区") && !button("Agent") && !button("设置") && !button("新建 Skill"), "User edition must keep debug and management controls hidden")
       assert(agentReads === 0 && modelReads === 0, "Unrelated configuration must not block user startup")
       assert(dependencies.workspaces.getState().sessions.length === 0, "User startup must not create a blank conversation")
+      click("执行记录")
+      closeNavigation()
+      await until(record, "Execution records must remain available as a secondary view")
       click(record())
       await until(() => fixture.querySelector('[aria-label="执行详情"]'), "Execution details must remain available")
       click("技能")
@@ -63,7 +66,7 @@
       await until(officialSkill, "Official skill must be listed")
       assert(!button("本地草稿技能") && !button("复制 官方巡检") && !fixture.querySelector('[aria-label="Skill 来源"]'), "User catalog must hide local skills and management controls")
       click(officialSkill())
-      await until(() => [...fixture.querySelectorAll('[aria-label="文件内容"]')].some(element => visible(element) && element.textContent.includes("发布的原始说明。")), "Official original must be readable")
+      await until(() => [...fixture.querySelectorAll('[data-slot="skill-screen"],[aria-label="文件内容"]')].some(element => visible(element) && element.textContent.includes("发布的原始说明。")), "Official original must be readable")
       assert(!button("编辑") && !button("复制为本地 Skill") && !button("在新会话中实验") && !button("恢复原始内容"), "User detail must have no editing or experiment actions")
       assert(!fixture.textContent.includes("本地草稿不应出现"), "Draft content must not override official content")
       window.dispatchEvent(new KeyboardEvent("keydown", { key: "s", ctrlKey: true, bubbles: true, cancelable: true }))

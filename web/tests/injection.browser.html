@@ -26,7 +26,7 @@
   const roots = [];
   const dependencies = ["web-a", "desktop-b"].map((backendId, index) => createTestDependencies({
     backendId,
-    models: { async list() { return [{ id: `${backendId}-model`, label: `${backendId} model` }]; } },
+    models: { async list() { return [{ id: `${backendId}-model`, label: `${backendId} model`, isDefault: true }]; } },
     host: {
       async copyText(text) { copies[index].push(text); },
       async openExternal() {},
@@ -58,8 +58,9 @@
       flushSync(() => dependencies[index].threads.get("same-thread").updateDraft({ text: `request-${index}` }));
       flushSync(() => scope.querySelector('[aria-label="发送"]').click());
       await until(() => scope.textContent.includes(`${dependencies[index].backendId} reply`), "Shared UI must render its own gateway response");
-      flushSync(() => scope.querySelector('[data-slot="message-footer"] button').click());
+      flushSync(() => [...scope.querySelectorAll('button[aria-label="复制"]')].at(-1).click());
       await until(() => copies[index].length === 1, "Copy must use the injected host");
+      assert(copies[index][0] === `${dependencies[index].backendId} reply`, "The assistant copy action must copy this backend response");
       assert(requests[index][0].request.model === models[0].id && requests[index][0].threadId === "same-thread", "Gateway must receive the injected model and thread identity");
     }
     assert(dependencies[0].threads.get("same-thread") !== dependencies[1].threads.get("same-thread"), "Same thread IDs on different backends must not share a cache entry");

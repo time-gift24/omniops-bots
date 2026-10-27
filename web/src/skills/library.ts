@@ -21,6 +21,8 @@ export type ManagedSkill = {
   origin: "local" | "official"
   version?: string
   contentId?: string
+  /** Stable platform identity; id may remain an exact immutable-version reference. */
+  officialId?: string
   readOnly: boolean
   modifiedAt: string | null
   entries: readonly SkillEntry[]

@@ -282,6 +282,7 @@ export function AgentChatCredits({
       <input
         ref={fileInputRef}
         type="file"
+        disabled={disabled || busy}
         multiple
         hidden
         accept={acceptedFileTypes}

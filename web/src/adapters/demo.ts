@@ -25,6 +25,7 @@ export function createDemoAdapters(
   return {
     backendId,
     ...(overrides.runs ? { runs: overrides.runs } : {}),
+    ...(overrides.publications ? { publications: overrides.publications } : {}),
     gatewayFor:
       overrides.gatewayFor ??
       (overrides.models

@@ -6,6 +6,23 @@ import type {
 } from "@/runs/source"
 import { array, choice, object, readChatEvent, string } from "./protocol"
 
+function readOutput(value: unknown): unknown {
+  const encoded = JSON.stringify(value, (_key, entry) => {
+    if (
+      entry === undefined ||
+      typeof entry === "function" ||
+      typeof entry === "symbol" ||
+      typeof entry === "bigint" ||
+      (typeof entry === "number" && !Number.isFinite(entry))
+    )
+      throw new Error("远端结果包含无效 JSON。")
+    return entry
+  })
+  if (!encoded || new TextEncoder().encode(encoded).length > 8 * 1024 * 1024)
+    throw new Error("远端结果超过显示限制。")
+  return JSON.parse(encoded)
+}
+
 export function readRun(value: unknown): RunRecord {
   const raw = object(value)
   const completed =
@@ -13,7 +30,22 @@ export function readRun(value: unknown): RunRecord {
       ? undefined
       : readChatEvent({ type: "completed", response: raw.result })
   const error = raw.error === undefined ? undefined : object(raw.error)
+  const delivery = raw.delivery === undefined ? undefined : object(raw.delivery)
   return {
+    ...(raw.origin === undefined
+      ? {}
+      : { origin: choice(raw.origin, ["a2a"] as const) }),
+    ...(delivery
+      ? {
+          delivery: {
+            taskId: string(delivery.taskId),
+            state: choice(delivery.state, ["pending", "confirmed"] as const),
+            ...(delivery.receivedAt === undefined
+              ? {}
+              : { receivedAt: string(delivery.receivedAt) }),
+          },
+        }
+      : {}),
     runId: string(raw.runId),
     threadId: string(raw.threadId),
     title: string(raw.title),
@@ -33,6 +65,7 @@ export function readRun(value: unknown): RunRecord {
       ? { error: { kind: string(error.kind), message: string(error.message) } }
       : {}),
     ...(completed?.type === "completed" ? { result: completed.response } : {}),
+    ...(Object.hasOwn(raw, "output") ? { output: readOutput(raw.output) } : {}),
     ...(raw.snapshot == null ? {} : { snapshot: object(raw.snapshot) }),
     ...(raw.events === undefined
       ? {}
@@ -69,10 +102,12 @@ export function createRunSource(
   request: (
     method: string,
     params?: Record<string, unknown>
-  ) => Promise<unknown>
+  ) => Promise<unknown>,
+  subscribe?: (listener: () => void) => () => void
 ) {
   const contexts = new Map<string, SessionContext>()
   const runs: RunSource = {
+    subscribe,
     bindSession(threadId, context) {
       const existing = contexts.get(threadId)
       if (existing && JSON.stringify(existing) !== JSON.stringify(context))

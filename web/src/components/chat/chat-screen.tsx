@@ -27,11 +27,14 @@ export function ChatScreen({
   models,
   workspaceName,
   suggestions = SUGGESTIONS,
+  fixedModel: selectedHistoricalModel,
 }: {
   threadId?: string
   models: readonly ModelChoice[]
   workspaceName?: string
   suggestions?: readonly string[]
+  /** A new session selected from saved history keeps its proven model before first send. */
+  fixedModel?: string
 }) {
   const { threads, desktop, runs } = useAppDependencies()
   const [modelSnapshot, setModelSnapshot] = React.useState<{
@@ -39,7 +42,8 @@ export function ChatScreen({
     model: string
   } | null>(null)
   const fixedModel =
-    modelSnapshot?.threadId === threadId ? modelSnapshot.model : null
+    selectedHistoricalModel ??
+    (modelSnapshot?.threadId === threadId ? modelSnapshot.model : null)
   const desktopTask = React.useSyncExternalStore(
     desktop.subscribe,
     () => threadTask(desktop.getState(), threadId),
@@ -86,7 +90,7 @@ export function ChatScreen({
     <ChatComposer
       store={store}
       models={sessionModels}
-      locked={!empty}
+      locked={!empty || !!selectedHistoricalModel}
       className="mx-auto w-full"
     />
   )

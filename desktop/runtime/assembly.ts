@@ -4,6 +4,8 @@ import { createHash, randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import { invalid, RuntimeError } from './errors.ts';
+import { packageContentId, readPackage, type PackageEntry } from './package.ts';
+export { packageContentId } from './package.ts';
 
 export type AgentConfiguration = {
   name: string; description: string; instructions: string;
@@ -11,7 +13,7 @@ export type AgentConfiguration = {
 };
 export type AgentEntry = {
   id: string; source: 'local' | 'official'; contentId: string;
-  releaseTag?: string; configuration: AgentConfiguration;
+  releaseTag?: string; configuration: AgentConfiguration; packageFormat?: 1;
 };
 type StoredAgent = AgentEntry & { unpublished?: true };
 export type McpConfiguration = { id: string; name: string; description: string; url: string; credentialEnv?: string };
@@ -20,7 +22,6 @@ export type SessionAssembly = {
   sessionId: string; directory: string; assemblyContentId: string; agent: AgentEntry; skills: SkillSnapshot[]; mcpServers: McpConfiguration[];
   experimentSkillId?: string; model?: string; modelParameters?: Record<string, unknown>; desktopVersion?: string;
 };
-type PackageEntry = { path: string; kind: 'file' | 'folder'; bytes?: Uint8Array };
 type SkillPackage = {
   skill: { id: string; name: string; origin: string; contentId?: string; version?: string };
   entries: PackageEntry[];
@@ -29,10 +30,10 @@ type SkillLibrary = {
   capture(id: string): Promise<SkillPackage>;
   handle(method: string, params?: Record<string, unknown>): Promise<unknown>;
 };
-type McpCatalog = { list(): unknown | Promise<unknown>; get(id: string): unknown | Promise<unknown> };
+type McpCatalog = { list(): unknown | Promise<unknown>; get(id: string): unknown | Promise<unknown>; save?(server:unknown):Promise<unknown>;remove?(id:string):Promise<unknown> };
 type PrepareOptions = {
   sessionId: string; agentId?: string; contentId?: string; experimentSkillId?: string;
-  model?: string; modelParameters?: Record<string, unknown>; desktopVersion?: string;
+  model?: string; modelParameters?: Record<string, unknown>; desktopVersion?: string; signal?: AbortSignal;
 };
 const HASH = /^[a-f0-9]{64}$/u;
 const ID = /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/u;
@@ -88,14 +89,6 @@ function relative(value: unknown): string {
   if (valueText !== valueText.normalize('NFC') || valueText.includes('\\') || valueText.split('/').some(segment => !segment || segment === '.' || segment === '..' || /[<>:"|?*]/u.test(segment) || /[. ]$/u.test(segment))) throw invalid('Skill 文件路径无效。');
   return valueText;
 }
-export function packageContentId(entries: PackageEntry[]): string {
-  const manifest = entries.map(entry => {
-    const file = relative(entry.path);
-    return entry.kind === 'folder' ? { path: file, kind: 'folder' } : { path: file, kind: 'file', bytes: entry.bytes!.byteLength, sha256: hash(entry.bytes!) };
-  }).sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0);
-  if (new Set(manifest.map(entry => entry.path.toLowerCase())).size !== manifest.length) throw invalid('Skill 包存在重复路径或大小写冲突。');
-  return hash(canonical(manifest));
-}
 async function directory(value: string): Promise<string> {
   await mkdir(value, { recursive: true, mode: 0o700 });
   if ((await lstat(value)).isSymbolicLink()) throw invalid('装配目录不能是符号链接。');
@@ -139,32 +132,10 @@ function metadata(entries: PackageEntry[]): { name: string; description: string 
   } catch { throw invalid('Skill 入口的 YAML 元信息无效，请检查 SKILL.md。'); }
   return { name: text(raw.name, 'Skill 元信息 name', 100), description: text(raw.description, 'Skill 元信息 description', 4096) };
 }
-async function readPackage(root: string): Promise<PackageEntry[]> {
-  const entries: PackageEntry[] = [];
-  let bytes = 0;
-  async function walk(folder: string, prefix = '', depth = 0): Promise<void> {
-    if (depth > 32 || (await lstat(folder)).isSymbolicLink()) throw invalid('Skill 快照目录无效。');
-    for (const item of await readdir(folder, { withFileTypes: true })) {
-      const relativePath = relative(prefix + item.name), file = path.join(folder, item.name);
-      if (entries.length >= 1000 || !item.isFile() && !item.isDirectory()) throw invalid('Skill 快照包含过多文件、链接或特殊文件。');
-      if (item.isDirectory()) {
-        entries.push({ path: relativePath, kind: 'folder' });
-        await walk(file, relativePath + '/', depth + 1);
-      } else {
-        const content = await readBytes(file);
-        bytes += content.byteLength;
-        if (bytes > MAX_PACKAGE) throw new RuntimeError('resource-limit', 'Skill 快照超过 100 MiB。');
-        entries.push({ path: relativePath, kind: 'file', bytes: content });
-      }
-    }
-  }
-  await walk(root);
-  return entries;
-}
-
-export function createAssemblyStore({ agentsDir, runsDir, skillLibrary, tools, mcpCatalog = { list: () => [], get: () => undefined } }: {
+export function createAssemblyStore({ agentsDir, runsDir, skillLibrary, tools, mcpCatalog = { list: () => [], get: () => undefined }, ensureOfficial }: {
   agentsDir: string; runsDir: string; skillLibrary: SkillLibrary;
   tools: readonly { id: string }[]; mcpCatalog?: McpCatalog;
+  ensureOfficial?: (reference: {kind:'agent'|'skill';id:string;contentId:string}, options:{signal?:AbortSignal}) => Promise<void>;
 }) {
   let queue = Promise.resolve<unknown>(undefined);
   const run = <T>(action: () => Promise<T>): Promise<T> => {
@@ -206,6 +177,35 @@ export function createAssemblyStore({ agentsDir, runsDir, skillLibrary, tools, m
     if (releaseTag && !/^v\.\d+\.\d+\.\d+$/u.test(releaseTag)) throw invalid('Agent 发布标签无效。');
     return { id, source: raw.source as 'local' | 'official', contentId: raw.contentId as string, configuration: config, ...(releaseTag ? { releaseTag } : {}), ...(raw.unpublished ? { unpublished: true } : {}) };
   }
+  async function readFormalAgent(id: string, contentId: string, signal?: AbortSignal) {
+    agentId(id);
+    if(!HASH.test(contentId))throw invalid('正式 Agent 内容身份无效。');
+    await ensureOfficial?.({kind:'agent',id,contentId}, {signal});
+    signal?.throwIfAborted();
+    const root = await directory(agentsDir);
+    const packageDirectory=path.join(root,'releases',id,contentId);
+    if(await realpath(packageDirectory)!==packageDirectory)throw invalid('正式 Agent 目录不能经过符号链接。');
+    const entries = await readPackage(packageDirectory, {signal});
+    if (entries.length !== 2 || !['agent.json','prompt.md'].every(name => entries.some(file => file.path === name && file.kind === 'file')) || packageContentId(entries) !== contentId) throw new RuntimeError('integrity', '正式 Agent 完整包摘要不匹配。');
+    const raw = record(JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(entries.find(file=>file.path==='agent.json')!.bytes)));
+    if (raw.schemaVersion !== 1 || raw.promptFile !== 'prompt.md' || Object.keys(raw).some(key=>!['schemaVersion','name','description','promptFile','toolIds','mcpServers','skills'].includes(key)) || !Array.isArray(raw.skills) || raw.skills.length > 256 || !Array.isArray(raw.mcpServers) || raw.mcpServers.length > 256) throw invalid('正式 Agent 装配格式无效。');
+    const mounts = new Map<string,string>();
+    const skillIds: string[] = [];
+    for (const value of raw.skills) {
+      const skill = record(value), skillId = agentId(skill.skillId);
+      if (typeof skill.contentId !== 'string' || !HASH.test(skill.contentId) || typeof skill.mountPath !== 'string' || !/^\/skills\/(?:[A-Za-z0-9_-]+\/)+$/u.test(skill.mountPath) || skill.mountPath.length>1024 || skill.mountPath.split('/').length>35 || Object.keys(skill).some(key=>!['skillId','contentId','mountPath'].includes(key))) throw invalid('正式 Skill 固定引用无效。');
+      const key = `official/${skillId}/${skill.contentId}`;
+      if (skillIds.some(existing=>existing.split('/')[1]===skillId) || [...mounts.values()].some(mount=>mount.startsWith(skill.mountPath as string) || (skill.mountPath as string).startsWith(mount))) throw invalid('正式 Skill 引用或挂载路径冲突。');
+      skillIds.push(key); mounts.set(key,skill.mountPath);
+      await ensureOfficial?.({kind:'skill',id:skillId,contentId:skill.contentId},{signal});
+      signal?.throwIfAborted();
+    }
+    const mcpServers = raw.mcpServers.map(mcpConfiguration);
+    if (new Set(mcpServers.map(server=>server.id)).size!==mcpServers.length) throw invalid('正式 MCP 身份冲突。');
+    const config = configuration({ name:raw.name, description:raw.description, instructions:new TextDecoder('utf-8',{fatal:true}).decode(entries.find(file=>file.path==='prompt.md')!.bytes), toolIds:raw.toolIds, skillIds, mcpServerIds:mcpServers.map(server=>server.id) });
+    const selected: AgentEntry = {id,source:'official',contentId,configuration:config,packageFormat:1};
+    return {selected,mounts,mcpServers};
+  }
   async function validateReferences(config: AgentConfiguration): Promise<void> {
     for (const id of config.skillIds) await skillLibrary.handle('skill_library_get', { id });
     for (const id of config.mcpServerIds) {
@@ -227,7 +227,7 @@ export function createAssemblyStore({ agentsDir, runsDir, skillLibrary, tools, m
     let total = 0;
     for (const skill of stored.skills) {
       const mount = text(skill.mountPath, 'Skill 挂载路径', 1024);
-      if (!/^\/skills\/[A-Za-z0-9_-]+\/$/u.test(mount) || mounts.has(mount) || !HASH.test(skill.contentId)) throw invalid('会话 Skill 快照路径或摘要无效。');
+      if (!/^\/skills\/(?:[A-Za-z0-9_-]+\/)+$/u.test(mount) || [...mounts].some(value=>value.startsWith(mount)||mount.startsWith(value)) || !HASH.test(skill.contentId)) throw invalid('会话 Skill 快照路径或摘要无效。');
       mounts.add(mount);
       const entries = await readPackage(path.join(target, mount.slice(1)));
       total += entries.reduce((size, item) => size + (item.bytes?.byteLength ?? 0), 0);
@@ -239,6 +239,8 @@ export function createAssemblyStore({ agentsDir, runsDir, skillLibrary, tools, m
     return { ...stored, directory: target };
   }
   async function prepare(options: PrepareOptions): Promise<SessionAssembly> {
+    if (options.signal !== undefined && !(options.signal instanceof AbortSignal)) throw invalid('取消信号无效。');
+    options.signal?.throwIfAborted();
     text(options.sessionId, '会话 ID');
     if (options.contentId !== undefined && (!HASH.test(options.contentId) || options.agentId === undefined || options.experimentSkillId !== undefined)) throw invalid('远端任务必须指定固定官方 Agent 版本。');
     const root = await directory(runsDir), target = path.join(root, hash(options.sessionId));
@@ -252,7 +254,15 @@ export function createAssemblyStore({ agentsDir, runsDir, skillLibrary, tools, m
       try { await lstat(target); throw invalid('会话快照不完整，请新建会话。'); }
       catch (missing) { if ((missing as NodeJS.ErrnoException).code !== 'ENOENT') throw missing; }
     }
-    const { unpublished: _unpublished, ...selected } = await readAgent(options.agentId ?? 'browser-assistant', options.contentId === undefined);
+    let formal: Awaited<ReturnType<typeof readFormalAgent>> | undefined;
+    if (options.contentId !== undefined) {
+      try { formal = await readFormalAgent(options.agentId!, options.contentId, options.signal); }
+      catch (error) {
+        // Existing independent HTTP fixtures use legacy local identities; platform-backed production never falls back.
+        if (ensureOfficial || (error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+      }
+    }
+    const { unpublished: _unpublished, ...selected } = formal ? { ...formal.selected, unpublished: undefined } : await readAgent(options.agentId ?? 'browser-assistant', options.contentId === undefined);
     if (options.contentId !== undefined && (selected.source !== 'official' || selected.contentId !== options.contentId)) throw invalid('远端任务的官方 Agent 版本不存在或摘要不匹配。');
     const config = configuration(selected.configuration);
     const missing = config.toolIds.filter(id => !tools.some(tool => tool.id === id));
@@ -260,6 +270,7 @@ export function createAssemblyStore({ agentsDir, runsDir, skillLibrary, tools, m
     const captured: SkillPackage[] = [];
     let capturedBytes = 0;
     const capture = async (id: string): Promise<SkillPackage> => {
+      options.signal?.throwIfAborted();
       const value = await skillLibrary.capture(id);
       capturedBytes += value.entries.reduce((size, item) => size + (item.bytes?.byteLength ?? 0), 0);
       if (capturedBytes > MAX_ASSEMBLY) throw new RuntimeError('resource-limit', '本次 Skill 装配超过 256 MiB，请减少所选 Skill。');
@@ -277,8 +288,8 @@ export function createAssemblyStore({ agentsDir, runsDir, skillLibrary, tools, m
       else captured.push(experiment);
       config.skillIds = captured.map(item => item.skill.id);
     }
-    const mcpServers: McpConfiguration[] = [];
-    for (const id of config.mcpServerIds) {
+    const mcpServers: McpConfiguration[] = formal ? formal.mcpServers : [];
+    for (const id of formal ? [] : config.mcpServerIds) {
       const value = await mcpCatalog.get(id);
       if (!value) throw invalid(`找不到所需 MCP：${id}。`);
       const server = mcpConfiguration(value);
@@ -296,7 +307,7 @@ export function createAssemblyStore({ agentsDir, runsDir, skillLibrary, tools, m
       if (skill.origin === 'official' && skill.contentId !== contentId) throw new RuntimeError('integrity', '官方 Skill 缓存内容摘要不匹配，不能使用此版本。');
       const mountName = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(info.name) && info.name.length <= 64 && !/^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])$/u.test(info.name)
         ? info.name : `skill-${hash(skill.id).slice(0, 24)}`;
-      return { id: skill.id, name: info.name, contentId, ...(skill.version ? { releaseTag: skill.version } : {}), mountPath: `/skills/${mountName}/` };
+      return { id: skill.id, name: info.name, contentId, ...(skill.version ? { releaseTag: skill.version } : {}), mountPath: formal?.mounts.get(skill.id) ?? `/skills/${mountName}/` };
     });
     if (new Set(skills.map(skill => skill.mountPath)).size !== skills.length) throw invalid('Skill 挂载目录冲突，请调整名称。');
     const assemblyContentId = hash(canonical({ configuration: config, skills: skills.map(({ id, contentId }) => ({ id, contentId })), mcpServers }));
@@ -317,8 +328,9 @@ export function createAssemblyStore({ agentsDir, runsDir, skillLibrary, tools, m
     await mkdir(path.join(staging, 'skills'), { recursive: true, mode: 0o700 });
     try {
       for (const [index, skill] of skills.entries()) {
+        options.signal?.throwIfAborted();
         const destination = path.join(staging, skill.mountPath.slice(1));
-        await mkdir(destination, { mode: 0o700 });
+        await mkdir(destination, { recursive: true, mode: 0o700 });
         const folders = [destination];
         for (const item of captured[index]!.entries) {
           const file = path.join(destination, relative(item.path));
@@ -331,6 +343,7 @@ export function createAssemblyStore({ agentsDir, runsDir, skillLibrary, tools, m
         for (const folder of folders.reverse()) await chmod(folder, 0o500);
       }
       await writeJson(path.join(staging, 'assembly.json'), assembly);
+      options.signal?.throwIfAborted();
       await rename(staging, target);
       return structuredClone(assembly);
     } catch (error) {
@@ -375,6 +388,34 @@ export function createAssemblyStore({ agentsDir, runsDir, skillLibrary, tools, m
       const created = entry(`local-${randomUUID()}`, config);
       await writeJson(path.join(await directory(agentsDir), `${created.id}.json`), { ...created, unpublished: true });
       return created;
+    }),
+    getVersion: (id:string,contentId:string,options:{signal?:AbortSignal}={}) => run(async()=>{
+      if(!HASH.test(contentId))throw invalid('正式 Agent 内容身份无效。');
+      return (await readFormalAgent(id,contentId,options.signal)).selected;
+    }),
+    capturePackage: (id:string,options:{signal?:AbortSignal;officialSkills?:Record<string,string>}={}) => run(async()=>{
+      options.signal?.throwIfAborted();
+      const selected=await readAgent(id),config=configuration(selected.configuration);
+      const skills:Array<{skillId:string;contentId:string;mountPath:string}>=[];
+      const names=new Set<string>();
+      for(const localId of config.skillIds){
+        options.signal?.throwIfAborted();
+        const captured=await skillLibrary.capture(localId),info=metadata(captured.entries),contentId=packageContentId(captured.entries);
+        const official=/^official\/([^/]+)\/([a-f0-9]{64})$/u.exec(localId);
+        if(official&&official[2]!==contentId)throw new RuntimeError('integrity','官方 Skill 缓存摘要不匹配。');
+        const fixedId=official?.[1]??options.officialSkills?.[localId];
+        if(!fixedId)throw invalid('请先为引用的本地 Skill 创建官方身份并发布确定版本。');
+        const skillId=agentId(fixedId);
+        if(names.has(info.name.toLowerCase())||skills.some(value=>value.skillId===skillId))throw invalid('Agent Skill 引用或名称冲突。');
+        names.add(info.name.toLowerCase());
+        const mountName=/^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(info.name)&&info.name.length<=64?info.name:`skill-${hash(localId).slice(0,24)}`;
+        skills.push({skillId,contentId,mountPath:`/skills/${mountName}/`});
+      }
+      const mcpServers:McpConfiguration[]=[];
+      for(const id of config.mcpServerIds){const value=await mcpCatalog.get(id);if(!value)throw invalid('Agent 所需 MCP 不存在。');mcpServers.push(mcpConfiguration(value));}
+      const formal={schemaVersion:1,name:config.name,description:config.description,promptFile:'prompt.md',toolIds:config.toolIds,skills,mcpServers};
+      const entries:PackageEntry[]=[{path:'agent.json',kind:'file',bytes:Buffer.from(JSON.stringify(formal,null,2)+'\n')},{path:'prompt.md',kind:'file',bytes:Buffer.from(config.instructions)}];
+      return {kind:'agent' as const,id:selected.id,name:config.name,contentId:packageContentId(entries),entries};
     }),
     prepareSession: (options: PrepareOptions) => run(() => prepare(options)),
     mcpServers: async () => {

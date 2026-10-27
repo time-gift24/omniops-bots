@@ -1,6 +1,6 @@
 import { constants } from 'node:fs';
-import { access, lstat, mkdir, mkdtemp, open, readdir, realpath, rm, stat, writeFile } from 'node:fs/promises';
-import { createHash } from 'node:crypto';
+import { access, lstat, mkdir, mkdtemp, open, readdir, realpath, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { createHash, randomUUID } from 'node:crypto';
 import { execFile } from 'node:child_process';
 import { homedir, tmpdir } from 'node:os';
 import path from 'node:path';
@@ -10,12 +10,15 @@ import { createSkillLibrary, defaultSkillRoot } from './skill-library.ts';
 import { createAssemblyStore, type AgentConfiguration, type SessionAssembly } from './assembly.ts';
 import { identifier } from './input.ts';
 import { createChatHistory } from './chat/history.ts';
+import type { PlatformClient, PackageReference } from './platform.ts';
+import { readPackage, packageContentId, writePackageFiles } from './package.ts';
+import { writeJson } from './json-store.ts';
 
 type WorkspaceFile = { name: string; path: string; size: string; bytes: number };
 type Baseline = Map<string, { content: Buffer; hash: string }>;
 type SessionBinding = { root: string; baseline: Promise<Baseline> };
 type HistoryRecord = { snapshot?: SessionAssembly & { workingDirectory?: string; workspacePath?: string } };
-type ResourceOptions = { homeDir?: string; skillsDir?: string; agentsDir?: string; runsDir?: string; temporaryDir?: string; mcpCatalog?: Parameters<typeof createAssemblyStore>[0]['mcpCatalog'] };
+type ResourceOptions = { homeDir?: string; skillsDir?: string; agentsDir?: string; runsDir?: string; temporaryDir?: string; mcpCatalog?: Parameters<typeof createAssemblyStore>[0]['mcpCatalog']; platform?: Pick<PlatformClient,'fetchPackage'> };
 export type PrepareSessionOptions = Parameters<ReturnType<typeof createAssemblyStore>['prepareSession']>[0] & { workspacePath?: string };
 const record = (value: unknown): Record<string, unknown> => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw invalid('资源参数无效。');
@@ -151,9 +154,87 @@ async function changedLines(before: Buffer, after: Buffer) {
   } finally { await rm(directory, { recursive: true, force: true }); }
 }
 
-export function createResources({ homeDir = homedir(), skillsDir = defaultSkillRoot(homeDir), agentsDir = path.join(homeDir, '.omnimind-ops', 'agents'), runsDir = path.join(homeDir, '.omnimind-ops', 'runs'), temporaryDir = path.join(homeDir, '.omniops-bots', 'tmp'), mcpCatalog }: ResourceOptions = {}) {
+export function createResources({ homeDir = homedir(), skillsDir = defaultSkillRoot(homeDir), agentsDir = path.join(homeDir, '.omnimind-ops', 'agents'), runsDir = path.join(homeDir, '.omnimind-ops', 'runs'), temporaryDir = path.join(homeDir, '.omniops-bots', 'tmp'), mcpCatalog, platform }: ResourceOptions = {}) {
   const skillLibrary = createSkillLibrary({ root: skillsDir });
-  const assembly = createAssemblyStore({ agentsDir, runsDir, skillLibrary, tools: BUILTIN_TOOLS, mcpCatalog });
+  const pending = new Map<string,{controller:AbortController;work:Promise<void>;waiters:number}>();
+  let tagQueue = Promise.resolve();
+  async function ensureOfficial(reference: PackageReference, {signal}: {signal?:AbortSignal}): Promise<void> {
+    signal?.throwIfAborted();
+    const key = JSON.stringify(reference);
+    let shared = pending.get(key);
+    if (!shared) {
+      const controller = new AbortController();
+      const work = (async () => {
+        const root = reference.kind === 'agent' ? agentsDir : skillsDir;
+        await mkdir(root,{recursive:true,mode:0o700});
+        if ((await lstat(root)).isSymbolicLink()) throw invalid('正式物料目录不能是链接。');
+        let parent = await realpath(root);
+        for (const name of ['releases',reference.id]) {
+          parent = path.join(parent,name);
+          await mkdir(parent,{mode:0o700}).catch(error=>{if((error as NodeJS.ErrnoException).code!=='EEXIST')throw error;});
+          if (!(await lstat(parent)).isDirectory() || (await lstat(parent)).isSymbolicLink()) throw invalid('正式物料目录不能是链接。');
+        }
+        const target = path.join(parent,reference.contentId);
+        let cached=false;
+        try { await lstat(target); cached=true; } catch(error) { if((error as NodeJS.ErrnoException).code!=='ENOENT')throw error; }
+        if(cached){
+          const current = await readPackage(target,{signal:controller.signal});
+          if (packageContentId(current)!==reference.contentId) throw new RuntimeError('integrity','正式物料缓存已改变，不能覆盖。');
+          return;
+        }
+        const downloaded = await platform!.fetchPackage(reference,{signal:controller.signal});
+        let staging: string | undefined;
+        try {
+          controller.signal.throwIfAborted();
+          const entries = await readPackage(downloaded.directory,{signal:controller.signal});
+          if (packageContentId(entries)!==reference.contentId) throw new RuntimeError('integrity','下载物料完整摘要不匹配。');
+          staging = await mkdtemp(path.join(parent,'.pending-'));
+          await writePackageFiles(entries,staging,{signal:controller.signal});
+          controller.signal.throwIfAborted();
+          await rename(staging,target);
+          staging=undefined;
+          if(downloaded.manifest.releaseTag){
+            const tag = downloaded.manifest.releaseTag;
+            const update = tagQueue.then(async()=>{
+              const file = path.join(parent,'tags.json');
+              let tags: Record<string,unknown> = {};
+              try {
+                const info=await lstat(file);
+                if(!info.isFile()||info.isSymbolicLink()||info.size>256*1024)throw invalid('版本标签缓存无效。');
+                const handle=await open(file,constants.O_RDONLY|(constants.O_NOFOLLOW??0));
+                try { const bytes=Buffer.alloc(info.size+1);const read=await handle.read(bytes,0,bytes.length,0);if(read.bytesRead!==info.size)throw invalid('版本标签读取期间改变。');tags=record(JSON.parse(bytes.subarray(0,read.bytesRead).toString('utf8'))); }
+                finally {await handle.close();}
+              } catch(error){if((error as NodeJS.ErrnoException).code!=='ENOENT')throw error;}
+              if(tags[tag]!==undefined&&tags[tag]!==reference.contentId)throw new RuntimeError('integrity','正式标签不可改指其他内容。');
+              if(Object.keys(tags).length>=1000&&tags[tag]===undefined)throw new RuntimeError('resource-limit','版本标签缓存超过上限。');
+              await writeJson(file,{...tags,[tag]:reference.contentId});
+            });
+            tagQueue=update.catch(()=>{});
+            await update;
+          }
+        } finally {
+          if(staging)await rm(staging,{recursive:true,force:true});
+          await downloaded.discard();
+        }
+      })();
+      shared={controller,work,waiters:0}; pending.set(key,shared);
+      void work.finally(()=>{if(pending.get(key)?.work===work)pending.delete(key);}).catch(()=>{});
+    }
+    shared.waiters++;
+    const lease=shared;
+    try {
+      await new Promise<void>((resolve,reject)=>{
+        const abort=()=>reject(signal?.reason ?? new DOMException('Aborted','AbortError'));
+        signal?.addEventListener('abort',abort,{once:true});
+        lease.work.then(resolve,reject).finally(()=>signal?.removeEventListener('abort',abort)).catch(()=>{});
+        if(signal?.aborted)abort();
+      });
+    } finally {
+      lease.waiters--;
+      if(!lease.waiters&&pending.get(key)===lease)lease.controller.abort();
+    }
+  }
+  const assembly = createAssemblyStore({ agentsDir, runsDir, skillLibrary, tools: BUILTIN_TOOLS, mcpCatalog, ...(platform?{ensureOfficial}:{}) });
   const roots = new Set<string>();
   const sessions = new Map<string, SessionBinding>();
   let history: ReturnType<typeof createChatHistory<HistoryRecord>> | undefined;
@@ -297,8 +378,56 @@ export function createResources({ homeDir = homedir(), skillsDir = defaultSkillR
   }
   return {
     hasMethod: (method: string) => METHODS.has(method) || skillLibrary.hasMethod(method), handle, getAgent,
+    async captureResource(reference:{kind:'agent'|'skill';id:string;contentId?:string},options:{signal?:AbortSignal;officialSkills?:Record<string,string>}={}) {
+      options.signal?.throwIfAborted();
+      if(reference.kind==='skill'){
+        const id=reference.contentId?`official/${reference.id}/${reference.contentId}`:reference.id;
+        if(reference.contentId&&platform)await ensureOfficial({kind:'skill',id:reference.id,contentId:reference.contentId},options);
+        const captured=await skillLibrary.capture(id);
+        if(reference.contentId&&packageContentId(captured.entries)!==reference.contentId)throw new RuntimeError('integrity','官方 Skill 缓存摘要不匹配。');
+        return {kind:'skill' as const,id:reference.id,name:captured.skill.name,contentId:packageContentId(captured.entries),entries:captured.entries};
+      }
+      if(reference.kind!=='agent')throw invalid('资源类型无效。');
+      if(reference.contentId){
+        const selected=await assembly.getVersion(reference.id,reference.contentId,options);
+        const entries=await readPackage(path.join(agentsDir,'releases',selected.id,selected.contentId),options);
+        return {kind:'agent' as const,id:selected.id,name:selected.configuration.name,contentId:selected.contentId,entries};
+      }
+      return assembly.capturePackage(reference.id,options);
+    },
+    async selectResourceVersion(reference:{kind:'agent'|'skill';id:string;contentId:string;editable?:boolean},options:{signal?:AbortSignal}={}) {
+      const {kind,id,contentId,editable=false}=reference;
+      if(!/^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/u.test(id)||!/^[a-f0-9]{64}$/u.test(contentId)||!['skill','agent'].includes(kind))throw invalid('版本选择无效。');
+      options.signal?.throwIfAborted();
+      if(kind==='skill'){
+        if(platform)await ensureOfficial({kind,id,contentId},options);
+        const official=`official/${id}/${contentId}`;
+        const skill=await skillLibrary.handle(editable?'skill_library_copy':'skill_library_get',{id:official}) as Awaited<ReturnType<typeof skillLibrary.capture>>['skill'];
+        return {kind,officialId:id,contentId,...(editable?{localId:skill.id}:{}),skill};
+      }
+      const agent=await assembly.getVersion(id,contentId,options);
+      if(!editable)return {kind,officialId:id,contentId,agent};
+      const copied:string[]=[];
+      try {
+        const mcpServerIds:string[]=[];
+        if(agent.configuration.mcpServerIds.length){
+          if(!mcpCatalog?.save||!mcpCatalog.remove)throw new RuntimeError('unavailable','当前宿主不能复制 MCP 配置。');
+          const raw=await readPackage(path.join(agentsDir,'releases',id,contentId),options);
+          const config=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(raw.find(value=>value.path==='agent.json')!.bytes));
+          for(const server of config.mcpServers){
+            const copyId='cp'+randomUUID().replaceAll('-','').slice(0,10);
+            await mcpCatalog.save({...server,id:copyId});copied.push(copyId);mcpServerIds.push(copyId);
+          }
+        }
+        const copy=await assembly.create({configuration:{...agent.configuration,mcpServerIds}});
+        return {kind,officialId:id,contentId,localId:copy.id,agent:copy};
+      } catch(error){for(const copiedId of copied)await mcpCatalog?.remove?.(copiedId).catch(()=>{});throw error;}
+    },
+
     async prepareSession(options: PrepareSessionOptions) {
+      options.signal?.throwIfAborted();
       const session = await assembly.prepareSession(options);
+      options.signal?.throwIfAborted();
       return { ...session, ...await sessionDirectory(options.sessionId, options.workspacePath, { preparedDirectory: session.directory }) };
     },
   };

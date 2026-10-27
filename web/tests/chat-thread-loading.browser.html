@@ -63,7 +63,7 @@
     type("first request");
     if (!mode) {
       await until(() => requested("/src/components/chat/chat-thread.tsx"), "Composer input must preload the thread");
-      assert(fixture.querySelector("h1"), "Preloading must keep the welcome screen");
+      assert(fixture.querySelector("h2"), "Preloading must keep the welcome screen");
     }
     click(button("发送"));
     if (mode === "delay") {
@@ -80,7 +80,7 @@
     assert(modelButton().disabled, "Streaming must keep model selection disabled");
     finish();
     await until(() => store.getState().status === "idle", "Loading must not stop consumption of the reply");
-    assert(!modelButton().disabled, "Completion must re-enable model selection");
+    assert(modelButton().disabled, "Completion must keep the established session model fixed");
     if (mode !== "failure") await until(() => fixture.textContent.includes("Reply ready"), "The loaded thread must render the consumed reply");
     assert(editor().textContent === "next draft" && store.getDraft().text === "next draft", "Loading or failure must preserve the next draft");
     assert(requests === 1 && aborts === 0, "Loading or failure must not send again or abort the thread");

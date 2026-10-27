@@ -12,6 +12,9 @@ pub unsafe extern "C" fn RunWinMain(
     _version_info: *mut std::ffi::c_void,
 ) -> i32 {
     std::panic::catch_unwind(|| {
+        if app::diagnostics_only() {
+            return app::run().unwrap_or(1);
+        }
         match unsafe { app::native_browser::prepare_bootstrap(instance, sandbox_info) } {
             Ok(Some(code)) => code,
             Ok(None) => app::run().unwrap_or(1),
